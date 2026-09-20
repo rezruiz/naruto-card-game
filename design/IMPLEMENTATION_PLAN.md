@@ -1,11 +1,43 @@
 # Implementation Plan — Naruto Card Game Prototype
 
-Status: **approved, blocked on Node.js install**. Once Node is available,
-resume at Milestone 0 below. This plan implements `design/SPEC.md`
+Status: **in progress — Milestone 1 complete, Milestone 2 next.** Node.js
+is installed (v24.19.0). This plan implements `design/SPEC.md`
 (authoritative ruleset) for **Kakuzu, Hidan, Deidara, and Itachi** only —
 Pain and Kisame are deferred until their HP/Pool Capacity are finalized.
 
-Confirmed decisions:
+**Repo:** https://github.com/rezruiz/naruto-card-game (public)
+**Live deploy:** https://rezruiz.github.io/naruto-card-game/ (auto-deploys
+from `main` via `.github/workflows/deploy.yml` on every push)
+**Git identity for this repo (local, not global):** user.name `rezruiz`,
+user.email `262661000+rezruiz@users.noreply.github.com`
+
+**Progress:**
+- [x] Milestone 0 — Vite + React + TypeScript + Vitest scaffold, verified
+      (`npm run dev` / `npm test` / `npm run build` all work). Node.js is
+      installed system-wide.
+- [x] Milestone 1 — Turn-phase skeleton: `src/engine/types.ts`,
+      `src/engine/state.ts`, `src/engine/reducer.ts`,
+      `src/engine/phases/phaseMachine.ts` implement the six-phase cycle,
+      End-Phase Chakra clearing (§4.7), and an action log. Minimal UI
+      wired in `src/App.tsx` + `src/ui/components/` (PhaseIndicator,
+      TurnControls, PlayerHealthBar, ActionLog).
+- [x] Milestone 2 — Chakra sources (`src/engine/chakra.ts`): place from
+      hand once/turn, tap for Chakra, untap at Untap Phase, personal
+      Chakra Pooling into a placeholder character's Chakra Pool (capped
+      at capacity, persists past End Phase unlike the generic pool). 17
+      passing tests across `tests/engine/phases.test.ts` and
+      `tests/engine/chakra.test.ts`. UI: ChakraSourceRow, CharacterCard,
+      HandView.
+      **Rule change:** there is no automatic base Chakra income anymore
+      (SPEC.md §5.1 was revised) — the *only* source of generic Chakra is
+      tapping Chakra sources. `applyBaseChakraIncome` was removed from
+      the engine; a fresh board with zero sources has zero Chakra
+      available all game.
+- [ ] Milestones 3-11 — see Build Order (§6 below), unchanged from the
+      original plan. **Resume at Milestone 3 (board/targeting/combat
+      core) next.**
+
+Confirmed decisions from the original planning pass, still standing:
 - **Hand Deck filler:** synthetic, textless "Chakra Fodder" Jutsu cards
   fill the 40-card Hand Deck for now (no real Jutsu cards exist yet in
   SPEC.md §14's gap list). Trivially swappable once real Jutsu cards are
@@ -71,12 +103,24 @@ tests/engine/ chakra.test.ts stack.test.ts combat.test.ts
   chakraSourcePlacedThisTurn, retaliationAvailable,
   firstCharacterInstanceId (free upkeep).
 - `BoardUnit = CharacterInstance | TokenInstance` — both share the board
-  array, board-order/adjacency, and the 5-unit limit.
+  array and board-order/adjacency, but **only CharacterInstances count
+  toward the 5-unit limit** (SPEC.md §10 — tokens are exempt; a
+  token-specific cap like Deidara's 5-spider limit is separate and
+  tracked independently).
 - `CharacterInstance`: HP, `chakraPool {current, capacity}` (capacity can
   be a computed hook, e.g. Kakuzu's `(hearts-1)*2`), mutable `styles[]`,
   `status {disabled, stunnedUntilTurn, summoningSick,
-  ultimateLockedUntilTurn}`, `tempModifiers[]`, `usedAbilitiesThisTurn`,
-  and an `extra` bag for per-card state (hearts, clayCharges, curseActive).
+  ultimateLockedUntilTurn, tapped}`, `tempModifiers[]`,
+  `usedAbilitiesThisTurn`, and an `extra` bag for per-card state (hearts,
+  clayCharges, curseActive). `status.tapped` is the new mechanic from
+  SPEC.md §5.3 (postdates the original plan): pooling Chakra into a
+  character taps it (blocks further active-ability use that turn), and
+  using an active ability taps it too (blocks further pooling); Passives
+  are unaffected. Untaps at that player's next Untap Phase, same as
+  Chakra sources. **UI note:** the designer wants tapped characters shown
+  rotated 90° sideways, borrowed directly from Magic: The Gathering's
+  tapped-permanent convention — `CharacterCard` should apply a rotation
+  transform when `status.tapped` is true.
 - `AbilityDef`: id/name/speed/style/abilityType, isUltimate/isForbidden,
   oncePerTargetPerGame, usesPerTurn, and `cost`/`legality`/`targeting`/
   `resolve` as functions over context — dynamic, not static, so discounts
@@ -116,7 +160,9 @@ PlayerHealthBar/GameOverScreen.
 ## 6. Build order (each milestone from #3 onward playable through the UI)
 
 0. Scaffold (Vite+React+TS+Vitest, `npm run dev`/`npm test` verified)
-1. Turn-phase skeleton (6 phases cycling, base Chakra income, log)
+1. Turn-phase skeleton (6 phases cycling, log) — note: no automatic base
+   Chakra income exists (removed from SPEC.md §5.1 after this plan was
+   first written); Chakra only comes from tapping sources (Milestone 2)
 2. Chakra system (sources, tapping, personal pooling, Style-affinity,
    End-Phase loss) against one placeholder character
 3. Board/targeting/combat core (board order, adjacency, free targeting,
@@ -124,9 +170,16 @@ PlayerHealthBar/GameOverScreen.
    Retaliation, 5-unit limit, win condition)
 4. Stack & priority (all speeds go on the stack, 2-pass resolution,
    auto-pass with zero legal responses)
-5. Deck/hand/setup flow (40/10 decks incl. Chakra Fodder, draw-3-choose-1,
-   5-card hand, first-player draw-skip, empty-deck damage, reinforcement
-   triggers)
+5. Deck/hand/setup flow (40-card Hand Deck incl. Chakra Fodder + a
+   10-15-card Character Deck per SPEC.md §2, draw-3-choose-1, 6-card
+   starting hand + free-then-escalating mulligan per §3, first-player
+   draw-skip, empty-deck damage, reinforcement triggers — note: the
+   "every 3rd turn" auto-reinforcement trigger was **removed**; only
+   on-defeat and card-granted draws remain, and playing any character
+   past your starting one now costs escalating Chakra per §8/§6.7
+   (3/5/7/9/... Chakra, a counter that never resets even if characters
+   die) — this postdates when this plan was first written, so build it
+   per the current SPEC.md, not the summary here)
 6. Kakuzu (Five Hearts SBA hook, dynamic pool capacity, Elemental
    Versatility, Patchwork Threads)
 7. Hidan (Jashin's Blessing, End-Phase regen, Curse Technique)
@@ -143,8 +196,11 @@ PlayerHealthBar/GameOverScreen.
 
 1. **Hand Deck filler** — confirmed: synthetic Chakra Fodder cards (see
    top of doc).
-2. Face-down Chakra placement (§5.2) is assumed restricted to non-Character
-   cards from hand.
+2. Placing a Chakra source (§5.2 — as of 2026-09-14, this Consumes the
+   hand card into the Consumed pile and puts a separate Chakra Card
+   Stack card in play instead; a physical-table convenience change, no
+   mechanical
+   difference) is assumed restricted to non-Character cards from hand.
 3. **All ability activations use the stack**, even Sorcery-speed —
    required for Crow Clone / Deidara's Forbidden Technique v2 (both
    Reactive Technique) to have something to respond to. UI auto-passes
@@ -169,8 +225,10 @@ PlayerHealthBar/GameOverScreen.
 13. Damage-modifier stacking order (no card currently needs it, but
     future-proofed) — proposed order: flat reductions (LIFO) → clamp to
     0 → floor-clamps → "cannot be prevented" bypasses everything.
-14. Character Deck needs 10 cards from only 4 designed characters —
-    defaulted to a fixed multiset (e.g. 3/3/2/2), easily reconfigured
+14. Character Deck must be 10-15 cards (SPEC.md §2, with rank caps: max 3
+    S/A/B each) from only 4 implemented characters (Kakuzu, Hidan,
+    Deidara, Itachi — Pain/Kisame deferred) — defaulted to a fixed
+    multiset (e.g. a 12-card deck at 3 copies each), easily reconfigured
     later.
 15. Kakuzu's Pool capacity shrinking below currently-pooled amount (losing
     a Heart) — defaulted to clamping current down (excess lost). Worth a

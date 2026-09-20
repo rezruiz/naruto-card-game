@@ -1,9 +1,27 @@
-import type { GameState, PlayerId, PlayerState } from './types';
+import type { CharacterInstance, GameState, PlayerId, PlayerState } from './types';
 
-const STARTING_HEALTH = 30;
+const STARTING_HEALTH = 20;
+
+function createPlaceholderCharacter(player: PlayerId): CharacterInstance {
+  return {
+    instanceId: `${player}-placeholder`,
+    name: 'Placeholder',
+    maxHP: 10,
+    currentHP: 10,
+    chakraPool: { current: 0, capacity: 5 },
+  };
+}
 
 function createPlayer(id: PlayerId): PlayerState {
-  return { id, health: STARTING_HEALTH, genericChakraAvailable: 0 };
+  return {
+    id,
+    health: STARTING_HEALTH,
+    genericChakraAvailable: 0,
+    chakraSources: [],
+    chakraSourcePlacedThisTurn: false,
+    hand: Array.from({ length: 10 }, (_, i) => `filler-${i + 1}`),
+    board: [createPlaceholderCharacter(id)],
+  };
 }
 
 export function createInitialState(firstPlayer: PlayerId): GameState {

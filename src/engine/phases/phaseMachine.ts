@@ -11,10 +11,9 @@ export function otherPlayer(player: PlayerId): PlayerId {
 
 /**
  * Advances the game by one phase, switching the active player and
- * incrementing the turn counter whenever End Phase is passed. Applies
- * each phase's automatic entry effects (currently just Upkeep's base
- * Chakra income, per SPEC.md §5.1 — 1 Chakra every turn, never growing
- * on its own).
+ * incrementing the turn counter whenever End Phase is passed. There is
+ * no automatic Chakra income (SPEC.md §5.1) — the only source of generic
+ * Chakra is tapping Chakra sources (§5.2).
  */
 export function advancePhase(state: GameState): GameState {
   const wrapping = state.phase === 'End';
@@ -28,8 +27,8 @@ export function advancePhase(state: GameState): GameState {
     // §4.7: unspent generic Chakra never carries past End Phase.
     next = clearGenericChakra(next, state.activePlayer);
   }
-  if (phase === 'Upkeep') {
-    next = applyBaseChakraIncome(next);
+  if (phase === 'Untap') {
+    next = untapPlayer(next, activePlayer);
   }
 
   return appendLog(next, `${activePlayer} enters ${phase} Phase (turn ${turn}).`);
@@ -45,13 +44,17 @@ function clearGenericChakra(state: GameState, player: PlayerId): GameState {
   };
 }
 
-function applyBaseChakraIncome(state: GameState): GameState {
-  const player = state.players[state.activePlayer];
+function untapPlayer(state: GameState, player: PlayerId): GameState {
+  const p = state.players[player];
   return {
     ...state,
     players: {
       ...state.players,
-      [state.activePlayer]: { ...player, genericChakraAvailable: player.genericChakraAvailable + 1 },
+      [player]: {
+        ...p,
+        chakraSources: p.chakraSources.map(() => ({ tapped: false })),
+        chakraSourcePlacedThisTurn: false,
+      },
     },
   };
 }

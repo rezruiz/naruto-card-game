@@ -8,6 +8,89 @@
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.player-board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chakra-sources,
+.hand-view {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chakra-sources__label {
+  font-weight: 600;
+}
+
+.chakra-sources__boxes {
+  display: flex;
+  gap: 4px;
+}
+
+.chakra-source {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.chakra-source--tapped {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hand-view button,
+.character-card button {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+
+.hand-view button:disabled,
+.character-card button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.board-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.character-card {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.character-card__name {
+  font-weight: 600;
 }
 
 .player-panel {

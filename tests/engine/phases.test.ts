@@ -34,25 +34,16 @@ describe('turn phase machine', () => {
     expect(state.turn).toBe(2);
   });
 
-  it('gains exactly 1 base Chakra at Upkeep, every turn, never more', () => {
+  it('grants no automatic Chakra income — Upkeep alone never changes available Chakra', () => {
     let state = createInitialState('p1');
     state = advance(state, 1); // Untap -> Upkeep
     expect(state.phase).toBe('Upkeep');
-    expect(state.players.p1.genericChakraAvailable).toBe(1);
+    expect(state.players.p1.genericChakraAvailable).toBe(0);
 
-    // Full lap back to p1's next Upkeep: still exactly 1, not accumulating
-    // (End Phase clears unspent Chakra along the way, per §4.7).
+    // Full lap back to p1's next Upkeep: still 0, since no sources exist yet.
     state = advance(state, PHASE_ORDER.length * 2);
     expect(state.phase).toBe('Upkeep');
     expect(state.activePlayer).toBe('p1');
-    expect(state.players.p1.genericChakraAvailable).toBe(1);
-  });
-
-  it('only gives base Chakra to the player whose Upkeep it is, and clears the other on End Phase', () => {
-    let state = createInitialState('p1');
-    state = advance(state, PHASE_ORDER.length + 1); // p2's Upkeep
-    expect(state.activePlayer).toBe('p2');
-    expect(state.players.p2.genericChakraAvailable).toBe(1);
     expect(state.players.p1.genericChakraAvailable).toBe(0);
   });
 
