@@ -41,9 +41,9 @@ mechanically tight, flavor-accurate, and easy to parse standalone.
 - **Character Cards** — the units you play and fight with.
 - **Jutsu Cards** — standalone spell-like cards played from hand.
 - **Token Cards** — small, disposable summoned units (see §10).
-- **Terrain Cards** — has minimal rules defined so far (see §10a); no
-  example cards exist in the Akatsuki deck yet.
-- **Mission Cards** — has minimal rules defined (see §10b) and 5 example
+- **Terrain Cards** — has minimal rules defined so far (see §10a); 1
+  example card (§13c).
+- **Mission Cards** — has minimal rules defined (see §10b) and 6 example
   cards (§13a).
 - **Item Cards** — named as a future card type in the core design, but
   **not mechanically defined in this prototype**. None currently exist
@@ -301,7 +301,9 @@ Sealing, Mangekyō, etc. are **not** Styles — they describe *how* an
 ability works, not its element, and impose no restrictions by
 themselves. These aren't a formal card field; they just live in an
 ability's name/flavor text. The one formal classification every ability
-does carry is its **Type** — Ninjutsu, Taijutsu, or Genjutsu (§6.8).
+does carry is its **Type** — Ninjutsu, Taijutsu, or Genjutsu (§6.8) —
+plus Bukijutsu, a narrower category coined specifically for Explosive
+Tag (§13b) and not yet retrofitted onto any other card.
 
 **Taijutsu is a base capability every character has**, not a listed
 Style — it's not tied to any specific character's identity, so it's
@@ -415,24 +417,28 @@ Retreating doesn't move the character or change its zone — it stays in
 its back-row slot, in normal left-to-right order (§9), and still counts
 toward your 5-character board limit (§6.5).
 
-While Retreated, a character behaves like Disabled (§6.5a): it cannot
-take any action, active or passive — no attacks, no abilities, no
-self-regen, and it cannot serve as a Style-match enabler for a hand
-card. Its HP and Rank stay exactly as they were the moment it retreated.
-Unlike Disabled, though:
-- **A Retreated character cannot be targeted at all**, by default. This
-  is a deliberate exception to the normal targeting-vs-affected
-  distinction (§9): a Retreated character is immune to untargeted
-  blanket/splash effects too, not just to being targeted — full
-  immunity, not just untargetability, unless a specific card says
-  otherwise.
-  - **Exception:** if a player has zero non-Retreated characters in
-    play, all of that player's Retreated characters become legal
-    targets again — this stops a player from Retreating their entire
-    board into permanent immunity.
-- Already-in-motion lingering effects (e.g. a damage-over-time tick)
-  still resolve on it normally — that's a continuation of something
-  already applied, not a new targeting or affecting action.
+While Retreated, a character behaves exactly like Disabled (§6.5a): it
+can't take any action, active or passive — no attacks, no abilities, no
+self-regen, and it can't serve as a Style-match enabler for a hand
+card. Its HP and Rank stay the same as the moment it retreated, unless
+there's an already-activated damaging or healing effect still ongoing —
+that continues as normal for its set duration and timing (e.g. a
+damage-over-time tick, or a delayed heal already queued up before it
+retreated).
+
+**A Retreated character cannot be targeted or damaged at all**, outside
+of those already-ongoing effects from before it retreated. This is a
+deliberate exception to the normal targeting-vs-affected distinction
+(§9): full immunity to both targeted *and* untargeted/blanket effects,
+not just untargetability, unless a specific card says otherwise.
+- **Exception:** if a player has zero non-Retreated characters in play,
+  all of that player's Retreated characters become legal targets again
+  — this stops a player from Retreating their entire board into
+  permanent immunity.
+
+A character under a stun-type effect cannot be Retreated until it's
+unimpeded (already stated above — repeated here for emphasis, not a
+second separate rule).
 
 **Returning** from Retreated costs 0 Chakra — just flip the status off.
 A character that returns is treated exactly like it just entered play
@@ -507,7 +513,23 @@ template to check new cards against:
     replaces an earlier, separate "Type" descriptor field — e.g. "Ritual
     Ability," "Water Ability," "Gravity Ability" — which was dropped as
     redundant with Style; that descriptor's role is now folded into this
-    Ninjutsu/Taijutsu/Genjutsu field.)
+    Ninjutsu/Taijutsu/Genjutsu field.
+    - **Exception — Bukijutsu:** a narrower, ranged/thrown-weapon-attack
+      Type (kunai, shuriken, senbon, exploding tags), coined specifically
+      for Explosive Tag (§13b). Not a general 4th category retrofitted
+      onto other cards — every other ability in the game keeps its
+      existing Ninjutsu/Taijutsu/Genjutsu classification unchanged.
+    - **Physical (umbrella category):** Taijutsu and Bukijutsu are both
+      "Physical" Types. Any rule or card text that blocks, redirects, or
+      otherwise cares about "a Taijutsu attack" generically (e.g. §9's
+      physical-blocking-vs-Genjutsu rule, Asura Path's Mechanized Guard,
+      Preta Path's Absorb Impact, Hiruko's Puppet Shell Guard) is phrased
+      as caring about **a Physical attack** instead — this covers both
+      Taijutsu and Bukijutsu (and any future Physical sub-type) without
+      needing to list them out individually every time. "Physical" isn't
+      itself a Type a card is ever printed with; it's a grouping term
+      used only in other cards'/rules' text when referring to Taijutsu
+      and Bukijutsu together.)
   - Effect text
 
 **Terminology note:** "ability" refers specifically to a character's own
@@ -821,11 +843,12 @@ you" clause doesn't depend on that target at all, so it still resolves.
 **Physical blocking vs. Genjutsu:** an ability that blocks, redirects,
 or reduces incoming damage by physically intercepting an attack (e.g.
 Hiruko's Puppet Shell Guard, Third Kazekage's Iron Sand Wall, Asura
-Path's Mechanized Guard) only works against Ninjutsu- and Taijutsu-Type
-attacks — it has no effect against a Genjutsu-Type attack, since
-Genjutsu is an illusion/mental technique with nothing physical to
-intercept. This applies retroactively to every card of this kind, even
-where the printed text doesn't spell out the Type restriction itself.
+Path's Mechanized Guard) only works against Ninjutsu-Type and
+Physical-Type (Taijutsu or Bukijutsu, §6.8) attacks — it has no effect
+against a Genjutsu-Type attack, since Genjutsu is an illusion/mental
+technique with nothing physical to intercept. This applies
+retroactively to every card of this kind, even where the printed text
+doesn't spell out the Type restriction itself.
 
 ---
 
@@ -882,6 +905,79 @@ example cards (§13a) is defined here, the rest is deferred (§12):
   Reward public information. A specific card can override this (§0) —
   e.g. the Bingo Book series (§13a) can be played face down and revealed
   only once its Condition is met.
+
+### 10c. Jutsu Cards
+Jutsu cards live in the 40-card Hand Deck (§2) and are drawn normally.
+Unlike a character's own printed Abilities, a Jutsu card isn't tied to
+one specific character — it's a standalone effect any eligible
+character can enable. Each Jutsu card states:
+- **Style** (or "None") — per §5.3's Style-affinity rule, playing a
+  Jutsu card requires an in-play character able to enable it: either
+  the card is Style: None (any character can enable it — Taijutsu-type
+  effects fall under this, §6.2), or you control a character whose own
+  Styles include the card's Style.
+- **Speed** — Sorcery (the default, omitted on the card, §7), Quick
+  Technique, or Reactive Technique, exactly like character abilities.
+- **Cost** — paid the same way a character ability's cost is (§5.3):
+  from the generic pool, or from the enabling character's own Chakra
+  Pool. A Jutsu card can specify a **cheaper cost specifically when paid
+  from the enabling character's Pool** (e.g. "2 Chakra, 1 if paid from
+  the enabling character's Pool") — this is a new, card-specific
+  discount pattern, distinct from every character ability so far (which
+  never varies in cost by funding source, only in *which* pool it's
+  legal to draw from). Where a Jutsu card doesn't state such a
+  discount, its cost is the same regardless of funding source, as usual.
+- **Type** (Ninjutsu, Taijutsu, or Genjutsu, §6.8) and **effect text**,
+  using the same colon/comma notation as abilities (§6.8a).
+
+Playing/activating a Jutsu card still requires an eligible enabling
+character to be in play, un-Disabled, and un-Retreated (§6.5a, §6.5b) at
+the moment it's played — same restrictions as using that character's
+own abilities. Unless a specific card says otherwise, a named Jutsu
+card is limited to once per turn, same as a character ability (§9).
+
+**Ongoing-effect Jutsu cards stay in play, not the discard pile, until
+their effect ends.** A Jutsu card whose effect isn't fully resolved the
+instant it's activated (it has a stated duration, or triggers multiple
+times over future Phases/turns — e.g. Deploy Medic Corps, §13b) remains
+face up in a visible "in play" area, purely for tracking purposes, the
+same way a Mission card stays in play until its Condition triggers
+(§10b). It moves to the discard pile only once its effect is either
+fully completed (all of its triggers have happened) or explicitly
+cancelled by its own text or another effect. This also has a
+mechanical reason, not just bookkeeping: a card sitting in the discard
+pile is normally free to be affected by anything that interacts with
+that pile, and a still-active delayed effect shouldn't be reachable or
+disruptable that way while it's still pending.
+
+**Assist cards** are a sub-category of Jutsu cards, not a separate card
+type or zone — mechanically, an Assist card is a Jutsu card in every
+respect (same Hand Deck, same Speed/Cost/Type rules above), just
+written like a stripped-down "character card lite": built around a
+specific (often guest/cameo) character briefly lending a single
+signature technique, rather than presented as an impersonal spell.
+Its header line follows a fixed format instead of a plain card name:
+**[Assist Type]: [Character assisting], [Synergy]** — e.g. "Impact
+Assist: Sasuke, Akatsuki." The two named Assist Types so far are
+**Impact Assist** (offense-flavored payoff) and **Guard Assist**
+(protective/mitigating payoff) — see §13b for more on how a card's
+payoff, not its trigger shape, decides which one it is. The named
+character doesn't need to be a canon member of the deck's own faction
+(e.g. Sasuke Uchiha guest-starring in an Akatsuki deck) — the Synergy
+named alongside them is set independently, based on what the card
+should mechanically plug into, the same way Juzo Biwa's Akatsuki
+Synergy was assigned despite his own uncertain canon affiliation
+(§13).
+
+**Assist cards ignore the normal Style-enabling requirement**
+(§5.3/§10c) — unlike every other Jutsu card, playing one doesn't need
+an in-play character whose own Styles match. The flavor character is
+understood to briefly step into play themselves to perform the one
+technique, then exit immediately once it resolves — so a listed Style
+on an Assist card is flavor/informational only (still relevant for any
+Style-conditional text elsewhere that checks it), not an enabling
+requirement. An Assist card can be played even with zero characters in
+play, or none matching its Style.
 
 ---
 
@@ -1020,13 +1116,13 @@ Abilities (each ability belongs to the named Path token, not to Pain):
 - Deva Path: Shinra Tensei, V2 — 4 Chakra, Reactive Technique, Style: Gravity, Type: Ninjutsu: In response to a targeted Ninjutsu or Taijutsu ability aimed at Deva Path specifically, negate its targeting — the ability fails to target, so its damage (and anything else depending on that target) fizzles (§9).
 - Deva Path: Banshō Ten'in — 4 Chakra, Style: Gravity, Type: Ninjutsu: Pull an enemy character closer, Deal 1 damage. Rest of turn: damage to it +1, can't be protected by its controller's damage-reduction abilities.
 - Asura Path: Mechanized Assault — 3 Chakra, Style: None, Type: Taijutsu: Deal 4 damage.
-- Asura Path: Mechanized Guard — Reactive Technique, 2 Chakra, Style: None, Type: Taijutsu: In response to a targeted Taijutsu ability aimed at any Path, redirect it onto Asura instead, reduced by 1 (min 0). Targeted-only (§9).
+- Asura Path: Mechanized Guard — Reactive Technique, 2 Chakra, Style: None, Type: Taijutsu: In response to a targeted Physical (Taijutsu or Bukijutsu, §6.8) ability aimed at any Path, redirect it onto Asura instead, reduced by 1 (min 0). Targeted-only (§9).
 - Human Path: Soul Rip — 2 Chakra, Style: None, Type: Ninjutsu: Deal 2 damage; if this defeats the target, draw 1 card.
 - Animal Path: Summon — 1 Chakra, Style: None, Type: Ninjutsu: Create 1 of the 3 named Path Beast tokens below, your choice of which — but not one that's already in play or on cooldown (see below).
 - Preta Path: Chakra Absorption — Reactive Technique, 2 Chakra, Style: None, Type: Ninjutsu: Redirect a targeted Ninjutsu attack onto Preta, reduce to 0, gain 1 Chakra to Preta Path's Pool. Targeted-only (§9).
-- Preta Path: Absorb Impact — Reactive Technique, 1 Chakra, Style: None, Type: Taijutsu: Redirect a targeted Taijutsu attack onto Preta, taking it −1 (min 0). Targeted-only (§9).
+- Preta Path: Absorb Impact — Reactive Technique, 1 Chakra, Style: None, Type: Taijutsu: Redirect a targeted Physical (Taijutsu or Bukijutsu, §6.8) attack onto Preta, taking it −1 (min 0). Targeted-only (§9).
 - Naraka Path: King of Hell's Judgment — 4 Chakra, Style: None, Type: Ninjutsu: Choose a Path token (including Naraka). At your next Upkeep, heal it 3 HP. Cancelled if Naraka Path dies first.
-- Naraka Path: Rinne Rebirth — 7 Chakra, Style: None, Type: Ninjutsu: Choose 1 defeated Path token; revives at full HP (with summoning sickness, §6.6) at your next Upkeep. Cancelled if Naraka Path dies first.
+- Naraka Path: Outer Path — Samsara of Heavenly Life Technique — 7 Chakra, Style: None, Type: Ninjutsu: Choose 1 defeated Path token; revives at full HP (with summoning sickness, §6.6) at your next Upkeep. Cancelled if Naraka Path dies first.
 
 Deva Path's Ultimate — Almighty Push (6 Chakra + Deva Path's entire
 Chakra Pool spent in full, Style: Gravity, Type: Ninjutsu):
@@ -1193,7 +1289,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
 
 **Hiruko Form (starting)** — HP 7 · Pool Capacity 2
 - Tail Strike — 3 Chakra, Style: None, Type: Taijutsu: Deal 2 damage, apply 2 Poison counters.
-- Puppet Shell Guard — 2 Chakra, Reactive Technique, Style: None, Type: Taijutsu: Redirect a targeted Ninjutsu or Taijutsu attack aimed at Third Kazekage onto Hiruko instead, reduced by 2 (min 0).
+- Puppet Shell Guard — 2 Chakra, Reactive Technique, Style: None, Type: Taijutsu: Redirect a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at Third Kazekage onto Hiruko instead, reduced by 2 (min 0).
 
 **Hollow Body Form (after Hiruko falls)** — HP 4 · Pool Capacity 2
 - Poison Senbon — 2 Chakra, Style: Poison, Type: Taijutsu: Deal 1 damage, apply 2 Poison counters. (Poisoned: at the start of every Upkeep Phase — not just its controller's — it loses 1 Poison counter and takes 1 damage per counter removed. This damage can't be prevented or healed away.)
@@ -1428,6 +1524,100 @@ separate instances lets each instance be redirected independently
 (potentially to different characters than the attacker chose, or all to
 the same one). This Mission stays in play until one of the three
 selected characters is defeated or Retreated (§6.5b), then discard it.
+
+---
+
+## 13b. Example Jutsu Cards
+
+**Substitution** — Style: None, Reactive Technique, Type: Ninjutsu
+Cost: 4 Chakra (2 if paid from the enabling character's own Chakra
+Pool). *(full nuance: design/CHARACTER_LOG.md)*
+Effect: In response to a targeted damage-dealing ability or Attack-type
+Jutsu aimed at the character enabling this card's play, negate its
+targeting — it fails to target, so its damage (and anything else
+depending on that target) fizzles (§9).
+
+**Lightning Substitution** — Style: Lightning, Reactive Technique,
+Type: Ninjutsu
+Cost: 4 Chakra (2 if paid from the enabling character's own Chakra
+Pool).
+Effect: In response to a targeted damage-dealing ability or Attack-type
+Jutsu aimed at the character enabling this card's play, negate its
+targeting (§9). If the negated ability was Type: Taijutsu, deal 2
+damage to its source.
+
+**Water Substitution** — Style: Water, Reactive Technique, Type:
+Ninjutsu
+Cost: 3 Chakra (1 if paid from the enabling character's own Chakra
+Pool). *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Same as Substitution: in response to a targeted damage-dealing
+ability or Attack-type Jutsu aimed at the character enabling this
+card's play, negate its targeting (§9).
+
+**Incoming Mission Assignment** — Style: None, no Type
+Cost: 0 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Look at the top 6 cards of your Hand Deck. You may add 1
+Mission card among them to your hand. Shuffle the rest back into your
+Hand Deck.
+
+**Battlefield Selection** — Style: None, no Type
+Cost: 0 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Look at the top 6 cards of your Hand Deck. You may add 1
+Terrain card among them to your hand. Shuffle the rest back into your
+Hand Deck.
+
+**Chakra Transfer** — Style: None, Type: Ninjutsu
+Cost: 0 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Choose two different characters you control. Remove X Chakra
+(your choice, X≥1) from the first's Chakra Pool and add X−1 to the
+second's Chakra Pool, minimum 1, capped by its remaining room (§5.3) —
+the amount added can't exceed that room.
+
+**Field Intelligence** — Style: None, no Type
+Cost: 1 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Your opponent reveals 2 cards of their choice from their hand
+to you. Draw 1 card.
+
+**Deploy Medic Corps** — Style: None, Type: Ninjutsu
+Cost: 2 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Choose 1 Retreated character you control (this card may target
+a Retreated character despite §6.5b's normal targeting immunity — an
+explicit exception). At the start of each of the next 4 of your own
+Upkeep Phases, heal it 1 HP. If it ever stops being Retreated before
+all 4 triggers occur, this effect is cancelled.
+
+**Jutsu Disruption** — Style: None, Reactive Technique, Type: Ninjutsu
+Cost: 2 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: In response to a targeted Ninjutsu-Type damage-dealing ability
+or Attack-type Jutsu card — other than an Ultimate or Forbidden
+Technique — negate its targeting (§9).
+
+**Explosive Tag** — Style: None, Type: Bukijutsu
+Cost: 1 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Deal 1 damage to 1 target, plus 1 damage to a second character
+adjacent to it in one direction of your choice (front, behind, left, or
+right, §9).
+
+**Assist Cards** (see §10c):
+
+**Chidori Interception** — Impact Assist: Sasuke, Akatsuki
+Style: Lightning (no enabling requirement — informational only, §10c),
+Reactive Technique, Type: Ninjutsu. *(full nuance:
+design/CHARACTER_LOG.md)*
+Cost: 1 Chakra (0 if an Akatsuki-Synergy Terrain card is in play)
+Effect: In response to an enemy character or token activating a
+targeted damage-dealing ability or Attack-type Jutsu, deal 2 damage to
+it. The original attack still resolves normally — this doesn't negate
+or reduce it.
+
+---
+
+## 13c. Example Terrain Cards
+
+**Akatsuki Hideout** — Synergy: Akatsuki, 0 Chakra. *(full nuance:
+design/CHARACTER_LOG.md)*
+Effect: Akatsuki-Synergy characters you control have their Upkeep
+(§6.5) reduced by 1 (minimum 0).
 
 ---
 

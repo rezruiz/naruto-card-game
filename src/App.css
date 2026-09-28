@@ -33,26 +33,52 @@
 
 .chakra-sources__label {
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chakra-symbol {
+  font-size: 16px;
 }
 
 .chakra-sources__boxes {
   display: flex;
-  gap: 4px;
+  gap: 6px;
+  align-items: center;
 }
 
+.chakra-sources__empty {
+  font-size: 12px;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* Styled like a small card, tapped/untapped the way a land taps in MTG. */
 .chakra-source {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  border: 1px solid var(--accent);
+  width: 32px;
+  height: 44px;
+  border-radius: 5px;
+  border: 2px solid var(--accent);
   background: var(--accent-bg);
   cursor: pointer;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.chakra-source__symbol {
+  font-size: 16px;
 }
 
 .chakra-source--tapped {
-  opacity: 0.4;
+  transform: rotate(90deg);
+  opacity: 0.5;
   cursor: default;
+  border-color: var(--border);
+  background: var(--panel-bg);
 }
 
 .hand-view button,
@@ -166,4 +192,679 @@
   padding-left: 20px;
   max-height: 240px;
   overflow-y: auto;
+}
+
+.front-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.token-card {
+  border: 1px dashed var(--border);
+  background: var(--panel-bg);
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-width: 90px;
+  font-size: 12px;
+}
+
+.character-card__abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.ability-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.targetable {
+  outline: 2px solid var(--accent);
+  cursor: pointer;
+}
+
+.pending-banner {
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pending-banner span:last-child {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.stack-panel {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.app__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.character-card__badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 11px;
+  border-radius: 4px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+}
+
+.badge--retreated {
+  border-color: #999;
+  opacity: 0.8;
+}
+
+.badge--disabled {
+  border-color: #c33;
+  color: #c33;
+}
+
+.badge--sick {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.enablable {
+  outline: 2px dashed var(--accent);
+  cursor: pointer;
+}
+
+.hand-view__cards {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.hand-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-width: 150px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hand-card--pending {
+  outline: 2px solid var(--accent);
+}
+
+.hand-card__name {
+  font-weight: 600;
+}
+
+.hand-card__meta {
+  opacity: 0.7;
+}
+
+.hand-card__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.reveal-panel {
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.reveal-panel__title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.reveal-panel__options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.terrain-badge,
+.missions-badge {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.lobby-screen {
+  max-width: 480px;
+  margin: 60px auto;
+  padding: 24px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lobby-screen__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lobby-screen__join {
+  display: flex;
+  gap: 8px;
+}
+
+.lobby-screen__code {
+  font-size: 18px;
+}
+
+.lobby-screen__error {
+  color: #c33;
+}
+
+/* ---- Across-the-table layout: opponent on top, you on the bottom ---- */
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.table-middle {
+  border-top: 2px dashed var(--border);
+  border-bottom: 2px dashed var(--border);
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.table-middle .phase-indicator,
+.table-middle .turn-controls,
+.table-middle .stack-panel,
+.table-middle .pending-banner {
+  margin-bottom: 0;
+}
+
+.player-board--top {
+  opacity: 0.97;
+}
+
+.board-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---- Minimized in-play cards ---- */
+.compact-card {
+  position: relative;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 132px;
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+.compact-card:hover {
+  box-shadow: 0 0 0 2px var(--accent);
+  transform: translateY(-1px);
+}
+
+.compact-card--retreated {
+  opacity: 0.6;
+}
+
+.compact-card__name {
+  font-weight: 600;
+  font-size: 14px;
+  padding-right: 18px;
+}
+
+.compact-card__vitals {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.compact-card__badges {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.compact-card__hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 4px;
+  text-align: center;
+  font-size: 11px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 5;
+}
+
+.compact-card:hover .compact-card__hint {
+  opacity: 1;
+}
+
+.compact-card .compact-card__info {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.35;
+}
+
+.compact-card:hover .compact-card__info {
+  opacity: 1;
+}
+
+.token-card {
+  width: 104px;
+  min-height: 52px;
+}
+
+.in-play-cards {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.in-play-chip {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  cursor: pointer;
+}
+
+.in-play-chip--hidden {
+  border-style: dashed;
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* ---- Card details popup ---- */
+.details-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.details-modal {
+  background: var(--panel-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: min(560px, 100%);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.details-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.details-modal__header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.details-modal__subtitle {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.details-modal__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.details-modal__actions button,
+.details-modal__header button {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+
+.details-modal__note {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.details-modal__text {
+  margin: 0;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  flex: 1;
+  min-height: 80px;
+}
+
+/* Hand cards: same hover hint + click-for-details as in-play cards */
+.hand-card {
+  position: relative;
+  cursor: pointer;
+  transition: box-shadow 0.12s ease;
+}
+
+.hand-card--hidden {
+  cursor: default;
+}
+
+.hand-card:not(.hand-card--hidden):hover {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.hand-card__hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 4px;
+  text-align: center;
+  font-size: 11px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 5;
+}
+
+.hand-card:hover .hand-card__hint {
+  opacity: 1;
+}
+
+/* ---- Trust mode: declared actions, deck tools, manual adjustments ---- */
+.staged-panel {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.staged-panel__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.staged-panel__hint {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.staged-panel__empty {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.staged-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staged-item {
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.staged-item--p1 {
+  border-left-color: #3b82f6;
+}
+
+.staged-item--p2 {
+  border-left-color: #ef4444;
+}
+
+.staged-item__main {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.staged-item__order {
+  opacity: 0.6;
+}
+
+.staged-item__owner {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.staged-item__label {
+  font-weight: 600;
+}
+
+.staged-item__targets {
+  opacity: 0.8;
+}
+
+.staged-item__warning {
+  color: #b45309;
+  font-size: 12px;
+}
+
+.staged-item__actions,
+.staged-panel__controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.staged-panel button,
+.deck-bar button,
+.manual-tools button,
+.deck-list button {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+
+.staged-panel button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.staged-panel button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.staged-panel__prompt {
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deck-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+}
+
+.deck-bar__count {
+  font-weight: 600;
+}
+
+.stepper {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 8px;
+}
+
+.stepper button {
+  font: inherit;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+
+.player-panel__health {
+  display: flex;
+  align-items: center;
+}
+
+.manual-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+.manual-tools__title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.manual-tools__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.deck-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.deck-list__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding: 3px 0;
+  font-size: 13px;
+}
+
+.deck-list__count input {
+  width: 56px;
+}
+
+.hand-card__move {
+  font: inherit;
+  font-size: 11px;
+  max-width: 90px;
+}
+
+.reveal-panel__note {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 6px;
 }

@@ -39,9 +39,20 @@ user.email `262661000+rezruiz@users.noreply.github.com`
 
 Confirmed decisions from the original planning pass, still standing:
 - **Hand Deck filler:** synthetic, textless "Chakra Fodder" Jutsu cards
-  fill the 40-card Hand Deck for now (no real Jutsu cards exist yet in
-  SPEC.md §14's gap list). Trivially swappable once real Jutsu cards are
-  designed.
+  pad out the 40-card Hand Deck where real cards don't yet fill it.
+  **Akatsuki starter Hand Deck manifest (as of 2026-09-19):** 2 copies
+  each of the 6 Mission cards (SPEC.md §13a) = 12; 3 copies each of the
+  Substitution family — Substitution, Lightning Substitution, Water
+  Substitution (§13b) = 9; 2 copies each of the other 7 Jutsu cards —
+  Incoming Mission Assignment, Chakra Transfer, Field Intelligence,
+  Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield
+  Selection (§13b) = 14; 3 copies of the 1 Terrain card, Akatsuki
+  Hideout (§13c) = 3; 2 copies of the 1 Assist card, Chidori Interception
+  (§13b) = 2. Total: 12 + 9 + 14 + 3 + 2 = **40 real cards — no Chakra
+  Fodder needed**. Recompute this whenever a Mission/Jutsu/Terrain/
+  Assist card is added/removed, or this copy-count scheme changes —
+  Chakra Fodder makes up whatever the real-card count falls short of 40
+  by (0 currently).
 - **Hidden information:** fully open for v1 — both players' hands, Chakra
   Pools, and Character Deck draw choices are visible to both, matching
   in-person hotseat play. A pass-and-reveal hidden-hand mode is a later

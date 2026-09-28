@@ -20,7 +20,7 @@ describe('Chakra sources (§5.2)', () => {
     let state = toMain1(createInitialState('p1'));
     const handSizeBefore = state.players.p1.hand.length;
 
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     expect(state.players.p1.chakraSources).toHaveLength(1);
     expect(state.players.p1.chakraSources[0].tapped).toBe(false);
     expect(state.players.p1.hand).toHaveLength(handSizeBefore - 1);
@@ -29,20 +29,20 @@ describe('Chakra sources (§5.2)', () => {
 
   it('cannot be placed twice in the same turn', () => {
     let state = toMain1(createInitialState('p1'));
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     expect(state.players.p1.chakraSources).toHaveLength(1);
   });
 
   it('cannot be placed outside a Main Phase', () => {
     const state = createInitialState('p1'); // Untap Phase
-    const result = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    const result = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     expect(result.players.p1.chakraSources).toHaveLength(0);
   });
 
   it('produces 1 Chakra when tapped, and cannot be tapped twice', () => {
     let state = toMain1(createInitialState('p1'));
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     const before = state.players.p1.genericChakraAvailable;
 
     state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 0 });
@@ -55,7 +55,7 @@ describe('Chakra sources (§5.2)', () => {
 
   it('untap at the start of the owner’s next turn, and the once-per-turn flag resets', () => {
     let state = toMain1(createInitialState('p1'));
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 0 });
     expect(state.players.p1.chakraSources[0].tapped).toBe(true);
 
@@ -69,7 +69,7 @@ describe('Chakra sources (§5.2)', () => {
 
   it('total available Chakra grows turn over turn as sources accumulate, from a starting point of zero', () => {
     let state = toMain1(createInitialState('p1'));
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 0 });
     expect(state.players.p1.genericChakraAvailable).toBe(1); // 1 source, no base income
 
@@ -82,7 +82,7 @@ describe('Chakra sources (§5.2)', () => {
     state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 0 });
     expect(state.players.p1.genericChakraAvailable).toBe(1);
 
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 1 });
     expect(state.players.p1.genericChakraAvailable).toBe(2); // 2 sources
   });
@@ -91,52 +91,52 @@ describe('Chakra sources (§5.2)', () => {
 describe('Personal Chakra Pooling (§5.3)', () => {
   it('pools generic Chakra into a character’s Pool, spending it from the generic pool', () => {
     let state = toMain1(createInitialState('p1'));
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 0 });
     expect(state.players.p1.genericChakraAvailable).toBe(1);
 
-    state = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-placeholder', amount: 1 });
+    state = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 });
     expect(state.players.p1.genericChakraAvailable).toBe(0);
-    expect(state.players.p1.board[0].chakraPool.current).toBe(1);
+    expect(state.players.p1.backRow[0]?.chakraPool.current).toBe(1);
   });
 
   it('cannot pool more than is available', () => {
     const state = toMain1(createInitialState('p1'));
-    const result = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-placeholder', amount: 5 });
-    expect(result.players.p1.board[0].chakraPool.current).toBe(0);
+    const result = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 5 });
+    expect(result.players.p1.backRow[0]?.chakraPool.current).toBe(0);
   });
 
   it('cannot pool beyond the character’s capacity', () => {
     let state = toMain1(createInitialState('p1'));
-    // Placeholder capacity is 5. Accumulate 6 sources over 6 of p1's turns,
-    // then tap all of them together in one turn to have 6 Chakra available
-    // — more than the character can hold.
-    for (let i = 0; i < 6; i++) {
-      state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    // Kakuzu's starting capacity is (5 Hearts - 1) * 2 = 8. Accumulate 9
+    // sources over 9 of p1's turns, then tap all of them together in one
+    // turn to have 9 Chakra available — more than the character can hold.
+    for (let i = 0; i < 9; i++) {
+      state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
       state = advance(state, 4 + 7 + 3); // back to p1 Main1 next turn
     }
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 9; i++) {
       state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: i });
     }
-    expect(state.players.p1.genericChakraAvailable).toBe(6);
-    const result = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-placeholder', amount: 6 });
-    expect(result.players.p1.board[0].chakraPool.current).toBe(0); // rejected, capacity is 5
+    expect(state.players.p1.genericChakraAvailable).toBe(9);
+    const result = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 9 });
+    expect(result.players.p1.backRow[0]?.chakraPool.current).toBe(0); // rejected, capacity is 8
   });
 
   it('is not cleared at End Phase, unlike the generic pool', () => {
     let state = toMain1(createInitialState('p1'));
-    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE' });
+    state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 0 });
-    state = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-placeholder', amount: 1 });
+    state = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 });
 
     state = advance(state, 4); // Combat, Main2, End -> p2 Untap
-    expect(state.players.p1.board[0].chakraPool.current).toBe(1);
+    expect(state.players.p1.backRow[0]?.chakraPool.current).toBe(1);
     expect(state.players.p1.genericChakraAvailable).toBe(0);
   });
 
   it('cannot be pooled outside a Main Phase', () => {
     const state = createInitialState('p1'); // Untap Phase
-    const result = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-placeholder', amount: 1 });
-    expect(result.players.p1.board[0].chakraPool.current).toBe(0);
+    const result = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 });
+    expect(result.players.p1.backRow[0]?.chakraPool.current).toBe(0);
   });
 });

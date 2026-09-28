@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Office lock files (created while a .docx/.xlsx/.pptx is open)
+~$*

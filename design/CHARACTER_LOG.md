@@ -1,12 +1,13 @@
 # Character Log — Nuanced Ability Context
 
-**Purpose:** the character cards in `design/SPEC.md` §13 are kept as
-concise as possible while remaining fully rules-legal on their own. This
+**Purpose:** the character cards in `design/SPEC.md` §13 (and, as of the
+Jutsu card section below, the Jutsu cards in §13b) are kept as concise
+as possible while remaining fully rules-legal on their own. This
 document is their companion — full explanatory context, worked examples,
-edge cases, and flagged open questions for every ability that has real
-nuance. Simple effects with no meaningful ambiguity (a plain "deal X
-damage" with no conditions) aren't listed here at all — the card text is
-the whole story for those.
+edge cases, and flagged open questions for every card/ability that has
+real nuance. Simple effects with no meaningful ambiguity (a plain "deal
+X damage" with no conditions) aren't listed here at all — the card text
+is the whole story for those.
 
 This is a living document — when an ability with an entry here gets
 edited, update the entry too, the same way SPEC.md itself is kept current
@@ -170,7 +171,7 @@ merely reduces by 1 (same partial-reduction pattern as Asura's
 Mechanized Guard). Both are targeted-only (§9) — an untargeted/blanket
 attack can't be redirected by either.
 
-### Naraka Path — King of Hell's Judgment / Rinne Rebirth
+### Naraka Path — King of Hell's Judgment / Outer Path: Samsara of Heavenly Life Technique
 Both are delayed-and-cancellable in the same pattern: the effect is
 scheduled for the controller's next Upkeep Phase, and is cancelled
 outright if Naraka Path itself dies before that Upkeep arrives. Nothing
@@ -182,7 +183,8 @@ Two different ways a Beast can leave play, with different consequences:
 - **Defeated in combat** → goes on a 2-cycle cooldown (2 of its
   controller's own Upkeep Phases) before Animal Path can resummon it.
 - **Fizzled because Animal Path died** → no cooldown at all. If Animal
-  Path comes back (e.g. via Naraka Path's Rinne Rebirth), Summon can
+  Path comes back (e.g. via Naraka Path's Outer Path: Samsara of
+  Heavenly Life Technique), Summon can
   immediately recreate any Beast that fizzled this way, even the same
   turn Animal Path returns (subject to its own summoning sickness for
   non-damaging use, §6.6).
@@ -406,8 +408,9 @@ clocks:
   scheduled for the End Phase of the *opponent's* next turn — sooner
   than "your own next turn" would be, since the opponent's turn comes
   first. This half is cancelled if Konan is defeated any time before it
-  resolves (mirroring Naraka Path's King of Hell's Judgment/Rinne
-  Rebirth pattern) — representing canon's "requires significant
+  resolves (mirroring Naraka Path's King of Hell's Judgment/Outer Path:
+  Samsara of Heavenly Life Technique pattern) — representing canon's
+  "requires significant
   preparation time," and giving the opponent a real counterplay window
   (kill Konan to stop the second hit) that didn't exist before.
 Both hits are blanket effects (target no one) — neither can be stopped
@@ -439,8 +442,9 @@ an explicit ruling, since the alternative (letting Hollow Body act
 immediately, treating this as pure narrative continuation rather than a
 fresh entry) was also defensible; summoning sickness was chosen as the
 safer default, consistent with how every other "enters/re-enters play"
-moment in the game works (Retreat's return, Naraka Path's Rinne
-Rebirth, a fresh character played from the Character Deck).
+moment in the game works (Retreat's return, Naraka Path's Outer Path:
+Samsara of Heavenly Life Technique, a fresh character played from the
+Character Deck).
 
 Only Hollow Body's defeat is a true defeat of Sasori — there's no third
 stage beyond it in this draft.
@@ -1022,3 +1026,349 @@ at activation. This card has no Yahiko-specific Synergy tag of its own
 a card-text callback to Yahiko specifically, not a general
 Synergy-based mechanic, so it doesn't interact with §6.4's Synergy
 upkeep-discount math at all.
+
+---
+
+## Jutsu Cards (§13b)
+
+### Substitution / Lightning Substitution — who gets protected
+The card protects specifically **the character enabling its play** —
+the same character satisfying §10c's Style/eligibility requirement must
+also be the one currently targeted by the attack being negated. You
+can't use a Lightning-Style character elsewhere on your board to enable
+Lightning Substitution and then protect a *different* character with
+it; the attack has to be aimed at that same enabling character. This
+means playing either card requires the threatened character itself to
+be the eligible one — if your only Lightning-Style character isn't the
+one under attack, Lightning Substitution can't be played at all for
+that attack (Substitution, Style: None, doesn't have this problem,
+since any character can enable it).
+
+### The Pool-funding discount (both cards)
+"2 Chakra, 1 if paid from the enabling character's own Chakra Pool" is
+a new cost pattern — no character ability anywhere in the game varies
+its printed cost by funding source; they only ever vary in *which*
+pools are legal to draw from (generic vs. a character's own banked
+Chakra, §5.3). This makes personal Chakra Pooling meaningfully more
+valuable for these two cards specifically: banking Chakra ahead of time
+into the eventual enabling character effectively pre-pays half the
+cost. Since Pooling itself is a Sorcery-speed action restricted to your
+own Main Phases (§5.3), and both these cards are Reactive Techniques
+usable any time, this rewards planning ahead — pooling into a
+Lightning-Style character during your Main Phase so the 1-Chakra
+discount is available if you need to flash in a Substitution later,
+including on your opponent's turn.
+
+### Incoming Mission Assignment
+Several interpretive calls made drafting this, flagged for review:
+- **"Look at" is private** — only its controller sees the 6 cards; the
+  opponent doesn't get to see them, matching the standard convention
+  for a "look at the top N cards of your deck" effect (no card so far
+  has needed this distinction explicitly, since this is the first
+  deck-search effect in the game).
+- **Finding a Mission card is optional, and capped at 1** — "you may
+  add 1 Mission card among them" means you can decline even if one
+  turns up, and if more than one Mission card appears among the 6, you
+  still only take one.
+- **The other 5 (or 6, if none/none-taken) go back via shuffle**, not a
+  chosen order back on top or to the bottom — this wasn't specified on
+  the card, so shuffling was chosen as the simplest, least
+  information-leaking default (an ordered return would let the
+  controller stack their own next few draws, which felt like more than
+  this card was meant to grant). Flag if a different return method was
+  intended.
+- **No Type set** — this reads as an administrative/logistics action
+  (issuing a mission order) rather than a cast technique, so it doesn't
+  cleanly fit Ninjutsu/Taijutsu/Genjutsu, the same reasoning already
+  used for Itachi's Sharingan Foresight passive (§Itachi above).
+- **Speed defaults to Sorcery** (no Speed stated) — playable only during
+  one of its controller's own Main Phases, same as any other
+  unmarked-speed card (§7).
+
+### Battlefield Selection
+A direct structural twin of Incoming Mission Assignment, just fetching
+a Terrain card instead of a Mission card — every interpretive ruling
+above applies identically here: the look is private, finding a Terrain
+card is optional and capped at 1 even if more than one appears among
+the 6, the rest shuffle back rather than returning in a chosen order,
+no Type is set (same administrative-action reasoning), and Speed
+defaults to Sorcery. One Terrain-specific wrinkle worth noting: §10a
+caps a player at 1 Terrain card *in play* at a time, but that limit is
+about play, not hand size — this card can still add a Terrain card to
+hand freely regardless of how many Terrain cards (if any) are currently
+in play, including a second copy of Akatsuki Hideout (§13c) while one is
+already active; playing that copy later would simply replace the
+existing one per §10a, not stack.
+
+### Chakra Transfer
+Several interpretive calls made drafting this, flagged for review:
+- **The 1-Chakra "tax" mirrors Zetsu's Absorbed Vitality** (§Zetsu
+  above) — spend X, the recipient gets X−1, same conversion rate
+  pattern, just moving Chakra between Pools instead of converting it to
+  healing.
+- **Bounded by the standard Pooling behavior, not a "waste the excess"
+  model.** §5.3's normal Chakra-pooling action refuses outright if the
+  amount would exceed a Pool's remaining room, rather than partially
+  applying and discarding the overflow — this card follows that same
+  convention: X must be chosen such that X−1 fits in the destination's
+  remaining room, or the transfer simply isn't legal for that X. It
+  doesn't cap X down automatically and waste the difference.
+- **X=1 now transfers a full 1, tax-free** — the amount added has a
+  floor of 1 (updated from an earlier draft with no floor, where X=1
+  would net 0 and be a pointless choice). This means the "X−1 tax"
+  effectively only bites at X≥2; the base case (moving exactly 1
+  Chakra) is a plain untaxed 1-for-1 transfer, and 2+ always costs
+  exactly 1 more than what the destination receives.
+- **Both characters must be yours** — this only moves Chakra within
+  your own board; there's no reading where it could pull from or push
+  to an opponent's character's Pool.
+- **Not itself a "pooling" action** for rules purposes — it doesn't tap
+  either character (the tap-on-pool rule from §5.3/the engine's
+  `status.tapped` mechanic is specifically tied to the *voluntary
+  tap-and-pool* action, not to every possible way a Pool can change),
+  so using this card doesn't tap the source or destination character.
+  Flag if tapping either character was actually intended, since the
+  card text doesn't currently say so.
+
+### Field Intelligence
+Interpretive calls made drafting this, flagged for review:
+- **The opponent chooses which 2 cards to reveal**, not you — "your
+  opponent reveals 2 cards from their hand" is read the standard way
+  such phrasing works: the named player picks what gets shown, rather
+  than the activating player getting to select freely from their hand.
+  A more aggressive "look at 2 cards of your choice from their hand"
+  version was also possible, but that's a materially stronger
+  information-denial effect (guaranteed to see their best/worst cards
+  rather than whatever they're willing to show) — flag if that stronger
+  version was actually intended.
+- **This is the first "reveal" effect in the game** — distinct from
+  Incoming Mission Assignment's "look at" (which is private, seen only
+  by the looking player). A reveal is shown to both players and is a
+  one-time disclosure with no lasting effect — the revealed cards stay
+  in the opponent's hand, playable normally; nothing is discarded,
+  and there's no ongoing "these cards are known" tracking after the
+  reveal resolves.
+- **If the opponent has fewer than 2 cards in hand**, they simply reveal
+  as many as they have (down to 0) — there's no minimum-hand-size
+  requirement to legally play this card.
+
+### Deploy Medic Corps
+This card only makes sense as an **explicit exception to Retreat's
+full targeting immunity** (§6.5b) — without that override, a Retreated
+character can't legally be chosen as a target at all (the immunity
+blocks beneficial effects too, not just harmful ones), which would make
+this card impossible to ever use. The card text calls this out directly
+per §0's rule precedence (card text overrides defaults). A few further
+interpretive calls, flagged for review:
+- **The heal is cancelled if the target ever stops being Retreated**
+  before all 4 triggers complete — updated from an earlier draft that
+  had it continue regardless. This mirrors Naraka Path's Outer Path:
+  Samsara of Heavenly Life Technique/King of Hell's Judgment
+  cancellation pattern (§Pain of the Six Paths above): the effect is
+  conditioned on the target *remaining*
+  Retreated for the whole duration, not just attached to the character
+  once and forgotten. Returning from Retreated (even voluntarily, by its
+  own controller) cancels the remaining heals — there's no way to bank
+  the effect and then bring the character back early without losing it.
+- **"4 cycles" was read as "4 of your own Upkeep Phases"** specifically
+  (not both players' Upkeeps, and not 4 full turn-cycles in some other
+  counting), matching the established convention used by Deva Path's
+  3-turn-cycle lockout and the Path Beast cooldown (§Pain of the Six
+  Paths, §Sasori above) — total healing over the full duration is 4 HP.
+- **This is the first Jutsu card to trigger §10c's "ongoing-effect
+  cards stay in play" rule** — Deploy Medic Corps sits face up in play
+  (not the discard pile) for the whole 4-Upkeep duration, moving to
+  discard only once it either completes all 4 heals or gets cancelled
+  by the target leaving Retreated early. Every other Jutsu card so far
+  (Substitution, Lightning Substitution, Incoming Mission Assignment,
+  Chakra Transfer, Field Intelligence) resolves instantly and goes
+  straight to discard as normal — none of them have a stated duration
+  or multiple triggers.
+
+### Assist Cards (new sub-category) and Chidori Interception
+Assist cards are a presentation/flavor layer over the existing Jutsu
+card rules (§10c), not a new zone or card type — the only genuinely new
+*mechanic* they introduce is bypassing the Style-enabling requirement
+entirely (§5.3), justified by the flavor that the named character
+briefly enters and exits play to perform their one technique
+themselves, rather than needing one of your own characters to "channel"
+it. This is a deliberate, narrow exception — every other Jutsu card
+still needs a matching enabling character in play.
+
+The header format is **[Assist Type]: [Character], [Synergy]** in
+place of a plain card name line (e.g. "Impact Assist: Sasuke,
+Akatsuki") — this replaces an earlier draft that used a separate
+"Flavor: [Character]" line plus a normal Synergy field; the user's
+correction folded both into one structured header instead. Also note:
+the user's own phrasing for this once read "Impact Assault" — read as a
+typo for "Impact Assist" (matching every other use of "Assist" in this
+whole sub-category, including the card type's own name), not a rename
+of the category itself. Flag if "Assault" was actually intended as the
+umbrella term.
+
+**Chidori Interception**, the first example, is an **Impact Assist**
+(offense-flavored) rather than a Guard Assist, since its payoff is
+dealing damage — even though it's structurally a reactive interception.
+This sets the working precedent that Assist Type is judged by the
+*payoff*, not the *trigger shape*: a reactive ability that punishes with
+damage is Impact, not Guard, even though "Guard" might sound like the
+more literal fit for something that responds to an incoming attack.
+Guard Assist, by implication, is reserved for cards whose payoff is
+protective/mitigating (redirecting, reducing, preventing) rather than
+punishing.
+
+A few further notes on Chidori Interception specifically:
+- **Does not negate or reduce the original attack** — both the
+  triggering attack and Chidori Interception's own 2 damage happen;
+  this is a pure punish, unlike Substitution/Lightning Substitution's
+  negation-based design or Lightning Substitution's negate-then-punish
+  combo. The enemy's attack still fully resolves against whatever it
+  was aimed at.
+- **Triggers off any enemy attacker, Character or Token** — "an enemy
+  character or token activating a targeted damage-dealing ability or
+  Attack-type Jutsu" isn't restricted to attacks aimed at any particular
+  target of yours; it just needs to be the opponent's own attack being
+  activated at all.
+- **Header reads "Impact Assist: Sasuke, Akatsuki"** — same
+  guest-character pattern already established by Juzo Biwa (§Juzo Biwa
+  above): the named Synergy reflects what the card mechanically plugs
+  into (this deck), not an in-universe affiliation claim (Sasuke was
+  never Akatsuki in any continuity).
+- **Style: Lightning is flavor/informational only** here, per the new
+  Assist Style-bypass rule above — no in-play Lightning-Style character
+  is needed to play it.
+- **Cost reduction checks the controller's own Terrain, not either
+  player's** — "if an Akatsuki-Synergy Terrain card is in play" is read
+  as scoped to the activating player's own Terrain (matching how
+  Akatsuki Hideout's own Upkeep reduction only benefits its own
+  controller, §10a's one-way default) — the opponent having an
+  Akatsuki-Synergy Terrain in play doesn't discount your Chidori
+  Interception. This required retroactively adding a formal Synergy
+  field to Akatsuki Hideout itself (previously it had none, since no
+  other card had ever needed to check a Terrain's Synergy before) —
+  Terrain cards can now carry a Synergy tag the same way Characters and
+  Assist cards do.
+
+### Akatsuki Hideout (Terrain)
+The deck's first Terrain card. Interpretive calls, flagged for review:
+- **One-way by default (§10a)** — since the card text just says
+  "Akatsuki-Synergy characters you control," this only benefits its
+  controller's own Akatsuki characters, not the opponent's, even though
+  this is currently a mirror match where both players run the same
+  Akatsuki deck. §10a's default requires a Terrain's text to say
+  otherwise for it to affect both sides symmetrically, and this text
+  doesn't — so playing it is a genuine one-sided advantage even in the
+  mirror, not a wash.
+- **Stacks with the existing Synergy upkeep discount (§6.5)** rather
+  than being floored separately — all applicable upkeep reductions on a
+  given character (the per-matching-character Synergy discount, plus
+  this Terrain's flat -1) sum together first, and only the *combined*
+  total is floored at 0. There's no reading where the Synergy discount
+  gets floored to 0 on its own and then this Terrain's -1 tries to apply
+  on top of that already-floored number.
+- **Doesn't touch starting-character Upkeep Phase effects (§6.5)** — a
+  starting character follows its own bespoke Rank-scaled table (free
+  upkeep, a Chakra gain, etc.), not the standard per-rank Upkeep table
+  this Terrain reduces. Only non-starting Akatsuki-Synergy characters'
+  ordinary Upkeep costs are affected.
+- **3 copies added to the Hand Deck manifest** (IMPLEMENTATION_PLAN.md)
+  — the starter deck's real-card count rises from 33 to 36, so Chakra
+  Fodder filler drops from 7 to 4 to keep the Hand Deck at 40 (§2).
+
+### Jutsu Disruption
+Interpretive calls and clarifications, flagged for review:
+- **Not tied to protecting the enabling character** — unlike Substitution
+  and Lightning Substitution (which only protect the character enabling
+  their own play, per the earlier correction above), Jutsu Disruption
+  has no such restriction: it can negate a qualifying Ninjutsu attack
+  aimed at *any* target, friend or otherwise relevant to you, as long as
+  you have any eligible character in play to enable the card at all
+  (Style: None, so any character qualifies). This is the actual
+  differentiator from Substitution, which is why both cards can coexist
+  without one making the other redundant.
+- **The Ultimate/Forbidden Technique carve-out only ever matters against
+  character abilities** — Jutsu (hand) cards never carry an "Ultimate"
+  or "Forbidden Technique" designation (those are character-card-only
+  categories, §6.8), so this exclusion has no effect when negating an
+  Attack-type Jutsu card; it only ever blocks this card from being used
+  against a character's Ninjutsu-Type Ultimate or Forbidden Technique
+  specifically. This is a deliberate balance safeguard — those are
+  already large investments (often "X Chakra + entire Pool," §Deidara,
+  §Pain of the Six Paths, §Konan, §Sasori above), and letting a cheap
+  2-Chakra card blank one outright would undercut that cost.
+- **Covers both damage-dealing abilities and Attack-type Jutsu**, same
+  phrasing convention as Substitution — "attack" isn't restricted to
+  only character abilities.
+
+### Water Substitution
+Third card in the Substitution family, and the cheapest — 3 Chakra base
+(1 if paid from the enabling character's own Pool). It originally had
+no Pool-funding discount at all (a flat 1 Chakra, full stop) while
+Substitution/Lightning Substitution used a 2/1-if-from-Pool structure;
+after the family-wide cost pass, all three now share the same
+discount-for-Pool-funding shape, just at different absolute numbers —
+Substitution/Lightning Substitution: 4/2, Water Substitution: 3/1. Same
+protection scope as base Substitution (protects only the character
+enabling its play, per the earlier correction above) and no bonus
+counter-damage clause like Lightning Substitution's Taijutsu punish —
+the tradeoff across the three cards is purely: Substitution (Style:
+None, flexible, 4/2) is the baseline; Lightning Substitution (Style:
+Lightning, same cost, extra Taijutsu punish) is a strict upgrade *if*
+you have Lightning available; Water Substitution (Style: Water,
+cheaper on both the base and Pool-funded cost, no bonus) is a discount
+version *if* you have Water available instead. This gives the two
+elemental variants different value propositions rather than one simply
+being better than the other.
+
+### Explosive Tag
+The deck's first direct-damage Jutsu card. One important distinction
+flagged for clarity: this is **not** a cross-pattern effect (§9) — a
+true cross pattern hits *all* available cardinal directions from the
+epicenter simultaneously (like Shinra Tensei or C3 Shi-Suri, §Pain of
+the Six Paths, §Deidara above). Explosive Tag instead lets the attacker
+choose **one** of the up to four adjacent positions (front, behind,
+left, or right) to also hit — closer in spirit to the pre-cross-pattern
+version of Shinra Tensei ("your choice of side") than to how cross
+pattern effects work today. If there's no occupant in the chosen
+direction (edge of a row, empty paired slot), that second hit simply
+doesn't land — same graceful-fizzle handling as every other
+adjacency-based effect in the game.
+
+**Type — Bukijutsu, and the new Physical umbrella (§6.8):** this card
+is what introduced Bukijutsu, a narrower Type for ranged/thrown weapon
+attacks specifically (kunai, shuriken, senbon, exploding tags),
+alongside a "Physical" umbrella term covering both Taijutsu and
+Bukijutsu together. Two things worth being clear on, since an earlier
+pass at this over-corrected before being walked back:
+- **Bukijutsu was not retrofitted onto any other card.** Every
+  previously-Taijutsu ability that involves a weapon of any kind
+  (Hidan's scythe, Kisame's Samehada, Itachi's shuriken, Sasori's tail/
+  senbon/puppet blades, Juzo Biwa's and Yahiko's swords, etc.) **stays
+  Taijutsu** — Bukijutsu exists solely for this one card so far. Whether
+  any of those deserve reclassification later is an open question, not
+  something resolved by this change.
+- **The "Physical" umbrella exists so blocking/redirect effects don't
+  need updating every time a new Physical sub-type appears.** Anywhere
+  a rule or card used to say "a Taijutsu attack" generically as a stand-
+  in for "a physical attack" (§9's physical-blocking-vs-Genjutsu rule,
+  Asura Path's Mechanized Guard, Preta Path's Absorb Impact, Hiruko's
+  Puppet Shell Guard), that wording is now "a Physical attack" instead —
+  so those abilities correctly work against Explosive Tag's Bukijutsu
+  damage too, without each having needed an individual edit. "Physical"
+  is purely a grouping term for other text to reference; no card is
+  ever printed with `Type: Physical` itself.
+
+### Lightning Substitution's Taijutsu bonus
+The bonus "deal 2 damage to its source" clause is conditioned on the
+Type of the ability that just got negated — it checks the *negated
+ability's* printed Type (Taijutsu), not the Style or identity of
+whichever character or Jutsu card originated it. Per the comma/colon
+rules (§6.8a), this bonus clause only exists at all if the main
+negation succeeds — there's no scenario where the 2 damage happens
+without the targeting having already been negated first, since the
+card's own text frames it as "if the negated ability was Type:
+Taijutsu." This is a different bonus-structure than Sasori's Iron Sand
+Wall or the Pain-deck's redirect abilities (which reduce/redirect
+damage rather than negate targeting) — this is a pure negation with an
+attached punish, closer in spirit to Deva Path's Shinra Tensei V2 but
+with an added counter-attack Shinra Tensei V2 doesn't have.
