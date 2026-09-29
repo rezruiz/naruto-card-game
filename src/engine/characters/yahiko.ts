@@ -105,6 +105,7 @@ const yahikoSacrificesHimself: AbilityDef = {
   style: 'None',
   type: 'None',
   isUltimate: true,
+  spendsEntirePool: true,
   targetSide: 'ally', // "one of your other characters"
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);

@@ -1,6 +1,7 @@
 import { placeCharacter, placeToken } from '../board';
 import { createCharacterInstance, getCharacterDef } from './registry';
 import { createSixPaths } from './pain';
+import { makeThirdKazekage } from './sasori';
 import type { CharacterInstance, GameState, PlayerId } from '../types';
 
 /**
@@ -60,6 +61,21 @@ for (const defId of [
 ]) {
   register(defId, spawnCharacter(defId));
 }
+
+// Sasori's Chakra Strings: Third Kazekage trait — "When Sasori enters play,
+// also create the Third Kazekage token", entering alongside him (same turn,
+// same Ambush).
+registry['sasori-hiruko'] = {
+  ...registry['sasori-hiruko'],
+  spawn: (state, player, turn, hasAmbush) => {
+    let next = spawnCharacter('sasori-hiruko')(state, player, turn, hasAmbush);
+    const sasori = [...next.players[player].backRow].reverse().find((c) => c?.defId === 'sasori-hiruko');
+    if (!sasori) return next;
+    const kazekage = makeThirdKazekage(player, sasori.instanceId);
+    next = placeToken(next, player, { ...kazekage, status: { ...kazekage.status, enteredTurn: turn, hasAmbush } });
+    return next;
+  },
+};
 
 // Pain has no CharacterDef of his own — his "card" spawns all 6 Path tokens
 // directly into the front row (SPEC.md's Six Paths trait), so his room check

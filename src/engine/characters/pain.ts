@@ -2,6 +2,7 @@ import { countTokensOfType, findOccupant, getCrossPatternTargets, patchOccupant,
 import { dealDamage, healOccupant } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
 import { findAbility } from '../abilities';
+import { drawCard } from '../deck';
 import type { AbilityDef } from '../abilities';
 import { registerTokenDef } from './registry';
 import type { GameState, PlayerId, StackItem, TokenInstance } from '../types';
@@ -181,6 +182,7 @@ const almightyPush: AbilityDef = {
   style: 'None', // NOTE: Token sources can't carry Styles yet (see file-top comment) — Gravity is flavor-only here
   type: 'Ninjutsu',
   isUltimate: true,
+  spendsEntirePool: true,
   maxTargets: 0,
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
@@ -254,8 +256,7 @@ const mechanizedGuard: AbilityDef = {
 
 // --- Human Path --------------------------------------------------------------
 
-// NOTE (simplified for this pass): "draw 1 card" is dropped — no
-// Character-Deck/hand-draw system exists in the engine yet.
+// "Deal 2 damage; if this defeats the target, draw 1 card."
 const soulRip: AbilityDef = {
   id: 'soul-rip',
   name: 'Human Path: Soul Rip',
@@ -266,7 +267,11 @@ const soulRip: AbilityDef = {
   isDamaging: true,
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
-    return target ? dealDamage(ctx.state, target, 2).state : ctx.state;
+    if (!target) return ctx.state;
+    const result = dealDamage(ctx.state, target, 2);
+    const owner = findOccupant(ctx.state, ctx.sourceInstanceId)?.player;
+    if (!result.defeated || !owner) return result.state;
+    return appendLog(drawCard(result.state, owner), 'Soul Rip claims its target — Human Path draws 1 card.');
   },
 };
 

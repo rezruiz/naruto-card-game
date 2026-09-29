@@ -50,6 +50,10 @@ export interface AbilityDef {
   sharedUseGroup?: string;
   /** Cost must be paid entirely from the source's resolved Chakra Pool — no generic-pool contribution allowed (e.g. Zetsu's Absorbed Vitality, "paid from the shared Reservoir only"). */
   requiresFullPoolPayment?: boolean;
+  /** "N Chakra + the entire Pool" costs (Almighty Push, Yahiko Sacrifices Himself, Death is an Explosion): the whole Pool is always spent as part of the cost, whatever split the player asked for; the rest comes from generic Chakra. */
+  spendsEntirePool?: boolean;
+  /** Can't be activated at all — it fires from its own trigger (the engine asks the controller at that moment). Shown on the card for reference only. */
+  triggeredOnly?: boolean;
   /** UI hint: how many targets to collect before activating. Default 1. */
   maxTargets?: number;
   /**
@@ -165,6 +169,8 @@ export function checkLegality(
   const found = findOccupant(state, sourceInstanceId);
   if (!found) return { ok: false, reason: 'source not found' };
   const source: BoardOccupant = found.occupant;
+  if (ability.triggeredOnly) return { ok: false, reason: `${ability.name} triggers on its own — it can't be activated.` };
+  if (ability.spendsEntirePool) payFromPool = resolvePoolOwner(state, source)?.current ?? 0;
 
   if (source.status.disabled) return { ok: false, reason: `${source.name} is Disabled.` };
   if (source.status.retreated) return { ok: false, reason: `${source.name} is Retreated.` };
@@ -349,7 +355,9 @@ export function activateAbility(
   const { player, occupant: source } = found;
   const ability = findAbility(source.defId, abilityId);
   if (!ability) return appendLog(state, `No such ability: ${abilityId}.`);
+  if (ability.triggeredOnly) return appendLog(state, `${ability.name} triggers on its own — it can't be activated.`);
   const choices = opts.choices;
+  if (ability.spendsEntirePool) payFromPool = resolvePoolOwner(state, source)?.current ?? 0;
 
   if (!opts.trust) {
     const legality = checkLegality(state, sourceInstanceId, ability, targetInstanceIds, payFromPool, { choices });

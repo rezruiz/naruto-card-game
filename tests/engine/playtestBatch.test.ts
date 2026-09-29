@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { activateAbility, findAbility } from '../../src/engine/abilities';
 import { placeToken } from '../../src/engine/board';
-import { getCharacterDef, getTokenDef, makeThirdKazekage } from '../../src/engine/characters';
+import { createSixPaths, getCharacterDef, getTokenDef, makeThirdKazekage } from '../../src/engine/characters';
 import { abilityCostText, abilityText, traitLines } from '../../src/ui/abilityText';
 import { DISPLAYED_EXTRA_KEYS, trackedResources } from '../../src/engine/characters/progressText';
 import { makeHandCardInstance } from '../../src/engine/deck';
@@ -198,7 +198,7 @@ describe('Every tracked resource is visible (progressText guard)', () => {
 describe('Condensed ability text (the clickable ability boxes)', () => {
   it('every character and token ability has condensed text and a cost label, and every unit has trait lines on file', () => {
     const characters = ['kakuzu', 'hidan', 'deidara', 'kisame', 'itachi', 'konan', 'sasori-hiruko', 'sasori-hollow-body', 'zetsu', 'juzo', 'yahiko', 'amegakure-civilian-rebel'];
-    const tokens = ['deva-path', 'asura-path', 'human-path', 'animal-path', 'preta-path', 'naraka-path', 'ku-three-headed-hound', 'war-rhino', 'giant-drill-beaked-bird', 'third-kazekage', 'puppet-soldier', 'white-zetsu-clone', 'zetsu-golem'];
+    const tokens = ['deva-path', 'asura-path', 'human-path', 'animal-path', 'preta-path', 'naraka-path', 'ku-three-headed-hound', 'war-rhino', 'giant-drill-beaked-bird', 'third-kazekage', 'puppet-soldier', 'white-zetsu-clone', 'zetsu-golem', 'clay-spider'];
     const s = freshMain1();
     const missing: string[] = [];
     for (const id of characters) {
@@ -214,6 +214,42 @@ describe('Condensed ability text (the clickable ability boxes)', () => {
     }
     expect(missing).toEqual([]);
     for (const id of [...characters, ...tokens]) expect(traitLines(id), id).toBeInstanceOf(Array);
+  });
+});
+
+describe('"N + entire Pool" costs and Soul Rip', () => {
+  it('Almighty Push spends Deva Path’s whole Pool plus 6 generic, even though the UI asks to pay 0 from the Pool', () => {
+    let s = giveChakra(freshMain1(), 'p1', 6);
+    const deva = createSixPaths('p1')[0];
+    s = placeToken(s, 'p1', { ...deva, chakraPool: { current: 3, capacity: 3 } });
+    s = activateAbility(s, deva.instanceId, 'almighty-push', [], 0);
+    expect(s.stack).toHaveLength(1);
+    expect(s.players.p1.genericChakraAvailable).toBe(0);
+    expect(s.players.p1.frontRow.find((t) => t?.instanceId === deva.instanceId)!.chakraPool!.current).toBe(0);
+  });
+
+  it('Soul Rip draws a card when it defeats its target', () => {
+    let s = { ...freshCombat(), players: { ...freshCombat().players } };
+    const human = createSixPaths('p1')[2];
+    s = placeToken(giveChakra(s, 'p1', 2), 'p1', human);
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, handDeck: [makeHandCardInstance('substitution')] }, p2: { ...s.players.p2, backRow: s.players.p2.backRow.map((c, i) => (i === 3 && c ? { ...c, currentHP: 2 } : c)) } } };
+    const target = s.players.p2.backRow[3]!.instanceId; // Kisame: no defeat-replacement
+    const handBefore = s.players.p1.hand.length;
+    s = resolveTop(activateAbility(s, human.instanceId, 'soul-rip', [target], 0));
+    expect(s.players.p2.backRow.some((c) => c?.instanceId === target)).toBe(false);
+    expect(s.players.p1.hand.length).toBe(handBefore + 1);
+  });
+});
+
+describe('Sasori enters with his Third Kazekage', () => {
+  it('playing Sasori from hand also creates the Third Kazekage token', () => {
+    let s = freshMain1();
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c, i) => (i === 4 ? null : c)), hand: [{ kind: 'character', instanceId: 'sasori-card', entryId: 'sasori-hiruko' }] } } };
+    s = gameReducer(s, { type: 'PLAY_CHARACTER', instanceId: 'sasori-card' });
+    const sasori = s.players.p1.backRow.find((c) => c?.defId === 'sasori-hiruko')!;
+    expect(sasori).toBeDefined();
+    const kazekage = s.players.p1.frontRow.find((t) => t?.defId === 'third-kazekage');
+    expect(kazekage?.ownerCharacterInstanceId).toBe(sasori.instanceId);
   });
 });
 

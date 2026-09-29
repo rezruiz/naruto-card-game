@@ -39,7 +39,7 @@ function AbilityBox({ state, instanceId, ability, usable, onUse }: { state: Game
       </span>
     </>
   );
-  return usable ? (
+  return usable && !ability.triggeredOnly ? (
     <button type="button" className="ability-box ability-box--usable" title={`Use ${ability.name}`} onClick={onUse}>
       {content}
     </button>
@@ -107,7 +107,8 @@ export function CharacterDetailsModal({
     .join(' · ');
 
   const available = state.players[found.player].genericChakraAvailable;
-  const poolRoom = character ? (Number.isFinite(character.chakraPool.capacity) ? character.chakraPool.capacity - character.chakraPool.current : Infinity) : 0;
+  // Any unit with a Pool of its own can be pooled into — characters, and Pain's Path tokens (Rinnegan Reservoir).
+  const poolRoom = pool ? (Number.isFinite(pool.capacity) ? pool.capacity - pool.current : Infinity) : 0;
 
   return (
     <DetailsModal title={occupant.name} subtitle={subtitle} hideText onClose={onClose}>
@@ -147,7 +148,7 @@ export function CharacterDetailsModal({
           </div>
         )}
 
-        {canAct && character && (
+        {canAct && (character || poolRoom > 0) && (
           <div className="card-details__actions">
             {!retreated && poolRoom > 0 && (
               <>
@@ -161,15 +162,16 @@ export function CharacterDetailsModal({
                 )}
               </>
             )}
-            {retreated ? (
-              <button type="button" onClick={closeThen(() => onReturnFromRetreat(instanceId))}>
-                Return from Retreat
-              </button>
-            ) : (
-              <button type="button" title="Retreat: immune to damage and targeting, but can't act, until you return" onClick={closeThen(() => onRetreat(instanceId))}>
-                Retreat ({retreatCost(character.rank)} Chakra)
-              </button>
-            )}
+            {character &&
+              (retreated ? (
+                <button type="button" onClick={closeThen(() => onReturnFromRetreat(instanceId))}>
+                  Return from Retreat
+                </button>
+              ) : (
+                <button type="button" title="Retreat: immune to damage and targeting, but can't act, until you return" onClick={closeThen(() => onRetreat(instanceId))}>
+                  Retreat ({retreatCost(character.rank)} Chakra)
+                </button>
+              ))}
           </div>
         )}
         {!canAct && abilities.length > 0 && <span className="details-modal__note">Abilities can be used by the controlling player.</span>}

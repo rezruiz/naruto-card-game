@@ -35,6 +35,8 @@ const yes = (v: unknown) => (v ? 'Yes' : 'No');
  */
 const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant) => TrackedItem | undefined> = {
   clayCharges: (v) => ({ label: 'Clay Charges', value: `${(v as number) ?? 0}`, key: true }),
+  deathPending: (v) => (v ? { label: 'Death is an Explosion', value: 'Would be defeated — waiting on your answer', key: true } : undefined),
+  deathResolved: () => undefined, // internal: his Death is an Explosion decision was made
   hearts: (v) => ({ label: 'Hearts', value: `${(v as number) ?? 5}/5`, key: true }),
   lostStyles: (v) => ((v as string[] | undefined)?.length ? { label: 'Styles lost', value: (v as string[]).join(', ') } : undefined),
   curseActive: (v) => ({ label: 'Curse active', value: yes(v), key: !!v }),
