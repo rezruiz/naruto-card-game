@@ -479,12 +479,27 @@ function ViewGame({
       </div>
     );
 
+    // The battlefield (characters, tokens, Terrain/Missions) is one visually
+    // distinct, neutral-toned unit — kept adjacent to the middle divider on
+    // both sides, so the two players' battlefields meet in the center, framed
+    // by (not blended into) each player's own colored hand/Chakra/info area.
+    const battlefield = (
+      <div className="battlefield" key="battlefield">
+        {back}
+        {front}
+        {inPlay}
+      </div>
+    );
+
     // Seated across the table: my back row (characters) is nearest me and my
     // front row (tokens) faces the middle — the opponent's side is the exact
-    // mirror, so the two front rows meet in the center.
-    const order = position === 'bottom' ? [front, back, inPlay, info, chakra, hand] : [hand, chakra, info, inPlay, back, front];
+    // mirror, so the two battlefields meet in the center. `info` (name/health)
+    // comes first either way, so it's the first thing you see on entering
+    // that player's zone — from the top of the page for the top board, or
+    // right after crossing the middle divider for the bottom board.
+    const order = position === 'bottom' ? [info, battlefield, chakra, hand] : [info, hand, chakra, battlefield];
     return (
-      <div className={`player-board player-board--${position}`} key={playerId}>
+      <div className={`player-board player-board--${position} player-board--${playerId}`} key={playerId}>
         {order}
       </div>
     );

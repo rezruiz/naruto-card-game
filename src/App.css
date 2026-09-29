@@ -16,6 +16,20 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  border-radius: 10px;
+  padding: 10px 10px 10px 14px;
+  border-left: 6px solid transparent;
+}
+
+/* A persistent, unmistakable color per player (matches the declared-actions queue's own p1/p2 coloring) — visible at every scroll position, not just next to the name. */
+.player-board--p1 {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.player-board--p2 {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
 }
 
 .chakra-sources,
@@ -98,6 +112,17 @@
   cursor: default;
 }
 
+/* The shared battlefield: a neutral-toned island inside each player's colored zone, so the two players' characters/tokens read as a distinct "table" rather than blending into either player's own hand/Chakra area. */
+.battlefield {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .board-row {
   display: flex;
   gap: 8px;
@@ -128,8 +153,31 @@
 }
 
 .player-panel--active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.player-panel h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+/* The player banner always carries that player's color (a steady "whose section is this" signal), independent of .player-panel--active's ring (a separate "whose turn is it" signal). */
+.player-board--p1 .player-panel {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.player-board--p1 .player-panel h3 {
+  color: #1d4ed8;
+}
+
+.player-board--p2 .player-panel {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.player-board--p2 .player-panel h3 {
+  color: #b91c1c;
 }
 
 .phase-indicator {
