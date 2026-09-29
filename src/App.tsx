@@ -1,15 +1,19 @@
-import { useReducer, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { gameReducer, setupPending } from './engine/reducer';
 import { createSetupState } from './engine/state';
 import { findOccupant, isCharacter } from './engine/board';
-import { findAbility } from './engine/abilities';
+import { findAbility, type ChoiceSpec } from './engine/abilities';
 import { getCharacterDeckEntry } from './engine/characters';
-import { reinforcementCost } from './engine/playCharacter';
+import { currentTax } from './engine/playCharacter';
 import { getHandCardDef } from './engine/cards/registry';
 import { missionProgressText } from './engine/cards/missions';
-import type { GameState, HandEntry, PlayerId } from './engine/types';
+import type { AbilityChoices, GameAction, GameState, HandEntry, MissionInstance, PlayerId } from './engine/types';
 import { cardStage, newPendingCard, toHandCardContext, type PendingCard } from './ui/cardFlow';
-import { getHandCardText } from './ui/cardInfo';
+import { getCharacterCardText, getHandCardText } from './ui/cardInfo';
+import { pushUndo, undoLabelFor, type UndoEntry } from './ui/undo';
+import { AbilityChoiceStep } from './ui/components/AbilityChoiceStep';
+import { ChoicePanel } from './ui/components/ChoicePanel';
+import { HandRevealPanel } from './ui/components/HandRevealPanel';
 import { ActionLog } from './ui/components/ActionLog';
 import { DeckToolsModal, type DeckTool } from './ui/components/DeckToolsModal';
 import { UpkeepPanel } from './ui/components/UpkeepPanel';
@@ -40,6 +44,9 @@ type PendingAbility = {
   targets: string[];
   /** Set when re-aiming an already-declared (staged) action instead of declaring a new one. */
   stagedId?: string;
+  /** Once targets are in: the ability's optional choices still to be asked (alternative costs / resource-dependent extra effects), and the answers so far. */
+  choiceQueue?: ChoiceSpec[];
+  choices?: AbilityChoices;
 };
 
 type Pending = PendingAbility | PendingCard | null;
@@ -54,6 +61,37 @@ function InPlayChip({ label, name, progress, onOpen }: { label: string; name: st
       {label}: {name}
       {progress && <span className="in-play-chip__progress"> · {progress}</span>}
     </button>
+  );
+}
+
+/** Squad Formation's standing choice: which group member absorbs a redirected hit, or Off (the controller decides; never automatic). */
+function SquadRedirectSelect({
+  mission,
+  state,
+  disabled,
+  onChange,
+}: {
+  mission: MissionInstance;
+  state: GameState;
+  disabled: boolean;
+  onChange: (redirectTo: string | null) => void;
+}) {
+  const group = (mission.extra.group as string[] | undefined) ?? [];
+  return (
+    <label className="squad-redirect" title="When one member of the group is hit, redirect that hit to this member instead">
+      Redirect hits to:{' '}
+      <select disabled={disabled} value={(mission.extra.redirectTo as string | undefined) ?? ''} onChange={(e) => onChange(e.target.value || null)}>
+        <option value="">Off</option>
+        {group.map((id) => {
+          const found = findOccupant(state, id);
+          return found ? (
+            <option key={id} value={id}>
+              {found.occupant.name}
+            </option>
+          ) : null;
+        })}
+      </select>
+    </label>
   );
 }
 
@@ -183,12 +221,20 @@ function ViewGame({
   dispatch,
   myPlayerId,
   onLeave,
+  onRestart,
+  onUndo,
+  undoLabel,
 }: {
   state: GameState;
-  dispatch: (action: Parameters<typeof gameReducer>[1]) => void;
+  dispatch: (action: GameAction) => void;
   /** null = local hotseat (both boards are "yours"); 'p1'/'p2' = networked (only that board is interactive). */
   myPlayerId: PlayerId | null;
   onLeave?: () => void;
+  /** Start a fresh game (same players, same connection). */
+  onRestart?: () => void;
+  /** Undo the most recent draw/reveal-type action (the kinds that can't be fixed by hand) — see ui/undo.ts. */
+  onUndo?: () => void;
+  undoLabel?: string | null;
 }) {
   const [pending, setPending] = useState<Pending>(null);
   const [details, setDetails] = useState<Details>(null);
@@ -202,17 +248,41 @@ function ViewGame({
   const isMyBoard = (playerId: PlayerId) => myPlayerId === null || myPlayerId === playerId;
 
   /** Trust mode declares (stages) the action for later resolution; strict mode activates it right away. */
-  function submitAbility(instanceId: string, abilityId: string, targets: string[]) {
+  function submitAbility(instanceId: string, abilityId: string, targets: string[], choices?: AbilityChoices) {
     dispatch(
       trust
-        ? { type: 'STAGE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool: 0 }
-        : { type: 'ACTIVATE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool: 0 },
+        ? { type: 'STAGE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool: 0, choices }
+        : { type: 'ACTIVATE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool: 0, choices },
     );
   }
 
+  /** Targets are in — ask the ability's optional choices (if it has any right now), then submit. */
   function finishAbility(p: PendingAbility, targets: string[]) {
-    if (p.stagedId) dispatch({ type: 'RETARGET_STAGED', stagedId: p.stagedId, targetInstanceIds: targets });
-    else submitAbility(p.instanceId, p.abilityId, targets);
+    if (p.stagedId) {
+      dispatch({ type: 'RETARGET_STAGED', stagedId: p.stagedId, targetInstanceIds: targets });
+      setPending(null);
+      return;
+    }
+    const found = findOccupant(state, p.instanceId);
+    const ability = found ? findAbility(found.occupant.defId, p.abilityId) : undefined;
+    const specs = ability?.choices?.({ state, sourceInstanceId: p.instanceId, targetInstanceIds: targets }) ?? [];
+    if (specs.length > 0) {
+      setPending({ ...p, targets, choiceQueue: specs, choices: {} });
+      return;
+    }
+    submitAbility(p.instanceId, p.abilityId, targets);
+    setPending(null);
+  }
+
+  function answerAbilityChoice(value: boolean | number | string) {
+    if (!pending || pending.kind !== 'ability' || !pending.choiceQueue?.length) return;
+    const [spec, ...rest] = pending.choiceQueue;
+    const choices = { ...pending.choices, [spec.id]: value };
+    if (rest.length > 0) {
+      setPending({ ...pending, choiceQueue: rest, choices });
+      return;
+    }
+    submitAbility(pending.instanceId, pending.abilityId, pending.targets, choices);
     setPending(null);
   }
 
@@ -236,11 +306,12 @@ function ViewGame({
   }
 
   function startActivation(playerId: PlayerId, instanceId: string, abilityId: string, maxTargets: number) {
+    const fresh: PendingAbility = { kind: 'ability', playerId, instanceId, abilityId, maxTargets, targets: [] };
     if (maxTargets === 0) {
-      submitAbility(instanceId, abilityId, []);
+      finishAbility(fresh, []);
       return;
     }
-    setPending({ kind: 'ability', playerId, instanceId, abilityId, maxTargets, targets: [] });
+    setPending(fresh);
   }
 
   /** Dispatches once a card's pipeline is complete, otherwise just stores the (further-along) pending state — the single funnel every card-flow step passes through. */
@@ -284,6 +355,7 @@ function ViewGame({
   function clickTarget(targetInstanceId: string) {
     if (!pending) return;
     if (pending.kind === 'ability') {
+      if (pending.choiceQueue) return; // targets are locked in; answering its choices now
       const targets = [...pending.targets, targetInstanceId];
       if (targets.length >= pending.maxTargets) {
         finishAbility(pending, targets);
@@ -317,7 +389,7 @@ function ViewGame({
     const mine = isMyBoard(playerId);
     const canActNow = mine && (trust || isActive) && canAct && !setupBlocked;
     const canPlayCards = mine && !setupBlocked;
-    const isTargetable = !!pending && (pending.kind === 'ability' || cardStage(pending) === 'target');
+    const isTargetable = !!pending && (pending.kind === 'ability' ? !pending.choiceQueue : cardStage(pending) === 'target');
     const isEnablable = pending?.kind === 'card' && cardStage(pending) === 'enabler' && pending.playerId === playerId && mine;
     const pendingCardInstanceId = pending?.kind === 'card' ? pending.cardInstanceId : null;
 
@@ -332,31 +404,58 @@ function ViewGame({
         <UpkeepPanel entries={previewUpkeep(state, playerId)} />
         {player.pendingCharacterReveal && (
           <CharacterRevealPanel
+            key={player.pendingCharacterReveal.revealed.join('|')}
             player={playerId}
             revealed={player.pendingCharacterReveal.revealed}
             reason={player.pendingCharacterReveal.reason}
-            taxNote={
-              player.pendingCharacterReveal.reason === 'reinforcement'
-                ? (() => {
-                    const { cost, waived } = reinforcementCost(state, playerId);
-                    return waived ? 'Playing it from your hand is free (Empty-Board Waiver).' : `Playing it from your hand will cost the Reinforcement Tax: ${cost} Chakra.`;
-                  })()
-                : undefined
-            }
             interactive={mine}
             onChoose={(entryId) => dispatch({ type: 'CHOOSE_CHARACTER', player: playerId, entryId })}
+            onOpenDetails={(entryId) => {
+              const entry = getCharacterDeckEntry(entryId);
+              if (entry) setDetails({ kind: 'card', name: entry.name, subtitle: `Character card · Rank ${entry.rank}`, text: getCharacterCardText(entryId) });
+            }}
           />
         )}
-        {setupBlocked && !player.pendingCharacterReveal && (
-          <button type="button" disabled={!mine} onClick={() => dispatch({ type: 'MULLIGAN', player: playerId })}>
-            Mulligan
-          </button>
+        {setupBlocked && player.startingCharacterInstanceId === null && (
+          <div className="mulligan-bar">
+            <button
+              type="button"
+              disabled={!mine}
+              title="Shuffle your hand back and redraw — the first mulligan is free (6 cards), each one after draws 1 fewer"
+              onClick={() => dispatch({ type: 'MULLIGAN', player: playerId })}
+            >
+              Mulligan (redraw {Math.max(0, 6 - player.mulligansSoFar)})
+            </button>
+            <span className="mulligan-bar__note">
+              {player.mulligansSoFar === 0 ? 'Available until you confirm your starting character.' : `${player.mulligansSoFar} mulligan(s) so far.`}
+            </span>
+          </div>
         )}
+        {setupBlocked && player.startingCharacterInstanceId !== null && (
+          <div className="mulligan-bar__note">Setup done — waiting for the other player.</div>
+        )}
+        {player.pendingHandReveal &&
+          (mine ? (
+            <HandRevealPanel
+              hand={player.hand}
+              count={player.pendingHandReveal.count}
+              requestedBy={player.pendingHandReveal.requestedBy}
+              onReveal={(instanceIds) => dispatch({ type: 'REVEAL_HAND_CARDS', player: playerId, instanceIds })}
+            />
+          ) : (
+            <div className="reveal-panel__note">
+              Waiting for {playerId.toUpperCase()} to reveal {player.pendingHandReveal.count} card(s) (Field Intelligence)…
+            </div>
+          ))}
         {trust && mine && !setupBlocked && (
           <div className="deck-bar">
             <span className="deck-bar__count">Deck: {player.handDeck.length}</span>
-            <button type="button" onClick={() => dispatch({ type: 'DRAW_CARDS', player: playerId, count: 1 })}>
-              Draw
+            <button
+              type="button"
+              title="Manual correction: draw 1 extra card (your normal once-per-turn draw is the Draw button in the sidebar during your Draw Phase)"
+              onClick={() => dispatch({ type: 'DRAW_CARDS', player: playerId, count: 1 })}
+            >
+              Draw extra
             </button>
             <button type="button" onClick={() => dispatch({ type: 'SHUFFLE_DECK', player: playerId })}>
               Shuffle
@@ -409,17 +508,16 @@ function ViewGame({
         onPlayCharacter={(instanceId) => dispatch({ type: 'PLAY_CHARACTER', instanceId })}
         characterPlay={(entryId) => {
           const entry = getCharacterDeckEntry(entryId);
-          const { cost, waived } = reinforcementCost(state, playerId);
           const room = entry ? entry.hasRoom(state, playerId) : false;
           return {
-            label: waived ? 'Play (free)' : `Play (${cost} Chakra)`,
-            hint: waived
-              ? 'Empty-Board Waiver: you control no characters, so the Reinforcement Tax is waived.'
-              : `Reinforcement Tax: ${cost} Chakra from your available (generic) Chakra — a character's Pool can't pay it. It goes up by 2 each time you pay it.`,
+            label: 'Play (free)',
+            hint: 'Playing a character from hand is always free — the tax is paid when you draw it from the Character Deck.',
             disabled: !room,
             reason: room ? undefined : entryId === 'pain' ? 'Needs 6 open front-row slots for the Path tokens.' : 'Your back row is full (5 characters).',
           };
         }}
+        mustPlayCPlus={mine && player.mustPlayCharacter}
+        onDropCharacter={trust && mine ? (instanceId) => dispatch({ type: 'RETURN_CHARACTER_TO_HAND', instanceId }) : undefined}
         onOpenDetails={(name, subtitle, text) => setDetails({ kind: 'card', name, subtitle, text })}
       />
     );
@@ -437,6 +535,7 @@ function ViewGame({
                 onClickAsTarget={clickTarget}
                 onClickAsEnabler={clickEnabler}
                 onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
+                draggable={trust && mine && !pending}
               />
             ),
         )}
@@ -450,6 +549,7 @@ function ViewGame({
               <TokenCard
                 key={token.instanceId}
                 token={token}
+                state={state}
                 isTargetable={isTargetable}
                 onClickAsTarget={clickTarget}
                 onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
@@ -468,13 +568,22 @@ function ViewGame({
           />
         )}
         {player.missionsInPlay.map((m) => (
-          <InPlayChip
-            key={m.instanceId}
-            label="Mission"
-            name={m.defId === '__hidden__' ? undefined : getHandCardDef(m.defId)?.name}
-            progress={m.defId === '__hidden__' ? undefined : missionProgressText(m.defId, m.extra)}
-            onOpen={(name) => setDetails({ kind: 'card', name, subtitle: 'Mission in play', text: getHandCardText(name) })}
-          />
+          <span className="in-play-cards__mission" key={m.instanceId}>
+            <InPlayChip
+              label="Mission"
+              name={m.defId === '__hidden__' ? undefined : getHandCardDef(m.defId)?.name}
+              progress={m.defId === '__hidden__' ? undefined : missionProgressText(m.defId, m.extra)}
+              onOpen={(name) => setDetails({ kind: 'card', name, subtitle: 'Mission in play', text: getHandCardText(name) })}
+            />
+            {m.defId === 'squad-formation' && !!m.extra.active && (
+              <SquadRedirectSelect
+                mission={m}
+                state={state}
+                disabled={!mine}
+                onChange={(redirectTo) => dispatch({ type: 'SET_SQUAD_REDIRECT', missionInstanceId: m.instanceId, redirectTo })}
+              />
+            )}
+          </span>
         ))}
       </div>
     );
@@ -513,11 +622,24 @@ function ViewGame({
     <div className="app">
       <div className="app__header">
         <h1>Naruto Custom Card Game — Prototype</h1>
-        {onLeave && (
-          <button type="button" onClick={onLeave}>
-            Leave game
-          </button>
-        )}
+        <span className="app__header-actions">
+          {onRestart && (
+            <button
+              type="button"
+              title="Start a brand-new game with the same players (keeps the connection)"
+              onClick={() => {
+                if (window.confirm('Restart the game? The current game will be lost.')) onRestart();
+              }}
+            >
+              Restart game
+            </button>
+          )}
+          {onLeave && (
+            <button type="button" onClick={onLeave}>
+              Leave game
+            </button>
+          )}
+        </span>
       </div>
       <div className="game-layout">
         <div className="game-main">
@@ -530,10 +652,88 @@ function ViewGame({
           {bottom.hud}
         </div>
         <aside className="game-sidebar">
+          <div className="sidebar-toggle">
+            <label title="Trust mode: declare actions and resolve them together; the engine only warns about rule problems. Off: the engine enforces every rule.">
+              <input
+                type="checkbox"
+                checked={trust}
+                onChange={(e) => dispatch({ type: 'SET_RULES', rules: e.target.checked ? 'trust' : 'strict' })}
+              />{' '}
+              Trust mode {trust ? 'ON' : 'OFF'}
+            </label>
+          </div>
           <PhaseIndicator state={state} />
+          {onUndo && (
+            <button type="button" className="sidebar-undo" disabled={!undoLabel} onClick={onUndo} title="Undo the last draw/reveal-type action (things you can't fix by hand)">
+              ↶ Undo{undoLabel ? `: ${undoLabel}` : ''}
+            </button>
+          )}
+          {state.firstPlayerPending && <div className="sidebar-note">Setup: pick your starting character and mulligan if you like. Who goes first is flipped once both players confirm.</div>}
+          {state.pendingChoices.map((choice) => (
+            <ChoicePanel
+              key={choice.id}
+              choice={choice}
+              interactive={isMyBoard(choice.player)}
+              onResolve={(optionIds) => dispatch({ type: 'RESOLVE_CHOICE', choiceId: choice.id, optionIds })}
+            />
+          ))}
+          {(['p1', 'p2'] as PlayerId[]).map((pid) => {
+            const p = state.players[pid];
+            const offer = p.reinforcementOffers[0];
+            const controls = isMyBoard(pid);
+            return (
+              <div key={`decisions-${pid}`}>
+                {p.mustPlayCharacter && (
+                  <div className="decision-panel decision-panel--required">
+                    {pid.toUpperCase()} lost their last C+ character: {controls ? 'play a C+ character from your hand now (free) — highlighted in your hand.' : 'waiting for them to play a C+ character.'}
+                  </div>
+                )}
+                {offer && (
+                  <div className="decision-panel">
+                    <span>
+                      {pid.toUpperCase()}:{' '}
+                      {offer === 'free'
+                        ? 'your last C+ character fell — take a free Character Deck draw (look at 2, keep 1)?'
+                        : `a C+ character fell — pay ${currentTax(state, pid)} Chakra for a Character Deck draw (look at 2, keep 1)? Your tax won't go up.`}
+                      {p.reinforcementOffers.length > 1 && ` (${p.reinforcementOffers.length - 1} more after this)`}
+                    </span>
+                    {controls && (
+                      <span>
+                        <button type="button" onClick={() => dispatch({ type: 'ACCEPT_REINFORCEMENT', player: pid })}>
+                          {offer === 'free' ? 'Draw (free)' : `Pay ${currentTax(state, pid)} & draw`}
+                        </button>
+                        <button type="button" onClick={() => dispatch({ type: 'DECLINE_REINFORCEMENT', player: pid })}>
+                          Decline
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {!setupBlocked && isMyBoard(state.activePlayer) && (
+            <div className="deck-actions">
+              {state.phase === 'Draw' && !state.players[state.activePlayer].drawnThisDrawPhase && (
+                <button type="button" onClick={() => dispatch({ type: 'DRAW_PHASE_CARD' })} title="Your once-per-turn Draw Phase draw">
+                  {state.turn === 1 && state.activePlayer === state.firstPlayer ? 'Skip first-turn draw' : `Draw (Hand Deck: ${state.players[state.activePlayer].handDeck.length})`}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={state.players[state.activePlayer].characterDeck.length === 0 || !!state.players[state.activePlayer].pendingCharacterReveal}
+                onClick={() => dispatch({ type: 'DRAW_CHARACTER_DECK', player: state.activePlayer })}
+                title="Pay the Character Deck tax to look at 2 and keep 1 (resolves immediately — no stack). Your own Main Phase. Each paid draw raises the tax: 3, 5, 7, then 8."
+              >
+                Character Deck ({state.players[state.activePlayer].characterDeck.length}) — draw for {currentTax(state, state.activePlayer)} Chakra
+              </button>
+            </div>
+          )}
           {pending && (
             <div className="pending-banner">
-              {pending.kind === 'ability' ? (
+              {pending.kind === 'ability' && pending.choiceQueue?.length ? (
+                <AbilityChoiceStep key={pending.choiceQueue[0].id} spec={pending.choiceQueue[0]} onAnswer={answerAbilityChoice} onCancel={() => setPending(null)} />
+              ) : pending.kind === 'ability' ? (
                 <>
                   <span>
                     Choose {pending.maxTargets > 1 ? `up to ${pending.maxTargets} targets` : 'a target'} ({pending.targets.length}/
@@ -611,6 +811,7 @@ function ViewGame({
                   onDamage: (instanceId, amount) => dispatch({ type: 'DEAL_DAMAGE', instanceId, amount }),
                   onAdjustPool: (instanceId, delta) => dispatch({ type: 'ADJUST_POOL', instanceId, delta }),
                   onToggleStatus: (instanceId, status) => dispatch({ type: 'TOGGLE_STATUS', instanceId, status }),
+                  onReturnToHand: (instanceId) => dispatch({ type: 'RETURN_CHARACTER_TO_HAND', instanceId }),
                 }
               : undefined
           }
@@ -624,17 +825,81 @@ function ViewGame({
   );
 }
 
+/**
+ * Local (single-player testing) game state, with the same undo history and
+ * restart the networked host keeps: an in-memory snapshot is pushed before
+ * each undoable action (draws, mulligans, reveal picks — see ui/undo.ts).
+ */
+function useLocalGame() {
+  const [state, setState] = useState<GameState>(() => createSetupState(undefined, 'trust'));
+  const [history, setHistory] = useState<UndoEntry[]>([]);
+  // The latest state, readable synchronously by dispatch (every update below keeps it in step with `state`).
+  const stateRef = useRef(state);
+
+  const dispatch = useCallback((action: GameAction) => {
+    const prev = stateRef.current;
+    const label = undoLabelFor(action);
+    if (label) setHistory((h) => pushUndo(h, { state: prev, label }));
+    const next = gameReducer(prev, action);
+    stateRef.current = next;
+    setState(next);
+  }, []);
+
+  const undo = useCallback(() => {
+    setHistory((h) => {
+      const entry = h.at(-1);
+      if (!entry) return h;
+      stateRef.current = entry.state;
+      setState(entry.state);
+      return h.slice(0, -1);
+    });
+  }, []);
+
+  const restart = useCallback(() => {
+    const fresh = createSetupState(undefined, 'trust');
+    stateRef.current = fresh;
+    setState(fresh);
+    setHistory([]);
+  }, []);
+
+  return { state, dispatch, undo, undoLabel: history.at(-1)?.label ?? null, restart };
+}
+
 function App() {
   const [viewMode, setViewMode] = useState<'lobby' | 'local'>('lobby');
-  const [localState, localDispatch] = useReducer(gameReducer, undefined, () => createSetupState(undefined, 'trust'));
+  const local = useLocalGame();
   const net = useNetGame();
 
   if (viewMode === 'local') {
-    return <ViewGame state={localState} dispatch={localDispatch} myPlayerId={null} onLeave={() => setViewMode('lobby')} />;
+    return (
+      <ViewGame
+        state={local.state}
+        dispatch={local.dispatch}
+        myPlayerId={null}
+        onLeave={() => {
+          // Leaving ends this game — coming back to Single-Player Testing starts a fresh one, not the stale old state.
+          local.restart();
+          setViewMode('lobby');
+        }}
+        onRestart={local.restart}
+        onUndo={local.undo}
+        undoLabel={local.undoLabel}
+      />
+    );
   }
 
   if (net.mode === 'playing' && net.state) {
-    return <ViewGame state={net.state} dispatch={net.dispatch} myPlayerId={net.myPlayerId} onLeave={net.leave} />;
+    return (
+      <ViewGame
+        state={net.state}
+        dispatch={net.dispatch}
+        myPlayerId={net.myPlayerId}
+        onLeave={net.leave}
+        onRestart={net.restart}
+        onUndo={net.undo}
+        undoLabel={net.undoLabel}
+      />
+    );
   }
 
   return (

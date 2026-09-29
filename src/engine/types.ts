@@ -122,8 +122,25 @@ export interface PlayerState {
   startingCharacterInstanceId: string | null;
   /** Set when one of this player's characters is defeated; consumed by the next character they play, granting it Ambush for that one entry (SPEC.md §6.6's Retaliation exception). */
   retaliationPending: boolean;
-  /** How many Reinforcement draw-2-keep-1 reveals (§8) this player still owes, from characters defeated since the last one was processed — the reducer drains this before any other action. */
-  pendingReinforcementDraws: number;
+  /**
+   * This player's own characters defeated since the reducer last looked
+   * (§8's Reinforcement trigger) — recorded by combat.ts at the moment of
+   * defeat (`lastCPlus`: no other C-rank-or-higher character was left in
+   * play right after it fell, D-ranks ignored), turned into an offer or a
+   * forced play by the reducer (which, unlike combat.ts, can see hand
+   * cards' ranks without an import cycle).
+   */
+  pendingReinforcementEvents: { rank: CharacterInstance['rank']; lastCPlus: boolean }[];
+  /** Reinforcement offers awaiting ACCEPT/DECLINE, oldest first: 'paid' = pay the current tax to look 2 / pick 1 (the tax counter doesn't move); 'free' = the last-C+-defeated free draw. */
+  reinforcementOffers: ('paid' | 'free')[];
+  /** §8: this player's last C+ character fell while they held a C+ character card — they must play one (free, ignoring timing) before doing anything else. */
+  mustPlayCharacter: boolean;
+  /** This turn's Draw Phase draw has been taken (§4.3) — the draw is a manual click, once per turn. Reset every Untap. */
+  drawnThisDrawPhase: boolean;
+  /** Field Intelligence (§13b): this player must reveal `count` hand cards of their choice to `requestedBy`. */
+  pendingHandReveal: { requestedBy: PlayerId; count: number } | null;
+  /** Hand cards this player has revealed (Field Intelligence) — shown to the opponent even over the network until they leave hand or the turn ends. */
+  revealedHandCards: string[];
   /** Remaining shuffled Hand Deck (Jutsu/Mission/Terrain/Assist cards), §2. */
   handDeck: HandCardInstance[];
   /** Remaining shuffled Character Deck, as entry ids (§2, §8) — see characters/deckEntries.ts. */
@@ -141,7 +158,7 @@ export interface PlayerState {
    * always added to hand normally, on top of the one main pick, per §8.
    */
   pendingCharacterReveal: { revealed: string[]; reason: 'setup' | 'reinforcement' } | null;
-  /** How many reinforcements (characters played from hand past the starting one) this player has paid for so far — only ever increases, drives the escalating tax (§8). */
+  /** How many paid manual Character Deck draws (§8) this player has made — only ever increases, drives the escalating tax (3/5/7/8, capped). Reinforcement-trigger draws never advance it. */
   reinforcementsPlayed: number;
   /** How many times this player has mulliganed so far this game (§3) — the first is free (redraw 6); each one after draws 1 fewer. */
   mulligansSoFar: number;
@@ -204,6 +221,8 @@ export interface StagedAction {
   targets: string[];
   payFromPool: number;
   amount?: number;
+  /** The player's answers to the ability's optional choices (AbilityDef.choices), e.g. whether to spend a Clay Charge. */
+  choices?: AbilityChoices;
   /** Advisory only — why the strict rules would have blocked this, computed when it was declared/retargeted. */
   warnings: string[];
 }
@@ -216,7 +235,32 @@ export interface PendingFinalize {
   approvals: PlayerId[];
 }
 
+/** A player's answers to an ability's optional choices, keyed by ChoiceSpec id. */
+export type AbilityChoices = Record<string, boolean | number | string>;
+
+/**
+ * A decision the engine needs from one specific player mid-resolution
+ * (e.g. which Mission to replace, which characters to pay Upkeep for).
+ * Plain data — the follow-up is looked up by `resolverId` in choices.ts, so
+ * it survives the network and undo snapshots.
+ */
+export interface PendingChoice {
+  id: string;
+  player: PlayerId;
+  prompt: string;
+  options: { id: string; label: string }[];
+  /** How many options must be picked (inclusive range). */
+  min: number;
+  max: number;
+  resolverId: string;
+  data: Record<string, unknown>;
+}
+
 export interface GameState {
+  /** The first-player coin flip hasn't happened yet — per SPEC.md §3 it comes after both players finish Setup (character pick + mulligans). */
+  firstPlayerPending: boolean;
+  /** Decisions waiting on a specific player (oldest first) — see PendingChoice. */
+  pendingChoices: PendingChoice[];
   /** Set when a combat step clears a player's board and forces their Retreated characters out (retreatCollapse.ts): the next advance out of Combat is replaced by a second Combat. */
   extraCombatPending: boolean;
   /** Retreated characters that stay immune for the whole of the round currently resolving, even if their controller's last non-Retreated character falls mid-resolution (they're forced out only once the step is over). */
@@ -251,10 +295,19 @@ export type GameAction =
       targetInstanceIds: string[];
       /** How much of the cost to pay from the character's own Pool vs the generic pool. */
       payFromPool: number;
+      choices?: AbilityChoices;
     }
   | { type: 'PASS_PRIORITY' }
+  | { type: 'SET_RULES'; rules: RulesMode }
+  | { type: 'DRAW_PHASE_CARD' }
+  | { type: 'DRAW_CHARACTER_DECK'; player: PlayerId }
+  | { type: 'ACCEPT_REINFORCEMENT'; player: PlayerId }
+  | { type: 'DECLINE_REINFORCEMENT'; player: PlayerId }
+  | { type: 'REVEAL_HAND_CARDS'; player: PlayerId; instanceIds: string[] }
+  | { type: 'RESOLVE_CHOICE'; choiceId: string; optionIds: string[] }
+  | { type: 'SET_SQUAD_REDIRECT'; missionInstanceId: string; redirectTo: string | null }
   // --- Trust mode: staging & resolution ---
-  | { type: 'STAGE_ABILITY'; instanceId: string; abilityId: string; targetInstanceIds: string[]; payFromPool: number }
+  | { type: 'STAGE_ABILITY'; instanceId: string; abilityId: string; targetInstanceIds: string[]; payFromPool: number; choices?: AbilityChoices }
   | { type: 'STAGE_CARD'; instanceId: string; enablingInstanceId: string; targetInstanceIds: string[]; payFromPool: number; amount?: number }
   | { type: 'RETARGET_STAGED'; stagedId: string; targetInstanceIds: string[] }
   | { type: 'UNSTAGE'; stagedId: string }
@@ -278,6 +331,7 @@ export type GameAction =
   | { type: 'SHUFFLE_DECK'; player: PlayerId }
   | { type: 'DECK_TAKE'; player: PlayerId; instanceId: string; shuffle: boolean }
   | { type: 'DECK_TO_BOTTOM'; player: PlayerId; instanceId: string }
+  | { type: 'RETURN_CHARACTER_TO_HAND'; instanceId: string }
   | { type: 'RETREAT'; instanceId: string }
   | { type: 'RETURN_FROM_RETREAT'; instanceId: string }
   | { type: 'CHOOSE_CHARACTER'; player: PlayerId; entryId: string }

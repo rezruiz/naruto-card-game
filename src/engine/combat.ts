@@ -63,28 +63,19 @@ export function dealDamage(
   }
 
   // Squad Formation (Mission, §13a): a single damage instance aimed at one
-  // of the Mission's 3 chosen characters may be redirected to a different
-  // member of the same group instead. NOTE (simplified for this pass):
-  // auto-redirects to whichever other group member currently has the most
-  // HP (protecting the weakest) — no interactive "controller's choice"
-  // channel exists yet for picking which of the three absorbs it. The
-  // redirected hit itself is never redirected again (skipSquadRedirect) —
-  // otherwise a 2-member group would ping-pong the same instance forever.
+  // of the Mission's 3 chosen characters MAY be redirected to a different
+  // member of the same group — the controller's choice, never automatic.
+  // Damage can't pause mid-resolution for a live prompt, so the controller
+  // sets a standing choice on the Mission (SET_SQUAD_REDIRECT: which member
+  // absorbs redirected hits, or Off). The redirected hit itself is never
+  // redirected again (skipSquadRedirect).
   const squadGroup = occupant.extra.squadFormationGroup as string[] | undefined;
   if (!opts.skipSquadRedirect && squadGroup && squadGroup.length > 1) {
-    let bestId: string | undefined;
-    let bestHp = -1;
-    for (const id of squadGroup) {
-      if (id === targetInstanceId) continue;
-      const other = findOccupant(state, id);
-      if (other && other.occupant.currentHP > bestHp) {
-        bestHp = other.occupant.currentHP;
-        bestId = id;
-      }
-    }
-    if (bestId) {
-      const redirected = appendLog(state, `Squad Formation redirects the hit from ${occupant.name} to another member of the group.`);
-      return dealDamage(redirected, bestId, amount, { ...opts, skipSquadRedirect: true });
+    const mission = state.players[player].missionsInPlay.find((m) => m.defId === 'squad-formation' && (m.extra.group as string[] | undefined)?.includes(targetInstanceId));
+    const redirectTo = mission?.extra.redirectTo as string | undefined;
+    if (redirectTo && redirectTo !== targetInstanceId && squadGroup.includes(redirectTo) && findOccupant(state, redirectTo)) {
+      const redirected = appendLog(state, `Squad Formation: ${player} redirects the hit from ${occupant.name} to ${findOccupant(state, redirectTo)!.occupant.name}.`);
+      return dealDamage(redirected, redirectTo, amount, { ...opts, skipSquadRedirect: true });
     }
   }
 
@@ -212,9 +203,12 @@ function applyDefeat(
       next = fizzleOwnedTokens(next, player, occupant.instanceId);
       // SPEC.md §6.6 Retaliation: the next character this player plays is
       // exempt from summoning sickness entirely (consumed once played, §8).
-      // §8's own Reinforcement trigger: owed a draw-2-keep-1 reveal — the
-      // reducer drains this (see reducer.ts) since deck.ts can't be imported
-      // here without a circular import (deck.ts -> characters -> combat.ts).
+      // §8's Reinforcement trigger is recorded here, at the moment of defeat
+      // (whether any other C-rank-or-higher character is still standing —
+      // D-ranks don't count), and turned into an offer/forced play by the
+      // reducer, which can look up hand cards' ranks without the import
+      // cycle deck.ts/characters would cause here.
+      const lastCPlus = !next.players[player].backRow.some((c) => c && c.rank !== 'D');
       next = {
         ...next,
         players: {
@@ -222,7 +216,7 @@ function applyDefeat(
           [player]: {
             ...next.players[player],
             retaliationPending: true,
-            pendingReinforcementDraws: next.players[player].pendingReinforcementDraws + 1,
+            pendingReinforcementEvents: [...next.players[player].pendingReinforcementEvents, { rank: occupant.rank, lastCPlus }],
           },
         },
       };
@@ -254,7 +248,7 @@ function applyDefeat(
   return checkWinner(next);
 }
 
-function fizzleOwnedTokens(
+export function fizzleOwnedTokens(
   state: GameState,
   player: PlayerId,
   ownerInstanceId: string,

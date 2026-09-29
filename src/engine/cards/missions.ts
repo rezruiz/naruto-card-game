@@ -2,31 +2,103 @@ import { findOccupant, isCharacter, patchCharacter, patchOccupant } from '../boa
 import { healOccupant } from '../combat';
 import { appendLog } from '../phases/phaseMachine';
 import { drawCard, revealCharacters } from '../deck';
-import { registerHandCard, registerMission } from './registry';
+import { getHandCardDef, registerHandCard, registerMission } from './registry';
+import { enqueueChoice, registerChoiceResolver } from '../choices';
 import type { HandCardDef, HandCardContext, MissionDef } from './registry';
 import type { GameState, MissionInstance, PlayerId } from '../types';
 
 let missionCounter = 0;
 
-/** SPEC.md §10b: enters play, replacing an existing Mission at the controlled-character-count cap (auto: the oldest — documented simplification, no interactive "of your choice" channel exists yet). */
+function missionName(defId: string): string {
+  return getHandCardDef(defId)?.name ?? defId;
+}
+
+/** Discards one of this player's Missions in play (by instance id) to the discard pile. */
+function discardMission(state: GameState, owner: PlayerId, missionInstanceId: string): GameState {
+  const p = state.players[owner];
+  const mission = p.missionsInPlay.find((m) => m.instanceId === missionInstanceId);
+  if (!mission) return state;
+  const next = {
+    ...state,
+    players: {
+      ...state.players,
+      [owner]: {
+        ...p,
+        missionsInPlay: p.missionsInPlay.filter((m) => m.instanceId !== missionInstanceId),
+        discardPile: [...p.discardPile, { instanceId: mission.instanceId, defId: mission.defId }],
+      },
+    },
+  };
+  return appendLog(next, `${owner} replaces ${mission.extra.faceDown ? 'a face-down Mission' : missionName(mission.defId)}.`);
+}
+
+registerChoiceResolver('mission-replace', (state, choice, optionIds) => discardMission(state, choice.player, optionIds[0]));
+
+/**
+ * SPEC.md §10b: enters play. At the controlled-character-count cap, the
+ * controller chooses which existing Mission it replaces ("one of your
+ * choice") — asked, never picked for them. With only one candidate there's
+ * nothing to choose.
+ */
 function enterPlayAsMission(ctx: HandCardContext, defId: string, extra: Record<string, unknown> = {}): GameState {
   const p = ctx.state.players[ctx.player];
   const controlledCount = p.backRow.filter((c) => c !== null).length;
-  let missionsInPlay = p.missionsInPlay;
-  let discardPile = p.discardPile;
-  if (missionsInPlay.length >= Math.max(1, controlledCount)) {
-    const [oldest, ...rest] = missionsInPlay;
-    missionsInPlay = rest;
-    if (oldest) discardPile = [...discardPile, { instanceId: oldest.instanceId, defId: oldest.defId }];
-  }
+  const atCap = p.missionsInPlay.length >= Math.max(1, controlledCount);
+  const candidates = p.missionsInPlay;
   missionCounter += 1;
   const played: MissionInstance = { instanceId: `mission-${ctx.player}-${missionCounter}`, defId, owner: ctx.player, extra };
-  const next = {
+  let next: GameState = {
     ...ctx.state,
-    players: { ...ctx.state.players, [ctx.player]: { ...p, missionsInPlay: [...missionsInPlay, played], discardPile } },
+    players: { ...ctx.state.players, [ctx.player]: { ...p, missionsInPlay: [...p.missionsInPlay, played] } },
   };
-  return appendLog(next, `${ctx.player} plays ${defId} as a Mission.`);
+  next = appendLog(next, `${ctx.player} plays ${extra.faceDown ? 'a face-down Mission' : missionName(defId)} as a Mission.`);
+  if (!atCap || candidates.length === 0) return next;
+  if (candidates.length === 1) return discardMission(next, ctx.player, candidates[0].instanceId);
+  return enqueueChoice(next, {
+    player: ctx.player,
+    prompt: 'Mission limit reached — choose which Mission in play to replace.',
+    options: candidates.map((m) => ({ id: m.instanceId, label: missionName(m.defId) + (m.extra.faceDown ? ' (face-down)' : '') })),
+    min: 1,
+    max: 1,
+    resolverId: 'mission-replace',
+    data: {},
+  });
 }
+
+/**
+ * A Mission reward that goes to "a character you control" — the controller
+ * picks which one. `reward` names the effect so the follow-up can be looked
+ * up again from plain data (see choices.ts).
+ */
+function rewardCharacterChoice(state: GameState, owner: PlayerId, reward: 'unshakable-resolve' | 'bingo-book-b', prompt: string): GameState {
+  const characters = state.players[owner].backRow.filter((c): c is NonNullable<typeof c> => c !== null);
+  if (characters.length === 0) return state;
+  if (characters.length === 1) return applyCharacterReward(state, reward, characters[0].instanceId);
+  return enqueueChoice(state, {
+    player: owner,
+    prompt,
+    options: characters.map((c) => ({ id: c.instanceId, label: c.name })),
+    min: 1,
+    max: 1,
+    resolverId: 'mission-reward',
+    data: { reward },
+  });
+}
+
+function applyCharacterReward(state: GameState, reward: string, target: string): GameState {
+  if (reward === 'unshakable-resolve') {
+    let next = patchCharacter(state, target, (c) => ({ ...c, chakraPool: { ...c.chakraPool, current: c.chakraPool.current + 5 } }));
+    next = healOccupant(next, target, 5);
+    return appendLog(next, `Unshakable Resolve's reward goes to ${findOccupant(next, target)?.occupant.name ?? 'a character'}.`);
+  }
+  const next = patchCharacter(state, target, (c) => ({
+    ...c,
+    chakraPool: { ...c.chakraPool, current: Math.min(c.chakraPool.capacity, c.chakraPool.current + 3) },
+  }));
+  return appendLog(next, `Bingo Book: Threat Level B's +3 Chakra goes to ${findOccupant(next, target)?.occupant.name ?? 'a character'}.`);
+}
+
+registerChoiceResolver('mission-reward', (state, choice, optionIds) => applyCharacterReward(state, choice.data.reward as string, optionIds[0]));
 
 function missionCard(id: string, name: string, cost: number, faceDown: boolean, initialExtra: Record<string, unknown> = {}): HandCardDef {
   return {
@@ -40,11 +112,6 @@ function missionCard(id: string, name: string, cost: number, faceDown: boolean, 
     maxTargets: 0,
     resolve: (ctx) => enterPlayAsMission(ctx, id, faceDown ? { ...initialExtra, faceDown: true } : initialExtra),
   };
-}
-
-/** Auto-targets "a character you control" for a reward that needs one — the mission owner's first character in play (documented simplification, no player-choice channel exists yet). */
-function firstOwnedCharacter(state: GameState, owner: PlayerId): string | undefined {
-  return state.players[owner].backRow.find((c) => c !== null)?.instanceId;
 }
 
 // --- Unshakable Resolve ----------------------------------------------------
@@ -83,13 +150,8 @@ registerMission({
       return { state: patchMission(state, owner, missionInstanceId, { untaps }), discard: false };
     }
 
-    const target = firstOwnedCharacter(state, owner);
-    let next = state;
-    if (target) {
-      next = patchCharacter(next, target, (c) => ({ ...c, chakraPool: { ...c.chakraPool, current: c.chakraPool.current + 5 } }));
-      next = healOccupant(next, target, 5);
-    }
-    return { state: appendLog(next, 'Unshakable Resolve succeeds!'), discard: true };
+    const next = appendLog(state, 'Unshakable Resolve succeeds!');
+    return { state: rewardCharacterChoice(next, owner, 'unshakable-resolve', 'Unshakable Resolve: choose a character you control to gain +5 Chakra and heal 5.'), discard: true };
   },
 });
 
@@ -100,7 +162,8 @@ export function missionProgressText(defId: string, extra: Record<string, unknown
     return untaps === undefined ? undefined : `${untaps}/6 Untaps`;
   }
   if (defId === 'squad-formation') {
-    return extra.active ? 'Active — protecting its group of 3' : 'Waiting for 3 characters in play';
+    if (!extra.active) return 'Waiting for 3 characters in play';
+    return extra.redirectTo ? 'Active — redirecting hits' : 'Active — redirect off';
   }
   return undefined;
 }
@@ -136,13 +199,7 @@ function bingoBookReward(rank: 'S' | 'A' | 'B' | 'C'): MissionDef['tick'] {
         },
       };
     } else if (rank === 'B') {
-      const target = firstOwnedCharacter(next, owner);
-      if (target) {
-        next = patchCharacter(next, target, (c) => ({
-          ...c,
-          chakraPool: { ...c.chakraPool, current: Math.min(c.chakraPool.capacity, c.chakraPool.current + 3) },
-        }));
-      }
+      next = rewardCharacterChoice(next, owner, 'bingo-book-b', 'Bingo Book: Threat Level B — choose a character you control to gain +3 Chakra.');
       next = drawCard(next, owner);
       next = {
         ...next,

@@ -57,10 +57,13 @@ const foldShikigami: AbilityDef = {
     })),
 };
 
-// NOTE (simplified for this pass, matching Deidara's Detonation Art
-// precedent): the Charge spend is automatic whenever one is banked, rather
-// than the controller's free choice — no optional-resource-spend UI channel
-// exists yet.
+function shikigamiCharges(state: GameState, instanceId: string): number {
+  const found = findOccupant(state, instanceId);
+  return found && isCharacter(found.occupant) ? ((found.occupant.extra.shikigamiCharges as number) ?? 0) : 0;
+}
+
+// Spending a Shikigami Charge is the controller's choice (asked at
+// activation, only when Konan has one); resolve re-checks it's still there.
 const paperBombTag: AbilityDef = {
   id: 'paper-bomb-tag',
   name: 'Paper Bomb Tag',
@@ -69,19 +72,28 @@ const paperBombTag: AbilityDef = {
   style: 'Paper',
   type: 'Ninjutsu',
   isDamaging: true,
+  choices: (ctx) =>
+    shikigamiCharges(ctx.state, ctx.sourceInstanceId) >= 1
+      ? [{ id: 'spendCharge', kind: 'yesno', prompt: 'Spend 1 Shikigami Charge for 5 damage instead of 3?' }]
+      : [],
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
     if (!target) return ctx.state;
-    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    const hasCharge = found && isCharacter(found.occupant) && ((found.occupant.extra.shikigamiCharges as number) ?? 0) >= 1;
-    let state = dealDamage(ctx.state, target, hasCharge ? 5 : 3).state;
-    if (hasCharge) {
+    const spend = ctx.choices?.spendCharge === true && shikigamiCharges(ctx.state, ctx.sourceInstanceId) >= 1;
+    let state = ctx.state;
+    if (spend) {
       state = patchCharacter(state, ctx.sourceInstanceId, (k) => ({
         ...k,
         extra: { ...k.extra, shikigamiCharges: (k.extra.shikigamiCharges as number) - 1 },
       }));
     }
-    return state;
+    state = appendLog(
+      state,
+      spend
+        ? `Konan spends 1 Shikigami Charge (${shikigamiCharges(state, ctx.sourceInstanceId)} left) — upgraded Paper Bomb Tag.`
+        : 'Konan uses the base Paper Bomb Tag (no Charge spent).',
+    );
+    return dealDamage(state, target, spend ? 5 : 3).state;
   },
 };
 

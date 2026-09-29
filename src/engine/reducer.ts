@@ -7,8 +7,12 @@ import { tickChakraSpores } from './chakraSpore';
 import { tickScheduledHeals } from './scheduledHeals';
 import { payUpkeep } from './upkeep';
 import { retreat, returnFromRetreat } from './retreat';
-import { chooseCharacter, drawCard, mulligan, revealCharacters } from './deck';
-import { playCharacter } from './playCharacter';
+import { chooseCharacter, drawForDrawPhase, drawFromCharacterDeck, mulligan } from './deck';
+import { currentTax, playCharacter } from './playCharacter';
+import { getCharacterDeckEntry } from './characters';
+import { revealHandCards } from './handReveal';
+import { resolveChoice } from './choices';
+import { returnCharacterToHand } from './trust/returnToHand';
 import { playHandCard } from './cards/playHandCard';
 import { runMissionTrigger } from './cards/missionRunner';
 import { forceOutOfRetreat } from './retreatCollapse';
@@ -56,23 +60,119 @@ export function setupPending(state: GameState): boolean {
 }
 
 /**
- * SPEC.md §8: a character being defeated owes its controller a Reinforcement
- * draw-2-keep-1 reveal — combat.ts can't trigger this itself (importing
- * deck.ts from there would cycle back through characters -> combat.ts), so
- * every dispatched action first drains any such reveals still owed.
+ * SPEC.md §8: turns each of a player's defeated characters (recorded by
+ * combat.ts — it can't see hand cards' ranks without an import cycle) into
+ * what the Reinforcement rule gives them:
+ * - a D-rank defeat: nothing.
+ * - a C+ defeat with another C+ still in play: an optional offer to pay the
+ *   current tax for a look-2-pick-1 (the tax counter doesn't move).
+ * - their LAST C+ in play (D-ranks ignored): if they hold a C+ character
+ *   card, they must play one; otherwise an optional FREE look-2-pick-1.
  */
 function drainPendingReinforcements(state: GameState): GameState {
   let next = state;
   for (const player of ['p1', 'p2'] as PlayerId[]) {
-    while (next.players[player].pendingReinforcementDraws > 0 && next.players[player].pendingCharacterReveal === null) {
-      next = {
-        ...next,
-        players: { ...next.players, [player]: { ...next.players[player], pendingReinforcementDraws: next.players[player].pendingReinforcementDraws - 1 } },
-      };
-      next = revealCharacters(next, player, 2, 'reinforcement');
+    const events = next.players[player].pendingReinforcementEvents;
+    if (events.length === 0) continue;
+    let p = { ...next.players[player], pendingReinforcementEvents: [] };
+    const notes: string[] = [];
+    for (const event of events) {
+      if (event.rank === 'D') {
+        notes.push(`${player}'s D-rank character doesn't trigger a Reinforcement.`);
+        continue;
+      }
+      if (!event.lastCPlus) {
+        p = { ...p, reinforcementOffers: [...p.reinforcementOffers, 'paid'] };
+        notes.push(`${player} may pay ${currentTax(next, player)} Chakra for a Reinforcement draw (look at 2, keep 1).`);
+        continue;
+      }
+      const cPlusInHand = p.hand.some((h) => h.kind === 'character' && (getCharacterDeckEntry(h.entryId)?.rank ?? 'D') !== 'D');
+      if (cPlusInHand) {
+        p = { ...p, mustPlayCharacter: true };
+        notes.push(`${player} lost their last C+ character and must play a C+ character from hand now (free).`);
+      } else {
+        p = { ...p, reinforcementOffers: [...p.reinforcementOffers, 'free'] };
+        notes.push(`${player} lost their last C+ character — they may take a free Reinforcement draw (look at 2, keep 1).`);
+      }
     }
+    next = { ...next, players: { ...next.players, [player]: p } };
+    for (const note of notes) next = appendLog(next, note);
   }
   return next;
+}
+
+/**
+ * SPEC.md §3: the first-player coin flip happens once BOTH players have
+ * finished Setup. Starting characters were placed before anyone knew who
+ * goes first, so their summoning-sickness turn is set here (turn 1 for the
+ * first player, turn 2 for the second).
+ */
+function flipForFirstPlayer(state: GameState): GameState {
+  if (!state.firstPlayerPending || setupPending(state)) return state;
+  const first: PlayerId = Math.random() < 0.5 ? 'p1' : 'p2';
+  const players = { ...state.players };
+  for (const id of ['p1', 'p2'] as PlayerId[]) {
+    const enteredTurn = id === first ? 1 : 2;
+    const p = players[id];
+    players[id] = {
+      ...p,
+      backRow: p.backRow.map((c) => (c ? { ...c, status: { ...c.status, enteredTurn } } : c)),
+      frontRow: p.frontRow.map((t) => (t ? { ...t, status: { ...t.status, enteredTurn } } : t)),
+    };
+  }
+  return appendLog(
+    { ...state, players, firstPlayerPending: false, firstPlayer: first, activePlayer: first, priorityPlayer: first },
+    `Setup complete — coin flip: ${first} goes first (and skips their first Draw).`,
+  );
+}
+
+/** Anything a player still has to answer before the game should move to the next phase — null when nothing is outstanding. */
+export function outstandingDecision(state: GameState): string | null {
+  for (const player of ['p1', 'p2'] as PlayerId[]) {
+    const p = state.players[player];
+    if (p.mustPlayCharacter) return `${player} must play a C+ character from hand first.`;
+    if (p.reinforcementOffers.length > 0) return `${player} hasn't answered their Reinforcement offer yet.`;
+    if (p.pendingHandReveal) return `${player} hasn't revealed their cards for Field Intelligence yet.`;
+    if (p.pendingCharacterReveal) return `${player} hasn't picked from their Character Deck reveal yet.`;
+  }
+  const choice = state.pendingChoices[0];
+  return choice ? `${choice.player} still has a choice to make: ${choice.prompt}` : null;
+}
+
+function answerReinforcement(state: GameState, player: PlayerId, accept: boolean): GameState {
+  const p = state.players[player];
+  const [offer, ...rest] = p.reinforcementOffers;
+  if (!offer) return appendLog(state, `${player} has no Reinforcement offer to answer.`);
+  if (!accept) {
+    return appendLog({ ...state, players: { ...state.players, [player]: { ...p, reinforcementOffers: rest } } }, `${player} declines the Reinforcement draw.`);
+  }
+  const drawn = drawFromCharacterDeck(state, player, offer === 'free' ? 'reinforcement-free' : 'reinforcement-paid');
+  // Only consume the offer if the draw actually happened (e.g. not refused for lack of Chakra — tap more and try again).
+  if (!drawn.players[player].pendingCharacterReveal) return drawn;
+  return { ...drawn, players: { ...drawn.players, [player]: { ...drawn.players[player], reinforcementOffers: rest } } };
+}
+
+function setRules(state: GameState, rules: GameState['rules']): GameState {
+  if (state.rules === rules) return state;
+  if (state.staged.length > 0 || state.pendingFinalize) {
+    return appendLog(state, "Can't switch rules modes while actions are declared or being resolved — resolve or withdraw them first.");
+  }
+  return appendLog({ ...state, rules }, rules === 'trust' ? 'Trust mode turned ON — declared actions, advisory warnings.' : 'Trust mode turned OFF — the engine now enforces every rule.');
+}
+
+function setSquadRedirect(state: GameState, missionInstanceId: string, redirectTo: string | null): GameState {
+  for (const player of ['p1', 'p2'] as PlayerId[]) {
+    const p = state.players[player];
+    const mission = p.missionsInPlay.find((m) => m.instanceId === missionInstanceId);
+    if (!mission) continue;
+    const missionsInPlay = p.missionsInPlay.map((m) => (m.instanceId === missionInstanceId ? { ...m, extra: { ...m.extra, redirectTo } } : m));
+    const name = redirectTo ? (state.players[player].backRow.find((c) => c?.instanceId === redirectTo)?.name ?? 'a group member') : null;
+    return appendLog(
+      { ...state, players: { ...state.players, [player]: { ...p, missionsInPlay } } },
+      name ? `${player} sets Squad Formation to redirect hits to ${name}.` : `${player} turns Squad Formation's redirect off.`,
+    );
+  }
+  return state;
 }
 
 /** SPEC.md §10b: feeds every queued "you defeated an enemy of Rank X" event (recorded by combat.ts) to that player's in-play Missions (the Bingo Book family) — same drain pattern as Reinforcement draws, for the same import-cycle reason. */
@@ -105,20 +205,27 @@ function advanceOnePhase(input: GameState): GameState {
     next = tickChakraSpores(next, next.activePlayer);
     next = tickScheduledHeals(next, next.activePlayer);
   }
-  if (next.phase === 'Draw') {
-    // SPEC.md §4.3: the very first player's very first turn skips the Draw Phase.
-    const skip = next.turn === 1 && next.activePlayer === next.firstPlayer;
-    if (!skip) next = drawCard(next, next.activePlayer);
-  }
+  // The Draw Phase draw itself is a manual click (DRAW_PHASE_CARD), never automatic.
   return next;
 }
 
-const AUTO_PHASES = new Set(['Untap', 'Upkeep', 'Draw']);
+/** Guards a phase advance against unanswered decisions: refused under the strict rules, allowed with an advisory in trust mode. */
+function guardedAdvance(state: GameState, advance: (s: GameState) => GameState): GameState {
+  const outstanding = outstandingDecision(state);
+  if (!outstanding) return advance(state);
+  if (state.rules !== 'trust') return appendLog(state, `Can't move to the next phase yet: ${outstanding}`);
+  return advance(appendLog(state, `Moving on with a decision still open — ${outstanding} (trust mode — allowed).`));
+}
 
-/** Trust mode: nobody needs to click through Untap/Upkeep/Draw — a new turn lands straight on Main Phase 1. */
+const AUTO_PHASES = new Set(['Untap', 'Upkeep']);
+
+/** Trust mode: nobody needs to click through Untap/Upkeep — a new turn lands on the Draw Phase, waiting for the manual draw. */
 function runToMainPhase(state: GameState): GameState {
   let next = state;
-  while (next.rules === 'trust' && AUTO_PHASES.has(next.phase) && !next.winner && !setupPending(next)) next = advanceOnePhase(next);
+  const skippedFirstDraw = (s: GameState) => s.phase === 'Draw' && s.turn === 1 && s.activePlayer === s.firstPlayer;
+  while (next.rules === 'trust' && (AUTO_PHASES.has(next.phase) || skippedFirstDraw(next)) && !next.winner && !setupPending(next) && !next.firstPlayerPending) {
+    next = advanceOnePhase(next);
+  }
   return next;
 }
 
@@ -129,21 +236,42 @@ function drainAll(state: GameState): GameState {
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
-  const result = forceOutOfRetreat(reduce(state, action));
-  // Trust mode resolves many actions in one go, so anything queued along the way (Reinforcement draws, Mission triggers) is settled immediately rather than at the next action.
-  return result.rules === 'trust' ? runToMainPhase(drainAll(result)) : result;
+  // Anything queued along the way (Reinforcement triggers, Mission triggers) is settled immediately, so its prompt shows up right when the defeat resolves.
+  const result = flipForFirstPlayer(drainAll(forceOutOfRetreat(reduce(state, action))));
+  return result.rules === 'trust' ? runToMainPhase(result) : result;
 }
+
+const SETUP_ACTIONS = new Set<GameAction['type']>(['CHOOSE_CHARACTER', 'MULLIGAN', 'SET_RULES']);
 
 function reduce(state: GameState, action: GameAction): GameState {
   const drained = drainAll(state);
-  if (setupPending(drained) && action.type !== 'CHOOSE_CHARACTER' && action.type !== 'MULLIGAN') {
+  if (setupPending(drained) && !SETUP_ACTIONS.has(action.type)) {
     return drained;
   }
   const trust = drained.rules === 'trust';
 
   switch (action.type) {
     case 'ADVANCE_PHASE':
-      return advanceOnePhase(drained);
+      return guardedAdvance(drained, advanceOnePhase);
+    case 'SET_RULES':
+      return setRules(drained, action.rules);
+    case 'DRAW_PHASE_CARD': {
+      const drawn = drawForDrawPhase(drained);
+      // Trust mode: nothing else happens in the Draw Phase, so taking the draw moves straight on to Main Phase 1.
+      return trust && drawn.phase === 'Draw' && drawn.players[drawn.activePlayer].drawnThisDrawPhase ? advanceOnePhase(drawn) : drawn;
+    }
+    case 'DRAW_CHARACTER_DECK':
+      return drawFromCharacterDeck(drained, action.player, 'manual');
+    case 'ACCEPT_REINFORCEMENT':
+      return answerReinforcement(drained, action.player, true);
+    case 'DECLINE_REINFORCEMENT':
+      return answerReinforcement(drained, action.player, false);
+    case 'REVEAL_HAND_CARDS':
+      return revealHandCards(drained, action.player, action.instanceIds);
+    case 'RESOLVE_CHOICE':
+      return resolveChoice(drained, action.choiceId, action.optionIds);
+    case 'SET_SQUAD_REDIRECT':
+      return setSquadRedirect(drained, action.missionInstanceId, action.redirectTo);
     case 'PLACE_CHAKRA_SOURCE':
       return placeChakraSource(drained, action.instanceId);
     case 'TAP_CHAKRA_SOURCE':
@@ -157,6 +285,7 @@ function reduce(state: GameState, action: GameAction): GameState {
         action.abilityId,
         action.targetInstanceIds,
         action.payFromPool,
+        { choices: action.choices },
       );
     case 'PASS_PRIORITY':
       return passPriority(drained);
@@ -183,7 +312,7 @@ function reduce(state: GameState, action: GameAction): GameState {
   if (!trust) return drained;
   switch (action.type) {
     case 'STAGE_ABILITY':
-      return stageAbility(drained, action.instanceId, action.abilityId, action.targetInstanceIds, action.payFromPool, trustHooks);
+      return stageAbility(drained, action.instanceId, action.abilityId, action.targetInstanceIds, action.payFromPool, trustHooks, action.choices);
     case 'STAGE_CARD':
       return stageCard(drained, action.instanceId, action.enablingInstanceId, action.targetInstanceIds, action.payFromPool, action.amount, trustHooks);
     case 'RETARGET_STAGED':
@@ -195,7 +324,7 @@ function reduce(state: GameState, action: GameAction): GameState {
     case 'RESOLVE_ACTIONS':
       return startFinalize(drained, action.player, false, trustHooks);
     case 'FINALIZE_PHASE':
-      return startFinalize(drained, action.player, true, trustHooks);
+      return startFinalize(outstandingDecision(drained) ? appendLog(drained, `Heads up — ${outstandingDecision(drained)}`) : drained, action.player, true, trustHooks);
     case 'APPROVE_RESOLVE':
       return approveResolve(drained, action.player, trustHooks);
     case 'CANCEL_FINALIZE':
@@ -228,6 +357,8 @@ function reduce(state: GameState, action: GameAction): GameState {
       return deckTake(drained, action.player, action.instanceId, action.shuffle);
     case 'DECK_TO_BOTTOM':
       return deckToBottom(drained, action.player, action.instanceId);
+    case 'RETURN_CHARACTER_TO_HAND':
+      return returnCharacterToHand(drained, action.instanceId);
     default:
       return drained;
   }

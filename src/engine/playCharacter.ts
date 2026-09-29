@@ -5,34 +5,35 @@ import type { GameState, PlayerId } from './types';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
 
-/** SPEC.md §8 — Reinforcement Tax: 3/5/7/9/... Chakra, +2 each time, never resets. */
-function reinforcementTax(reinforcementsPlayed: number): number {
-  return 3 + 2 * reinforcementsPlayed;
+/** SPEC.md §8 — the Character Deck draw tax: 3/5/7/8 Chakra, then stays at 8. Driven only by paid manual draws; never resets. */
+export function reinforcementTax(paidDraws: number): number {
+  return Math.min(8, 3 + 2 * paidDraws);
 }
 
-/** What playing a Character card from hand would cost this player right now (§8) — waived when they control no characters, reduced by Bingo Book: Threat Level A's discount. */
-export function reinforcementCost(state: GameState, player: PlayerId): { cost: number; waived: boolean } {
+/** What drawing from the Character Deck costs this player right now (§8): the escalating tax, less Bingo Book: Threat Level A's one-time discount. */
+export function currentTax(state: GameState, player: PlayerId): number {
   const p = state.players[player];
-  const waived = p.backRow.every((c) => c === null);
-  if (waived) return { cost: 0, waived };
   const base = reinforcementTax(p.reinforcementsPlayed);
-  return { cost: base - Math.min(base, p.nextReinforcementDiscount), waived };
+  return base - Math.min(base, p.nextReinforcementDiscount);
 }
 
 /**
- * SPEC.md §8: play a Character card from hand — every one after your free
- * starting character (§6.7) costs the escalating Reinforcement Tax, paid
- * from generic Chakra, unless the Empty-Board Waiver applies (0 characters
- * currently in play — waived, and doesn't advance the tax counter).
+ * SPEC.md §8: play a Character card from hand — always free (the tax is
+ * paid when the card is DRAWN from the Character Deck, not when it's
+ * played). Normal timing is your own Main Phase; a forced play
+ * (mustPlayCharacter — your last C+ character fell while you held a C+
+ * character card) ignores timing entirely, and playing a C+ card satisfies it.
  */
 export function playCharacter(state: GameState, instanceId: string): GameState {
   const relaxed = state.rules === 'trust';
   const player =
-    (relaxed ? (['p1', 'p2'] as const).find((id) => state.players[id].hand.some((h) => h.instanceId === instanceId)) : undefined) ?? state.activePlayer;
+    (['p1', 'p2'] as const).find((id) => state.players[id].hand.some((h) => h.instanceId === instanceId && h.kind === 'character')) ?? state.activePlayer;
   const p = state.players[player];
+  const forced = p.mustPlayCharacter;
 
   let working = state;
-  if (!MAIN_PHASES.has(state.phase)) {
+  const onTime = MAIN_PHASES.has(state.phase) && state.activePlayer === player;
+  if (!forced && !onTime) {
     if (!relaxed) return appendLog(state, `${player} can only play a character during their own Main Phase.`);
     working = appendLog(working, `${player} plays a character outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
@@ -45,14 +46,7 @@ export function playCharacter(state: GameState, instanceId: string): GameState {
   if (!entry.hasRoom(working, player)) {
     return appendLog(working, `${player} doesn't have room in play for ${entry.name}.`);
   }
-
-  // Empty-Board Waiver / Bingo Book: Threat Level A's one-time discount (§13a) — see reinforcementCost.
-  const { cost: fullCost, waived } = reinforcementCost(working, player);
-  const discount = waived ? 0 : Math.min(reinforcementTax(p.reinforcementsPlayed), p.nextReinforcementDiscount);
-  const cost = relaxed ? Math.min(fullCost, p.genericChakraAvailable) : fullCost;
-  if (!relaxed && cost > p.genericChakraAvailable) {
-    return appendLog(working, `${player} doesn't have ${cost} Chakra available for the Reinforcement Tax.`);
-  }
+  const satisfiesForced = forced && entry.rank !== 'D';
 
   const beforeBackRow = working.players[player].backRow;
   // Retaliation (§6.6) or Bingo Book: Threat Level A's Ambush reward — either grants Ambush to this entry.
@@ -65,12 +59,10 @@ export function playCharacter(state: GameState, instanceId: string): GameState {
       ...next.players,
       [player]: {
         ...np,
-        genericChakraAvailable: np.genericChakraAvailable - cost,
         hand: np.hand.filter((h) => h.instanceId !== instanceId),
-        reinforcementsPlayed: waived ? np.reinforcementsPlayed : np.reinforcementsPlayed + 1,
         retaliationPending: false,
-        nextReinforcementDiscount: waived ? np.nextReinforcementDiscount : np.nextReinforcementDiscount - discount,
         nextCharacterFullyStunned: false,
+        mustPlayCharacter: satisfiesForced ? false : np.mustPlayCharacter,
       },
     },
   };
@@ -88,5 +80,5 @@ export function playCharacter(state: GameState, instanceId: string): GameState {
     }
   }
 
-  return appendLog(next, `${player} plays ${entry.name}${waived ? ' (Empty-Board Waiver, free)' : ` (Reinforcement Tax: ${cost})`}.`);
+  return appendLog(next, `${player} plays ${entry.name} (free${satisfiesForced ? ' — required after losing their last C+ character' : ''}).`);
 }

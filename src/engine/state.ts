@@ -16,6 +16,18 @@ const STARTING_HEALTH = 20;
  */
 const STARTING_ROSTER = ['kakuzu', 'hidan', 'deidara', 'kisame', 'itachi'];
 
+/** The per-player fields every fresh PlayerState starts with for §8 reinforcements, the manual Draw Phase draw, and Field Intelligence reveals. */
+function freshReinforcementFields() {
+  return {
+    pendingReinforcementEvents: [],
+    reinforcementOffers: [],
+    mustPlayCharacter: false,
+    drawnThisDrawPhase: false,
+    pendingHandReveal: null,
+    revealedHandCards: [],
+  } satisfies Partial<PlayerState>;
+}
+
 function createPlayer(id: PlayerId): PlayerState {
   const backRow = new Array(BACK_ROW_SIZE).fill(null);
   STARTING_ROSTER.forEach((defId, i) => {
@@ -36,7 +48,7 @@ function createPlayer(id: PlayerId): PlayerState {
     // the Upkeep special-case treatment (§6.5) has something real to apply to.
     startingCharacterInstanceId: `${id}-${STARTING_ROSTER[0]}`,
     retaliationPending: false,
-    pendingReinforcementDraws: 0,
+    ...freshReinforcementFields(),
     handDeck: [],
     characterDeck: [],
     consumedPile: [],
@@ -66,7 +78,7 @@ function createEmptyPlayer(id: PlayerId): PlayerState {
     frontRow: new Array(FRONT_ROW_SIZE).fill(null),
     startingCharacterInstanceId: null,
     retaliationPending: false,
-    pendingReinforcementDraws: 0,
+    ...freshReinforcementFields(),
     handDeck: [],
     characterDeck: [],
     consumedPile: [],
@@ -90,14 +102,23 @@ function createEmptyPlayer(id: PlayerId): PlayerState {
  * pick the starting character — §8's D-rank bonus rule applies here too),
  * and deals each a 6-card starting hand (mulligan is a separate, optional
  * MULLIGAN action from here). Turn 1 begins immediately; the Draw Phase
- * skip for whoever goes first is handled by the reducer's own Draw Phase
- * logic, keyed off `firstPlayer`.
+ * skip for whoever goes first is handled by drawForDrawPhase, keyed off
+ * `firstPlayer`.
+ *
+ * §3 order: the first-player coin flip happens AFTER both players finish
+ * Setup, so nobody knows who goes first while deciding on a mulligan. With
+ * no explicit `firstPlayer`, it's left pending (a placeholder is stored) and
+ * flipped by the reducer once both starting characters are confirmed.
+ * Passing one (tests) fixes it up front.
  */
-export function createSetupState(firstPlayer: PlayerId = Math.random() < 0.5 ? 'p1' : 'p2', rules: RulesMode = 'strict'): GameState {
+export function createSetupState(firstPlayer?: PlayerId, rules: RulesMode = 'strict'): GameState {
+  const placeholder: PlayerId = firstPlayer ?? 'p1';
   let state: GameState = {
+    firstPlayerPending: firstPlayer === undefined,
+    pendingChoices: [],
     turn: 1,
-    firstPlayer,
-    activePlayer: firstPlayer,
+    firstPlayer: placeholder,
+    activePlayer: placeholder,
     phase: 'Untap',
     players: { p1: createEmptyPlayer('p1'), p2: createEmptyPlayer('p2') },
     rules,
@@ -105,10 +126,10 @@ export function createSetupState(firstPlayer: PlayerId = Math.random() < 0.5 ? '
     resolutionShield: [],
     staged: [],
     pendingFinalize: null,
-    log: [{ id: 'log-1', turn: 1, phase: 'Untap', text: `${firstPlayer} goes first.` }],
+    log: [{ id: 'log-1', turn: 1, phase: 'Untap', text: firstPlayer ? `${firstPlayer} goes first.` : 'Setup: each player picks a starting character and may mulligan. Who goes first is decided afterward.' }],
     winner: null,
     stack: [],
-    priorityPlayer: firstPlayer,
+    priorityPlayer: placeholder,
     passesInARow: 0,
   };
 
@@ -129,6 +150,8 @@ export function createSetupState(firstPlayer: PlayerId = Math.random() < 0.5 ? '
 
 export function createInitialState(firstPlayer: PlayerId): GameState {
   return {
+    firstPlayerPending: false,
+    pendingChoices: [],
     turn: 1,
     firstPlayer,
     activePlayer: firstPlayer,

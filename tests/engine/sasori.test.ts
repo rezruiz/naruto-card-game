@@ -98,6 +98,21 @@ describe('Sasori', () => {
     expect(state.players.p1.backRow[1]!.currentHP).toBe(hidanHpBefore - 2); // 4 - 2
   });
 
+  it('Iron Sand Wall: the player may pay X more Chakra (up to 4) to reduce it by a further X', () => {
+    let { state, kazekageId } = withSasoriAndKazekage();
+    state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
+    state = giveChakra(state, 'p2', 4);
+    state = activateAbility(state, 'p2-kakuzu', 'searing-migraine', ['p1-hidan'], 0); // 4 damage, Ninjutsu
+
+    state = giveChakra(state, 'p1', 6);
+    state = activateAbility(state, kazekageId, 'iron-sand-wall', ['p1-hidan'], 0, { choices: { extraX: 2 } });
+    expect(state.players.p1.genericChakraAvailable).toBe(1); // 3 + X(2) paid
+
+    const hidanHpBefore = state.players.p1.backRow[1]!.currentHP;
+    for (let i = 0; i < 4; i++) state = gameReducer(state, { type: 'PASS_PRIORITY' });
+    expect(state.players.p1.backRow[1]!.currentHP).toBe(hidanHpBefore); // 4 - (2 + 2)
+  });
+
   it('Chakra Strings: Puppet Summon is capped at 3 Puppet Soldiers', () => {
     let state = giveChakra(withSasori(), 'p1', 3);
     // Transform to Hollow Body first — Puppet Summon only exists on that form.

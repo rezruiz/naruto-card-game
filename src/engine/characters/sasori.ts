@@ -1,4 +1,4 @@
-import { countTokensOfType, findOccupant, isCharacter, patchCharacter, placeToken } from '../board';
+import { countTokensOfType, findOccupant, isCharacter, patchOccupant, placeToken } from '../board';
 import { dealDamage, registerDefeatHook } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
 import { applyPoison } from '../poison';
@@ -210,18 +210,22 @@ const goldDustPoison: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): the "+X Chakra for +X reduction, up to
-// X=4" scaling is dropped (fixed at the base -2) — there's no action-level
-// channel yet for the controller to choose a numeric X at activation, the
-// same gap noted for Deidara's Detonation Art / Konan's Paper Bomb Tag.
-// Implemented as a real, working reduction via the engine's generic
-// damage-prevention pool (combat.ts's dealDamage) — unlike Puppet Shell
-// Guard, this one is a genuine reduction on the original target, not a
-// redirect, matching design/CHARACTER_LOG.md's own distinction.
+/** Iron Sand Wall's optional extra X (0–4), as chosen by the controller at activation. */
+function ironSandExtra(ctx: { choices?: Record<string, unknown> }): number {
+  const x = ctx.choices?.extraX;
+  return typeof x === 'number' ? Math.max(0, Math.min(4, Math.floor(x))) : 0;
+}
+
+// "3+X Chakra ... You may spend X additional Chakra (up to 4) to reduce it
+// by a further X" — X is the controller's choice at activation, paid as
+// part of the cost. Implemented as a real reduction via the engine's
+// generic damage-prevention pool (combat.ts's dealDamage) — unlike Puppet
+// Shell Guard, a genuine reduction on the original target, not a redirect.
 const ironSandWall: AbilityDef = {
   id: 'iron-sand-wall',
   name: 'Iron Sand Wall',
-  cost: 3,
+  cost: (ctx) => 3 + ironSandExtra(ctx),
+  choices: () => [{ id: 'extraX', kind: 'number', prompt: 'Spend extra Chakra (X) to reduce the damage by a further X', min: 0, max: 4 }],
   speed: 'Reactive',
   style: 'None',
   type: 'Ninjutsu',
@@ -234,11 +238,12 @@ const ironSandWall: AbilityDef = {
   resolve: (ctx) => {
     const allyId = ctx.targetInstanceIds[0];
     if (!allyId) return ctx.state;
-    const state = patchCharacter(ctx.state, allyId, (c) => ({
+    const reduction = 2 + ironSandExtra(ctx);
+    const state = patchOccupant(ctx.state, allyId, (c) => ({
       ...c,
-      extra: { ...c.extra, damagePreventionRemaining: 2, damagePreventionUntilTurn: ctx.state.turn },
+      extra: { ...c.extra, damagePreventionRemaining: reduction, damagePreventionUntilTurn: ctx.state.turn },
     }));
-    return appendLog(state, 'Iron Sand Wall reduces the next hit against its target by 2.');
+    return appendLog(state, `Iron Sand Wall reduces the next hit against its target by ${reduction}${ironSandExtra(ctx) > 0 ? ` (paid ${ironSandExtra(ctx)} extra Chakra)` : ''}.`);
   },
 };
 

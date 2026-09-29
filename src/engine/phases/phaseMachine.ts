@@ -154,7 +154,14 @@ function resetTurnUsage(state: GameState, player: PlayerId): GameState {
     ...state,
     players: {
       ...state.players,
-      [player]: { ...p, attackJutsuUsedThisTurn: [], backRow: p.backRow.map(resetStatus), frontRow: p.frontRow.map(resetStatus) },
+      [player]: {
+        ...p,
+        attackJutsuUsedThisTurn: [],
+        drawnThisDrawPhase: false,
+        revealedHandCards: [],
+        backRow: p.backRow.map(resetStatus),
+        frontRow: p.frontRow.map(resetStatus),
+      },
     },
   };
 }

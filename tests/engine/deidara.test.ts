@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activateAbility } from '../../src/engine/abilities';
+import { activateAbility, findAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { freshCombat, freshMain1, giveChakra, resolveTop } from './testUtils';
 
@@ -34,13 +34,33 @@ describe('Deidara', () => {
     expect(state.stack.length).toBe(stackBefore);
   });
 
-  it('Detonation Art deals 4 (not 2) when a Clay Charge is available, and spends it', () => {
+  it('Detonation Art deals 4 (not 2) and spends a Clay Charge when the player chooses to spend it', () => {
     let state = giveChakra(freshCombat(), 'p1', 3);
     const targetHpBefore = state.players.p2.backRow[0]?.currentHP ?? 0;
-    state = activateAbility(state, 'p1-deidara', 'detonation-art', ['p2-kakuzu'], 0);
+    state = activateAbility(state, 'p1-deidara', 'detonation-art', ['p2-kakuzu'], 0, { choices: { spendCharge: true } });
     state = resolveTop(state);
     expect(state.players.p2.backRow[0]?.currentHP).toBe(targetHpBefore - 4);
     expect(state.players.p1.backRow[2]?.extra.clayCharges).toBe(0); // spent
+  });
+
+  it("Detonation Art never spends a Clay Charge on its own — declining (or not being asked) deals the base 2 and keeps it", () => {
+    for (const choices of [{ spendCharge: false }, undefined]) {
+      let state = giveChakra(freshCombat(), 'p1', 3);
+      const targetHpBefore = state.players.p2.backRow[0]?.currentHP ?? 0;
+      state = activateAbility(state, 'p1-deidara', 'detonation-art', ['p2-kakuzu'], 0, { choices });
+      state = resolveTop(state);
+      expect(state.players.p2.backRow[0]?.currentHP).toBe(targetHpBefore - 2);
+      expect(state.players.p1.backRow[2]?.extra.clayCharges).toBe(1); // kept
+    }
+  });
+
+  it('only asks about the Clay Charge when Deidara has one', () => {
+    const state = freshCombat();
+    const ability = findAbility('deidara', 'detonation-art')!;
+    const ctx = { state, sourceInstanceId: 'p1-deidara', targetInstanceIds: ['p2-kakuzu'] };
+    expect(ability.choices!(ctx).map((c) => c.id)).toEqual(['spendCharge']);
+    const noCharges = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c) => (c?.defId === 'deidara' ? { ...c, extra: { ...c.extra, clayCharges: 0 } } : c)) } } };
+    expect(ability.choices!({ ...ctx, state: noCharges })).toEqual([]);
   });
 
   it('C3, Shi-Suri requires a full Pool and 5 Clay Charges, and hits in a cross pattern', () => {

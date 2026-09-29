@@ -5,7 +5,7 @@ import { getHandCardDef } from '../cards/registry';
 import { getCharacterDef, getTokenDef } from '../characters/registry';
 import { appendLog } from '../phases/phaseMachine';
 import { resolveTopOfStack } from '../stack';
-import type { BoardOccupant, GameState, PlayerId, StackItem, StagedAction } from '../types';
+import type { AbilityChoices, BoardOccupant, GameState, PlayerId, StackItem, StagedAction } from '../types';
 
 /**
  * Trust mode (playtesting): players agree on legality out loud, so the
@@ -77,13 +77,21 @@ function probeState(state: GameState, viewer: PlayerId, stack: StagedAction[]): 
   };
 }
 
-function abilityWarnings(state: GameState, owner: PlayerId, sourceId: string, abilityId: string, targets: string[], payFromPool: number): string[] {
+function abilityWarnings(
+  state: GameState,
+  owner: PlayerId,
+  sourceId: string,
+  abilityId: string,
+  targets: string[],
+  payFromPool: number,
+  choices?: AbilityChoices,
+): string[] {
   const found = findOccupant(state, sourceId);
   const ability = found ? findAbility(found.occupant.defId, abilityId) : undefined;
   if (!ability) return ['Unknown ability.'];
   // Only the *other* player's staged actions count as "on the stack" for the purpose of this check — a player batching several of their own Normal-speed actions in one round is fine.
   const probe = probeState(state, owner, state.staged.filter((a) => a.owner !== owner));
-  const result = checkLegality(probe, sourceId, ability, targets, payFromPool, { skipEvasion: true });
+  const result = checkLegality(probe, sourceId, ability, targets, payFromPool, { skipEvasion: true, choices });
   return result.ok ? [] : [result.reason ?? 'Not legal under the strict rules.'];
 }
 
@@ -127,6 +135,7 @@ export function stageAbility(
   targets: string[],
   payFromPool: number,
   hooks: TrustHooks,
+  choices?: AbilityChoices,
 ): GameState {
   const found = findOccupant(state, instanceId);
   if (!found) return state;
@@ -142,7 +151,8 @@ export function stageAbility(
     label: `${found.occupant.name}: ${ability.name}`,
     targets,
     payFromPool,
-    warnings: abilityWarnings(state, found.player, instanceId, abilityId, targets, payFromPool),
+    choices,
+    warnings: abilityWarnings(state, found.player, instanceId, abilityId, targets, payFromPool, choices),
   };
   const next = appendLog({ ...state, staged: insertStaged(state.staged, action) }, `${found.player} declares ${action.label}.`);
   return afterStagedChange(next, found.player, hooks);
@@ -187,7 +197,7 @@ export function retargetStaged(state: GameState, stagedId: string, targets: stri
   if (!action) return state;
   const warnings =
     action.kind === 'ability'
-      ? abilityWarnings(state, action.owner, action.sourceInstanceId, action.abilityId!, targets, action.payFromPool)
+      ? abilityWarnings(state, action.owner, action.sourceInstanceId, action.abilityId!, targets, action.payFromPool, action.choices)
       : cardWarnings(state, action.owner, action.cardInstanceId!, action.sourceInstanceId, targets, action.payFromPool, action.amount);
   const updated = { ...action, targets, warnings };
   const next = appendLog({ ...state, staged: state.staged.map((a) => (a.id === stagedId ? updated : a)) }, `${action.owner} changes the target of ${action.label}.`);
@@ -272,7 +282,7 @@ function resolveAllStaged(state: GameState): GameState {
   for (const a of list) {
     next =
       a.kind === 'ability'
-        ? activateAbility(next, a.sourceInstanceId, a.abilityId!, a.targets, a.payFromPool, { trust: true })
+        ? activateAbility(next, a.sourceInstanceId, a.abilityId!, a.targets, a.payFromPool, { trust: true, choices: a.choices })
         : playHandCard(next, a.owner, a.cardInstanceId!, a.sourceInstanceId, a.targets, a.payFromPool, a.amount, { trust: true });
   }
   next = { ...next, stack: next.stack.slice().reverse() };

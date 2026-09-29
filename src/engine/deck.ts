@@ -2,7 +2,10 @@ import { getCharacterDeckEntry } from './characters';
 import { applyHealthLoss } from './combat';
 import { appendLog } from './phases/phaseMachine';
 import { getHandCardDef } from './cards/registry';
+import { currentTax, reinforcementTax } from './playCharacter';
 import type { GameState, HandCardInstance, PlayerId } from './types';
+
+const MAIN_PHASES = new Set(['Main1', 'Main2']);
 
 /** Fisher-Yates — pure, returns a new array. */
 export function shuffle<T>(items: T[]): T[] {
@@ -87,6 +90,84 @@ export function lookAndTakeCardType(state: GameState, player: PlayerId, count: n
 }
 
 let characterHandEntryCounter = 0;
+
+/**
+ * SPEC.md §4.3: the Draw Phase draw — a manual click, once per turn, by the
+ * active player during their Draw Phase. The very first player's very
+ * first turn skips it. Out-of-timing draws are refused under the strict
+ * rules and allowed with an advisory in trust mode.
+ */
+export function drawForDrawPhase(state: GameState): GameState {
+  const relaxed = state.rules === 'trust';
+  const player = state.activePlayer;
+  const p = state.players[player];
+  let working = state;
+  if (state.phase !== 'Draw') {
+    if (!relaxed) return appendLog(state, `${player} can only take their Draw Phase draw during the Draw Phase.`);
+    working = appendLog(working, `${player} takes their Draw Phase draw outside the Draw Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+  }
+  if (p.drawnThisDrawPhase) return appendLog(working, `${player} has already drawn this turn.`);
+  if (state.turn === 1 && player === state.firstPlayer) {
+    return appendLog(working, `${player} goes first, so their very first turn skips the Draw Phase draw.`);
+  }
+  let next = drawCard(working, player);
+  next = { ...next, players: { ...next.players, [player]: { ...next.players[player], drawnThisDrawPhase: true } } };
+  return appendLog(next, `${player} draws for the turn.`);
+}
+
+/**
+ * SPEC.md §8: a Character Deck draw — look at the top 2, pick 1 (plus the
+ * D-rank bonus rule). A state-based action: never goes on the stack and
+ * resolves immediately. Its cost and timing come from what triggered it:
+ * - 'manual': the player's own choice — Normal-speed timing (their own
+ *   Main Phase), pays the current tax, and is the ONLY thing that raises
+ *   the tax counter.
+ * - 'reinforcement-paid': accepted after one of their C+ characters fell —
+ *   any time, pays the current tax, counter unchanged.
+ * - 'reinforcement-free': their last C+ character fell with no C+ character
+ *   in hand — free, counter unchanged.
+ */
+export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 'manual' | 'reinforcement-paid' | 'reinforcement-free'): GameState {
+  const relaxed = state.rules === 'trust';
+  const p = state.players[player];
+  let working = state;
+  if (p.pendingCharacterReveal) return appendLog(state, `${player} already has a Character Deck reveal to resolve first.`);
+  if (p.characterDeck.length === 0) return appendLog(state, `${player}'s Character Deck is empty.`);
+  if (mode === 'manual' && !(MAIN_PHASES.has(state.phase) && state.activePlayer === player)) {
+    if (!relaxed) return appendLog(state, `${player} can only draw from the Character Deck during their own Main Phase.`);
+    working = appendLog(working, `${player} draws from the Character Deck outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+  }
+
+  const wp = working.players[player];
+  const fullCost = mode === 'reinforcement-free' ? 0 : currentTax(working, player);
+  const discountUsed = mode === 'reinforcement-free' ? 0 : Math.min(reinforcementTax(wp.reinforcementsPlayed), wp.nextReinforcementDiscount);
+  if (fullCost > wp.genericChakraAvailable) {
+    if (!relaxed) return appendLog(working, `${player} doesn't have ${fullCost} Chakra available for the Character Deck draw.`);
+    working = appendLog(working, `${player} is short ${fullCost - wp.genericChakraAvailable} Chakra for the Character Deck draw (trust mode — allowed).`);
+  }
+  const paid = Math.min(fullCost, wp.genericChakraAvailable);
+  let next: GameState = {
+    ...working,
+    players: {
+      ...working.players,
+      [player]: {
+        ...wp,
+        genericChakraAvailable: wp.genericChakraAvailable - paid,
+        reinforcementsPlayed: mode === 'manual' ? wp.reinforcementsPlayed + 1 : wp.reinforcementsPlayed,
+        nextReinforcementDiscount: wp.nextReinforcementDiscount - discountUsed,
+      },
+    },
+  };
+  next = appendLog(
+    next,
+    mode === 'reinforcement-free'
+      ? `${player} takes a free Reinforcement draw (their last C+ character fell).`
+      : mode === 'reinforcement-paid'
+        ? `${player} pays ${paid} Chakra for a Reinforcement draw (the tax doesn't go up).`
+        : `${player} pays the Character Deck tax (${paid} Chakra) to draw — next draw costs ${reinforcementTax(next.players[player].reinforcementsPlayed)}.`,
+  );
+  return revealCharacters(next, player, 2, 'reinforcement');
+}
 
 /**
  * SPEC.md §4.3/§10b's "whenever you're required to draw" deck-out rule: draw
@@ -222,6 +303,8 @@ function findLatestSpawnedId(state: GameState, player: PlayerId): string {
  */
 export function mulligan(state: GameState, player: PlayerId): GameState {
   const p = state.players[player];
+  // Confirming your starting character finalizes your Setup — your hand is kept from then on.
+  if (p.startingCharacterInstanceId !== null) return appendLog(state, `${player} has already finished Setup — their hand is kept.`);
   const cardEntries = p.hand.filter((h) => h.kind === 'card');
   const otherEntries = p.hand.filter((h) => h.kind !== 'card');
   const shuffledBack = shuffle([...p.handDeck, ...cardEntries.map((c) => ({ instanceId: c.instanceId, defId: c.defId }))]);

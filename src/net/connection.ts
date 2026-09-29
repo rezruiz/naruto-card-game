@@ -1,7 +1,13 @@
 import { Peer, type DataConnection } from 'peerjs';
 import type { GameAction, GameState } from '../engine/types';
 
-export type NetMessage = { kind: 'action'; action: GameAction } | { kind: 'state'; state: GameState };
+export type NetMessage =
+  | { kind: 'action'; action: GameAction }
+  | { kind: 'state'; state: GameState; undoLabel?: string | null }
+  /** Guest -> host: undo the most recent undoable action (the host keeps the only history). */
+  | { kind: 'undo' }
+  /** Guest -> host: start a fresh game over the same connection. */
+  | { kind: 'restart' };
 
 export type ConnStatus = 'connecting' | 'waiting' | 'connected' | 'disconnected' | 'error';
 

@@ -101,8 +101,12 @@ contain **up to 3 copies** of the same card.
      follows a traditional −1 mulligan: each one draws exactly 1 fewer
      card than the previous draw (so your 2nd mulligan draws 5, your 3rd
      draws 4, and so on). You may mulligan as many times as you want,
-     down to a hand of 0.
-3. Determine the first player **(placeholder: coin flip / random choice)**.
+     down to a hand of 0 — up until you confirm your starting character;
+     confirming it finishes your Setup and keeps your current hand. Each
+     player's mulligans are their own independent choice.
+3. Once both players have finished step 2, determine the first player
+   **(placeholder: coin flip / random choice)** — so neither player knows
+   who goes first while deciding whether to mulligan.
 4. The first player's first turn skips their Draw Phase (§4.3) — they do
    not draw on their very first turn.
 
@@ -138,7 +142,8 @@ Untap all of your tapped Chakra sources. Nothing else untaps.
 
 ### 4.3 Draw Phase
 Draw 1 card from your Hand Deck (skipped on the first player's first turn
-only). If your Hand Deck is empty and you're required to draw, you instead
+only). The draw is taken by the player (a deliberate action, not
+automatic). If your Hand Deck is empty and you're required to draw, you instead
 take **3 player-Health damage (placeholder)** and draw nothing.
 
 ### 4.4 Main Phase 1
@@ -644,16 +649,34 @@ Quick Technique and Reactive Technique cards/abilities:
 Your Character Deck starts with (deck size − 1) cards after setup: you
 draw the top 3, keep 1 as your starting character, and shuffle the other
 2 back in — so a 10-card Character Deck has 9 remaining after setup, a
-15-card one has 14, and so on. You only draw further characters when one
-of these triggers fires:
+15-card one has 14, and so on.
 
-1. **One of your characters is defeated.**
-2. **A card effect explicitly grants a character draw** (e.g. a
-   "Reinforcements"-type Jutsu card).
+**A Character Deck draw** means: **look at the top 2 cards of your
+Character Deck, choose 1 to add to your hand, and place the other on the
+bottom of your Character Deck** (plus the D Rank special rule below).
+Drawing from the Character Deck is a **state-based action**: it never
+goes on the stack, can't be responded to, and resolves immediately. Its
+timing is set by whatever causes it:
 
-Whenever either trigger fires, unless the triggering effect says
-otherwise: **draw 2 cards from your Character Deck, choose 1 to add to
-your hand, and place the other on the bottom of your Character Deck.**
+1. **Manual draw.** On your own turn, during a Main Phase (Normal-speed
+   timing), you may pay the **Character Deck Tax** (below) to make a
+   Character Deck draw. This is the only thing that raises the tax.
+2. **Reinforcement (one of your characters is defeated).** Resolves
+   immediately when the defeat does, on either player's turn:
+   - A **D-rank** character being defeated triggers **no** Reinforcement.
+   - A **C-rank or higher** character is defeated while you still have
+     another C-rank-or-higher character in play: you **may** pay your
+     **current** Character Deck Tax to make a Character Deck draw. This
+     does **not** raise the tax.
+   - Your **last C-rank-or-higher character in play** is defeated
+     (D-rank characters in play are ignored for this — e.g. with a B and a
+     D in play, the B being defeated counts as your last): if you have a
+     C-rank-or-higher Character card in hand, you **must** play at least
+     one of them immediately (free, ignoring normal timing). If you don't
+     (D-rank cards in hand are ignored), you **may** make a Character Deck
+     draw **for free**. Neither raises the tax.
+3. **A card effect explicitly grants a character draw** (e.g. a
+   "Reinforcements"-type Jutsu card) — as that card says.
 
 **D Rank special rule:** whenever you draw multiple Character cards as
 part of a Character Deck draw (the Setup starting-character draw, §3,
@@ -679,47 +702,31 @@ more.
   Any D-rank or non-chosen cards beyond what you take are placed on the
   bottom of your Character Deck as normal, in the order you choose.
 
-A newly drawn character must still be played from hand like any other
-Character card (subject to the 5-character board limit and summoning
-sickness) — including the Chakra cost below.
+**Playing a Character card from hand is always free** (subject to the
+5-character board limit and summoning sickness). The cost of a new
+character is paid when it is *drawn*, not when it is played.
 
-**Reinforcement Tax — cost to bring a new character into play:** your
-starting character (§3, §6.7) is free. Every character you play from
-hand after that — every *reinforcement* — costs Chakra on top of the
-normal act of playing it, scaling with how many you've already brought
-in this way **this game** (this count only ever goes up — it doesn't
-reset if earlier characters are later defeated). This tax applies only
-to reinforcements — additional characters past your first; it was never
-meant to apply to a single character entering play on its own (your free
-starting character, or a free replacement under the Empty-Board Waiver
-below):
+**Character Deck Tax — the cost of a Character Deck draw:** paid from
+your generic Chakra pool (tapped Chakra sources) — no character's
+personal Chakra Pool can fund it (§5.3). It scales with how many **manual**
+Character Deck draws you have paid for **this game** (this count only
+ever goes up), capped at 8:
 
-| Additional character # (2nd, 3rd, 4th character overall, ...) | Cost |
+| Paid manual draws so far | Tax |
 |---|---|
-| 1st additional | 3 Chakra |
-| 2nd additional | 5 Chakra |
-| 3rd additional | 7 Chakra |
-| 4th additional | 9 Chakra |
-| *(each one after)* | *+2 Chakra from the last* |
+| 0 | 3 Chakra |
+| 1 | 5 Chakra |
+| 2 | 7 Chakra |
+| 3 or more | 8 Chakra (cap) |
 
-This tax is paid from your generic Chakra pool (tapped Chakra sources) at
-the moment you play the character card — no character's personal Chakra
-Pool can fund it, per §5.3, since the character being played isn't in
-play yet and this isn't an action performed through any already-in-play
-character.
-
-**Empty-Board Waiver:** if a player has **0 characters in play**, the
-next character they play is free to bring into play — the Reinforcement
-Tax above is waived for that one play. Because the tax is *waived*
-rather than *paid*, it does **not** advance your escalating cost counter
-— the next reinforcement you actually pay for afterward still costs
-whatever the counter already stood at before this free play (e.g. if the
-next reinforcement was going to cost 3, it's still 3 after this free
-play; the counter only climbs when a Reinforcement Tax is genuinely
-paid). (This waiver covers only the Reinforcement Tax — that character
-still pays its full ongoing Upkeep per §6.5's normal Rank-based table
-like any non-starting character; it is not treated as free-to-maintain
-the way your original starting character is.)
+Only a paid **manual** draw advances the count. A paid Reinforcement
+draw costs your *current* tax without advancing it, and the free
+last-C-rank-or-higher Reinforcement draw costs nothing and doesn't
+advance it either. Keeping extra D-rank cards from a draw (D Rank special
+rule) costs nothing extra and doesn't advance it. (A character entering
+play this way still pays its full ongoing Upkeep per §6.5's normal
+Rank-based table — only your original starting character gets the
+starting-character treatment.)
 
 ---
 

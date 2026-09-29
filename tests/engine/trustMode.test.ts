@@ -217,16 +217,20 @@ describe('trust mode: resolution order (first activated, first resolved)', () =>
 });
 
 describe('trust mode: turn flow', () => {
-  it('Finalize Phase with nothing declared just advances, and a new turn lands on Main 1 automatically', () => {
+  it('Finalize Phase with nothing declared just advances; a new turn runs Untap/Upkeep and waits at Draw for the manual draw', () => {
     let s = trustMain1();
     s = run(s, { type: 'FINALIZE_PHASE', player: 'p1' }); // Main1 -> Combat
     s = run(s, { type: 'FINALIZE_PHASE', player: 'p1' }); // -> Main2
     s = run(s, { type: 'FINALIZE_PHASE', player: 'p1' }); // -> End
     expect(s.phase).toBe('End');
-    s = run(s, { type: 'FINALIZE_PHASE', player: 'p1' }); // -> p2's turn: Untap/Upkeep/Draw run automatically
+    s = run(s, { type: 'FINALIZE_PHASE', player: 'p1' }); // -> p2's turn: Untap/Upkeep run automatically
     expect(s.activePlayer).toBe('p2');
-    expect(s.phase).toBe('Main1');
+    expect(s.phase).toBe('Draw');
     expect(s.turn).toBe(2);
+    const deckBefore = s.players.p2.handDeck.length;
+    s = run(s, { type: 'DRAW_PHASE_CARD' });
+    expect(s.players.p2.handDeck.length).toBe(Math.max(0, deckBefore - 1));
+    expect(s.phase).toBe('Main1');
   });
 
   it("only the active player can finalize", () => {

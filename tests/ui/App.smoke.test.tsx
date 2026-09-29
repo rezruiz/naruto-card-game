@@ -8,6 +8,15 @@ import App from '../../src/App';
 // the closest substitute: it catches mount-time crashes (bad imports, wrong
 // prop names, undefined component references) that `tsc` alone can't, for
 // the one part of the app the 126 engine unit tests never actually render.
+/** Both players pick their first revealed character: select it, then Confirm (picking is two-step). */
+function pickBothStartingCharacters() {
+  for (let i = 0; i < 2; i++) {
+    const panel = screen.getAllByText(/choose a starting character/i)[0].closest('.reveal-panel')!;
+    fireEvent.click(panel.querySelector('.reveal-panel__option button')!);
+    fireEvent.click(panel.querySelector('.reveal-panel__confirm-button')!);
+  }
+}
+
 describe('App (smoke)', () => {
   afterEach(cleanup);
 
@@ -31,20 +40,22 @@ describe('App (smoke)', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /single-player testing/i }));
 
-    // Each player's reveal panel offers 3+ character buttons (Rank X) —
-    // click the first one for whichever panel is still open, twice (P1 then
-    // P2), which should clear setup and land on the live board.
-    for (let i = 0; i < 2; i++) {
-      const panels = screen.getAllByText(/choose a starting character/i);
-      expect(panels.length).toBeGreaterThan(0);
-      const panel = panels[0].closest('.reveal-panel')!;
-      const firstChoice = panel.querySelector('button')!;
-      fireEvent.click(firstChoice);
-    }
+    // Selecting a character alone commits nothing — it takes Confirm.
+    const panel = screen.getAllByText(/choose a starting character/i)[0].closest('.reveal-panel')!;
+    fireEvent.click(panel.querySelector('.reveal-panel__option button')!);
+    expect(screen.getAllByText(/choose a starting character/i)).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /mulligan/i })).toHaveLength(2); // both players can still mulligan
+    fireEvent.click(panel.querySelector('.reveal-panel__confirm-button')!);
+    expect(screen.getAllByText(/choose a starting character/i)).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /mulligan/i })).toHaveLength(1); // only the player still in setup
+    const other = screen.getAllByText(/choose a starting character/i)[0].closest('.reveal-panel')!;
+    fireEvent.click(other.querySelector('.reveal-panel__option button')!);
+    fireEvent.click(other.querySelector('.reveal-panel__confirm-button')!);
 
     expect(screen.queryByText(/choose a starting character/i)).toBeNull();
     expect(screen.getAllByText(/^HP \d+\/\d+/).length).toBeGreaterThan(0);
-    // Trust mode: no click-through of Untap/Upkeep/Draw — setup lands straight on Main 1, with Resolve/Finalize controls.
+    expect(screen.getByText(/coin flip: p[12] goes first/i)).toBeTruthy();
+    // Trust mode: Untap/Upkeep run on their own and the first player's skipped first draw passes through — setup lands on Main 1.
     expect(screen.getByRole('button', { name: /finalize main1 phase/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /resolve actions/i })).toBeTruthy();
   });
@@ -52,10 +63,7 @@ describe('App (smoke)', () => {
   it('shows minimized in-play cards and opens the full SPEC text in a popup on click', () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /single-player testing/i }));
-    for (let i = 0; i < 2; i++) {
-      const panel = screen.getAllByText(/choose a starting character/i)[0].closest('.reveal-panel')!;
-      fireEvent.click(panel.querySelector('button')!);
-    }
+    pickBothStartingCharacters();
 
     // Hotseat has no single "you": P1 sits at the bottom, P2 across the table at the top.
     const boards = container.querySelectorAll('.player-board');
@@ -79,10 +87,7 @@ describe('App (smoke)', () => {
   it('opens the same details popup from a card in hand, without triggering its Play button', () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /single-player testing/i }));
-    for (let i = 0; i < 2; i++) {
-      const panel = screen.getAllByText(/choose a starting character/i)[0].closest('.reveal-panel')!;
-      fireEvent.click(panel.querySelector('button')!);
-    }
+    pickBothStartingCharacters();
 
     const handCard = container.querySelector('.player-board--bottom .hand-card:not(.hand-card--hidden)')!;
     const name = handCard.querySelector('.hand-card__name')!.textContent!;

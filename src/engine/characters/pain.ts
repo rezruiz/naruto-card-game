@@ -424,11 +424,12 @@ const relentlessStrike: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): only the "Straight" path is implemented
-// (2 more hits continuing left/right in the primary target's own row) — the
-// "Bent" alternative (front-row primary, 2nd hit is the paired back-row
-// Character, 3rd hit is that Character's neighbor) is dropped for scope;
-// both still deal 3/2/1 down the path and stop early off the board's edge.
+// "Choose a primary target and a path: Straight (2 more hits continuing
+// left/right in its own row) or Bent (primary must be front-row — 2nd hit
+// is the Character behind it, 3rd hit is that Character's left/right
+// neighbor). Deal 3/2/1 down the path; a path that runs off the board just
+// hits fewer." Path and side are both the attacker's choice, asked at
+// activation (Bent is only offered for a front-row primary).
 const rampagingCharge: AbilityDef = {
   id: 'rampaging-charge',
   name: 'Rampaging Charge',
@@ -437,26 +438,53 @@ const rampagingCharge: AbilityDef = {
   style: 'None',
   type: 'Taijutsu',
   isDamaging: true,
+  choices: (ctx) => {
+    const primary = ctx.targetInstanceIds[0] ? findOccupant(ctx.state, ctx.targetInstanceIds[0]) : undefined;
+    const paths = [{ id: 'straight', label: 'Straight — continue along its row' }];
+    if (primary?.zone === 'front') paths.push({ id: 'bent', label: 'Bent — hit the Character behind it, then its neighbor' });
+    return [
+      { id: 'path', kind: 'option', prompt: 'Rampaging Charge path', options: paths },
+      {
+        id: 'side',
+        kind: 'option',
+        prompt: 'Which way does the path continue?',
+        options: [
+          { id: 'left', label: 'Left' },
+          { id: 'right', label: 'Right' },
+        ],
+      },
+    ];
+  },
   resolve: (ctx) => {
     const primaryId = ctx.targetInstanceIds[0];
     if (!primaryId) return ctx.state;
-    let state = dealDamage(ctx.state, primaryId, 3).state;
-
     const found = findOccupant(ctx.state, primaryId);
+    let state = dealDamage(ctx.state, primaryId, 3).state;
     if (!found) return state;
-    // Always continues rightward — no per-activation "attacker's choice of
-    // side" channel exists yet (same class of gap as the dropped X-scaling
-    // on Iron Sand Wall/Absorbed Vitality).
-    const row = found.zone === 'back' ? ctx.state.players[found.player].backRow : ctx.state.players[found.player].frontRow;
+    const step = ctx.choices?.side === 'left' ? -1 : 1;
+    const p = ctx.state.players[found.player];
+
+    if (ctx.choices?.path === 'bent' && found.zone === 'front') {
+      const col = Math.floor(found.index / 2);
+      const behind = p.backRow[col];
+      if (behind) {
+        state = dealDamage(state, behind.instanceId, 2).state;
+        const neighbor = p.backRow[col + step];
+        if (neighbor) state = dealDamage(state, neighbor.instanceId, 1).state;
+      }
+      return appendLog(state, `The War Rhino's charge bends into the back row (${step < 0 ? 'left' : 'right'}).`);
+    }
+
+    const row = found.zone === 'back' ? p.backRow : p.frontRow;
     const remainingDamages = [2, 1];
     let idx = found.index;
     while (remainingDamages.length > 0) {
-      idx += 1;
+      idx += step;
       const occ = row[idx];
       if (!occ) break;
       state = dealDamage(state, occ.instanceId, remainingDamages.shift()!).state;
     }
-    return appendLog(state, 'The War Rhino tramples through in a straight line.');
+    return appendLog(state, `The War Rhino tramples through in a straight line (${step < 0 ? 'left' : 'right'}).`);
   },
 };
 

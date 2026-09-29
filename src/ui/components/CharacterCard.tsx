@@ -1,5 +1,9 @@
 import type { CharacterInstance, GameState } from '../../engine/types';
 import { isSummoningSick } from '../../engine/board';
+import { trackedResources } from '../../engine/characters/progressText';
+
+/** The drag payload type for a character being dragged back to hand. */
+export const CHARACTER_DRAG_TYPE = 'application/x-naruto-character';
 
 /**
  * A minimized in-play card: just the name plus a one-line vitals readout.
@@ -15,6 +19,7 @@ export function CharacterCard({
   onClickAsTarget,
   onClickAsEnabler,
   onOpenDetails,
+  draggable = false,
 }: {
   character: CharacterInstance;
   state: GameState;
@@ -23,9 +28,12 @@ export function CharacterCard({
   onClickAsTarget: (instanceId: string) => void;
   onClickAsEnabler?: (instanceId: string) => void;
   onOpenDetails: (instanceId: string) => void;
+  /** Trust mode, own board: can be dragged onto its owner's hand to take back a play. */
+  draggable?: boolean;
 }) {
   const { chakraPool } = character;
   const sick = isSummoningSick(state, character);
+  const resources = trackedResources(state, character).filter((t) => t.key);
 
   function handleClick() {
     if (isEnablable) onClickAsEnabler?.(character.instanceId);
@@ -37,6 +45,13 @@ export function CharacterCard({
     <div
       className={`compact-card character-card${isTargetable ? ' targetable' : ''}${isEnablable ? ' enablable' : ''}${character.status.retreated ? ' compact-card--retreated' : ''}`}
       onClick={handleClick}
+      draggable={draggable}
+      title={draggable ? 'Drag onto your hand to return this character to hand' : undefined}
+      onDragStart={(e) => {
+        if (!draggable) return;
+        e.dataTransfer.setData(CHARACTER_DRAG_TYPE, character.instanceId);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
     >
       <button
         type="button"
@@ -57,6 +72,11 @@ export function CharacterCard({
         {character.status.retreated && <span className="badge badge--retreated">Retreated</span>}
         {character.status.disabled && <span className="badge badge--disabled">Disabled</span>}
         {sick && <span className="badge badge--sick">Sick</span>}
+        {resources.map((t, i) => (
+          <span className="badge badge--resource" key={`${t.label}-${i}`} title={`${t.label}: ${t.value}`}>
+            {t.label}: {t.value}
+          </span>
+        ))}
       </div>
       <div className="compact-card__hint">Click for details</div>
     </div>

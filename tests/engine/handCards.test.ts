@@ -232,23 +232,18 @@ describe('Missions (SPEC.md §13a)', () => {
     expect(group).toBeDefined();
     expect(group).toHaveLength(3);
 
-    // Damage aimed at one member should redirect to a *different* one —
-    // which of the (tied-HP) others absorbs it is an implementation detail,
-    // so this only checks the target itself took nothing.
-    const target = group![0];
-    state = {
-      ...state,
-      players: {
-        ...state.players,
-        p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c) => (c && c.instanceId === target ? { ...c, currentHP: 1 } : c)) },
-      },
-    };
-    const result = dealDamage(state, target, 2);
-    const hitTarget = result.state.players.p1.backRow.find((c) => c?.instanceId === target)!;
-    expect(hitTarget.currentHP).toBe(1); // untouched — redirected away
+    const [target, absorber] = group!;
+    const hp = (s: typeof state, id: string) => s.players.p1.backRow.find((c) => c?.instanceId === id)!.currentHP;
 
-    const groupTotalHpAfter = group!.reduce((sum, id) => sum + result.state.players.p1.backRow.find((c) => c?.instanceId === id)!.currentHP, 0);
-    const groupTotalHpBefore = group!.reduce((sum, id) => sum + state.players.p1.backRow.find((c) => c?.instanceId === id)!.currentHP, 0);
-    expect(groupTotalHpBefore - groupTotalHpAfter).toBe(2); // the 2 damage landed on *someone* in the group, just not the original target
+    // The redirect is the controller's choice, never automatic: Off by default, so the hit lands where it was aimed.
+    let result = dealDamage(state, target, 1);
+    expect(hp(state, target) - hp(result.state, target)).toBe(1);
+
+    // With a redirect chosen, a hit on any other member goes to the chosen one instead.
+    const mission = state.players.p1.missionsInPlay[0];
+    state = gameReducer(state, { type: 'SET_SQUAD_REDIRECT', missionInstanceId: mission.instanceId, redirectTo: absorber });
+    result = dealDamage(state, target, 1);
+    expect(hp(result.state, target)).toBe(hp(state, target)); // untouched — redirected away
+    expect(hp(state, absorber) - hp(result.state, absorber)).toBe(1);
   });
 });

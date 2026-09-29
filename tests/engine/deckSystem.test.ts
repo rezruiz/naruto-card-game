@@ -79,7 +79,6 @@ describe('Setup (SPEC.md §3)', () => {
 
   it('first mulligan redraws a full 6 for free; the second draws only 5', () => {
     let state = createSetupState('p1');
-    state = chooseBoth(state);
     const firstHandDeckSize = state.players.p1.handDeck.length;
 
     state = gameReducer(state, { type: 'MULLIGAN', player: 'p1' });
@@ -91,45 +90,98 @@ describe('Setup (SPEC.md §3)', () => {
     expect(state.players.p1.hand.filter((h) => h.kind === 'card')).toHaveLength(5);
     expect(state.players.p1.mulligansSoFar).toBe(2);
   });
+
+  it('mulligan is each player’s own choice, available until THAT player confirms their starting character', () => {
+    let state = createSetupState('p1');
+    state = gameReducer(state, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: state.players.p1.pendingCharacterReveal!.revealed[0] });
+    const p1Hand = state.players.p1.hand;
+    state = gameReducer(state, { type: 'MULLIGAN', player: 'p1' }); // p1 already confirmed — hand is kept
+    expect(state.players.p1.hand).toBe(p1Hand);
+    expect(state.players.p1.mulligansSoFar).toBe(0);
+
+    state = gameReducer(state, { type: 'MULLIGAN', player: 'p2' }); // p2 hasn't — still free to mulligan
+    expect(state.players.p2.mulligansSoFar).toBe(1);
+  });
+
+  it('flips for the first player only after BOTH players finish Setup (§3)', () => {
+    let state = createSetupState(undefined, 'strict');
+    expect(state.firstPlayerPending).toBe(true);
+    state = gameReducer(state, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: state.players.p1.pendingCharacterReveal!.revealed[0] });
+    expect(state.firstPlayerPending).toBe(true);
+    state = gameReducer(state, { type: 'CHOOSE_CHARACTER', player: 'p2', entryId: state.players.p2.pendingCharacterReveal!.revealed[0] });
+    expect(state.firstPlayerPending).toBe(false);
+    expect(state.activePlayer).toBe(state.firstPlayer);
+    expect(state.log.some((l) => /coin flip: p[12] goes first/.test(l.text))).toBe(true);
+    // Starting characters' summoning sickness follows the flip: turn 1 for the first player, turn 2 for the second.
+    const second = state.firstPlayer === 'p1' ? 'p2' : 'p1';
+    const firstUnits = [...state.players[state.firstPlayer].backRow, ...state.players[state.firstPlayer].frontRow].filter(Boolean);
+    const secondUnits = [...state.players[second].backRow, ...state.players[second].frontRow].filter(Boolean);
+    expect(firstUnits.every((u) => u!.status.enteredTurn === 1)).toBe(true);
+    expect(secondUnits.every((u) => u!.status.enteredTurn === 2)).toBe(true);
+  });
 });
 
-describe('Draw Phase (SPEC.md §4.3)', () => {
-  it("the first player's first turn skips the Draw Phase, but their opponent's first turn draws normally", () => {
+describe('Draw Phase (SPEC.md §4.3) — a manual draw, never automatic', () => {
+  it("entering the Draw Phase draws nothing; the Draw click draws 1, once; the first player's first turn is skipped", () => {
     let state = createSetupState('p1');
     state = chooseBoth(state);
     const p1HandDeckBefore = state.players.p1.handDeck.length;
 
     state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Upkeep
-    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Draw — skipped for p1
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Draw
+    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' }); // skipped for p1 on turn 1
     expect(state.players.p1.handDeck).toHaveLength(p1HandDeckBefore);
 
     // Finish p1's turn, into p2's turn.
     for (let i = 0; i < 5; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Main1,Combat,Main2,End,Untap(p2)
     const p2HandDeckBefore = state.players.p2.handDeck.length;
     state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // p2 Upkeep
-    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // p2 Draw — NOT skipped
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // p2 Draw
+    expect(state.players.p2.handDeck).toHaveLength(p2HandDeckBefore); // nothing automatic
+    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' });
+    expect(state.players.p2.handDeck).toHaveLength(p2HandDeckBefore - 1);
+    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' }); // once per turn
     expect(state.players.p2.handDeck).toHaveLength(p2HandDeckBefore - 1);
   });
 
+  it('strict mode refuses the Draw click outside the Draw Phase', () => {
+    let state = createSetupState('p2');
+    state = chooseBoth(state);
+    const before = state.players.p2.handDeck.length;
+    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' }); // still Untap
+    expect(state.players.p2.handDeck).toHaveLength(before);
+  });
+
   it('deals 3 Health damage instead of drawing when the Hand Deck is empty', () => {
-    let state = createSetupState('p1');
+    let state = createSetupState('p2');
     state = chooseBoth(state);
     state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: [] } } };
     const healthBefore = state.players.p1.health;
-
-    // p1's turn-1 Draw is skipped regardless (first player's first turn) —
-    // advance all the way to p1's *second* Draw Phase (turn 3), which isn't skipped.
-    while (!(state.activePlayer === 'p1' && state.phase === 'Draw' && state.turn === 3)) {
+    while (!(state.activePlayer === 'p1' && state.phase === 'Draw')) {
       state = gameReducer(state, { type: 'ADVANCE_PHASE' });
     }
+    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' });
     expect(state.players.p1.health).toBe(healthBefore - 3);
+  });
+
+  it('trust mode stops at the Draw Phase until the draw is taken, then moves on to Main 1', () => {
+    let state = createSetupState('p2', 'trust');
+    state = chooseBoth(state);
+    // p2 went first, so its skipped first Draw passes straight through to Main 1.
+    expect(state.phase).toBe('Main1');
+    let guard = 0;
+    while (!(state.activePlayer === 'p1' && state.phase === 'Draw') && guard++ < 20) state = gameReducer(state, { type: 'FINALIZE_PHASE', player: state.activePlayer });
+    expect(state.phase).toBe('Draw');
+    const before = state.players.p1.handDeck.length;
+    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' });
+    expect(state.players.p1.handDeck).toHaveLength(before - 1);
+    expect(state.phase).toBe('Main1');
   });
 });
 
 describe('Play a Character from hand (SPEC.md §6.7/§8)', () => {
-  it('the Reinforcement Tax escalates 3, 5, 7... and Empty-Board Waiver is skipped once a character is already in play', () => {
+  it('is always free — the tax is paid when drawing, not playing', () => {
     let state = setupWithJuzoStarting();
-    // Manually grant p1 a character-hand-entry and plenty of Chakra, bypassing the reveal flow for a focused test.
     state = {
       ...state,
       players: {
@@ -137,41 +189,20 @@ describe('Play a Character from hand (SPEC.md §6.7/§8)', () => {
         p1: {
           ...state.players.p1,
           genericChakraAvailable: 20,
-          hand: [...state.players.p1.hand, { kind: 'character', instanceId: 'p1-char-hand-test1', entryId: 'juzo' }],
+          hand: [
+            ...state.players.p1.hand,
+            { kind: 'character', instanceId: 'p1-char-hand-test1', entryId: 'yahiko' },
+            { kind: 'character', instanceId: 'p1-char-hand-test2', entryId: 'hidan' },
+          ],
         },
       },
     };
     state = gameReducer(state, { type: 'PLAY_CHARACTER', instanceId: 'p1-char-hand-test1' });
-    expect(state.players.p1.genericChakraAvailable).toBe(17); // 20 - 3 (already has a starting character, no waiver)
-    expect(state.players.p1.reinforcementsPlayed).toBe(1);
-    expect(state.players.p1.backRow.some((c) => c?.defId === 'juzo')).toBe(true);
-
-    state = {
-      ...state,
-      players: {
-        ...state.players,
-        p1: { ...state.players.p1, hand: [...state.players.p1.hand, { kind: 'character', instanceId: 'p1-char-hand-test2', entryId: 'yahiko' }] },
-      },
-    };
     state = gameReducer(state, { type: 'PLAY_CHARACTER', instanceId: 'p1-char-hand-test2' });
-    expect(state.players.p1.genericChakraAvailable).toBe(12); // 17 - 5 (2nd reinforcement)
-    expect(state.players.p1.reinforcementsPlayed).toBe(2);
-  });
-
-  it('waives the tax (and does not advance the counter) when the player controls 0 characters', () => {
-    let state = setupWithJuzoStarting();
-    // Wipe p1's board to 0 characters to trigger the Empty-Board Waiver.
-    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map(() => null), genericChakraAvailable: 5 } } };
-    state = {
-      ...state,
-      players: {
-        ...state.players,
-        p1: { ...state.players.p1, hand: [...state.players.p1.hand, { kind: 'character', instanceId: 'p1-char-hand-waiver', entryId: 'juzo' }] },
-      },
-    };
-    state = gameReducer(state, { type: 'PLAY_CHARACTER', instanceId: 'p1-char-hand-waiver' });
-    expect(state.players.p1.genericChakraAvailable).toBe(5); // unchanged — free
-    expect(state.players.p1.reinforcementsPlayed).toBe(0); // waived, doesn't advance the counter
+    expect(state.players.p1.genericChakraAvailable).toBe(20);
+    expect(state.players.p1.reinforcementsPlayed).toBe(0);
+    expect(state.players.p1.backRow.some((c) => c?.defId === 'yahiko')).toBe(true);
+    expect(state.players.p1.backRow.some((c) => c?.defId === 'hidan')).toBe(true);
   });
 
   it('Pain spawns all 6 Path tokens instead of a single character', () => {
@@ -218,18 +249,122 @@ describe('Play a Character from hand (SPEC.md §6.7/§8)', () => {
   });
 });
 
-describe('Reinforcement draw (SPEC.md §8)', () => {
-  it("a character's defeat owes a draw-2-keep-1 reveal, without blocking the rest of the game", () => {
-    let state = createSetupState('p1');
-    state = chooseBoth(state);
-    // Simulates what combat.ts sets on a true character defeat (tested
-    // directly for combat.ts's own half in coreSystems.test.ts) — this test
-    // is about the reducer's drain/gate behavior specifically.
-    state = { ...state, players: { ...state.players, p2: { ...state.players.p2, pendingReinforcementDraws: 1 } } };
-    const phaseBefore = state.phase;
-    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // should NOT be blocked by the pending reveal
-    expect(state.phase).not.toBe(phaseBefore);
-    expect(state.players.p2.pendingCharacterReveal).not.toBeNull(); // auto-drained
-    expect(state.players.p2.pendingReinforcementDraws).toBe(0);
+/** p1 at Main1 with exactly the given back row (by defId) and hand characters, plenty of Chakra, and a known Character Deck. */
+function economyState(backRow: string[], handCharacters: string[] = []): GameState {
+  let state = setupWithJuzoStarting();
+  let p1 = { ...state.players.p1, backRow: state.players.p1.backRow.map(() => null), genericChakraAvailable: 30 };
+  state = { ...state, players: { ...state.players, p1 } };
+  handCharacters.forEach((entryId, i) => {
+    p1 = state.players.p1;
+    state = { ...state, players: { ...state.players, p1: { ...p1, hand: [...p1.hand, { kind: 'character', instanceId: `seed-hand-${i}`, entryId }] } } };
+  });
+  backRow.forEach((entryId, i) => {
+    p1 = state.players.p1;
+    state = { ...state, players: { ...state.players, p1: { ...p1, hand: [...p1.hand, { kind: 'character', instanceId: `seed-board-${i}`, entryId }] } } };
+    state = gameReducer(state, { type: 'PLAY_CHARACTER', instanceId: `seed-board-${i}` });
+  });
+  p1 = state.players.p1;
+  return { ...state, players: { ...state.players, p1: { ...p1, characterDeck: ['kisame', 'itachi', 'konan', 'zetsu', 'hidan', 'yahiko', 'juzo', 'kakuzu'] } } };
+}
+
+function idOf(state: GameState, defId: string): string {
+  return state.players.p1.backRow.find((c) => c?.defId === defId)!.instanceId;
+}
+
+/** Defeats a character the way combat does, then lets the reducer settle the Reinforcement trigger (any action drains it). */
+function defeat(state: GameState, defId: string): GameState {
+  const next = dealDamage(state, idOf(state, defId), 9999).state;
+  return gameReducer(next, { type: 'PASS_PRIORITY' });
+}
+
+describe('Character Deck tax & draws (SPEC.md §8)', () => {
+  it('a manual draw pays the tax, raises it 3 → 5 → 7 → 8 and caps at 8', () => {
+    let state = economyState(['juzo']);
+    const paid: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      const before = state.players.p1.genericChakraAvailable;
+      state = gameReducer(state, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
+      paid.push(before - state.players.p1.genericChakraAvailable);
+      expect(state.players.p1.pendingCharacterReveal?.revealed.length).toBeGreaterThanOrEqual(2);
+      state = gameReducer(state, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: state.players.p1.pendingCharacterReveal!.revealed[0] });
+      state = { ...state, players: { ...state.players, p1: { ...state.players.p1, genericChakraAvailable: 30, characterDeck: ['kisame', 'itachi', 'konan', 'zetsu', 'hidan', 'yahiko'] } } };
+    }
+    expect(paid).toEqual([3, 5, 7, 8, 8]);
+    expect(state.players.p1.reinforcementsPlayed).toBe(5);
+  });
+
+  it('a manual draw is a Main Phase action — refused outside it under the strict rules', () => {
+    let state = economyState(['juzo']);
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Combat
+    state = gameReducer(state, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
+    expect(state.players.p1.pendingCharacterReveal).toBeNull();
+  });
+
+  it('a D-rank being defeated triggers no Reinforcement at all', () => {
+    let state = economyState(['juzo', 'amegakure-civilian-rebel']);
+    state = defeat(state, 'amegakure-civilian-rebel');
+    expect(state.players.p1.reinforcementOffers).toEqual([]);
+    expect(state.players.p1.mustPlayCharacter).toBe(false);
+  });
+
+  it('a C+ defeat with another C+ still in play offers a PAID draw at the current tax that does not raise it', () => {
+    let state = economyState(['juzo', 'yahiko']);
+    state = defeat(state, 'yahiko');
+    expect(state.players.p1.reinforcementOffers).toEqual(['paid']);
+    const before = state.players.p1.genericChakraAvailable;
+    state = gameReducer(state, { type: 'ACCEPT_REINFORCEMENT', player: 'p1' });
+    expect(before - state.players.p1.genericChakraAvailable).toBe(3);
+    expect(state.players.p1.reinforcementsPlayed).toBe(0);
+    expect(state.players.p1.pendingCharacterReveal).not.toBeNull();
+    expect(state.players.p1.reinforcementOffers).toEqual([]);
+  });
+
+  it('the paid offer can be declined', () => {
+    let state = economyState(['juzo', 'yahiko']);
+    state = defeat(state, 'yahiko');
+    state = gameReducer(state, { type: 'DECLINE_REINFORCEMENT', player: 'p1' });
+    expect(state.players.p1.reinforcementOffers).toEqual([]);
+    expect(state.players.p1.pendingCharacterReveal).toBeNull();
+  });
+
+  it('D-ranks are ignored for "last C+ character": with a B and a D in play, the B falling earns a FREE draw', () => {
+    let state = economyState(['juzo', 'amegakure-civilian-rebel']);
+    state = defeat(state, 'juzo');
+    expect(state.players.p1.reinforcementOffers).toEqual(['free']);
+    const before = state.players.p1.genericChakraAvailable;
+    state = gameReducer(state, { type: 'ACCEPT_REINFORCEMENT', player: 'p1' });
+    expect(state.players.p1.genericChakraAvailable).toBe(before);
+    expect(state.players.p1.reinforcementsPlayed).toBe(0);
+    expect(state.players.p1.pendingCharacterReveal).not.toBeNull();
+  });
+
+  it('a D-rank-only hand still counts as "no C+ in hand" — the free draw is offered', () => {
+    let state = economyState(['juzo'], ['amegakure-civilian-rebel']);
+    state = defeat(state, 'juzo');
+    expect(state.players.p1.reinforcementOffers).toEqual(['free']);
+    expect(state.players.p1.mustPlayCharacter).toBe(false);
+  });
+
+  it('last C+ falls while holding a C+ character card: they must play one (free, any timing); a D-rank does not satisfy it', () => {
+    let state = economyState(['juzo'], ['yahiko', 'amegakure-civilian-rebel']);
+    state = defeat(state, 'juzo');
+    expect(state.players.p1.mustPlayCharacter).toBe(true);
+    expect(state.players.p1.reinforcementOffers).toEqual([]);
+
+    // Can't move on under the strict rules until it's done.
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' });
+    expect(state.phase).toBe('Main1');
+
+    const rebel = state.players.p1.hand.find((h) => h.kind === 'character' && h.entryId === 'amegakure-civilian-rebel')!;
+    state = gameReducer(state, { type: 'PLAY_CHARACTER', instanceId: rebel.instanceId });
+    expect(state.players.p1.mustPlayCharacter).toBe(true);
+
+    state = { ...state, phase: 'Combat', activePlayer: 'p2' }; // outside normal timing (not even p1's turn) — the forced play still works
+    const yahiko = state.players.p1.hand.find((h) => h.kind === 'character' && h.entryId === 'yahiko')!;
+    const chakraBefore = state.players.p1.genericChakraAvailable;
+    state = gameReducer(state, { type: 'PLAY_CHARACTER', instanceId: yahiko.instanceId });
+    expect(state.players.p1.mustPlayCharacter).toBe(false);
+    expect(state.players.p1.backRow.some((c) => c?.defId === 'yahiko')).toBe(true);
+    expect(state.players.p1.genericChakraAvailable).toBe(chakraBefore);
   });
 });

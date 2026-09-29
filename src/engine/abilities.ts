@@ -1,14 +1,27 @@
 import { appendLog } from './phases/phaseMachine';
 import { findOccupant, isCharacter, isSummoningSick, patchCharacter, patchOccupant } from './board';
 import { canActivateNormalSpeed, pushStackItem } from './stack';
-import type { AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
+import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
 import { getCharacterDef, getTokenDef } from './characters/registry';
 
 export interface AbilityContext {
   state: GameState;
   sourceInstanceId: string;
   targetInstanceIds: string[];
+  /** The player's answers to this ability's optional choices (see AbilityDef.choices) — absent when it offers none. */
+  choices?: AbilityChoices;
 }
+
+/**
+ * One optional decision an ability asks its controller for at activation —
+ * an alternative cost, or an extra/alternative effect that needs some other
+ * resource (e.g. "spend 1 Clay Charge for +2 damage", "pay +X Chakra for +X
+ * reduction", "Straight or Bent path"). Never auto-decided by the engine.
+ */
+export type ChoiceSpec =
+  | { id: string; kind: 'yesno'; prompt: string }
+  | { id: string; kind: 'number'; prompt: string; min: number; max: number }
+  | { id: string; kind: 'option'; prompt: string; options: { id: string; label: string }[] };
 
 export interface AbilityDef {
   id: string;
@@ -49,6 +62,8 @@ export interface AbilityDef {
   targetSide?: 'enemy' | 'ally' | 'any';
   /** Extra legality beyond the shared checks below (Trigger conditions, resource costs, etc.). */
   legalityCheck?: (ctx: AbilityContext) => boolean;
+  /** The optional choices this ability offers right now (only those that currently apply — e.g. no charge prompt with 0 charges). Answers arrive in ctx.choices. */
+  choices?: (ctx: AbilityContext) => ChoiceSpec[];
   resolve: (ctx: AbilityContext) => GameState;
 }
 
@@ -145,7 +160,7 @@ export function checkLegality(
   targetInstanceIds: string[],
   payFromPool: number,
   /** skipEvasion: don't flip the evasion coin — for read-only 'could this be legal?' probes (trust mode's meaningful-response check), which must be deterministic and side-effect free. */
-  opts: { skipEvasion?: boolean } = {},
+  opts: { skipEvasion?: boolean; choices?: AbilityChoices } = {},
 ): Legality {
   const found = findOccupant(state, sourceInstanceId);
   if (!found) return { ok: false, reason: 'source not found' };
@@ -245,7 +260,7 @@ export function checkLegality(
     }
   }
 
-  const ctx: AbilityContext = { state, sourceInstanceId, targetInstanceIds };
+  const ctx: AbilityContext = { state, sourceInstanceId, targetInstanceIds, choices: opts.choices };
   if (ability.legalityCheck && !ability.legalityCheck(ctx)) {
     return { ok: false, reason: `${ability.name}'s condition isn't met.` };
   }
@@ -326,21 +341,22 @@ export function activateAbility(
   abilityId: string,
   targetInstanceIds: string[],
   payFromPool: number,
-  /** trust: skip the legality check and pay costs softly (trust mode — the players have agreed the play is legal). */
-  opts: { trust?: boolean } = {},
+  /** trust: skip the legality check and pay costs softly (trust mode — the players have agreed the play is legal). choices: the controller's answers to AbilityDef.choices. */
+  opts: { trust?: boolean; choices?: AbilityChoices } = {},
 ): GameState {
   const found = findOccupant(state, sourceInstanceId);
   if (!found) return state;
   const { player, occupant: source } = found;
   const ability = findAbility(source.defId, abilityId);
   if (!ability) return appendLog(state, `No such ability: ${abilityId}.`);
+  const choices = opts.choices;
 
   if (!opts.trust) {
-    const legality = checkLegality(state, sourceInstanceId, ability, targetInstanceIds, payFromPool);
+    const legality = checkLegality(state, sourceInstanceId, ability, targetInstanceIds, payFromPool, { choices });
     if (!legality.ok) return appendLog(state, `Can't activate ${ability.name}: ${legality.reason}`);
   }
 
-  const costCtx: AbilityContext = { state, sourceInstanceId, targetInstanceIds };
+  const costCtx: AbilityContext = { state, sourceInstanceId, targetInstanceIds, choices };
   const cost = resolveCost(ability, costCtx);
   const discount = computeFirstAbilityDiscount(costCtx, ability);
   let next = payCost(state, player, sourceInstanceId, cost, payFromPool, !!opts.trust);
@@ -352,7 +368,7 @@ export function activateAbility(
   }
   next = markUsed(next, player, sourceInstanceId, ability.id);
 
-  const ctx: AbilityContext = { state: next, sourceInstanceId, targetInstanceIds };
+  const ctx: AbilityContext = { state: next, sourceInstanceId, targetInstanceIds, choices };
   next = pushStackItem(next, {
     id: `stack-${next.stack.length}-${sourceInstanceId}-${abilityId}`,
     controllerId: player,

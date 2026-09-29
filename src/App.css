@@ -1,5 +1,5 @@
 .app {
-  max-width: 960px;
+  max-width: min(96vw, 1600px);
   margin: 0 auto;
   padding: 24px 16px 48px;
 }
@@ -537,7 +537,7 @@
 }
 
 .game-sidebar {
-  width: 260px;
+  width: 300px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1022,4 +1022,185 @@
   font-size: 12px;
   opacity: 0.85;
   margin-bottom: 6px;
+}
+
+/* --- Setup: select -> Details -> Confirm --- */
+.reveal-panel__option--selected > button:first-child {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+  font-weight: 600;
+}
+
+.reveal-panel__details {
+  font-size: 11px;
+  align-self: flex-start;
+}
+
+.reveal-panel__confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.reveal-panel__confirm-button:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.mulligan-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mulligan-bar__note {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* --- Header / sidebar controls --- */
+.app__header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sidebar-toggle {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-toggle label {
+  cursor: pointer;
+}
+
+.sidebar-undo:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.sidebar-note {
+  font-size: 12px;
+  opacity: 0.85;
+  line-height: 1.35;
+}
+
+.deck-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.decision-panel,
+.choice-panel {
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.decision-panel span:last-child {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.decision-panel--required {
+  border-color: #c33;
+  background: rgba(204, 51, 51, 0.08);
+  font-weight: 600;
+}
+
+.choice-panel__title {
+  font-weight: 600;
+}
+
+.choice-panel__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.choice-panel__option--selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.choice-panel__waiting {
+  opacity: 0.8;
+}
+
+/* --- Tracked resources --- */
+.badge--resource {
+  border-color: #0f766e;
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.07);
+}
+
+.tracked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.tracked-list__title {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+/* --- Drag a character back to hand --- */
+.character-card[draggable='true'] {
+  cursor: grab;
+}
+
+.hand-view--drop {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+
+.hand-view__drop-hint {
+  font-weight: normal;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.hand-card--required {
+  outline: 2px solid #c33;
+}
+
+/* --- Squad Formation redirect --- */
+.in-play-cards__mission {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.squad-redirect {
+  font-size: 12px;
+}
+
+.squad-redirect select {
+  font: inherit;
+  font-size: 12px;
 }

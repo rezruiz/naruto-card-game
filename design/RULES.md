@@ -96,7 +96,8 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 2. Each player does both of the following (independently, in either order):
    - **Starting character:** reveal the top **3** cards of your Character Deck; choose **1** to be your starting character. It enters play immediately, **free**, and **with summoning sickness** (§10). The unchosen cards are **shuffled back** into the Character Deck. **[Updated]** — the engine previously put them on the bottom; Setup now shuffles them back as written.
      - The **D-Rank rule** (§11.3) applies to this draw too.
-   - **Starting hand & mulligan:** draw **6** cards from the Hand Deck. You may **mulligan** any number of times: shuffle your hand back and redraw. **The first mulligan is free** (a full new 6). Each later mulligan draws **1 fewer** than the previous draw (5, then 4, …), down to 0.
+   - **Starting hand & mulligan:** draw **6** cards from the Hand Deck. You may **mulligan** any number of times: shuffle your hand back and redraw. **The first mulligan is free** (a full new 6). Each later mulligan draws **1 fewer** than the previous draw (5, then 4, …), down to 0. **[Updated]** Mulligan is available until you **confirm** your starting character (confirming keeps your hand); each player decides independently.
+   - **[Updated]** The first-player coin flip (step 3) happens **after** both players confirm.
 3. Determine the first player *(placeholder: coin flip)*.
 4. **The first player skips the Draw Phase of their very first turn only.**
 
@@ -117,19 +118,20 @@ Untap all of **your** tapped Chakra sources. Nothing else untaps. **[Updated]** 
 1. Your **starting character** gets its own Rank-scaled Upkeep effect instead of the normal table (§8.2).
 2. Pay Chakra **upkeep** for every other character you control (§8.1). There is no automatic Chakra income — upkeep is paid by **tapping Chakra sources**.
    - Payment is **mandatory whenever you can afford it**; you can't withhold it to save Chakra.
-   - If you can't pay for all, pay in **descending order of cost** — highest first. Ties for the highest remaining cost: you choose (the build breaks ties by board position).
+   - If you can't pay for all, pay in **descending order of cost** — highest first. Ties for the highest remaining cost: you choose. **[Updated]** The build asks you which of the tied characters to pay.
    - Chakra left over after upkeep isn't wasted: **untapped sources stay untapped and usable** for the rest of the turn.
    - A character whose upkeep goes unpaid becomes **Disabled** (not defeated) — §8.3.
 3. Start-of-Upkeep delayed effects fire here (poison ticks at *every* Upkeep of either player; scheduled heals; Spore drains, etc.).
 
 ### 4.3 Draw Phase
-Draw **1** card from the Hand Deck (skipped on the first player's first turn only). If your Hand Deck is empty and you must draw, take **3 Health damage** *(placeholder)* and draw nothing.
+Draw **1** card from the Hand Deck (skipped on the first player's first turn only). **[Updated]** The draw is a manual click (sidebar **Draw** button), not automatic; **[Playtest]** it can be undone. If your Hand Deck is empty and you must draw, take **3 Health damage** *(placeholder)* and draw nothing.
 
 ### 4.4 Main Phase 1
 Normal-speed actions. You may:
 - **Place 1 Chakra source** (once per turn, across both Main Phases combined — §6.2).
 - **Pool Chakra** into a character's personal Pool (§6.3).
-- **Play Character cards** from hand (paying the Reinforcement Tax — §11.4).
+- **Play Character cards** from hand (free — the tax is paid when drawing them, §11.4).
+- **Draw from your Character Deck** by paying the Character Deck Tax (§11.2).
 - Play **non-combat Normal-speed cards**: Terrain, Missions, deck searches, Field Intelligence, Chakra Transfer, Deploy Medic Corps, etc. (§15.6).
 - Activate **non-damaging (support) Normal-speed abilities** **[Updated]** (§5.4).
 - **Retreat** or **return** characters (§9).
@@ -329,26 +331,33 @@ If a player has retreated characters but **no non-Retreated character left**, al
 
 ## 11. Character Deck draws, reinforcements & the Reinforcement Tax
 
-### 11.1 Triggers
-You draw from the Character Deck only when (1) **one of your characters is defeated**, or (2) **a card effect grants a character draw.** (The old "every 3rd turn" trigger was **removed**.)
+### 11.1 The draw — a state-based action **[Updated]**
+A **Character Deck draw**: reveal **2** cards from your Character Deck, choose **1** to add to your hand, put the other on the **bottom**. It's a **state-based action** — never on the stack, can't be responded to, resolves immediately; its timing comes from whatever caused it. **Playing a Character card from hand is always free** (5-character limit and summoning sickness still apply). **[Playtest]** Reveals are private (§19); pick a card, check **Details**, then **Confirm**.
 
-### 11.2 The draw
-Reveal **2** cards from your Character Deck, choose **1** to add to your hand, and put the other on the **bottom** of the Character Deck. A newly drawn Character must still be **played from hand** like any card (5-character limit, summoning sickness, and the tax below). **[Playtest]** Reveals are private (§19).
+### 11.2 When you draw **[Updated]**
+1. **Manual draw** — your own Main Phase: pay the **Character Deck Tax** (§11.4) and draw. The **only** thing that raises the tax. **[Playtest]** Sidebar button "Character Deck (N) — draw for X Chakra".
+2. **Reinforcement** — when one of your characters is defeated, right away, on either player's turn:
+   - **D-Rank** defeated → no Reinforcement.
+   - **C+** defeated, another **C+** still in play → you **may** pay your **current** tax to draw; the tax does **not** go up.
+   - Your **last C+** in play defeated (D-Ranks in play ignored — a B and a D in play, the B dies → counts as last): holding a **C+** Character card → you **must** play one now (free, ignoring timing). Holding none (D-Ranks in hand ignored) → you **may** draw **for free**. Neither raises the tax.
+3. **A card effect** grants a character draw — as that card says.
+(The old "every 3rd turn" trigger was **removed**.)
 
 ### 11.3 D-Rank rule
 On any multi-card Character Deck draw (Setup or Reinforcement) that shows a D-Rank card, you may keep **that D-Rank card in addition to** your normal pick (leftovers still go back). **All-D reveal:** if every card revealed is D-Rank, keep revealing one at a time until a non-D-Rank card appears. **Cap:** at most **2** D-Rank bonus cards per draw, on top of your one pick; the rest go to the bottom.
 
-### 11.4 Reinforcement Tax
-Your **starting character is free.** Every character you play from hand **after** that is a *reinforcement* and costs generic Chakra by how many you've paid for **this game** (the count never decreases, even if characters die):
+### 11.4 Character Deck Tax **[Updated]**
+Paid when you **draw** from the Character Deck (not when you play the card). Scales with how many **manual** draws you've paid for this game (never decreases), **capped at 8**:
 
-| Reinforcement # | 1st | 2nd | 3rd | 4th | each after |
-|---|---|---|---|---|---|
-| Cost | 3 | 5 | 7 | 9 | +2 |
+| Paid manual draws so far | 0 | 1 | 2 | 3+ |
+|---|---|---|---|---|
+| Tax | 3 | 5 | 7 | 8 |
 
-- Paid from **generic Chakra only** (tapped sources). **No character's Pool can pay it** — the character being played isn't in play and it isn't an action any in-play character performs.
-- **Empty-Board Waiver:** if you control **0 characters**, the next character you play is **free**, and because the tax is *waived*, it **doesn't advance the counter**. That character still pays its normal upkeep.
-- **Bingo Book: Threat Level A** discounts your next *paid* reinforcement by 2 (a one-time discount; not applied when the tax is waived).
-- **[Playtest]** The Play button on a hand Character card shows its current tax (or "free"), and is disabled with a reason if there's no room (back row full; Pain needs **6 open front-row slots** for his Path tokens). The reveal panel after a defeat also states what playing the pick will cost.
+- Paid from **generic Chakra only** (tapped sources) — no character's Pool can pay it.
+- A paid **Reinforcement** draw costs your *current* tax but doesn't advance the count; the free last-C+ Reinforcement costs nothing and doesn't advance it. Extra D-Rank cards kept from a draw are free and don't advance it.
+- The old **Empty-Board Waiver** is replaced by the last-C+ Reinforcement rule (§11.2).
+- **Bingo Book: Threat Level A** discounts your next *paid* Character Deck draw by 2 (one-time).
+- **[Playtest]** Hand Character cards show "Play (free)", disabled with a reason if there's no room (back row full; Pain needs **6 open front-row slots**).
 
 ### 11.5 Pain and other special entries
 Pain of the Six Paths has **no HP or Pool of his own**; playing him spawns his **6 Path tokens** (Deva, Asura, Human, Animal, Preta, Naraka) into the front row. Sasori's card enters as **Hiruko**.
@@ -552,7 +561,7 @@ Declared actions resolve **first-declared, first-resolved.** A responding player
 3. The committed stack is flipped so the **first** queued action is on top, and they resolve **one by one, first to last.**
 4. **Retreat collapse** is checked (§9.4); if it earns the attacker a second Combat and this was a Finalize Combat, the phase holds for a second Combat instead of advancing.
 5. Queued Character Deck draws, defeat-triggered Mission checks, etc. are settled.
-6. If this was **Finalize Phase**, the next phase begins. **Untap, Upkeep and Draw run automatically**, so a new turn lands directly on **Main Phase 1** (Upkeep payments, poison/heal ticks, the Draw Phase draw, and Untap-triggered Missions all happen in that run). After Setup completes the game starts on the first player's Main Phase 1.
+6. If this was **Finalize Phase**, the next phase begins. **Untap and Upkeep run automatically**, so a new turn lands on the **Draw Phase**; clicking **Draw** takes the card and moves on to **Main Phase 1** (the first player's skipped first draw passes straight through). Upkeep payments, poison/heal ticks and Untap-triggered Missions happen in that run.
 
 ### 17.8 What trust mode does not enforce
 Not gated (advisory warnings only, where a strict rule would have applied): **which phase** you act in; **speed/priority**; **once-per-turn** limits; **pooled-vs-acted** exclusivity; **Style, Disabled, Retreated, summoning-sickness, target-side and Retreat-immunity-at-declaration** checks; **sufficient Chakra** at the moment of declaring; **Chakra-source placement** limits (one per turn, Main Phase) and the **Main-Phase-only** rule for pooling, Retreat, Return and playing Characters; Retreat's "not your only character", "not stunned" and "not already acted" conditions.

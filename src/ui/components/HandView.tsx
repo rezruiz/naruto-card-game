@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { HandEntry } from '../../engine/types';
+import { CHARACTER_DRAG_TYPE } from './CharacterCard';
 import { getHandCardDef } from '../../engine/cards/registry';
 import { getCharacterDeckEntry } from '../../engine/characters';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
@@ -15,6 +17,8 @@ export function HandView({
   onOpenDetails,
   onMoveCard,
   characterPlay,
+  onDropCharacter,
+  mustPlayCPlus = false,
 }: {
   hand: HandEntry[];
   canPlace: boolean;
@@ -31,10 +35,33 @@ export function HandView({
   onMoveCard?: (instanceId: string, to: 'discard' | 'deck-top' | 'deck-bottom') => void;
   /** What to show on a Character card's Play button: its Reinforcement Tax, and whether the board has room for it. */
   characterPlay?: (entryId: string) => { label: string; hint: string; disabled: boolean; reason?: string };
+  /** Trust mode, own hand: a character dragged here from the battlefield returns to hand. */
+  onDropCharacter?: (instanceId: string) => void;
+  /** This player must play a C+ character now (their last C+ fell) — highlights the cards that satisfy it. */
+  mustPlayCPlus?: boolean;
 }) {
+  const [dragOver, setDragOver] = useState(false);
   return (
-    <div className="hand-view">
-      <span className="hand-view__label">Hand ({hand.length})</span>
+    <div
+      className={`hand-view${dragOver ? ' hand-view--drop' : ''}`}
+      onDragOver={(e) => {
+        if (!onDropCharacter || !e.dataTransfer.types.includes(CHARACTER_DRAG_TYPE)) return;
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        setDragOver(false);
+        const id = e.dataTransfer.getData(CHARACTER_DRAG_TYPE);
+        if (id && onDropCharacter) {
+          e.preventDefault();
+          onDropCharacter(id);
+        }
+      }}
+    >
+      <span className="hand-view__label">
+        Hand ({hand.length}){onDropCharacter && <span className="hand-view__drop-hint"> — drag a character here to return it to hand</span>}
+      </span>
       <div className="hand-view__cards">
         {hand.map((entry) => {
           if (entry.kind === 'character') {
@@ -46,9 +73,10 @@ export function HandView({
                 </div>
               );
             }
+            const required = mustPlayCPlus && charEntry.rank !== 'D';
             return (
               <div
-                className="hand-card hand-card--character"
+                className={`hand-card hand-card--character${required ? ' hand-card--required' : ''}`}
                 key={entry.instanceId}
                 onClick={() => onOpenDetails(charEntry.name, `Character card · Rank ${charEntry.rank} — in hand`, getCharacterCardText(entry.entryId))}
               >
@@ -60,7 +88,7 @@ export function HandView({
                   return (
                     <button
                       type="button"
-                      disabled={!canAct || !!play?.disabled}
+                      disabled={!(canAct || required) || !!play?.disabled}
                       title={play?.reason ?? play?.hint}
                       onClick={(e) => {
                         e.stopPropagation();

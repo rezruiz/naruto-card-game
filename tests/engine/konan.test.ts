@@ -32,13 +32,22 @@ describe('Konan', () => {
     expect(state.stack.length).toBe(stackBefore); // 3rd this turn rejected
   });
 
-  it('Paper Bomb Tag deals 5 (not 3) and spends a Charge when one is banked', () => {
+  it('Paper Bomb Tag deals 5 (not 3) and spends a Charge when the player chooses to', () => {
     let state = giveChakra(withKonan(), 'p1', 3);
     const targetHpBefore = state.players.p2.backRow[0]!.currentHP;
-    state = activateAbility(state, 'p1-konan', 'paper-bomb-tag', ['p2-kakuzu'], 0);
+    state = activateAbility(state, 'p1-konan', 'paper-bomb-tag', ['p2-kakuzu'], 0, { choices: { spendCharge: true } });
     state = resolveTop(state);
     expect(state.players.p2.backRow[0]!.currentHP).toBe(targetHpBefore - 5);
     expect(state.players.p1.backRow[0]!.extra.shikigamiCharges).toBe(0); // spent
+  });
+
+  it('Paper Bomb Tag keeps the Charge and deals the base 3 when the player declines', () => {
+    let state = giveChakra(withKonan(), 'p1', 3);
+    const targetHpBefore = state.players.p2.backRow[0]!.currentHP;
+    state = activateAbility(state, 'p1-konan', 'paper-bomb-tag', ['p2-kakuzu'], 0, { choices: { spendCharge: false } });
+    state = resolveTop(state);
+    expect(state.players.p2.backRow[0]!.currentHP).toBe(targetHpBefore - 3);
+    expect(state.players.p1.backRow[0]!.extra.shikigamiCharges).toBe(1); // kept
   });
 
   it('Paper Clone negates an enemy ability targeting Konan (no once-per-attacker limit)', () => {

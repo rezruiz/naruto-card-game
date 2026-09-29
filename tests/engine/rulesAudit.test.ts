@@ -81,6 +81,26 @@ describe('§4.2/§6.5 Upkeep', () => {
     expect(char(s, 'p1', 'p1-t-B').status.disabled).toBe(true);
   });
 
+  it('asks the player which of several characters TIED at the cost where Chakra runs out to pay — never picks for them', () => {
+    // Two A(2)s and a B(1), 3 sources: only one A can be paid → a choice between the two As; then the B takes the last source.
+    let s = only(['t-A', 't-A', 't-B']);
+    // Both As share an id from the helper — give the second its own.
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c, i) => (i === 1 && c ? { ...c, instanceId: 'p1-t-A-2' } : c)) } } };
+    s = payUpkeep(sources(s, 'p1', 3), 'p1');
+    const choice = s.pendingChoices[0];
+    expect(choice).toBeDefined();
+    expect(choice.player).toBe('p1');
+    expect(choice.min).toBe(1);
+    expect(choice.options).toHaveLength(2);
+    const [first, second] = s.players.p1.backRow.filter((c) => c?.defId === 't-A').map((c) => c!.instanceId);
+    s = gameReducer(s, { type: 'RESOLVE_CHOICE', choiceId: choice.id, optionIds: [second] });
+    expect(s.pendingChoices).toHaveLength(0);
+    expect(s.players.p1.backRow.find((c) => c?.instanceId === second)!.status.disabled).toBe(false);
+    expect(s.players.p1.backRow.find((c) => c?.instanceId === first)!.status.disabled).toBe(true);
+    expect(s.players.p1.backRow.find((c) => c?.defId === 't-B')!.status.disabled).toBe(false);
+    expect(untapped(s, 'p1')).toBe(0);
+  });
+
   it('is mandatory when affordable, and leftover sources stay untapped for the rest of the turn', () => {
     const s = payUpkeep(sources(only(['t-A']), 'p1', 5), 'p1');
     expect(untapped(s, 'p1')).toBe(3);
@@ -523,33 +543,23 @@ describe('§4.3/§8 Draw, deck-out, and the Reinforcement Tax', () => {
   const play = (s: GameState, i: number) => run(s, { type: 'PLAY_CHARACTER', instanceId: `p1-c${i}` });
   const start = () => setBack(freshMain1(), 'p1', ['t-C', null, null, null, null]);
 
-  it('charges 3, 5, 7, 9... Chakra for each reinforcement, from generic Chakra only', () => {
-    let s = hand(giveChakra(start(), 'p1', 30), 'p1', ['yahiko', 'amegakure-civilian-rebel', 'amegakure-civilian-rebel', 'amegakure-civilian-rebel']);
-    const costs: number[] = [];
-    for (let i = 0; i < 3; i++) {
-      const before = s.players.p1.genericChakraAvailable;
-      s = play(s, i);
-      costs.push(before - s.players.p1.genericChakraAvailable);
-    }
-    expect(costs).toEqual([3, 5, 7]);
-    expect(s.players.p1.reinforcementsPlayed).toBe(3);
+  it('playing a character from hand costs nothing, at any tax level', () => {
+    let s = hand(giveChakra(start(), 'p1', 5), 'p1', ['yahiko', 'amegakure-civilian-rebel']);
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, reinforcementsPlayed: 3 } } };
+    s = play(play(s, 0), 1);
+    expect(s.players.p1.backRow.filter((c) => c)).toHaveLength(3);
+    expect(s.players.p1.genericChakraAvailable).toBe(5);
   });
 
-  it("can't be paid from a character's Pool, and is refused (nothing played, nothing spent) when generic Chakra is short", () => {
+  it("the Character Deck tax can't be paid from a character's Pool, and the draw is refused (nothing spent) when generic Chakra is short", () => {
     let s = patchChar(start(), 'p1', 'p1-t-C', (c) => ({ chakraPool: { ...c.chakraPool, current: 6 } }));
-    s = hand(giveChakra(s, 'p1', 2), 'p1', ['yahiko']);
-    const after = play(s, 0);
-    expect(after.players.p1.backRow.filter((c) => c)).toHaveLength(1);
-    expect(after.players.p1.hand).toHaveLength(1);
+    s = giveChakra(s, 'p1', 2);
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, characterDeck: ['konan', 'zetsu'] } } };
+    const after = run(s, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
+    expect(after.players.p1.pendingCharacterReveal).toBeNull();
+    expect(after.players.p1.genericChakraAvailable).toBe(2);
     expect(char(after, 'p1', 'p1-t-C').chakraPool.current).toBe(6);
-  });
-
-  it("waives the tax at 0 characters in play, without advancing the counter", () => {
-    let s = hand(giveChakra(start(), 'p1', 0), 'p1', ['yahiko']);
-    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map(() => null), reinforcementsPlayed: 2 } } };
-    s = play(s, 0);
-    expect(s.players.p1.backRow.filter((c) => c)).toHaveLength(1);
-    expect(s.players.p1.reinforcementsPlayed).toBe(2);
+    expect(after.players.p1.reinforcementsPlayed).toBe(0);
   });
 
   it('respects the 5-character board limit', () => {
@@ -557,39 +567,47 @@ describe('§4.3/§8 Draw, deck-out, and the Reinforcement Tax', () => {
     s = hand(giveChakra(s, 'p1', 9), 'p1', ['yahiko']);
     const after = play(s, 0);
     expect(after.players.p1.hand).toHaveLength(1);
-    expect(after.players.p1.genericChakraAvailable).toBe(9);
   });
 
-  it('a defeat owes a draw-2-keep-1 Reinforcement reveal: the pick goes to hand, the other to the bottom of the Character Deck', () => {
-    let s = freshMain1();
+  it('a draw looks at 2: the pick goes to hand, the other to the bottom of the Character Deck', () => {
+    let s = giveChakra(start(), 'p1', 3);
     s = { ...s, players: { ...s.players, p1: { ...s.players.p1, characterDeck: ['konan', 'zetsu', 'juzo'] } } };
-    s = dealDamage(s, 'p1-hidan', 99, { cannotBeReduced: true }).state;
-    s = dealDamage(s, 'p1-hidan', 99, { cannotBeReduced: true }).state;
-    s = gameReducer(s, { type: 'MULLIGAN', player: 'p2' }); // any action drains the owed reveal
+    s = run(s, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
     expect(s.players.p1.pendingCharacterReveal?.revealed).toEqual(['konan', 'zetsu']);
     s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: 'zetsu' });
     expect(s.players.p1.hand.some((h) => h.kind === 'character' && h.entryId === 'zetsu')).toBe(true);
     expect(s.players.p1.characterDeck).toEqual(['juzo', 'konan']);
   });
 
-  it("the first player skips only their very first draw; everyone else draws each Draw Phase; an empty deck costs 3 Health", () => {
+  it('a C+ defeat does NOT auto-reveal anything — it offers an optional Reinforcement', () => {
+    let s = freshMain1();
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, characterDeck: ['konan', 'zetsu', 'juzo'] } } };
+    s = dealDamage(s, 'p1-hidan', 99, { cannotBeReduced: true }).state;
+    s = dealDamage(s, 'p1-hidan', 99, { cannotBeReduced: true }).state;
+    s = gameReducer(s, { type: 'PASS_PRIORITY' }); // any action settles the trigger
+    expect(s.players.p1.pendingCharacterReveal).toBeNull();
+    expect(s.players.p1.reinforcementOffers.length + (s.players.p1.mustPlayCharacter ? 1 : 0)).toBe(1);
+  });
+
+  it("the first player skips only their very first draw; everyone else draws each Draw Phase (by clicking Draw); an empty deck costs 3 Health", () => {
     let s = createSetupState('p1');
     for (const p of ['p1', 'p2'] as const) {
       s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: p, entryId: s.players[p].pendingCharacterReveal!.revealed[0] });
     }
+    const drawTurn = (st: GameState) => toPhase(gameReducer(toPhase(st, 'Draw'), { type: 'DRAW_PHASE_CARD' }), 'Main1');
     const handSize = (st: GameState, p: PlayerId) => st.players[p].hand.length;
     const p1Start = handSize(s, 'p1');
-    s = toPhase(s, 'Main1'); // p1 turn 1: no draw
+    s = drawTurn(s); // p1 turn 1: no draw
     expect(handSize(s, 'p1')).toBe(p1Start);
     const p2Start = handSize(s, 'p2');
-    s = toPhase(toPhase(s, 'Untap'), 'Main1'); // p2 turn 2: draws 1
+    s = drawTurn(toPhase(s, 'Untap')); // p2 turn 2: draws 1
     expect(handSize(s, 'p2')).toBe(p2Start + 1);
-    s = toPhase(toPhase(s, 'Untap'), 'Main1'); // p1 turn 3: draws 1
+    s = drawTurn(toPhase(s, 'Untap')); // p1 turn 3: draws 1
     expect(handSize(s, 'p1')).toBe(p1Start + 1);
 
     const empty = { ...s, players: { ...s.players, p2: { ...s.players.p2, handDeck: [] } } };
     const hpBefore = empty.players.p2.health;
-    const after = toPhase(toPhase(empty, 'Untap'), 'Draw');
+    const after = gameReducer(toPhase(toPhase(empty, 'Untap'), 'Draw'), { type: 'DRAW_PHASE_CARD' });
     expect(after.players.p2.health).toBe(hpBefore - 3);
   });
 });
@@ -611,6 +629,12 @@ describe('§6.5b Retreat collapse: clearing the board forces Retreated character
     expect(s.players.p2.backRow.some((c) => c?.instanceId === 'p2-t-C')).toBe(false); // cleared
     expect(b(s).status.retreated).toBe(false); // forced out at once
     expect(s.extraCombatPending).toBe(true);
+
+    // p2's C-rank fell with another C+ (the Retreated B) still in play: an optional paid Reinforcement they must answer first.
+    expect(s.players.p2.reinforcementOffers).toEqual(['paid']);
+    expect(gameReducer(s, { type: 'ADVANCE_PHASE' }).phase).toBe('Combat');
+    expect(gameReducer(s, { type: 'ADVANCE_PHASE' }).extraCombatPending).toBe(true); // refused, not advanced
+    s = gameReducer(s, { type: 'DECLINE_REINFORCEMENT', player: 'p2' });
 
     s = gameReducer(s, { type: 'ADVANCE_PHASE' }); // finishing the combat step -> second Combat instead of Main 2
     expect(s.phase).toBe('Combat');

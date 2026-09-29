@@ -2,6 +2,8 @@ import { patchCharacter } from './board';
 import { getCharacterDef } from './characters/registry';
 import { getHandCardDef } from './cards/registry';
 import { UPKEEP_BY_RANK } from './ranks';
+import { enqueueChoice, registerChoiceResolver } from './choices';
+import { appendLog } from './phases/phaseMachine';
 import type { CharacterInstance, GameState, PlayerId } from './types';
 
 /**
@@ -155,14 +157,67 @@ export function upkeepReminderText(rank: CharacterInstance['rank'], reason: 'set
     : `Upkeep once played: ${base} Chakra/turn (Rank ${rank}; Synergy or Terrain may reduce it further).`;
 }
 
+type Owed = { instanceId: string; cost: number };
+
+function payOne(state: GameState, player: PlayerId, entry: Owed): GameState {
+  return setDisabled(tapSourcesForUpkeep(state, player, entry.cost), entry.instanceId, false);
+}
+
+function disableOne(state: GameState, player: PlayerId, entry: Owed): GameState {
+  const name = state.players[player].backRow.find((c) => c?.instanceId === entry.instanceId)?.name ?? 'A character';
+  return appendLog(setDisabled(state, entry.instanceId, true), `${name}'s Upkeep (${entry.cost}) can't be paid — it's Disabled.`);
+}
+
+/**
+ * §4.2: pays `owed` highest cost first. Within a group tied at the same
+ * cost, if the untapped sources cover some but not all of them, the PLAYER
+ * chooses which to pay (a pending choice) — then the rest of the list
+ * continues from there. Anything unaffordable is Disabled, not defeated.
+ */
+function payInOrder(state: GameState, player: PlayerId, owed: Owed[]): GameState {
+  let next = state;
+  const sorted = owed.slice().sort((a, b) => b.cost - a.cost);
+  for (let i = 0; i < sorted.length; ) {
+    const cost = sorted[i].cost;
+    const group = sorted.filter((e) => e.cost === cost);
+    const rest = sorted.slice(i + group.length);
+    const affordable = Math.floor(untappedSourceCount(next, player) / cost);
+    if (affordable >= group.length) {
+      for (const e of group) next = payOne(next, player, e);
+    } else if (affordable === 0) {
+      for (const e of group) next = disableOne(next, player, e);
+    } else {
+      const nameOf = (id: string) => next.players[player].backRow.find((c) => c?.instanceId === id)?.name ?? id;
+      return enqueueChoice(next, {
+        player,
+        prompt: `Upkeep: you can pay for ${affordable} of these ${group.length} characters (${cost} Chakra each) — choose which; the others are Disabled.`,
+        options: group.map((e) => ({ id: e.instanceId, label: nameOf(e.instanceId) })),
+        min: affordable,
+        max: affordable,
+        resolverId: 'upkeep-tie',
+        data: { group, rest },
+      });
+    }
+    i += group.length;
+  }
+  return next;
+}
+
+registerChoiceResolver('upkeep-tie', (state, choice, optionIds) => {
+  const group = choice.data.group as Owed[];
+  const rest = choice.data.rest as Owed[];
+  let next = state;
+  for (const e of group) next = optionIds.includes(e.instanceId) ? payOne(next, choice.player, e) : disableOne(next, choice.player, e);
+  return payInOrder(next, choice.player, rest);
+});
+
 /**
  * SPEC.md §4.2/§6.5: pay per-character Upkeep at the start of this player's
- * Upkeep Phase. Payment is mandatory whenever affordable, paid in descending
- * cost order (ties broken by board position — no interactive tie-break
- * prompt exists yet, a documented simplification); anything left unpaid
- * Disables that character instead of defeating it (§6.5a). The starting
- * character (§3) is exempt from this table entirely, using its own
- * Rank-scaled treatment instead.
+ * Upkeep Phase. Payment is mandatory whenever affordable, highest cost
+ * first; the player chooses only between characters tied at the cost where
+ * the Chakra runs out (payInOrder). Unpaid characters are Disabled instead
+ * of defeated (§6.5a). The starting character (§3) is exempt from this
+ * table entirely, using its own Rank-scaled treatment instead.
  */
 export function payUpkeep(state: GameState, player: PlayerId): GameState {
   let next = state;
@@ -187,15 +242,5 @@ export function payUpkeep(state: GameState, player: PlayerId): GameState {
   for (const entry of payable.filter((e) => e.cost === 0)) {
     next = setDisabled(next, entry.instanceId, false);
   }
-  const owed = payable.filter((e) => e.cost > 0).sort((a, b) => b.cost - a.cost);
-  for (const entry of owed) {
-    if (untappedSourceCount(next, player) >= entry.cost) {
-      next = tapSourcesForUpkeep(next, player, entry.cost);
-      next = setDisabled(next, entry.instanceId, false);
-    } else {
-      next = setDisabled(next, entry.instanceId, true);
-    }
-  }
-
-  return next;
+  return payInOrder(next, player, payable.filter((e) => e.cost > 0));
 }

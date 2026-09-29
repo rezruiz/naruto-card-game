@@ -1,6 +1,6 @@
 import { findOccupant, getAdjacent, isCharacter, patchCharacter } from '../board';
 import { dealDamage } from '../combat';
-import { appendLog } from '../phases/phaseMachine';
+import { appendLog, otherPlayer } from '../phases/phaseMachine';
 import { drawCard, lookAndTakeCardType } from '../deck';
 import { scheduleHeal } from '../scheduledHeals';
 import { negateFirstMatchingAttack, stackItemInfo } from './negation';
@@ -130,10 +130,9 @@ const chakraTransfer: HandCardDef = {
   },
 };
 
-// NOTE (simplified for this pass): "opponent reveals 2 cards of their choice"
-// has no mechanical effect to model — every hand is already fully visible in
-// this prototype's local hotseat mode (a remote game redacts it instead, see
-// redact.ts); only the draw is a real state change.
+// "Your opponent reveals 2 cards of their choice from hand. Draw 1 card."
+// The reveal is a real pending decision for the OPPONENT (handReveal.ts) —
+// they pick which cards; the caster sees them (log + un-redacted in hand).
 const fieldIntelligence: HandCardDef = {
   id: 'field-intelligence',
   name: 'Field Intelligence',
@@ -143,7 +142,18 @@ const fieldIntelligence: HandCardDef = {
   style: 'None',
   type: 'None',
   maxTargets: 0,
-  resolve: (ctx) => drawCard(appendLog(ctx.state, `${ctx.player}'s opponent reveals 2 cards from hand.`), ctx.player),
+  resolve: (ctx) => {
+    const opponent = otherPlayer(ctx.player);
+    const count = Math.min(2, ctx.state.players[opponent].hand.length);
+    let state = ctx.state;
+    if (count > 0) {
+      state = { ...state, players: { ...state.players, [opponent]: { ...state.players[opponent], pendingHandReveal: { requestedBy: ctx.player, count } } } };
+      state = appendLog(state, `Field Intelligence: ${opponent} must reveal ${count} card(s) of their choice from hand to ${ctx.player}.`);
+    } else {
+      state = appendLog(state, `Field Intelligence: ${opponent} has no cards in hand to reveal.`);
+    }
+    return drawCard(state, ctx.player);
+  },
 };
 
 const deployMedicCorps: HandCardDef = {

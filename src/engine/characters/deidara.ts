@@ -82,10 +82,8 @@ const clSpiderAbility: AbilityDef = {
   },
 };
 
-// Auto-spends 1 Clay Charge for the upgraded 4-damage version whenever one is
-// available (SIMPLIFIED for this pass — the real card lets the player choose
-// whether to spend it; there's no generic optional-resource-spend UI/input
-// channel yet, so this always upgrades when it can).
+// The Clay Charge spend is the controller's choice (asked at activation,
+// only when Deidara has one); resolve re-checks it's still there.
 const detonationArt: AbilityDef = {
   id: 'detonation-art',
   name: 'Detonation Art',
@@ -94,14 +92,22 @@ const detonationArt: AbilityDef = {
   style: 'Explosion',
   type: 'Ninjutsu',
   isDamaging: true,
+  choices: (ctx) =>
+    clayCharges(ctx.state, ctx.sourceInstanceId) >= 1
+      ? [{ id: 'spendCharge', kind: 'yesno', prompt: 'Spend 1 Clay Charge for 4 damage instead of 2?' }]
+      : [],
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
     if (!target) return ctx.state;
-    const charges = clayCharges(ctx.state, ctx.sourceInstanceId);
-    const upgraded = charges >= 1;
+    const upgraded = ctx.choices?.spendCharge === true && clayCharges(ctx.state, ctx.sourceInstanceId) >= 1;
     let state = upgraded ? addClayCharges(ctx.state, ctx.sourceInstanceId, -1) : ctx.state;
-    state = dealDamage(state, target, upgraded ? 4 : 2).state;
-    return state;
+    state = appendLog(
+      state,
+      upgraded
+        ? `Deidara spends 1 Clay Charge (${clayCharges(state, ctx.sourceInstanceId)} left) — upgraded Detonation Art.`
+        : 'Deidara uses the base Detonation Art (no Clay Charge spent).',
+    );
+    return dealDamage(state, target, upgraded ? 4 : 2).state;
   },
 };
 

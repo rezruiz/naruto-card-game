@@ -14,12 +14,14 @@ export function redactStateFor(state: GameState, viewerId: PlayerId): GameState 
   const opponentId: PlayerId = viewerId === 'p1' ? 'p2' : 'p1';
   const opponent = state.players[opponentId];
 
+  // Cards the opponent has revealed (Field Intelligence) stay face-up to this viewer.
   const redactedHand: HandEntry[] = opponent.hand.map((entry) =>
-    entry.kind === 'card'
-      ? { kind: 'card', instanceId: entry.instanceId, defId: '__hidden__' }
-      : { kind: 'character', instanceId: entry.instanceId, entryId: '__hidden__' },
+    opponent.revealedHandCards.includes(entry.instanceId)
+      ? entry
+      : entry.kind === 'card'
+        ? { kind: 'card', instanceId: entry.instanceId, defId: '__hidden__' }
+        : { kind: 'character', instanceId: entry.instanceId, entryId: '__hidden__' },
   );
-
   const pending = opponent.pendingCharacterReveal;
   const redactedReveal = pending ? { ...pending, revealed: pending.revealed.map(() => '__hidden__') } : null;
 

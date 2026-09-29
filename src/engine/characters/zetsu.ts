@@ -4,7 +4,7 @@ import { appendLog } from '../phases/phaseMachine';
 import { plantChakraSpore } from '../chakraSpore';
 import type { AbilityDef } from '../abilities';
 import { registerCharacter, registerTokenDef } from './registry';
-import type { PlayerId, TokenInstance } from '../types';
+import type { GameState, PlayerId, TokenInstance } from '../types';
 
 const DEF_ID = 'zetsu';
 const CLONE_ID = 'white-zetsu-clone';
@@ -162,24 +162,34 @@ const combineZetsuGolem: AbilityDef = {
 
 // Shared by Zetsu himself, every White Zetsu Clone, and every Zetsu Golem —
 // the exact same AbilityDef object is registered on all three (registry.ts).
-// NOTE (simplified for this pass, matching Detonation Art/Paper Bomb Tag/Iron
-// Sand Wall precedent): X is auto-maximized to whatever's currently in the
-// shared Reservoir rather than a controller-chosen amount — no per-activation
-// numeric-parameter channel exists yet.
+/** Absorbed Vitality's X — the controller's choice (1 to whatever the shared Reservoir holds); defaults to the most they can pay only when no choice was recorded (engine-internal callers). */
+function vitalityX(ctx: { state: GameState; sourceInstanceId: string; choices?: Record<string, unknown> }): number {
+  const available = poolOwnerCurrent(ctx.state, ctx.sourceInstanceId);
+  const chosen = ctx.choices?.x;
+  const x = typeof chosen === 'number' ? Math.floor(chosen) : available;
+  return Math.max(1, Math.min(x, Math.max(1, available)));
+}
+
+// "X Chakra, paid from the shared Reservoir only: Heal X-1" — X is chosen
+// by the controller at activation, up to what the Reservoir holds.
 const absorbedVitality: AbilityDef = {
   id: 'absorbed-vitality',
   name: 'Absorbed Vitality',
-  cost: (ctx) => Math.max(1, poolOwnerCurrent(ctx.state, ctx.sourceInstanceId)),
+  cost: (ctx) => vitalityX(ctx),
   speed: 'Normal',
   style: 'None',
   type: 'Ninjutsu',
   targetSide: 'ally', // "heal X-1 HP to an ally or itself"
   requiresFullPoolPayment: true,
   legalityCheck: (ctx) => poolOwnerCurrent(ctx.state, ctx.sourceInstanceId) >= 1,
+  choices: (ctx) => {
+    const available = poolOwnerCurrent(ctx.state, ctx.sourceInstanceId);
+    return available >= 1 ? [{ id: 'x', kind: 'number', prompt: 'Choose X (Chakra from the shared Reservoir) — heals X−1', min: 1, max: available }] : [];
+  },
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0] ?? ctx.sourceInstanceId;
-    const x = Math.max(1, poolOwnerCurrent(ctx.state, ctx.sourceInstanceId));
-    return healOccupant(ctx.state, target, x - 1);
+    const x = typeof ctx.choices?.x === 'number' ? Math.max(1, Math.floor(ctx.choices.x)) : 1;
+    return appendLog(healOccupant(ctx.state, target, x - 1), `Absorbed Vitality: X = ${x}, heals ${x - 1}.`);
   },
 };
 
