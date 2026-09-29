@@ -479,31 +479,35 @@ function ViewGame({
       </div>
     );
 
-    // The battlefield (characters, tokens, Terrain/Missions) is one visually
-    // distinct, neutral-toned unit — kept adjacent to the middle divider on
-    // both sides, so the two players' battlefields meet in the center, framed
-    // by (not blended into) each player's own colored hand/Chakra/info area.
+    // The battlefield is ONE shared, wide, neutral-toned space (assembled in
+    // the main return below from both players' halves) rather than living
+    // inside each player's own colored HUD — each player still has their own
+    // board limits (5 characters, 10 tokens), but their deployed units render
+    // together, facing each other across the middle seam. Seated across the
+    // table: my back row is nearest me and my front row faces the middle —
+    // the opponent's side is the exact mirror.
+    const battlefieldRows = position === 'bottom' ? [front, back, inPlay] : [inPlay, back, front];
     const battlefield = (
-      <div className="battlefield" key="battlefield">
-        {back}
-        {front}
-        {inPlay}
+      <div className={`battlefield-half battlefield-half--${playerId}`} key={playerId}>
+        {battlefieldRows}
       </div>
     );
 
-    // Seated across the table: my back row (characters) is nearest me and my
-    // front row (tokens) faces the middle — the opponent's side is the exact
-    // mirror, so the two battlefields meet in the center. `info` (name/health)
-    // comes first either way, so it's the first thing you see on entering
-    // that player's zone — from the top of the page for the top board, or
-    // right after crossing the middle divider for the bottom board.
-    const order = position === 'bottom' ? [info, battlefield, chakra, hand] : [info, hand, chakra, battlefield];
-    return (
+    // The HUD (name/health, Chakra, hand, deck tools) is each player's own
+    // colored strip, `info` first so it's the first thing seen entering that
+    // player's zone — from the top of the page for the top board, or right
+    // after the shared battlefield for the bottom board.
+    const hud = (
       <div className={`player-board player-board--${position} player-board--${playerId}`} key={playerId}>
-        {order}
+        {[info, chakra, hand]}
       </div>
     );
+
+    return { hud, battlefield };
   }
+
+  const top = renderPlayerBoard(topId, 'top');
+  const bottom = renderPlayerBoard(bottomId, 'bottom');
 
   return (
     <div className="app">
@@ -515,66 +519,79 @@ function ViewGame({
           </button>
         )}
       </div>
-      <div className="table">
-        {renderPlayerBoard(topId, 'top')}
-        <div className="table-middle">
-      {pending && (
-        <div className="pending-banner">
-          {pending.kind === 'ability' ? (
-            <>
-              <span>
-                Choose {pending.maxTargets > 1 ? `up to ${pending.maxTargets} targets` : 'a target'} ({pending.targets.length}/{pending.maxTargets}{' '}
-                selected)
-              </span>
-              <span>
-                {pending.targets.length > 0 && (
-                  <button type="button" onClick={confirmPartialTargets}>
-                    Confirm
-                  </button>
-                )}
-                <button type="button" onClick={() => setPending(null)}>
-                  Cancel
-                </button>
-              </span>
-            </>
-          ) : (
-            <PendingCardBanner
-              pending={pending}
+      <div className="game-layout">
+        <div className="game-main">
+          {top.hud}
+          <div className="shared-battlefield">
+            {top.battlefield}
+            <div className="battlefield-seam" />
+            {bottom.battlefield}
+          </div>
+          {bottom.hud}
+        </div>
+        <aside className="game-sidebar">
+          <PhaseIndicator state={state} />
+          {pending && (
+            <div className="pending-banner">
+              {pending.kind === 'ability' ? (
+                <>
+                  <span>
+                    Choose {pending.maxTargets > 1 ? `up to ${pending.maxTargets} targets` : 'a target'} ({pending.targets.length}/
+                    {pending.maxTargets} selected)
+                  </span>
+                  <span>
+                    {pending.targets.length > 0 && (
+                      <button type="button" onClick={confirmPartialTargets}>
+                        Confirm
+                      </button>
+                    )}
+                    <button type="button" onClick={() => setPending(null)}>
+                      Cancel
+                    </button>
+                  </span>
+                </>
+              ) : (
+                <PendingCardBanner
+                  pending={pending}
+                  state={state}
+                  onChoosePayFromPool={choosePayFromPool}
+                  onConfirmTargets={confirmPartialTargets}
+                  onChooseAmount={chooseAmount}
+                  onCancel={() => setPending(null)}
+                />
+              )}
+            </div>
+          )}
+          {state.stack.length > 0 && (
+            <div className="stack-panel">
+              Stack ({state.stack.length}):{' '}
+              {state.stack
+                .slice()
+                .reverse()
+                .map((item) => `${item.sourceName}: ${item.abilityName}`)
+                .join(' | ')}
+            </div>
+          )}
+          {trust && !setupBlocked && (
+            <StagedPanel
               state={state}
-              onChoosePayFromPool={choosePayFromPool}
-              onConfirmTargets={confirmPartialTargets}
-              onChooseAmount={chooseAmount}
-              onCancel={() => setPending(null)}
+              myPlayerId={myPlayerId}
+              dispatch={dispatch}
+              onRetarget={startRetarget}
+              canRetarget={(id) => retargetMax(id) > 0}
             />
           )}
-        </div>
-      )}
-      {state.stack.length > 0 && (
-        <div className="stack-panel">
-          Stack ({state.stack.length}):{' '}
-          {state.stack
-            .slice()
-            .reverse()
-            .map((item) => `${item.sourceName}: ${item.abilityName}`)
-            .join(' | ')}
-        </div>
-      )}
-      <PhaseIndicator state={state} />
-      {trust && !setupBlocked && (
-        <StagedPanel state={state} myPlayerId={myPlayerId} dispatch={dispatch} onRetarget={startRetarget} canRetarget={(id) => retargetMax(id) > 0} />
-      )}
-      {!trust && (myPlayerId === null || myPlayerId === state.activePlayer) && !setupBlocked && (
-        <TurnControls onAdvancePhase={() => dispatch({ type: 'ADVANCE_PHASE' })} />
-      )}
-      {!trust && state.stack.length > 0 && (myPlayerId === null || myPlayerId === state.priorityPlayer) && (
-        <div className="turn-controls">
-          <button type="button" onClick={() => dispatch({ type: 'PASS_PRIORITY' })}>
-            Pass Priority ({state.priorityPlayer})
-          </button>
-        </div>
-      )}
-        </div>
-        {renderPlayerBoard(bottomId, 'bottom')}
+          {!trust && (myPlayerId === null || myPlayerId === state.activePlayer) && !setupBlocked && (
+            <TurnControls onAdvancePhase={() => dispatch({ type: 'ADVANCE_PHASE' })} />
+          )}
+          {!trust && state.stack.length > 0 && (myPlayerId === null || myPlayerId === state.priorityPlayer) && (
+            <div className="turn-controls">
+              <button type="button" onClick={() => dispatch({ type: 'PASS_PRIORITY' })}>
+                Pass Priority ({state.priorityPlayer})
+              </button>
+            </div>
+          )}
+        </aside>
       </div>
       <ActionLog log={state.log} />
       {details?.kind === 'occupant' && (

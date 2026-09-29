@@ -112,15 +112,35 @@
   cursor: default;
 }
 
-/* The shared battlefield: a neutral-toned island inside each player's colored zone, so the two players' characters/tokens read as a distinct "table" rather than blending into either player's own hand/Chakra area. */
-.battlefield {
+/* The shared battlefield: ONE wide, neutral-toned space between the two players' colored HUD strips — their deployed characters/tokens face each other across the seam, each side keeping its own board limits but rendering together, not tucked inside either player's own hand/Chakra area. */
+.shared-battlefield {
   background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.battlefield-half {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.battlefield-half--p1 {
+  box-shadow: inset 4px 0 0 #3b82f6;
+}
+
+.battlefield-half--p2 {
+  box-shadow: inset 4px 0 0 #ef4444;
+}
+
+.battlefield-seam {
+  border-top: 2px dashed var(--border);
 }
 
 .board-row {
@@ -195,6 +215,7 @@
 
 .phase-indicator__list {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   list-style: none;
   margin: 0;
@@ -498,28 +519,49 @@
   color: #c33;
 }
 
-/* ---- Across-the-table layout: opponent on top, you on the bottom ---- */
-.table {
+/* ---- Across-the-table layout: opponent on top, you on the bottom, with a ---- */
+/* wide shared battlefield between them and turn/phase controls in a sidebar. */
+.game-layout {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  align-items: flex-start;
   margin-bottom: 16px;
 }
 
-.table-middle {
-  border-top: 2px dashed var(--border);
-  border-bottom: 2px dashed var(--border);
-  padding: 10px 0;
+.game-main {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.table-middle .phase-indicator,
-.table-middle .turn-controls,
-.table-middle .stack-panel,
-.table-middle .pending-banner {
+.game-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 12px;
+}
+
+.game-sidebar .phase-indicator,
+.game-sidebar .turn-controls,
+.game-sidebar .stack-panel,
+.game-sidebar .pending-banner {
   margin-bottom: 0;
+}
+
+@media (max-width: 700px) {
+  .game-layout {
+    flex-direction: column;
+  }
+
+  .game-sidebar {
+    width: 100%;
+    position: static;
+  }
 }
 
 .player-board--top {
