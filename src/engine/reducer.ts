@@ -182,7 +182,7 @@ function drainPendingMissionDefeatEvents(state: GameState): GameState {
     while (next.players[player].pendingDefeatEvents.length > 0) {
       const [event, ...rest] = next.players[player].pendingDefeatEvents;
       next = { ...next, players: { ...next.players, [player]: { ...next.players[player], pendingDefeatEvents: rest } } };
-      next = runMissionTrigger(next, player, { kind: 'defeat', rank: event.rank });
+      next = runMissionTrigger(next, player, { kind: 'defeat', rank: event.rank, byInstanceId: event.byInstanceId });
     }
   }
   return next;

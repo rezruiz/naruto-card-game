@@ -23,6 +23,60 @@ export function stackItemInfo(state: GameState, item: StackItem): StackItemInfo 
   return undefined;
 }
 
+/**
+ * The shared "redirect it onto X instead, reduced by N" pattern (Puppet
+ * Shell Guard, Mechanized Guard, Chakra Absorption, Absorb Impact, Yahiko
+ * Sacrifices Himself): the waiting attack's target is rewritten to the new
+ * unit — every part of its effect follows — and the damage it deals there
+ * is adjusted when it resolves (combat.ts reads StackItem.damageAdjust).
+ */
+export function redirectAttack(
+  state: GameState,
+  stackItemId: string,
+  fromInstanceId: string,
+  toInstanceId: string,
+  adjust: { reduceBy?: number; toZero?: boolean },
+  guardName: string,
+): GameState {
+  const idx = state.stack.findIndex((item) => item.id === stackItemId);
+  if (idx === -1) return appendLog(state, `${guardName} finds nothing left to redirect.`);
+  const item = state.stack[idx];
+  const targets = item.targets.map((t) => (t === fromInstanceId ? toInstanceId : t));
+  const damageAdjust = { ...(item.damageAdjust ?? {}), [toInstanceId]: adjust };
+  const stack = state.stack.slice();
+  stack[idx] = { ...item, targets, damageAdjust };
+  const fromName = findOccupant(state, fromInstanceId)?.occupant.name ?? 'its target';
+  const toName = findOccupant(state, toInstanceId)?.occupant.name ?? 'the guard';
+  const detail = adjust.toZero ? ', reduced to 0' : adjust.reduceBy ? `, reduced by ${adjust.reduceBy}` : '';
+  return appendLog({ ...state, stack }, `${guardName} redirects ${item.abilityName} from ${fromName} onto ${toName}${detail}.`);
+}
+
+/**
+ * "What would happen if this waiting attack resolved right now?" — runs it
+ * on a throwaway copy of the state (the engine is pure, so nothing leaks).
+ * Used for conditions like Yahiko's "an attack that would defeat it,
+ * calculated after any damage-reduction effects".
+ */
+export function simulateResolution(state: GameState, item: StackItem): GameState {
+  const sim: GameState = {
+    ...state,
+    stack: state.stack.filter((i) => i.id !== item.id),
+    resolving: {
+      itemId: item.id,
+      sourceInstanceId: item.sourceInstanceId,
+      abilityId: item.abilityId,
+      controllerId: item.controllerId,
+      targets: item.targets,
+      damageAdjust: item.damageAdjust,
+    },
+  };
+  try {
+    return item.resolve(sim, item);
+  } catch {
+    return state;
+  }
+}
+
 /** Removes the first stack item matching `predicate` and targeting `targetInstanceId` from an enemy controller — the shared "negate its targeting" pattern (Substitution family, Jutsu Disruption, and every character-side negation ability this session). Returns the negated item (for cards with a bonus effect keyed off it) alongside the resulting state. */
 export function negateFirstMatchingAttack(
   state: GameState,

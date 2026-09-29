@@ -20,7 +20,7 @@ export interface AbilityContext {
  */
 export type ChoiceSpec =
   | { id: string; kind: 'yesno'; prompt: string }
-  | { id: string; kind: 'number'; prompt: string; min: number; max: number }
+  | { id: string; kind: 'number'; prompt: string; min: number; max: number; initial?: number }
   | { id: string; kind: 'option'; prompt: string; options: { id: string; label: string }[] };
 
 export interface AbilityDef {
@@ -52,6 +52,8 @@ export interface AbilityDef {
   requiresFullPoolPayment?: boolean;
   /** "N Chakra + the entire Pool" costs (Almighty Push, Yahiko Sacrifices Himself, Death is an Explosion): the whole Pool is always spent as part of the cost, whatever split the player asked for; the rest comes from generic Chakra. */
   spendsEntirePool?: boolean;
+  /** Negates the targeting of an attack aimed at its own source (Crow Clone, Paper Clone, Shinra Tensei V2) — refused while that unit is under Spore Technique. */
+  negatesTargetingOfSelf?: boolean;
   /** Can't be activated at all — it fires from its own trigger (the engine asks the controller at that moment). Shown on the card for reference only. */
   triggeredOnly?: boolean;
   /** UI hint: how many targets to collect before activating. Default 1. */
@@ -69,6 +71,11 @@ export interface AbilityDef {
   /** The optional choices this ability offers right now (only those that currently apply — e.g. no charge prompt with 0 charges). Answers arrive in ctx.choices. */
   choices?: (ctx: AbilityContext) => ChoiceSpec[];
   resolve: (ctx: AbilityContext) => GameState;
+}
+
+/** Hidan with his Curse Technique active — his own side can't target him (SPEC.md, Hidan's Ultimate). */
+export function cursingHidan(unit: BoardOccupant): boolean {
+  return unit.defId === 'hidan' && unit.extra.curseActive === true;
 }
 
 function isElementalJutsu(ability: AbilityDef): boolean {
@@ -110,10 +117,25 @@ function computeFirstAbilityDiscount(ctx: AbilityContext, ability: AbilityDef): 
   return { eligible: elemental || leader, elemental, leader };
 }
 
+/** Samehada Shark Transformation: "attackers targeting him pay +1 Chakra" — +1 for each transformed enemy Kisame among the targets. Shared with hand cards (playHandCard.ts). */
+export function targetingSurcharge(state: GameState, actingPlayer: PlayerId | undefined, targetInstanceIds: string[]): number {
+  let extra = 0;
+  for (const id of new Set(targetInstanceIds)) {
+    const t = findOccupant(state, id);
+    if (t && t.player !== actingPlayer && t.occupant.defId === 'kisame' && t.occupant.extra.transformed) extra += 1;
+  }
+  return extra;
+}
+
 export function resolveCost(ability: AbilityDef, ctx: AbilityContext): number {
   const base = typeof ability.cost === 'function' ? ability.cost(ctx) : ability.cost;
   const discount = computeFirstAbilityDiscount(ctx, ability);
-  return discount.eligible ? Math.max(1, base - 1) : base;
+  let cost = discount.eligible ? Math.max(1, base - 1) : base;
+  const source = findOccupant(ctx.state, ctx.sourceInstanceId);
+  // Bingo Book: Threat Level C — the next ability used by the character that defeated its target costs 2 less.
+  const bingoDiscount = (source?.occupant.extra.nextAbilityDiscount as number | undefined) ?? 0;
+  if (bingoDiscount > 0) cost = Math.max(0, cost - bingoDiscount);
+  return cost + targetingSurcharge(ctx.state, source?.player, ctx.targetInstanceIds);
 }
 
 /**
@@ -135,6 +157,29 @@ function resolvePoolOwner(state: GameState, source: BoardOccupant): { instanceId
   const owner = found.occupant;
   const current = isCharacter(owner) ? owner.chakraPool.current : owner.chakraPool?.current;
   return current === undefined ? undefined : { instanceId: ownerId, current };
+}
+
+/**
+ * Every Pool this unit may spend from, in the order it spends them: its own
+ * (or its shared Reservoir owner's) first, then — for Pain's Paths (Rinnegan
+ * Reservoir) — every other Path's Pool.
+ */
+function poolSources(state: GameState, source: BoardOccupant): { instanceId: string; current: number }[] {
+  const own = resolvePoolOwner(state, source);
+  const sources = own ? [own] : [];
+  if (!isCharacter(source) && source.chakraPool && source.defId.endsWith('-path')) {
+    const found = findOccupant(state, source.instanceId);
+    for (const t of found ? state.players[found.player].frontRow : []) {
+      if (t && t.instanceId !== source.instanceId && t.defId.endsWith('-path') && t.chakraPool) sources.push({ instanceId: t.instanceId, current: t.chakraPool.current });
+    }
+  }
+  return sources;
+}
+
+/** Total Chakra this unit could pay from Pools right now (see poolSources) — what the UI offers to split a cost against. */
+export function poolAvailableFor(state: GameState, sourceInstanceId: string): number {
+  const found = findOccupant(state, sourceInstanceId);
+  return found ? poolSources(state, found.occupant).reduce((sum, s) => sum + s.current, 0) : 0;
 }
 
 function markStatusUsed(source: BoardOccupant, abilityId: string): BoardOccupant {
@@ -186,6 +231,15 @@ export function checkLegality(
   if (stunUntil !== undefined && state.turn <= stunUntil) {
     return { ok: false, reason: `${source.name} is stunned.` };
   }
+  // Spore Technique: can't negate the targeting of damage aimed at itself with its own ability.
+  const sporeUntil = source.extra.cannotNegateOwnDamageUntilTurn as number | undefined;
+  if (ability.negatesTargetingOfSelf && sporeUntil !== undefined && state.turn <= sporeUntil) {
+    return { ok: false, reason: `${source.name} is under Spore Technique and can't negate attacks on itself.` };
+  }
+  // Almighty Push's lockouts: the other Paths wait for its delayed hit; Deva Path itself sits out 3 turn cycles.
+  if (source.extra.lockedByAlmightyPush) return { ok: false, reason: `${source.name} is locked out until Almighty Push lands.` };
+  const abilityLock = source.extra.abilityLockUntilTurn as number | undefined;
+  if (abilityLock !== undefined && state.turn <= abilityLock) return { ok: false, reason: `${source.name} can't use abilities until turn ${abilityLock + 1}.` };
   const maxAbilitiesPerTurn = getCharacterDef(source.defId)?.maxAbilitiesPerTurn ?? getTokenDef(source.defId)?.maxAbilitiesPerTurn;
   if (maxAbilitiesPerTurn !== undefined && source.status.usedAbilitiesThisTurn.length >= maxAbilitiesPerTurn) {
     return { ok: false, reason: `${source.name} has already used its max abilities (${maxAbilitiesPerTurn}) this turn.` };
@@ -244,6 +298,9 @@ export function checkLegality(
       const isAlly = targetFound.player === found.player;
       if (side === 'enemy' && isAlly) return { ok: false, reason: `${ability.name} can only target an enemy.` };
       if (side === 'ally' && !isAlly) return { ok: false, reason: `${ability.name} can only target an ally.` };
+      if (isAlly && targetId !== sourceInstanceId && cursingHidan(targetFound.occupant)) {
+        return { ok: false, reason: `Hidan can't be targeted by friendly attacks while his Curse is active.` };
+      }
       if (targetFound.occupant.status.retreated) {
         const nonRetreatedExists = state.players[targetFound.player].backRow.some((c) => c && !c.status.retreated);
         if (nonRetreatedExists) return { ok: false, reason: `${targetFound.occupant.name} is Retreated and can't be targeted.` };
@@ -274,7 +331,7 @@ export function checkLegality(
   const cost = resolveCost(ability, ctx);
   const totalPool = payFromPool;
   const totalGeneric = cost - payFromPool;
-  const poolAvailable = resolvePoolOwner(state, source)?.current ?? 0; // Tokens default to no Pool of their own (SPEC.md §10)
+  const poolAvailable = poolSources(state, source).reduce((sum, s) => sum + s.current, 0); // Tokens default to no Pool of their own (SPEC.md §10)
   if (totalPool < 0 || totalPool > poolAvailable) {
     return { ok: false, reason: `Not enough Chakra pooled in ${source.name}.` };
   }
@@ -300,8 +357,8 @@ function payCost(
   let next = state;
   const found = findOccupant(state, sourceInstanceId);
   if (soft) {
-    const poolOwner = found ? resolvePoolOwner(next, found.occupant) : undefined;
-    const fromPool = Math.min(payFromPool, poolOwner?.current ?? 0);
+    const pooled = found ? poolSources(next, found.occupant).reduce((sum, s) => sum + s.current, 0) : 0;
+    const fromPool = Math.min(payFromPool, pooled);
     const fromGeneric = Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
     if (fromPool + fromGeneric < cost) {
       next = appendLog(next, `${player} is short ${cost - fromPool - fromGeneric} Chakra paying for this action (trust mode — allowed).`);
@@ -310,11 +367,16 @@ function payCost(
     cost = fromPool + fromGeneric;
   }
   if (found && payFromPool > 0) {
-    const poolOwner = resolvePoolOwner(next, found.occupant);
-    if (poolOwner) {
-      next = patchOccupant(next, poolOwner.instanceId, (o) => {
+    // Drain the unit's own Pool first, then (Pain's Paths) the other Paths' Pools.
+    let remaining = payFromPool;
+    for (const src of poolSources(next, found.occupant)) {
+      if (remaining <= 0) break;
+      const take = Math.min(remaining, src.current);
+      if (take <= 0) continue;
+      remaining -= take;
+      next = patchOccupant(next, src.instanceId, (o) => {
         const pool = isCharacter(o) ? o.chakraPool : o.chakraPool!;
-        return { ...o, chakraPool: { ...pool, current: pool.current - payFromPool } } as BoardOccupant;
+        return { ...o, chakraPool: { ...pool, current: pool.current - take } } as BoardOccupant;
       });
     }
   }
@@ -375,6 +437,9 @@ export function activateAbility(
     next = patchCharacter(next, sourceInstanceId, (c) => ({ ...c, extra: { ...c.extra, inspiringLeaderUsedTurn: state.turn } }));
   }
   next = markUsed(next, player, sourceInstanceId, ability.id);
+  if (source.extra.nextAbilityDiscount) {
+    next = patchOccupant(next, sourceInstanceId, (o) => ({ ...o, extra: { ...o.extra, nextAbilityDiscount: 0 } }));
+  }
 
   const ctx: AbilityContext = { state: next, sourceInstanceId, targetInstanceIds, choices };
   next = pushStackItem(next, {
@@ -385,7 +450,8 @@ export function activateAbility(
     abilityId,
     abilityName: ability.name,
     targets: targetInstanceIds,
-    resolve: (resolveState) => ability.resolve({ ...ctx, state: resolveState }),
+    // Targets are read from the item at resolution time — a redirect may have rewritten them while it waited.
+    resolve: (resolveState, item) => ability.resolve({ ...ctx, state: resolveState, targetInstanceIds: item?.targets ?? targetInstanceIds }),
   });
   return next;
 }

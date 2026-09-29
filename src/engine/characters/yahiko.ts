@@ -2,7 +2,9 @@ import { findOccupant, isCharacter, patchCharacter } from '../board';
 import { dealDamage } from '../combat';
 import { appendLog } from '../phases/phaseMachine';
 import type { AbilityDef } from '../abilities';
+import { redirectAttack, simulateResolution } from '../cards/negation';
 import { registerCharacter } from './registry';
+import type { GameState } from '../types';
 
 const DEF_ID = 'yahiko';
 
@@ -52,12 +54,8 @@ const waterPillarWall: AbilityDef = {
     })),
 };
 
-// NOTE (simplified for this pass): "each ally's next attack this turn deals
-// 1 additional damage" is a blanket per-ally buff. The engine has no generic
-// per-ability damage-modifier pipeline yet (same gap as Iron Skin/Paper
-// Body), so this sets a flag consumed manually by allies' own resolve
-// functions if they choose to check it — not yet wired into every existing
-// ability's resolve, so treat this as a scaffold rather than a live buff.
+// "Each ally's next attack this turn deals 1 additional damage." combat.ts
+// applies the +1 to every hit of each ally's next damaging attack this turn.
 const rallyingWords: AbilityDef = {
   id: 'rallying-words',
   name: 'Rallying Words',
@@ -74,7 +72,7 @@ const rallyingWords: AbilityDef = {
       if (ally) {
         state = patchCharacter(state, ally.instanceId, (c) => ({
           ...c,
-          extra: { ...c.extra, rallyingWordsBonusTurn: ctx.state.turn },
+          extra: { ...c.extra, rallyingWordsBonusTurn: ctx.state.turn, rallyingSpentOn: undefined },
         }));
       }
     }
@@ -82,17 +80,19 @@ const rallyingWords: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): SPEC.md's full effect redirects the
-// attack's exact damage number onto Yahiko instead, calculated after other
-// reductions — but a stack item's `resolve` is an opaque closure over its
-// original target (like every other ability), so the engine has no way to
-// read "how much damage is this about to deal" without actually running it,
-// nor to re-target that closure at Yahiko instead. Implemented instead as
-// full negation (à la Crow Clone/Paper Clone): the threatened ally takes no
-// damage at all, but the damage doesn't separately land on Yahiko either.
-// The "would defeat it" gating is dropped for the same reason (no damage
-// preview) — this can be activated against any targeted enemy ability aimed
-// at another one of the controller's characters, not just a lethal one.
+/** An enemy attack waiting on the stack, aimed at `allyId`, that would defeat it if it resolved now (after every reduction) — found by simulating it. */
+function lethalAttackOn(state: GameState, owner: 'p1' | 'p2', allyId: string) {
+  return state.stack.find((item) => {
+    if (!item.targets.includes(allyId) || item.controllerId === owner) return false;
+    const after = simulateResolution(state, item);
+    return !findOccupant(after, allyId);
+  });
+}
+
+// "In response to a targeted attack aimed at one of your other characters
+// that would defeat it — calculated after any damage-reduction effects —
+// redirect all of that damage onto Yahiko instead; the original target takes
+// none." "Would defeat it" is checked by simulating the waiting attack.
 const yahikoSacrificesHimself: AbilityDef = {
   id: 'yahiko-sacrifices-himself',
   name: 'Yahiko Sacrifices Himself',
@@ -117,21 +117,17 @@ const yahikoSacrificesHimself: AbilityDef = {
       p.backRow.filter((c) => c).length + p.frontRow.filter((t) => t).length;
     if (countUnits(ctx.state.players[opponent]) < countUnits(ctx.state.players[owner]) + 2) return false;
 
-    return ctx.state.stack.some((item) => item.targets.includes(allyId) && item.controllerId !== owner);
+    return !!lethalAttackOn(ctx.state, owner, allyId);
   },
   resolve: (ctx) => {
     const allyId = ctx.targetInstanceIds[0];
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     if (!allyId || !found) return ctx.state;
     const owner = found.player;
-
-    let state = ctx.state;
-    const idx = state.stack.findIndex((item) => item.targets.includes(allyId) && item.controllerId !== owner);
-    if (idx === -1) return appendLog(state, 'Yahiko finds no attack left to intercept.');
-
-    const negated = state.stack[idx];
-    state = { ...state, stack: [...state.stack.slice(0, idx), ...state.stack.slice(idx + 1)] };
-    return appendLog(state, `Yahiko throws himself in front of ${negated.abilityName}, sparing his ally.`);
+    // Prefer the attack that would be lethal; fall back to any enemy attack on the ally (trust mode declares without checking).
+    const item = lethalAttackOn(ctx.state, owner, allyId) ?? ctx.state.stack.find((it) => it.targets.includes(allyId) && it.controllerId !== owner);
+    if (!item) return appendLog(ctx.state, 'Yahiko finds no attack left to intercept.');
+    return redirectAttack(ctx.state, item.id, allyId, ctx.sourceInstanceId, {}, 'Yahiko Sacrifices Himself');
   },
 };
 

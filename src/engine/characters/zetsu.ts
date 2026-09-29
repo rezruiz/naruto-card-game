@@ -1,4 +1,4 @@
-import { countTokensOfType, findOccupant, isCharacter, patchCharacter, placeToken } from '../board';
+import { countTokensOfType, findOccupant, isCharacter, patchCharacter, patchOccupant, placeToken } from '../board';
 import { absorbChakra, dealDamage, healOccupant } from '../combat';
 import { appendLog } from '../phases/phaseMachine';
 import { plantChakraSpore } from '../chakraSpore';
@@ -156,7 +156,8 @@ const combineZetsuGolem: AbilityDef = {
     );
     let state = { ...ctx.state, players: { ...ctx.state.players, [found.player]: { ...ctx.state.players[found.player], frontRow } } };
     state = appendLog(state, `${chosen.length} White Zetsu Clones combine into a Zetsu Golem (${combinedHP} HP).`);
-    return placeToken(state, found.player, makeGolem(found.player, ctx.sourceInstanceId, Math.max(1, combinedHP)));
+    const golem = makeGolem(found.player, ctx.sourceInstanceId, Math.max(1, combinedHP));
+    return placeToken(state, found.player, { ...golem, extra: { ...golem.extra, createdTurn: state.turn } });
   },
 };
 
@@ -193,11 +194,11 @@ const absorbedVitality: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): the clause letting the affected enemy's
-// own kit not negate targeting of damage against itself isn't wired into
-// Crow Clone/Paper Clone/Yahiko's Ultimate — each would need an added check
-// against this target's extra.cannotNegateOwnDamageUntilTurn. The Taijutsu
-// lock and the two delayed Absorb 1 ticks ARE fully implemented.
+// Until the end of your next turn the target can't negate the targeting of
+// damage dealt to it with an ability of its own (or a hand card it enables —
+// every AbilityDef/HandCardDef marked negatesTargetingOfSelf is refused, see
+// abilities.ts / playHandCard.ts), and can't use Taijutsu; Absorb 1 from it at
+// your next 2 End Phases.
 const sporeTechnique: AbilityDef = {
   id: 'spore-technique',
   name: 'Spore Technique',
@@ -272,10 +273,6 @@ const cloneStrike: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): the Golem's own Regeneration trait ("heal
-// 1 if it took no damage last turn") isn't wired in — TokenDef has no
-// onUpkeep hook slot yet (only CharacterDef does), and tracking "no damage
-// last turn" needs a small state machine this pass didn't build out.
 const golemStrike: AbilityDef = {
   id: 'golem-strike',
   name: 'Golem Strike',
@@ -325,4 +322,22 @@ registerCharacter({
 });
 
 registerTokenDef({ id: CLONE_ID, name: 'White Zetsu Clone', abilities: [cloneStrike, absorbedVitality] });
-registerTokenDef({ id: GOLEM_ID, name: 'Zetsu Golem', abilities: [golemStrike, absorbedVitality] });
+registerTokenDef({
+  id: GOLEM_ID,
+  name: 'Zetsu Golem',
+  abilities: [golemStrike, absorbedVitality],
+  // Regeneration: "At the start of your Upkeep Phase, if the Golem took no damage last turn, heal it 1 HP."
+  // combat.ts stamps lastDamagedTurn on every hit; this checks it against the previous Upkeep's check.
+  onUpkeep: (state, instanceId) => {
+    const found = findOccupant(state, instanceId);
+    if (!found) return state;
+    const golem = found.occupant;
+    const since = (golem.extra.regenCheckedTurn as number | undefined) ?? (golem.extra.createdTurn as number | undefined) ?? -1;
+    const lastHit = golem.extra.lastDamagedTurn as number | undefined;
+    let next = patchOccupant(state, instanceId, (o) => ({ ...o, extra: { ...o.extra, regenCheckedTurn: state.turn } }));
+    if ((lastHit === undefined || lastHit <= since) && golem.currentHP < golem.maxHP) {
+      next = appendLog(healOccupant(next, instanceId, 1), 'Zetsu Golem regenerates (no damage taken last turn).');
+    }
+    return next;
+  },
+});

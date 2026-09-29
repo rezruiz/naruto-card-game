@@ -1,7 +1,147 @@
 import { appendLog, otherPlayer } from './phases/phaseMachine';
 import { findOccupant, isCharacter, patchOccupant } from './board';
-import type { AbilityType, GameState, PlayerId } from './types';
+import type { AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
 import { HEALTH_LOST_ON_DEFEAT } from './ranks';
+import { getCharacterDef, getTokenDef } from './characters/registry';
+import { getHandCardDef } from './cards/registry';
+
+/** Who is dealing this damage, with what — derived from the stack item currently resolving (state.resolving). */
+export interface DamageSource {
+  instanceId: string;
+  controller: PlayerId;
+  itemId: string;
+  type: AbilityType;
+  style: Style;
+  speed: AbilitySpeed;
+  /** The damaged unit is one of the item's chosen targets (vs splash/blanket damage). */
+  targeted: boolean;
+}
+
+function lookupAbility(defId: string, abilityId: string) {
+  const charDef = getCharacterDef(defId);
+  const list = charDef ? [...charDef.abilities, ...(charDef.ultimate ? [charDef.ultimate] : [])] : (getTokenDef(defId)?.abilities ?? []);
+  return list.find((a) => a.id === abilityId);
+}
+
+export function damageSourceFor(state: GameState, targetInstanceId: string): DamageSource | undefined {
+  const r = state.resolving;
+  if (!r) return undefined;
+  const src = findOccupant(state, r.sourceInstanceId);
+  const info = (src ? lookupAbility(src.occupant.defId, r.abilityId) : undefined) ?? getHandCardDef(r.abilityId);
+  if (!info) return undefined;
+  return {
+    instanceId: r.sourceInstanceId,
+    controller: r.controllerId,
+    itemId: r.itemId,
+    type: info.type,
+    style: info.style,
+    speed: info.speed,
+    targeted: r.targets.includes(targetInstanceId),
+  };
+}
+
+const isPhysicalType = (t: AbilityType) => t === 'Taijutsu' || t === 'Bukijutsu';
+const passivesOn = (o: BoardOccupant) => !o.status.disabled && !o.status.retreated;
+
+/**
+ * Every damage modifier that depends on the attacker or the attack: redirect
+ * adjustments, attacker bonuses (Rallying Words), vulnerability (Banshō
+ * Ten'in), and the defender's reductions (Iron Skin, Paper Body,
+ * Iron-Forged Body, Sharingan Foresight). Returns the modified amount plus
+ * the state (a one-shot bonus may be marked spent) and log notes.
+ */
+function applyDamageModifiers(
+  state: GameState,
+  target: BoardOccupant,
+  targetOwner: PlayerId,
+  amount: number,
+  src: DamageSource | undefined,
+  cannotBeReduced: boolean,
+): { state: GameState; amount: number; notes: string[]; unprotectable: boolean } {
+  let next = state;
+  let dmg = amount;
+  const notes: string[] = [];
+  const turn = state.turn;
+
+  const adjust = src ? state.resolving?.damageAdjust?.[target.instanceId] : undefined;
+  if (adjust?.toZero) return { state, amount: 0, notes: [`${target.name} takes none of it (redirected and reduced to 0).`], unprotectable: false };
+  if (adjust?.reduceBy) {
+    dmg = Math.max(0, dmg - adjust.reduceBy);
+    notes.push(`redirected hit reduced by ${adjust.reduceBy}`);
+  }
+
+  if (src) {
+    const attacker = findOccupant(state, src.instanceId)?.occupant;
+    // Rallying Words: this ally's next attack this turn deals +1 (every hit of that one attack).
+    if (attacker && attacker.extra.rallyingWordsBonusTurn === turn && (attacker.extra.rallyingSpentOn ?? src.itemId) === src.itemId) {
+      dmg += 1;
+      notes.push('+1 Rallying Words');
+      next = patchOccupant(next, attacker.instanceId, (o) => ({ ...o, extra: { ...o.extra, rallyingSpentOn: src.itemId } }));
+    }
+  }
+
+  // Banshō Ten'in: +1 damage for the rest of the turn, and its controller's damage-reduction abilities can't protect it.
+  const unprotectable = target.extra.banshoVulnerableTurn === turn;
+  if (unprotectable) {
+    dmg += 1;
+    notes.push("+1 Banshō Ten'in");
+  }
+
+  if (src && dmg > 0) {
+    // Konan's Paper Body: Fire burns paper (+1) — an increase, applied even to damage that can't be reduced.
+    if (target.defId === 'konan' && passivesOn(target) && src.style === 'Fire') {
+      dmg += 1;
+      notes.push('+1 Fire vs Paper Body');
+    }
+    if (!cannotBeReduced) {
+      const before = dmg;
+      if (!unprotectable && (target.extra.ironSkinUntilTurn as number | undefined) !== undefined && (target.extra.ironSkinUntilTurn as number) >= turn) {
+        if (isPhysicalType(src.type)) dmg = Math.max(0, dmg - 2);
+        else if (src.type === 'Ninjutsu' && src.style !== 'None') dmg = Math.max(0, dmg - 1);
+        if (dmg < before) notes.push(`Iron Skin −${before - dmg}`);
+      }
+      if (passivesOn(target)) {
+        const b = dmg;
+        if (target.defId === 'konan' && src.type === 'Taijutsu') dmg = Math.max(0, dmg - 2);
+        if (target.defId === 'juzo' && src.type === 'Taijutsu' && dmg > 1) dmg = Math.max(1, dmg - 1);
+        if (target.defId === 'itachi' && src.speed === 'Quick' && src.targeted && src.controller !== targetOwner) dmg = Math.max(0, dmg - 1);
+        if (dmg < b) notes.push(`${target.defId === 'konan' ? 'Paper Body' : target.defId === 'juzo' ? 'Iron-Forged Body' : 'Sharingan Foresight'} −${b - dmg}`);
+      }
+    }
+  }
+  return { state: next, amount: dmg, notes, unprotectable };
+}
+
+/** After damage lands: record who damaged whom (Hidan's Curse condition, Itachi's Tsukuyomi limit), end Water Prison early if Kisame was hit, and mark when a unit last took damage (Golem Regeneration). */
+function recordDamage(state: GameState, target: BoardOccupant, targetOwner: PlayerId, dealt: number, src: DamageSource | undefined): GameState {
+  if (dealt <= 0) return state;
+  let next = setExtra(state, target.instanceId, { lastDamagedTurn: state.turn });
+  if (src) {
+    const attacker = findOccupant(next, src.instanceId)?.occupant;
+    if (attacker?.defId === 'hidan' && src.controller !== targetOwner) {
+      const damaged = (attacker.extra.damagedEnemies as string[] | undefined) ?? [];
+      if (!damaged.includes(target.instanceId)) next = setExtra(next, attacker.instanceId, { damagedEnemies: [...damaged, target.instanceId] });
+    }
+    if (target.defId === 'itachi' && src.controller !== targetOwner) {
+      const fresh = findOccupant(next, target.instanceId)?.occupant;
+      const taken = { ...((fresh?.extra.damageTakenFrom as Record<string, number> | undefined) ?? {}) };
+      taken[src.instanceId] = (taken[src.instanceId] ?? 0) + dealt;
+      next = setExtra(next, target.instanceId, { damageTakenFrom: taken });
+    }
+  }
+  if (target.defId === 'kisame') {
+    // Water Prison ends early once Kisame takes damage.
+    for (const p of ['p1', 'p2'] as PlayerId[]) {
+      for (const unit of [...next.players[p].backRow, ...next.players[p].frontRow]) {
+        if (unit && unit.extra.targetLockBy === target.instanceId) {
+          next = setExtra(next, unit.instanceId, { targetLockUntilTurn: undefined, targetLockBy: undefined });
+          next = appendLog(next, `Kisame took damage — ${unit.name} breaks free of Water Prison.`);
+        }
+      }
+    }
+  }
+  return next;
+}
 
 /**
  * A character/token definition may register one of these to intercept its own
@@ -49,6 +189,8 @@ export function dealDamage(
     skipSquadRedirect?: boolean;
     /** An effect that was already running before its target Retreated (poison, Amaterasu) — SPEC.md §6.5b lets those keep ticking despite Retreat's full immunity. */
     ongoing?: boolean;
+    /** Not dealt by the resolving attack itself (e.g. Hidan's mirrored Curse damage) — no attacker modifiers, no kill credit. */
+    unattributed?: boolean;
   } = {},
 ): DamageResult {
   if (amount <= 0) return { state, dealt: 0, defeated: false };
@@ -79,14 +221,21 @@ export function dealDamage(
     }
   }
 
+  // Attacker/defender modifiers (see applyDamageModifiers).
+  const src = opts.unattributed || opts.ongoing ? undefined : damageSourceFor(state, targetInstanceId);
+  const modified = applyDamageModifiers(state, occupant, player, amount, src, !!opts.cannotBeReduced);
+  let next = modified.state;
+  if (modified.notes.length > 0) next = appendLog(next, `${occupant.name}: ${modified.notes.join(', ')}.`);
+  if (modified.amount <= 0) return { state: next, dealt: 0, defeated: false };
+
   // Generic damage-prevention pool (SPEC.md's "prevent the next N damage this
   // turn" pattern — Yahiko's Water Pillar Wall, Sasori's Iron Sand Wall):
   // extra.damagePreventionRemaining is consumed 1-for-1 against any damage
   // this unit takes this turn, unless the source says it cannotBeReduced
-  // (Amaterasu, Poison — an explicit, stronger override per SPEC.md).
-  let effectiveAmount = amount;
-  let next = state;
-  if (!opts.cannotBeReduced) {
+  // (Amaterasu, Poison — an explicit, stronger override per SPEC.md), or
+  // Banshō Ten'in made it unprotectable this turn.
+  let effectiveAmount = modified.amount;
+  if (!opts.cannotBeReduced && !modified.unprotectable) {
     const remaining = (occupant.extra.damagePreventionRemaining as number) ?? 0;
     const activeTurn = occupant.extra.damagePreventionUntilTurn as number | undefined;
     if (remaining > 0 && activeTurn === state.turn) {
@@ -106,6 +255,7 @@ export function dealDamage(
 
   next = setCurrentHP(next, player, zone, index, newHP);
   next = appendLog(next, `${occupant.name} takes ${amount} damage (${newHP}/${occupant.maxHP} HP).`);
+  next = recordDamage(next, occupant, player, amount, src);
 
   if (!opts.skipDamageTakenHook) {
     // A Disabled or Retreated character's triggered passives are off (§6.5a/§6.5b). Defeat-replacement passives are the exception — see the defeat hook below, which always runs.
@@ -132,7 +282,7 @@ export function dealDamage(
     }
   }
 
-  next = applyDefeat(next, player, zone, index);
+  next = applyDefeat(next, player, zone, index, src && src.controller !== player ? src.instanceId : undefined);
   return { state: next, dealt: amount, defeated: true };
 }
 
@@ -182,6 +332,8 @@ function applyDefeat(
   player: PlayerId,
   zone: 'back' | 'front',
   index: number,
+  /** The enemy unit whose attack made the kill, if known — credited for kill-triggered effects (Patchwork Threads, Bingo Book C). */
+  killerInstanceId?: string,
 ): GameState {
   const p = state.players[player];
   const occupant = zone === 'back' ? p.backRow[index]! : p.frontRow[index]!;
@@ -229,14 +381,28 @@ function applyDefeat(
         ...next,
         players: {
           ...next.players,
-          [winner]: { ...next.players[winner], pendingDefeatEvents: [...next.players[winner].pendingDefeatEvents, { rank: occupant.rank }] },
+          [winner]: {
+            ...next.players[winner],
+            pendingDefeatEvents: [...next.players[winner].pendingDefeatEvents, { rank: occupant.rank, byInstanceId: killerInstanceId }],
+          },
         },
       };
+      // Kill credit on the unit that made it: when, and the defeated character's Styles (Patchwork Threads can take one).
+      if (killerInstanceId && findOccupant(next, killerInstanceId)) {
+        next = setExtra(next, killerInstanceId, { lastKillTurn: next.turn, lastKillStyles: occupant.styles });
+      }
     }
   } else {
     const frontRow = p.frontRow.slice();
     frontRow[index] = null;
     next = { ...state, players: { ...state.players, [player]: { ...p, frontRow } } };
+    // A token that goes on cooldown when defeated (Pain's Path Beasts) — recorded on whoever summons it.
+    const cooldown = occupant.extra.cooldownOnDefeat as { holderId: string; key: string; upkeeps: number } | undefined;
+    const holder = cooldown ? findOccupant(next, cooldown.holderId)?.occupant : undefined;
+    if (cooldown && holder) {
+      next = setExtra(next, cooldown.holderId, { beastCooldowns: { ...((holder.extra.beastCooldowns as Record<string, number> | undefined) ?? {}), [cooldown.key]: cooldown.upkeeps } });
+      next = appendLog(next, `${occupant.name} goes on cooldown for ${cooldown.upkeeps} Upkeep Phases.`);
+    }
     // A Token can also be the trigger for other Tokens fizzling (e.g. Pain's
     // Path Beasts, tied to Animal Path specifically rather than to a
     // Character) — each sets extra.fizzlesIfInstanceIdDefeated to that other

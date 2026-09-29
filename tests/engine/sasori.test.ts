@@ -61,11 +61,11 @@ describe('Sasori', () => {
     expect(state.players.p2.backRow[0]!.extra.poisonCounters).toBe(1);
   });
 
-  it('Puppet Shell Guard negates a Ninjutsu/Physical attack targeting Third Kazekage', () => {
+  it('Puppet Shell Guard redirects a Ninjutsu/Physical attack on Third Kazekage onto Hiruko, reduced by 2', () => {
     let { state, kazekageId } = withSasoriAndKazekage();
     state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
-    state = giveChakra(state, 'p2', 3);
-    state = activateAbility(state, 'p2-kakuzu', 'earth-grudge-fear', [kazekageId], 0);
+    state = giveChakra(state, 'p2', 4);
+    state = activateAbility(state, 'p2-kakuzu', 'searing-migraine', [kazekageId], 0); // 4 damage, Ninjutsu
     expect(state.stack).toHaveLength(1);
 
     state = giveChakra(state, 'p1', 2);
@@ -73,10 +73,11 @@ describe('Sasori', () => {
     expect(state.stack).toHaveLength(2);
 
     const kazekageHpBefore = state.players.p1.frontRow.find((t) => t?.instanceId === kazekageId)!.currentHP;
-    state = gameReducer(state, { type: 'PASS_PRIORITY' });
-    state = gameReducer(state, { type: 'PASS_PRIORITY' }); // resolves Puppet Shell Guard, negating the attack
+    const hirukoHpBefore = state.players.p1.backRow[0]!.currentHP;
+    for (let i = 0; i < 4; i++) state = gameReducer(state, { type: 'PASS_PRIORITY' }); // the Guard, then the redirected attack
     expect(state.stack).toHaveLength(0);
     expect(state.players.p1.frontRow.find((t) => t?.instanceId === kazekageId)!.currentHP).toBe(kazekageHpBefore);
+    expect(state.players.p1.backRow[0]!.currentHP).toBe(hirukoHpBefore - 2); // 4 − 2
   });
 
   it('Iron Sand Wall reduces the next hit against a friendly unit by 2', () => {

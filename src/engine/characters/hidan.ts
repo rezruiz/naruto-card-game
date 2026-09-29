@@ -1,4 +1,5 @@
-import { findOccupant, isCharacter } from '../board';
+import { findOccupant, isCharacter, patchCharacter } from '../board';
+import { enqueueChoice, registerChoiceResolver } from '../choices';
 import { dealDamage, healOccupant, registerDamageTakenHook, registerDefeatHook } from '../combat';
 import { appendLog } from '../phases/phaseMachine';
 import type { AbilityDef } from '../abilities';
@@ -68,10 +69,9 @@ const tripleScytheSweep: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): the Condition ("target an enemy Hidan has
-// already damaged") isn't enforced yet — no per-target damage history is
-// tracked. The self-untargetable-by-friendlies clause is also not yet
-// enforced (no "friendly attack" distinction in getLegalTargets yet).
+// Condition: "target an enemy Hidan has already damaged" — combat.ts records
+// every enemy Hidan's attacks damage (damagedEnemies). While the Curse is
+// active his own side can't target him (abilities.ts / playHandCard.ts).
 const curseTechnique: AbilityDef = {
   id: 'curse-technique',
   name: 'Curse Technique: Death Controlling Possessed Blood',
@@ -80,6 +80,12 @@ const curseTechnique: AbilityDef = {
   style: 'Ritual',
   type: 'Ninjutsu',
   isUltimate: true,
+  legalityCheck: (ctx) => {
+    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
+    const target = ctx.targetInstanceIds[0];
+    if (!found || !isCharacter(found.occupant) || !target) return false;
+    return ((found.occupant.extra.damagedEnemies as string[] | undefined) ?? []).includes(target);
+  },
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
     if (!target) return ctx.state;
@@ -112,15 +118,60 @@ registerCharacter({
   },
 });
 
-// Jashin's Blessing (SPEC.md): first defeat survives at 1 HP instead.
-// NOTE (simplified for this pass): the Kakuzu cross-character revival clause
-// isn't implemented — it needs coordinated state changes across two
-// characters' defeat-hook logic, deferred to a later pass.
+/** Kakuzu on Hidan's side who can pay for the revival: in play, not Disabled/Retreated, Pool at capacity. */
+function kakuzuWhoCanRevive(state: GameState, player: 'p1' | 'p2') {
+  return state.players[player].backRow.find(
+    (c) => c && c.defId === 'kakuzu' && !c.status.disabled && !c.status.retreated && c.chakraPool.capacity > 0 && c.chakraPool.current >= c.chakraPool.capacity,
+  );
+}
+
+const REVIVE_CHOICE = 'hidan-kakuzu-revive';
+
+/** Hidan's defeat goes through — his controller's decision about the revival has been made. */
+function hidanDies(state: GameState, hidanId: string): GameState {
+  const marked = setExtra(state, hidanId, { revivePending: false, reviveResolved: true });
+  return dealDamage(marked, hidanId, 1, { cannotBeReduced: true, ongoing: true, unattributed: true }).state;
+}
+
+registerChoiceResolver(REVIVE_CHOICE, (state, choice, optionIds) => {
+  const hidanId = choice.data.hidanId as string;
+  const hidanFound = findOccupant(state, hidanId);
+  if (!hidanFound || !isCharacter(hidanFound.occupant)) return state;
+  const kakuzu = kakuzuWhoCanRevive(state, hidanFound.player);
+  if (optionIds[0] !== 'revive' || !kakuzu) return hidanDies(appendLog(state, 'Hidan falls.'), hidanId);
+  // Kakuzu spends his full Pool and stuns himself through his controller's next turn.
+  const stunnedUntil = state.activePlayer === hidanFound.player ? state.turn + 2 : state.turn + 1;
+  let next = patchCharacter(state, kakuzu.instanceId, (k) => ({ ...k, chakraPool: { ...k.chakraPool, current: 0 }, extra: { ...k.extra, stunnedUntilTurn: stunnedUntil } }));
+  next = patchCharacter(next, hidanId, (h) => ({ ...h, currentHP: 3, extra: { ...h.extra, revivePending: false } }));
+  return appendLog(next, 'Kakuzu stitches Hidan back together — Hidan returns at 3 HP; Kakuzu spends his Pool and is stunned through his next turn.');
+});
+
+// Jashin's Blessing (SPEC.md): first defeat survives at 1 HP instead. After
+// that, if Kakuzu is in play with a full Pool when Hidan would be truly
+// defeated, the controller is ASKED whether Kakuzu revives him at 3 HP
+// (Kakuzu spends his full Pool and stuns himself through their next turn).
 registerDefeatHook(DEF_ID, (state, targetInstanceId) => {
   const found = findOccupant(state, targetInstanceId);
   if (!found || !(isCharacter(found.occupant))) return null;
   const hidan = found.occupant;
-  if (hidan.extra.usedSafetyNet) return null; // one-time only — true defeat proceeds.
+  if (hidan.extra.usedSafetyNet) {
+    if (hidan.extra.reviveResolved) return null; // decided — the defeat goes through
+    if (hidan.extra.revivePending) return state; // still waiting on the answer; stays at 0 HP
+    if (!kakuzuWhoCanRevive(state, found.player)) return null;
+    const marked = setExtra(state, targetInstanceId, { revivePending: true });
+    return enqueueChoice(appendLog(marked, 'Hidan would be defeated — Kakuzu can revive him.'), {
+      player: found.player,
+      prompt: "Hidan would be defeated. Have Kakuzu revive him at 3 HP? Kakuzu spends his full Chakra Pool and is stunned through your next turn.",
+      options: [
+        { id: 'revive', label: 'Revive Hidan' },
+        { id: 'decline', label: 'Let him fall' },
+      ],
+      min: 1,
+      max: 1,
+      resolverId: REVIVE_CHOICE,
+      data: { hidanId: targetInstanceId },
+    });
+  }
 
   const p = state.players[found.player];
   const backRow = p.backRow.slice();
@@ -138,5 +189,5 @@ registerDamageTakenHook(DEF_ID, (state, targetInstanceId, amount) => {
   if (!hidan.extra.curseActive) return null;
   const cursedTarget = hidan.extra.cursedTarget as string | undefined;
   if (!cursedTarget) return null;
-  return dealDamage(state, cursedTarget, amount).state;
+  return dealDamage(state, cursedTarget, amount, { unattributed: true }).state;
 });

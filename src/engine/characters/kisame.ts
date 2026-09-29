@@ -86,11 +86,9 @@ const samehadaStrikeEvolved: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): enforces the 3-turn "can't use targeted
-// abilities" lock via the engine's generic targetLockUntilTurn check
-// (abilities.ts), but not the "or until Kisame takes damage" early-exit —
-// that needs a source-tracked lock (which unit imposed it) the engine
-// doesn't thread through onDamageTaken yet.
+// "Through the next 3 turns (or until Kisame takes damage), it can't use
+// abilities that target a character." The lock remembers who imposed it
+// (targetLockBy), so combat.ts can end it early when Kisame is hit.
 const waterPrisonJutsu: AbilityDef = {
   id: 'water-prison-jutsu',
   name: 'Water Style: Water Prison Jutsu',
@@ -109,7 +107,7 @@ const waterPrisonJutsu: AbilityDef = {
     if (!target) return ctx.state;
     let state = patchCharacter(ctx.state, target, (t) => ({
       ...t,
-      extra: { ...t.extra, targetLockUntilTurn: ctx.state.turn + 3 },
+      extra: { ...t.extra, targetLockUntilTurn: ctx.state.turn + 3, targetLockBy: ctx.sourceInstanceId },
     }));
     return appendLog(state, `Water Prison Jutsu traps its target — no targeted abilities for 3 turns.`);
   },
@@ -170,9 +168,9 @@ const thousandHungrySharks: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): "attackers targeting Kisame pay +1
-// Chakra while transformed" isn't wired in — the engine has no generic
-// incoming-cost-surcharge hook yet.
+// "Attackers targeting him pay +1 Chakra" while transformed is applied to
+// every ability and hand card that targets him (abilities.ts resolveCost,
+// playHandCard.ts).
 const samehadaSharkTransformation: AbilityDef = {
   id: 'samehada-shark-transformation',
   name: 'Samehada Shark Transformation',

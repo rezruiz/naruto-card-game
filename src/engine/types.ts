@@ -167,7 +167,7 @@ export interface PlayerState {
   /** Missions currently in play (§10b) — capped at the number of characters this player controls; playing past that cap replaces one of the controller's choice (auto: the oldest — a documented simplification, no interactive choice channel exists yet). */
   missionsInPlay: MissionInstance[];
   /** Enemy characters defeated by this player, awaiting a Mission tick (e.g. the Bingo Book family) — drained by the reducer each action, same pattern as pendingReinforcementDraws. */
-  pendingDefeatEvents: { rank: CharacterInstance['rank'] }[];
+  pendingDefeatEvents: { rank: CharacterInstance['rank']; byInstanceId?: string }[];
   /** Bingo Book: Threat Level S's reward — the next character this player plays is fully stunned (no abilities at all) the turn it enters, stricter than the normal summoning-sickness default. */
   nextCharacterFullyStunned: boolean;
   /** Bingo Book: Threat Level A's reward — Chakra discount applied to this player's next-paid Reinforcement Tax (§8). */
@@ -194,8 +194,25 @@ export interface StackItem {
   abilityId: string;
   abilityName: string;
   targets: string[];
-  /** Pure resolution function — applied to state when this item resolves off the stack. */
-  resolve: (state: GameState) => GameState;
+  /**
+   * Pure resolution function — applied to state when this item resolves off
+   * the stack. Receives the item itself as it stands at that moment, so a
+   * redirect that rewrote `targets` while it waited (Puppet Shell Guard,
+   * Mechanized Guard, ...) is honored.
+   */
+  resolve: (state: GameState, item: StackItem) => GameState;
+  /** Per-target damage adjustments a redirect attached while this item waited on the stack (e.g. "onto Hiruko instead, reduced by 2"). */
+  damageAdjust?: Record<string, { reduceBy?: number; toZero?: boolean }>;
+}
+
+/** The stack item currently resolving — lets the damage pipeline see who is attacking with what (Type/Style/speed), for damage modifiers, kill credit and redirects. Plain data. */
+export interface ResolvingContext {
+  itemId: string;
+  sourceInstanceId: string;
+  abilityId: string;
+  controllerId: PlayerId;
+  targets: string[];
+  damageAdjust?: StackItem['damageAdjust'];
 }
 
 /**
@@ -261,6 +278,8 @@ export interface GameState {
   firstPlayerPending: boolean;
   /** Decisions waiting on a specific player (oldest first) — see PendingChoice. */
   pendingChoices: PendingChoice[];
+  /** Set only while a stack item is resolving (see ResolvingContext). */
+  resolving?: ResolvingContext | null;
   /** Set when a combat step clears a player's board and forces their Retreated characters out (retreatCollapse.ts): the next advance out of Combat is replaced by a second Combat. */
   extraCombatPending: boolean;
   /** Retreated characters that stay immune for the whole of the round currently resolving, even if their controller's last non-Retreated character falls mid-resolution (they're forced out only once the step is over). */

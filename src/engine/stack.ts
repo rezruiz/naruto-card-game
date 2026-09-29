@@ -52,6 +52,19 @@ export function resolveTopOfStack(state: GameState): GameState {
   const top = state.stack[state.stack.length - 1];
   let next: GameState = { ...state, stack: state.stack.slice(0, -1) };
   next = appendLog(next, `Resolving ${top.sourceName}: ${top.abilityName}.`);
-  next = top.resolve(next);
-  return { ...next, priorityPlayer: next.activePlayer, passesInARow: 0 };
+  // While it resolves, the damage pipeline can see who is attacking with what (combat.ts).
+  const outer = next.resolving ?? null;
+  next = {
+    ...next,
+    resolving: {
+      itemId: top.id,
+      sourceInstanceId: top.sourceInstanceId,
+      abilityId: top.abilityId,
+      controllerId: top.controllerId,
+      targets: top.targets,
+      damageAdjust: top.damageAdjust,
+    },
+  };
+  next = top.resolve(next, top);
+  return { ...next, resolving: outer, priorityPlayer: next.activePlayer, passesInARow: 0 };
 }

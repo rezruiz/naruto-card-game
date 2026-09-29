@@ -182,11 +182,8 @@ function bingoBookReward(rank: 'S' | 'A' | 'B' | 'C'): MissionDef['tick'] {
     let next = state;
 
     if (rank === 'S') {
-      // NOTE (simplified for this pass): "look at top 4 instead of top 2"
-      // is delivered as an immediate reveal-4-keep-1 Character Deck draw
-      // (the real 2-keep-1 Reinforcement shape, just bigger) rather than
-      // modifying a *future* draw's size — no such deferred-parameter
-      // channel exists yet.
+      // "Draw from your Character Deck as normal, but look at the top 4
+      // instead of the top 2" — the reward IS that draw, made right away.
       next = revealCharacters(next, owner, 4, 'reinforcement');
       next = { ...next, players: { ...next.players, [owner]: { ...next.players[owner], nextCharacterFullyStunned: true } } };
       next = drawCard(next, owner);
@@ -206,11 +203,13 @@ function bingoBookReward(rank: 'S' | 'A' | 'B' | 'C'): MissionDef['tick'] {
         players: { ...next.players, [owner]: { ...next.players[owner], bonusChakraSourcePlacements: next.players[owner].bonusChakraSourcePlacements + 1 } },
       };
     } else {
-      // NOTE (simplified for this pass): "the cost of the next ability used
-      // by the character that defeated it is reduced by 2" is dropped —
-      // combat.ts's dealDamage doesn't attribute damage to its source, so
-      // there's no "which character defeated it" to apply a discount to
-      // (the same gap noted for Itachi's Tsukuyomi condition).
+      // "The cost of the next ability used by the character that defeated it
+      // is reduced by 2. Draw a card." combat.ts credits the kill.
+      const killer = trigger.byInstanceId ? findOccupant(next, trigger.byInstanceId) : undefined;
+      if (killer) {
+        next = patchOccupant(next, killer.occupant.instanceId, (o) => ({ ...o, extra: { ...o.extra, nextAbilityDiscount: ((o.extra.nextAbilityDiscount as number) ?? 0) + 2 } }));
+        next = appendLog(next, `${killer.occupant.name}'s next ability costs 2 less.`);
+      }
       next = drawCard(next, owner);
     }
 

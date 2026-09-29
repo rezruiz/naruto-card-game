@@ -1,4 +1,4 @@
-import { findOccupant, isCharacter } from '../board';
+import { findOccupant, isCharacter, patchCharacter } from '../board';
 import { dealDamage, healOccupant, registerDefeatHook } from '../combat';
 import { appendLog } from '../phases/phaseMachine';
 import type { AbilityDef } from '../abilities';
@@ -78,10 +78,9 @@ const falseDarkness: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): Iron Skin's temporary damage-reduction
-// buff isn't wired into combat.dealDamage yet (no generic "damage modifier"
-// system exists in the engine yet) — this implements only its "strikes for 2
-// physical damage" half. Expand once a modifier/status-effect system exists.
+// "Kakuzu takes −2 damage from physical attacks and −1 from elemental attacks
+// for the next turn cycle, and strikes for 2 physical damage." The reduction
+// lasts through the opponent's next turn (combat.ts reads ironSkinUntilTurn).
 const ironSkin: AbilityDef = {
   id: 'iron-skin',
   name: 'Iron Skin',
@@ -92,17 +91,28 @@ const ironSkin: AbilityDef = {
   isDamaging: true,
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
-    let state = appendLog(ctx.state, "Kakuzu's Iron Skin damage reduction is not yet simulated by the engine.");
+    let state = patchCharacter(ctx.state, ctx.sourceInstanceId, (k) => ({ ...k, extra: { ...k.extra, ironSkinUntilTurn: ctx.state.turn + 1 } }));
+    state = appendLog(state, 'Kakuzu hardens his skin: −2 from physical and −1 from elemental attacks until the end of the next turn.');
     if (target) state = dealDamage(state, target, 2).state;
     return state;
   },
 };
 
-// NOTE (simplified for this pass): the Ultimate's Trigger ("whenever Kakuzu
-// defeats any shinobi") isn't enforced yet — no generic on-defeat-by-source
-// event exists in the engine. It can be activated any time its Chakra
-// condition is met. The Style-steal-from-defeated-character clause is
-// dropped for the same reason (no "last defeated character" context wired).
+const ELEMENTAL_STYLES: Style[] = ['Fire', 'Water', 'Wind', 'Earth', 'Lightning'];
+
+/** Elemental Styles the character Kakuzu just defeated had that he doesn't (Patchwork Threads can take one). */
+function stealableStyles(state: GameState, kakuzuId: string): Style[] {
+  const found = findOccupant(state, kakuzuId);
+  if (!found || !isCharacter(found.occupant)) return [];
+  const k = found.occupant;
+  const defeated = (k.extra.lastKillStyles as Style[] | undefined) ?? [];
+  return defeated.filter((s) => ELEMENTAL_STYLES.includes(s) && !k.styles.includes(s));
+}
+
+// Trigger: "whenever Kakuzu defeats any shinobi" — usable the same turn one
+// of his attacks defeats a character (combat.ts credits the kill), with 2+
+// pooled. Takes one elemental Style the defeated character had that he
+// doesn't — the player's choice when there's more than one.
 const patchworkThreads: AbilityDef = {
   id: 'patchwork-threads',
   name: 'Earth Grudge Fear: Patchwork Threads',
@@ -114,7 +124,11 @@ const patchworkThreads: AbilityDef = {
   maxTargets: 0,
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    return !!found && isCharacter(found.occupant) && found.occupant.chakraPool.current >= 2;
+    return !!found && isCharacter(found.occupant) && found.occupant.chakraPool.current >= 2 && found.occupant.extra.lastKillTurn === ctx.state.turn;
+  },
+  choices: (ctx) => {
+    const options = stealableStyles(ctx.state, ctx.sourceInstanceId);
+    return options.length > 1 ? [{ id: 'style', kind: 'option', prompt: 'Take which Style from the defeated character?', options: options.map((s) => ({ id: s, label: s })) }] : [];
   },
   resolve: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
@@ -135,6 +149,12 @@ const patchworkThreads: AbilityDef = {
     let state: GameState = { ...ctx.state, players: { ...ctx.state.players, [player]: { ...p, backRow } } };
     state = healOccupant(state, ctx.sourceInstanceId, 5);
     state = appendLog(state, `Kakuzu regenerates a Heart (now ${newHearts}) and ends with 2 Chakra pooled.`);
+    const stealable = stealableStyles(state, ctx.sourceInstanceId);
+    const chosen = typeof ctx.choices?.style === 'string' && stealable.includes(ctx.choices.style as Style) ? (ctx.choices.style as Style) : stealable.length === 1 ? stealable[0] : undefined;
+    if (chosen) {
+      state = patchCharacter(state, ctx.sourceInstanceId, (k) => ({ ...k, styles: [...k.styles, chosen], extra: { ...k.extra, lastKillStyles: [] } }));
+      state = appendLog(state, `Kakuzu stitches in a new heart — he gains ${chosen} Style.`);
+    }
     return state;
   },
 };

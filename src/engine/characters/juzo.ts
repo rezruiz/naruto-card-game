@@ -6,9 +6,7 @@ import { registerCharacter } from './registry';
 
 const DEF_ID = 'juzo';
 
-// NOTE (simplified for this pass): Iron-Forged Body's -1 Taijutsu damage
-// reduction isn't wired into combat.dealDamage yet (same known gap as
-// Kakuzu's Iron Skin and Konan's Paper Body).
+// Iron-Forged Body (−1 from Taijutsu, min 1) is applied in combat.ts's damage modifiers.
 
 const cleavingStrike: AbilityDef = {
   id: 'cleaving-strike',

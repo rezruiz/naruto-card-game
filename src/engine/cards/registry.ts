@@ -47,6 +47,8 @@ export interface HandCardDef {
   legalityCheck?: (ctx: HandCardContext) => boolean;
   /** For 'jutsu'/'assist': the card's actual effect. For 'terrain'/'mission': what happens the moment it's played (almost always just entering play — see terrainInPlay/missionsInPlay in playHandCard.ts, which handles placement generically before this runs). */
   resolve: (ctx: HandCardContext) => GameState;
+  /** Negates the targeting of an attack aimed at its enabling character (the Substitution family) — refused while that character is under Spore Technique. */
+  negatesTargetingOfSelf?: boolean;
   /** Synergy tag(s), mainly relevant for Terrain cards (§10a) that other cards check for (e.g. Chidori Interception's cost discount "if an Akatsuki-Synergy Terrain is in play"). */
   synergy?: string[];
 }
@@ -64,7 +66,7 @@ export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type
 }
 
 /** What just happened, offered to every in-play Mission so it can decide whether it cares (§10b's Condition is checked at a variety of different trigger points across the 6 example cards, not one shared moment). */
-export type MissionTrigger = { kind: 'untap' } | { kind: 'defeat'; rank: import('../types').CharacterInstance['rank'] };
+export type MissionTrigger = { kind: 'untap' } | { kind: 'defeat'; rank: import('../types').CharacterInstance['rank']; byInstanceId?: string };
 
 /**
  * A Mission's ongoing Condition/Reward (§10b). Unlike a Jutsu/Assist card's

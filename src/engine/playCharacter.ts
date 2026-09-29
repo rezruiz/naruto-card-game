@@ -1,5 +1,5 @@
 import { getCharacterDeckEntry } from './characters';
-import { patchCharacter } from './board';
+import { patchOccupant } from './board';
 import { appendLog } from './phases/phaseMachine';
 import type { GameState, PlayerId } from './types';
 
@@ -68,15 +68,14 @@ export function playCharacter(state: GameState, instanceId: string): GameState {
   };
 
   // Bingo Book: Threat Level S's reward — stricter than normal summoning
-  // sickness (blocks every ability, not just damage-dealing ones). Applied
-  // via the engine's existing generic full-stun field. NOTE (simplified):
-  // if the entry is Pain (spawns 6 Path tokens, not a back-row character),
-  // this is skipped — no single new occupant to unambiguously apply it to.
+  // sickness (blocks every ability, not just damage-dealing ones), via the
+  // generic full-stun field. Applies to everything this card put into play —
+  // the new character, or all of Pain's Path tokens (and Sasori's Kazekage).
   if (p.nextCharacterFullyStunned) {
-    const newSlotIndex = next.players[player].backRow.findIndex((c, i) => c && !beforeBackRow[i]);
-    if (newSlotIndex !== -1) {
-      const newInstanceId = next.players[player].backRow[newSlotIndex]!.instanceId;
-      next = patchCharacter(next, newInstanceId, (c) => ({ ...c, extra: { ...c.extra, stunnedUntilTurn: state.turn } }));
+    const beforeIds = new Set([...beforeBackRow, ...working.players[player].frontRow].filter((u) => u !== null).map((u) => u!.instanceId));
+    const entered = [...next.players[player].backRow, ...next.players[player].frontRow].filter((u) => u !== null && !beforeIds.has(u.instanceId));
+    for (const u of entered) {
+      next = patchOccupant(next, u!.instanceId, (o) => ({ ...o, extra: { ...o.extra, stunnedUntilTurn: state.turn } }));
     }
   }
 

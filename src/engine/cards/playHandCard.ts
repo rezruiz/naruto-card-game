@@ -1,5 +1,6 @@
 import { findOccupant, isCharacter, patchCharacter } from '../board';
 import { canActivateNormalSpeed, pushStackItem } from '../stack';
+import { cursingHidan, targetingSurcharge } from '../abilities';
 import { appendLog } from '../phases/phaseMachine';
 import { getHandCardDef, needsEnablingCharacter } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
@@ -20,8 +21,22 @@ export function normalTiming(def: HandCardDef): 'main' | 'combat' | 'either' {
   return isAttackJutsu(def) ? 'combat' : 'main';
 }
 
+/**
+ * Itachi's Uchiha Prodigy: while he's in play (and not Disabled/Retreated),
+ * Quick Technique Jutsu cards he could use — styleless, or matching his
+ * Styles — cost his controller 1 less (minimum 1).
+ */
+function uchihaProdigyApplies(state: GameState, player: PlayerId, def: HandCardDef): boolean {
+  if (def.cardType !== 'jutsu' || def.speed !== 'Quick') return false;
+  return state.players[player].backRow.some(
+    (c) => c && c.defId === 'itachi' && !c.status.disabled && !c.status.retreated && (def.style === 'None' || c.styles.includes(def.style)),
+  );
+}
+
 function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool: number): number {
-  return typeof def.cost === 'function' ? def.cost(ctx, payFromPool) : def.cost;
+  let cost = typeof def.cost === 'function' ? def.cost(ctx, payFromPool) : def.cost;
+  if (uchihaProdigyApplies(ctx.state, ctx.player, def) && cost > 1) cost -= 1;
+  return cost + targetingSurcharge(ctx.state, ctx.player, ctx.targetInstanceIds);
 }
 
 /**
@@ -43,6 +58,10 @@ function checkEnabler(state: GameState, player: PlayerId, def: HandCardDef, enab
   if (def.style !== 'None' && !enabler.styles.includes(def.style)) {
     return { ok: false, reason: `${enabler.name} doesn't have Style: ${def.style}, needed to enable ${def.name}.` };
   }
+  const sporeUntil = enabler.extra.cannotNegateOwnDamageUntilTurn as number | undefined;
+  if (def.negatesTargetingOfSelf && sporeUntil !== undefined && state.turn <= sporeUntil) {
+    return { ok: false, reason: `${enabler.name} is under Spore Technique and can't negate attacks on itself.` };
+  }
   return { ok: true };
 }
 
@@ -55,6 +74,7 @@ function checkTargets(state: GameState, player: PlayerId, def: HandCardDef, targ
     const isAlly = targetFound.player === player;
     if (side === 'enemy' && isAlly) return { ok: false, reason: `${def.name} can only target an enemy.` };
     if (side === 'ally' && !isAlly) return { ok: false, reason: `${def.name} can only target an ally.` };
+    if (isAlly && cursingHidan(targetFound.occupant)) return { ok: false, reason: `Hidan can't be targeted by friendly attacks while his Curse is active.` };
     if (targetFound.occupant.status.retreated && !def.allowRetreatedTarget) {
       const nonRetreatedExists = state.players[targetFound.player].backRow.some((c) => c && !c.status.retreated);
       if (nonRetreatedExists) return { ok: false, reason: `${targetFound.occupant.name} is Retreated and can't be targeted.` };
@@ -203,7 +223,7 @@ export function playHandCard(
       abilityId: def.id,
       abilityName: def.name,
       targets: targetInstanceIds,
-      resolve: (resolveState) => def.resolve({ ...stackCtx, state: resolveState }),
+      resolve: (resolveState, item) => def.resolve({ ...stackCtx, state: resolveState, targetInstanceIds: item?.targets ?? targetInstanceIds }),
     });
   }
 

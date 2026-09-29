@@ -3,11 +3,26 @@ import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { dealDamage } from '../../src/engine/combat';
 import { freshCombat, giveChakra, resolveTop } from './testUtils';
+import type { GameState } from '../../src/engine/types';
+
+/** Curse Technique's condition: Hidan must already have damaged the target (combat.ts records it). */
+const hidanHasDamaged = (s: GameState, targetId: string): GameState => ({
+  ...s,
+  players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'hidan' ? { ...c, extra: { ...c.extra, damagedEnemies: [targetId] } } : c)) } },
+});
 
 describe('Hidan', () => {
+  it("Curse Technique can only target an enemy Hidan has already damaged", () => {
+    const state = giveChakra(freshCombat(), 'p1', 6);
+    expect(activateAbility(state, 'p1-hidan', 'curse-technique', ['p2-kakuzu'], 0).stack).toHaveLength(0);
+    let hit = activateAbility(giveChakra(state, 'p1', 8), 'p1-hidan', 'triple-scythe-sweep', ['p2-kakuzu'], 0);
+    hit = resolveTop(hit);
+    expect(hit.players.p1.backRow[1]?.extra.damagedEnemies).toEqual(['p2-kakuzu']);
+  });
+
   it('Curse Technique activates and binds a Cursed target', () => {
     let state = giveChakra(freshCombat(), 'p1', 6);
-    state = activateAbility(state, 'p1-hidan', 'curse-technique', ['p2-kakuzu'], 0);
+    state = activateAbility(hidanHasDamaged(state, 'p2-kakuzu'), 'p1-hidan', 'curse-technique', ['p2-kakuzu'], 0);
     state = resolveTop(state);
     expect(state.players.p1.backRow[1]?.extra.curseActive).toBe(true);
     expect(state.players.p1.backRow[1]?.extra.cursedTarget).toBe('p2-kakuzu');
@@ -15,7 +30,7 @@ describe('Hidan', () => {
 
   it("can't self-target the same turn the Curse was activated", () => {
     let state = giveChakra(freshCombat(), 'p1', 8);
-    state = activateAbility(state, 'p1-hidan', 'curse-technique', ['p2-kakuzu'], 0);
+    state = activateAbility(hidanHasDamaged(state, 'p2-kakuzu'), 'p1-hidan', 'curse-technique', ['p2-kakuzu'], 0);
     state = resolveTop(state);
 
     const stackBefore = state.stack.length;
@@ -25,7 +40,7 @@ describe('Hidan', () => {
 
   it('self-targeting costs 0 Chakra while Curse is active, and mirrors damage to the Cursed target', () => {
     let state = giveChakra(freshCombat(), 'p1', 8);
-    state = activateAbility(state, 'p1-hidan', 'curse-technique', ['p2-kakuzu'], 0);
+    state = activateAbility(hidanHasDamaged(state, 'p2-kakuzu'), 'p1-hidan', 'curse-technique', ['p2-kakuzu'], 0);
     state = resolveTop(state);
 
     // Advance two full rounds (back to p1's own Main1) so the same-turn

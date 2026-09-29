@@ -112,9 +112,8 @@ const detonationArt: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): requires Deidara's Pool at max Capacity
-// to activate (SPEC.md's Condition) — enforced below. Spends 5 Clay Charges,
-// so realistically needs several turns of Explosive Clay first.
+// Condition: Deidara's Pool at max Capacity (checked at activation; the cost
+// may then spend from it). Spends 5 Clay Charges.
 const c3ShiSuri: AbilityDef = {
   id: 'c3-shi-suri',
   name: 'C3, Shi-Suri',

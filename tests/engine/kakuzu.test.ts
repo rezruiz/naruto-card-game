@@ -46,6 +46,9 @@ describe('Kakuzu', () => {
     for (let i = 0; i < 14; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
     expect(state.activePlayer).toBe('p1');
     expect(state.phase).toBe('Main1');
+    // Its trigger: Kakuzu defeated someone this turn (combat.ts credits the kill).
+    expect(activateAbility(state, 'p1-kakuzu', 'patchwork-threads', [], 0).stack).toHaveLength(0);
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c) => (c?.defId === 'kakuzu' ? { ...c, extra: { ...c.extra, lastKillTurn: state.turn } } : c)) } } };
     state = activateAbility(state, 'p1-kakuzu', 'patchwork-threads', [], 0);
     state = resolveTop(state);
     expect(state.players.p1.backRow[0]?.chakraPool.current).toBe(2);

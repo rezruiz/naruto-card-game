@@ -3,6 +3,7 @@ import { dealDamage, healOccupant } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
 import { findAbility } from '../abilities';
 import { drawCard } from '../deck';
+import { redirectAttack } from '../cards/negation';
 import type { AbilityDef } from '../abilities';
 import { registerTokenDef } from './registry';
 import type { GameState, PlayerId, StackItem, TokenInstance } from '../types';
@@ -74,7 +75,8 @@ function makeBeast(defId: string, name: string, owner: PlayerId, animalPathInsta
     currentHP: defId === BIRD_ID ? 2 : 4,
     ownerCharacterInstanceId: `pain-${owner}`,
     status: freshTokenStatus(),
-    extra: { fizzlesIfInstanceIdDefeated: animalPathInstanceId, ...extra },
+    // Defeated (not fizzled) → on cooldown for 2 of its controller's Upkeeps before it can be resummoned (combat.ts).
+    extra: { fizzlesIfInstanceIdDefeated: animalPathInstanceId, cooldownOnDefeat: { holderId: animalPathInstanceId, key: defId, upkeeps: 2 }, ...extra },
   };
 }
 
@@ -113,15 +115,14 @@ const shinraTensei: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass, matching Crow Clone/Paper Clone precedent):
-// full negation rather than a pure "fails to target" state, since a stack
-// item's resolve is an opaque closure over its original target either way —
-// functionally equivalent from the target's perspective.
+// "Negate its targeting — the ability fails to target, so its damage (and
+// anything else depending on that target) fizzles": the attack is removed.
 const shinraTenseiV2: AbilityDef = {
   id: 'shinra-tensei-v2',
   name: 'Deva Path: Shinra Tensei, V2',
   cost: 4,
   speed: 'Reactive',
+  negatesTargetingOfSelf: true,
   style: 'None', // NOTE: Token sources can't carry Styles yet (see file-top comment) — Gravity is flavor-only here
   type: 'Ninjutsu',
   maxTargets: 0,
@@ -136,11 +137,11 @@ const shinraTenseiV2: AbilityDef = {
   resolve: (ctx) => negateAttackOn(ctx.state, ctx.sourceInstanceId, ctx.sourceInstanceId, 'Shinra Tensei, V2'),
 };
 
-// NOTE (simplified for this pass): the 2-row board's "pull closer" movement
-// has no defined meaning yet (design/CHARACTER_LOG.md flags this as an open
-// question even before this engine existed) — only the damage clause is
-// implemented; the "+1 damage rest of turn, can't be protected" buff isn't
-// wired in either (same gap as Iron Skin/Paper Body's unwired modifiers).
+// "Pull an enemy character closer, deal 1 damage. Rest of turn: damage to it
+// +1, can't be protected by its controller's damage-reduction abilities."
+// The +1 / unprotectable part lives in combat.ts (banshoVulnerableTurn).
+// OPEN DESIGN QUESTION (design/CHARACTER_LOG.md): "pull closer" has no
+// defined meaning on the 2-row board yet, so the pull itself does nothing.
 const banshoTennin: AbilityDef = {
   id: 'bansho-tennin',
   name: "Deva Path: Banshō Ten'in",
@@ -151,7 +152,13 @@ const banshoTennin: AbilityDef = {
   isDamaging: true,
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
-    return target ? dealDamage(ctx.state, target, 1).state : ctx.state;
+    if (!target) return ctx.state;
+    let state = dealDamage(ctx.state, target, 1).state;
+    if (findOccupant(state, target)) {
+      state = patchOccupant(state, target, (o) => ({ ...o, extra: { ...o.extra, banshoVulnerableTurn: ctx.state.turn } }));
+      state = appendLog(state, "Banshō Ten'in: the target takes +1 damage for the rest of the turn and can't be protected.");
+    }
+    return state;
   },
 };
 
@@ -163,13 +170,11 @@ function allPathsOf(state: GameState, owner: PlayerId): TokenInstance[] {
   return state.players[owner].frontRow.filter((t): t is TokenInstance => !!t && PATH_IDS.includes(t.defId));
 }
 
-// NOTE (simplified for this pass): the full sequence (locks out every other
-// Path until the delayed hit resolves, plus a separate 3-turn-cycle lockout
-// on Deva Path itself, plus the "first Path ability used this turn" gate) —
-// design/CHARACTER_LOG.md's most involved Ultimate — is reduced to its core,
-// working effect: the full-Pool condition, and the delayed blanket 8 damage
-// at the controller's next End Phase. No generic multi-turn ability-lockout
-// system exists yet to enforce the rest.
+// Condition: Deva's own Pool is full, and it's the first Path ability used
+// this turn (Deva included). Effect: every other Path is locked out until
+// the delayed hit lands (at your next End Phase: 8 to all enemy units), and
+// Deva Path itself is locked out of all abilities for 3 turn cycles.
+const ALMIGHTY_PUSH_LOCK_TURNS = 6; // 3 turn cycles = 6 turns
 const almightyPush: AbilityDef = {
   id: 'almighty-push',
   name: 'Deva Path: Almighty Push',
@@ -187,13 +192,23 @@ const almightyPush: AbilityDef = {
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     const pool = found?.occupant.chakraPool;
-    return !!pool && pool.current >= pool.capacity;
+    if (!found || !pool || pool.current < pool.capacity) return false;
+    return allPathsOf(ctx.state, found.player).every((p) => p.status.usedAbilitiesThisTurn.length === 0);
   },
-  resolve: (ctx) =>
-    patchOccupant(ctx.state, ctx.sourceInstanceId, (o) => ({
+  resolve: (ctx) => {
+    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
+    if (!found) return ctx.state;
+    let state = patchOccupant(ctx.state, ctx.sourceInstanceId, (o) => ({
       ...o,
-      extra: { ...o.extra, almightyPushPending: true },
-    })),
+      extra: { ...o.extra, almightyPushPending: true, abilityLockUntilTurn: ctx.state.turn + ALMIGHTY_PUSH_LOCK_TURNS },
+    }));
+    for (const path of allPathsOf(state, found.player)) {
+      if (path.instanceId !== ctx.sourceInstanceId) {
+        state = patchOccupant(state, path.instanceId, (o) => ({ ...o, extra: { ...o.extra, lockedByAlmightyPush: ctx.sourceInstanceId } }));
+      }
+    }
+    return appendLog(state, 'Almighty Push gathers — the other Paths are locked until it lands at the End Phase; Deva Path is spent for 3 turn cycles.');
+  },
 };
 
 // --- Asura Path --------------------------------------------------------------
@@ -221,23 +236,30 @@ function negateAttackOn(state: GameState, guardianInstanceId: string, protectedI
   return appendLog(next, `${guardName} intercepts ${negated.abilityName}.`);
 }
 
-function anyPathTargetedByEnemy(
+/** The first enemy attack on the stack aimed at one of this Path's fellow Paths (matching `typeFilter`), and which Path it's aimed at. */
+function enemyAttackOnAPath(
   ctx: { state: GameState; sourceInstanceId: string },
   typeFilter: (state: GameState, item: StackItem) => boolean,
-): string | undefined {
+): { item: StackItem; pathId: string } | undefined {
   const owner = pathOwnerOf(ctx.state, ctx.sourceInstanceId);
   if (!owner) return undefined;
   const paths = allPathsOf(ctx.state, owner).map((p) => p.instanceId);
   const item = ctx.state.stack.find(
     (it) => it.controllerId !== owner && it.targets.some((t) => paths.includes(t)) && typeFilter(ctx.state, it),
   );
-  return item?.targets.find((t) => paths.includes(t));
+  const pathId = item?.targets.find((t) => paths.includes(t));
+  return item && pathId ? { item, pathId } : undefined;
 }
 
-// NOTE (simplified for this pass, matching Sasori's Puppet Shell Guard/Iron
-// Sand Wall precedent): full negation of the attack rather than a redirect
-// onto Asura reduced by 1 — the engine can't re-target an already-pushed
-// stack item's opaque resolve closure at a different unit.
+function anyPathTargetedByEnemy(
+  ctx: { state: GameState; sourceInstanceId: string },
+  typeFilter: (state: GameState, item: StackItem) => boolean,
+): string | undefined {
+  return enemyAttackOnAPath(ctx, typeFilter)?.pathId;
+}
+
+// "In response to a targeted Physical ability aimed at any Path, redirect it
+// onto Asura instead, reduced by 1 (min 0)."
 const mechanizedGuard: AbilityDef = {
   id: 'mechanized-guard',
   name: 'Asura Path: Mechanized Guard',
@@ -248,9 +270,9 @@ const mechanizedGuard: AbilityDef = {
   maxTargets: 0,
   legalityCheck: (ctx) => !!anyPathTargetedByEnemy(ctx, isPhysical),
   resolve: (ctx) => {
-    const targetId = anyPathTargetedByEnemy(ctx, isPhysical);
-    if (!targetId) return appendLog(ctx.state, 'Mechanized Guard finds nothing left to intercept.');
-    return negateAttackOn(ctx.state, ctx.sourceInstanceId, targetId, 'Mechanized Guard');
+    const hit = enemyAttackOnAPath(ctx, isPhysical);
+    if (!hit) return appendLog(ctx.state, 'Mechanized Guard finds nothing left to intercept.');
+    return redirectAttack(ctx.state, hit.item.id, hit.pathId, ctx.sourceInstanceId, { reduceBy: 1 }, 'Mechanized Guard');
   },
 };
 
@@ -289,7 +311,8 @@ function summonBeast(id: string, name: string, factory: (owner: PlayerId, animal
     legalityCheck: (ctx) => {
       const found = findOccupant(ctx.state, ctx.sourceInstanceId);
       if (!found) return false;
-      return countTokensOfType(ctx.state, found.player, id) === 0;
+      const onCooldown = ((found.occupant.extra.beastCooldowns as Record<string, number> | undefined) ?? {})[id] > 0;
+      return countTokensOfType(ctx.state, found.player, id) === 0 && !onCooldown;
     },
     resolve: (ctx) => {
       const found = findOccupant(ctx.state, ctx.sourceInstanceId);
@@ -316,10 +339,11 @@ const chakraAbsorption: AbilityDef = {
   type: 'Ninjutsu',
   maxTargets: 0,
   legalityCheck: (ctx) => !!anyPathTargetedByEnemy(ctx, (s, i) => stackItemAbilityType(s, i) === 'Ninjutsu'),
+  // "Redirect a targeted Ninjutsu attack onto Preta, reduce to 0, gain 1 Chakra to Preta Path's Pool."
   resolve: (ctx) => {
-    const targetId = anyPathTargetedByEnemy(ctx, (s, i) => stackItemAbilityType(s, i) === 'Ninjutsu');
-    if (!targetId) return appendLog(ctx.state, 'Chakra Absorption finds nothing left to intercept.');
-    let state = negateAttackOn(ctx.state, ctx.sourceInstanceId, targetId, 'Chakra Absorption');
+    const hit = enemyAttackOnAPath(ctx, (s, i) => stackItemAbilityType(s, i) === 'Ninjutsu');
+    if (!hit) return appendLog(ctx.state, 'Chakra Absorption finds nothing left to intercept.');
+    const state = redirectAttack(ctx.state, hit.item.id, hit.pathId, ctx.sourceInstanceId, { toZero: true }, 'Chakra Absorption');
     return patchOccupant(state, ctx.sourceInstanceId, (o) => ({ ...o, chakraPool: { ...o.chakraPool!, current: Math.min(o.chakraPool!.capacity, o.chakraPool!.current + 1) } }));
   },
 };
@@ -333,10 +357,11 @@ const absorbImpact: AbilityDef = {
   type: 'Taijutsu',
   maxTargets: 0,
   legalityCheck: (ctx) => !!anyPathTargetedByEnemy(ctx, isPhysical),
+  // "Redirect a targeted Physical attack onto Preta, taking it −1 (min 0)."
   resolve: (ctx) => {
-    const targetId = anyPathTargetedByEnemy(ctx, isPhysical);
-    if (!targetId) return appendLog(ctx.state, 'Absorb Impact finds nothing left to intercept.');
-    return negateAttackOn(ctx.state, ctx.sourceInstanceId, targetId, 'Absorb Impact');
+    const hit = enemyAttackOnAPath(ctx, isPhysical);
+    if (!hit) return appendLog(ctx.state, 'Absorb Impact finds nothing left to intercept.');
+    return redirectAttack(ctx.state, hit.item.id, hit.pathId, ctx.sourceInstanceId, { reduceBy: 1 }, 'Absorb Impact');
   },
 };
 
@@ -524,12 +549,29 @@ registerTokenDef({
     for (const t of next.players[opponent].frontRow) {
       if (t) next = dealDamage(next, t.instanceId, 8).state;
     }
+    // The delayed hit has landed — the other Paths are free again.
+    for (const path of allPathsOf(next, owner)) {
+      if (path.extra.lockedByAlmightyPush) next = patchOccupant(next, path.instanceId, (o) => ({ ...o, extra: { ...o.extra, lockedByAlmightyPush: undefined } }));
+    }
     return appendLog(next, 'Almighty Push devastates all enemy units.');
   },
 });
 registerTokenDef({ id: ASURA_ID, name: 'Asura Path', abilities: [mechanizedAssault, mechanizedGuard] });
 registerTokenDef({ id: HUMAN_ID, name: 'Human Path', abilities: [soulRip] });
-registerTokenDef({ id: ANIMAL_ID, name: 'Animal Path', abilities: [summonKu, summonWarRhino, summonBird] });
+registerTokenDef({
+  id: ANIMAL_ID,
+  name: 'Animal Path',
+  abilities: [summonKu, summonWarRhino, summonBird],
+  // A defeated Path Beast's cooldown counts down over its controller's Upkeep Phases.
+  onUpkeep: (state, instanceId) => {
+    const found = findOccupant(state, instanceId);
+    const cooldowns = (found?.occupant.extra.beastCooldowns as Record<string, number> | undefined) ?? {};
+    if (!found || Object.keys(cooldowns).length === 0) return state;
+    const next: Record<string, number> = {};
+    for (const [beast, left] of Object.entries(cooldowns)) if (left - 1 > 0) next[beast] = left - 1;
+    return patchOccupant(state, instanceId, (o) => ({ ...o, extra: { ...o.extra, beastCooldowns: next } }));
+  },
+});
 registerTokenDef({ id: PRETA_ID, name: 'Preta Path', abilities: [chakraAbsorption, absorbImpact] });
 registerTokenDef({
   id: NARAKA_ID,

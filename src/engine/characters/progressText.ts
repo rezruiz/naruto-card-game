@@ -87,7 +87,32 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
   evasiveNormalOnly: (v) => (v ? { label: 'Evasive', value: 'vs Normal-speed attacks' } : undefined),
   elementalVersatilityUsedTurn: (v, s) => ({ label: 'Elemental Versatility discount', value: v === s.turn ? 'Used this turn' : 'Available' }),
   inspiringLeaderUsedTurn: (v, s) => (v === s.turn ? { label: 'Inspiring Leader discount', value: 'Used this turn' } : undefined),
-  rallyingWordsBonusTurn: (v, s) => (v === s.turn ? { label: 'Rallying Words', value: '+1 damage on next attack this turn', key: true } : undefined),
+  rallyingWordsBonusTurn: (v, s, occ) =>
+    v === s.turn && !occ.extra.rallyingSpentOn ? { label: 'Rallying Words', value: '+1 damage on next attack this turn', key: true } : undefined,
+  rallyingSpentOn: () => undefined, // shown via rallyingWordsBonusTurn
+  damagedEnemies: (v, s) => ({ label: 'Enemies damaged (Curse targets)', value: names(s, v) }),
+  revivePending: (v) => (v ? { label: "Kakuzu's revival", value: 'Would be defeated — waiting on your answer', key: true } : undefined),
+  reviveResolved: () => undefined, // internal: the revival decision was made
+  damageTakenFrom: (v, s) => {
+    const entries = Object.entries((v as Record<string, number> | undefined) ?? {});
+    return entries.length ? { label: 'Damage taken from (Tsukuyomi limit 6)', value: entries.map(([id, n]) => `${nameOf(s, id)} ${n}`).join(', ') } : undefined;
+  },
+  lastKillTurn: (v, s) => (v === s.turn ? { label: 'Defeated a character', value: 'This turn', key: true } : undefined),
+  lastKillStyles: () => undefined, // shown via Patchwork Threads' choice
+  ironSkinUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: 'Iron Skin', value: `−2 physical / −1 elemental through turn ${v}`, key: true } : undefined),
+  beastCooldowns: (v) => {
+    const entries = Object.entries((v as Record<string, number> | undefined) ?? {}).filter(([, n]) => n > 0);
+    return entries.length ? { label: 'Beast cooldowns', value: entries.map(([id, n]) => `${id.replace(/-/g, ' ')}: ${n} Upkeep(s)`).join(', '), key: true } : undefined;
+  },
+  cooldownOnDefeat: () => undefined, // internal: which Animal Path tracks this Beast's cooldown
+  lockedByAlmightyPush: (v) => (v ? { label: 'Locked', value: 'Until Almighty Push lands', key: true } : undefined),
+  abilityLockUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: 'Abilities locked', value: `Through turn ${v}`, key: true } : undefined),
+  banshoVulnerableTurn: (v, s) => (v === s.turn ? { label: "Banshō Ten'in", value: '+1 damage this turn, can’t be protected', key: true } : undefined),
+  regenCheckedTurn: () => undefined, // internal: Golem Regeneration bookkeeping
+  createdTurn: () => undefined, // internal
+  lastDamagedTurn: () => undefined, // internal: Golem Regeneration bookkeeping
+  targetLockBy: () => undefined, // shown via targetLockUntilTurn
+  nextAbilityDiscount: (v) => ((v as number) > 0 ? { label: 'Next ability', value: `costs ${v} less (Bingo Book)`, key: true } : undefined),
 };
 
 /** Every `extra` key the display knows how to show — the guard test checks each key the engine writes is in here. */

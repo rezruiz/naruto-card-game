@@ -3,6 +3,7 @@ import { dealDamage, registerDefeatHook } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
 import { applyPoison } from '../poison';
 import { findAbility } from '../abilities';
+import { redirectAttack } from '../cards/negation';
 import type { AbilityDef } from '../abilities';
 import { registerCharacter, registerTokenDef } from './registry';
 import type { GameState, PlayerId, StackItem, TokenInstance } from '../types';
@@ -71,10 +72,8 @@ const tailStrike: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass, matching Crow Clone/Paper Clone/Yahiko's
-// Ultimate precedent): full negation rather than redirect-and-reduce — a
-// stack item's resolve is an opaque closure over its original target, so the
-// engine can't re-target it at Hiruko instead.
+// "Redirect a targeted Ninjutsu or Physical attack aimed at Third Kazekage
+// onto Hiruko instead, reduced by 2 (min 0)."
 const puppetShellGuard: AbilityDef = {
   id: 'puppet-shell-guard',
   name: 'Puppet Shell Guard',
@@ -97,12 +96,9 @@ const puppetShellGuard: AbilityDef = {
       (t) => t?.defId === THIRD_KAZEKAGE_ID && t.ownerCharacterInstanceId === ctx.sourceInstanceId,
     );
     if (!kazekage) return ctx.state;
-    let state = ctx.state;
-    const idx = state.stack.findIndex((item) => item.targets.includes(kazekage.instanceId) && isNinjutsuOrPhysical(state, item));
-    if (idx === -1) return appendLog(state, 'Puppet Shell Guard finds nothing left to intercept.');
-    const negated = state.stack[idx];
-    state = { ...state, stack: [...state.stack.slice(0, idx), ...state.stack.slice(idx + 1)] };
-    return appendLog(state, `Hiruko intercepts ${negated.abilityName}, shielding Third Kazekage.`);
+    const item = ctx.state.stack.find((it) => it.targets.includes(kazekage.instanceId) && isNinjutsuOrPhysical(ctx.state, it));
+    if (!item) return appendLog(ctx.state, 'Puppet Shell Guard finds nothing left to intercept.');
+    return redirectAttack(ctx.state, item.id, kazekage.instanceId, ctx.sourceInstanceId, { reduceBy: 2 }, 'Puppet Shell Guard');
   },
 };
 

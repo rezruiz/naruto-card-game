@@ -11,7 +11,7 @@ export function AbilityChoiceStep({
   onAnswer: (value: boolean | number | string) => void;
   onCancel: () => void;
 }) {
-  const [value, setValue] = useState(spec.kind === 'number' ? spec.min : 0);
+  const [value, setValue] = useState(spec.kind === 'number' ? (spec.initial ?? spec.min) : 0);
   const cancel = (
     <button type="button" onClick={onCancel}>
       Cancel

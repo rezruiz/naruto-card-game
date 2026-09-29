@@ -49,29 +49,41 @@ describe('Yahiko', () => {
     expect(state.players.p1.genericChakraAvailable).toBe(4); // paid 1, not 2
   });
 
-  it('Yahiko Sacrifices Himself negates an attack targeting an ally, but only when outnumbered by 2+', () => {
+  /** p2 outnumbers p1 by 2 (p1 down to 3 characters), Hidan at 1 HP with his one-time survival already spent, and p2's Earth Grudge Fear (1 damage) aimed at him. */
+  function lethalOnHidan(hidanHp: number) {
     let state = withYahiko();
-    // Remove 2 of p1's characters so p2 (still at 5) outnumbers p1 (3) by 2.
     state = {
       ...state,
       players: {
         ...state.players,
-        p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c, i) => (i >= 3 ? null : c)) },
+        p1: {
+          ...state.players.p1,
+          backRow: state.players.p1.backRow.map((c, i) =>
+            i >= 3 ? null : c?.defId === 'hidan' ? { ...c, currentHP: hidanHp, extra: { ...c.extra, usedSafetyNet: true } } : c,
+          ),
+        },
       },
     };
     state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
     state = giveChakra(state, 'p2', 3);
     state = activateAbility(state, 'p2-kakuzu', 'earth-grudge-fear', ['p1-hidan'], 0);
     expect(state.stack).toHaveLength(1);
+    return giveChakra(state, 'p1', 5);
+  }
 
-    state = giveChakra(state, 'p1', 5);
+  it('Yahiko Sacrifices Himself redirects a lethal attack on an ally onto Yahiko — the ally takes none', () => {
+    let state = lethalOnHidan(1);
     state = activateAbility(state, 'p1-yahiko', 'yahiko-sacrifices-himself', ['p1-hidan'], 0);
     expect(state.stack).toHaveLength(2);
-
-    const hidanHpBefore = state.players.p1.backRow[1]!.currentHP;
-    state = gameReducer(state, { type: 'PASS_PRIORITY' });
-    state = gameReducer(state, { type: 'PASS_PRIORITY' }); // resolves the Ultimate, negating Earth Grudge Fear
+    const yahikoHp = state.players.p1.backRow[0]!.currentHP;
+    for (let i = 0; i < 4; i++) state = gameReducer(state, { type: 'PASS_PRIORITY' }); // Ultimate, then the (redirected) attack
     expect(state.stack).toHaveLength(0);
-    expect(state.players.p1.backRow[1]!.currentHP).toBe(hidanHpBefore); // Hidan untouched
+    expect(state.players.p1.backRow[1]!.currentHP).toBe(1); // Hidan untouched
+    expect(state.players.p1.backRow[0]!.currentHP).toBe(yahikoHp - 1); // Yahiko took it
+  });
+
+  it("can't be used against an attack that wouldn't defeat the ally", () => {
+    const state = lethalOnHidan(5);
+    expect(activateAbility(state, 'p1-yahiko', 'yahiko-sacrifices-himself', ['p1-hidan'], 0).stack).toHaveLength(1);
   });
 });

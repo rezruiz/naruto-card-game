@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { gameReducer, setupPending } from './engine/reducer';
 import { createSetupState } from './engine/state';
 import { findOccupant, isCharacter } from './engine/board';
-import { findAbility, type ChoiceSpec } from './engine/abilities';
+import { findAbility, poolAvailableFor, resolveCost, type ChoiceSpec } from './engine/abilities';
 import { getCharacterDeckEntry } from './engine/characters';
 import { currentTax } from './engine/playCharacter';
 import { getHandCardDef } from './engine/cards/registry';
@@ -34,6 +34,9 @@ import { useNetGame } from './net/useNetGame';
 import './App.css';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
+
+/** The synthetic last step of an ability's choice queue: how much of the cost to pay from the Pool. */
+const POOL_PAYMENT_CHOICE = '__payFromPool';
 
 type PendingAbility = {
   kind: 'ability';
@@ -248,12 +251,47 @@ function ViewGame({
   const isMyBoard = (playerId: PlayerId) => myPlayerId === null || myPlayerId === playerId;
 
   /** Trust mode declares (stages) the action for later resolution; strict mode activates it right away. */
-  function submitAbility(instanceId: string, abilityId: string, targets: string[], choices?: AbilityChoices) {
+  function submitAbility(instanceId: string, abilityId: string, targets: string[], choices?: AbilityChoices, payFromPool = 0) {
     dispatch(
       trust
-        ? { type: 'STAGE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool: 0, choices }
-        : { type: 'ACTIVATE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool: 0, choices },
+        ? { type: 'STAGE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices }
+        : { type: 'ACTIVATE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices },
     );
+  }
+
+  /**
+   * How to split an ability's cost between the unit's Pool(s) and generic
+   * Chakra. Returns a fixed amount when there's only one sensible split
+   * (nothing pooled, Pool-only costs, "entire Pool" costs — the engine takes
+   * the Pool itself), or the range to ask the player about.
+   */
+  function poolPayment(p: PendingAbility, targets: string[], choices: AbilityChoices): { fixed: number } | { min: number; max: number } {
+    const found = findOccupant(state, p.instanceId);
+    const ability = found ? findAbility(found.occupant.defId, p.abilityId) : undefined;
+    if (!found || !ability || ability.spendsEntirePool) return { fixed: 0 };
+    const cost = resolveCost(ability, { state, sourceInstanceId: p.instanceId, targetInstanceIds: targets, choices });
+    const pooled = poolAvailableFor(state, p.instanceId);
+    if (ability.requiresFullPoolPayment) return { fixed: cost };
+    const generic = state.players[found.player].genericChakraAvailable;
+    const max = Math.min(pooled, cost);
+    const min = Math.min(max, Math.max(0, cost - generic));
+    return min === max ? { fixed: max } : { min, max };
+  }
+
+  /** All choices answered — settle payment (asking if there's a real Pool/generic split to make), then submit. */
+  function payAndSubmit(p: PendingAbility, targets: string[], choices: AbilityChoices) {
+    const payment = poolPayment(p, targets, choices);
+    if ('fixed' in payment) {
+      submitAbility(p.instanceId, p.abilityId, targets, Object.keys(choices).length ? choices : undefined, payment.fixed);
+      setPending(null);
+      return;
+    }
+    setPending({
+      ...p,
+      targets,
+      choices,
+      choiceQueue: [{ id: POOL_PAYMENT_CHOICE, kind: 'number', prompt: 'Pay how much from the Pool (the rest from available Chakra)?', min: payment.min, max: payment.max, initial: payment.max }],
+    });
   }
 
   /** Targets are in — ask the ability's optional choices (if it has any right now), then submit. */
@@ -270,20 +308,24 @@ function ViewGame({
       setPending({ ...p, targets, choiceQueue: specs, choices: {} });
       return;
     }
-    submitAbility(p.instanceId, p.abilityId, targets);
-    setPending(null);
+    payAndSubmit(p, targets, {});
   }
 
   function answerAbilityChoice(value: boolean | number | string) {
     if (!pending || pending.kind !== 'ability' || !pending.choiceQueue?.length) return;
     const [spec, ...rest] = pending.choiceQueue;
+    if (spec.id === POOL_PAYMENT_CHOICE) {
+      const choices = pending.choices ?? {};
+      submitAbility(pending.instanceId, pending.abilityId, pending.targets, Object.keys(choices).length ? choices : undefined, value as number);
+      setPending(null);
+      return;
+    }
     const choices = { ...pending.choices, [spec.id]: value };
     if (rest.length > 0) {
       setPending({ ...pending, choiceQueue: rest, choices });
       return;
     }
-    submitAbility(pending.instanceId, pending.abilityId, pending.targets, choices);
-    setPending(null);
+    payAndSubmit(pending, pending.targets, choices);
   }
 
   /** How many targets a declared action takes (0 = nothing to re-aim). */

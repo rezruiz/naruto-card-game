@@ -62,10 +62,8 @@ export function buildHandDeck(manifest: { defId: string; copies: number }[] = HA
 /**
  * "Look at the top N cards of your Hand Deck; you may add 1 [cardType]
  * card among them to your hand; shuffle the rest back" (Incoming Mission
- * Assignment, Battlefield Selection, §13b). NOTE (simplified for this pass,
- * same as every other "controller's optional choice" card this session):
- * automatically takes the first matching card found rather than presenting
- * a real choice — no such UI channel exists yet.
+ * Assignment, Battlefield Selection, §13b). A set effect, not an optional
+ * choice (per the designer): the first matching card found is taken.
  */
 export function lookAndTakeCardType(state: GameState, player: PlayerId, count: number, cardType: string): GameState {
   const p = state.players[player];

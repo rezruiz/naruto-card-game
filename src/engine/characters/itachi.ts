@@ -82,6 +82,7 @@ const crowClone: AbilityDef = {
   name: 'Crow Clone',
   cost: 2,
   speed: 'Reactive',
+  negatesTargetingOfSelf: true,
   style: 'None',
   type: 'Ninjutsu',
   maxTargets: 0,
@@ -117,11 +118,9 @@ const crowClone: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): the delayed ticks fire on Itachi's
-// controller's Upkeep via the engine's generic onUpkeep hook (real, not
-// stubbed) — but "damage cannot be reduced" has no reduction system yet to
-// override (no character currently reduces damage in the engine either), so
-// this flag is threaded through for forward-compatibility only.
+// The delayed ticks fire on Itachi's controller's Upkeep (onUpkeep below).
+// "Damage cannot be reduced": every tick is dealt with cannotBeReduced, which
+// skips every reduction in combat.ts (Iron Skin, Paper Body, prevention...).
 const amaterasu: AbilityDef = {
   id: 'amaterasu',
   name: 'Amaterasu',
@@ -146,10 +145,8 @@ const amaterasu: AbilityDef = {
   },
 };
 
-// NOTE (simplified for this pass): the "must not have dealt more than 6
-// damage to Itachi this game" condition is not enforced — the engine's
-// dealDamage pipeline doesn't yet attribute damage to its source character,
-// only its target, so there's no per-attacker lifetime damage total to check.
+// Condition: the target is already under Mind Prison, and hasn't dealt more
+// than 6 damage to Itachi this game (a per-attacker tally kept by combat.ts).
 const tsukuyomiInfiniteAgony: AbilityDef = {
   id: 'tsukuyomi-infinite-agony',
   name: 'Mangekyō Sharingan: Tsukuyomi - Infinite Agony',
@@ -164,7 +161,9 @@ const tsukuyomiInfiniteAgony: AbilityDef = {
     const targetId = ctx.targetInstanceIds[0];
     if (!source || !isCharacter(source.occupant) || !targetId) return false;
     const usedOn = (source.occupant.extra.mindPrisonUsedOn as string[]) ?? [];
-    return usedOn.includes(targetId);
+    // ...and it must not have dealt more than 6 damage to Itachi this game (combat.ts tallies damageTakenFrom).
+    const taken = ((source.occupant.extra.damageTakenFrom as Record<string, number> | undefined) ?? {})[targetId] ?? 0;
+    return usedOn.includes(targetId) && taken <= 6;
   },
   resolve: (ctx) => {
     const targetId = ctx.targetInstanceIds[0];

@@ -7,9 +7,7 @@ import type { GameState, PlayerId } from '../types';
 
 const DEF_ID = 'konan';
 
-// NOTE (simplified for this pass, same as Kakuzu's Iron Skin): Paper Body's
-// incoming-damage modifiers (-2 vs Taijutsu, +1 vs Fire Style) aren't wired
-// into combat.dealDamage yet — no generic damage-modifier system exists.
+// Paper Body (−2 from Taijutsu, +1 from Fire) is applied in combat.ts's damage modifiers.
 
 function dealToAllEnemyUnits(state: GameState, owner: PlayerId, amount: number): GameState {
   const opponent = otherPlayer(owner);
@@ -105,6 +103,7 @@ const paperClone: AbilityDef = {
   name: 'Paper Clone',
   cost: 2,
   speed: 'Reactive',
+  negatesTargetingOfSelf: true,
   style: 'Paper',
   type: 'Ninjutsu',
   maxTargets: 0,
