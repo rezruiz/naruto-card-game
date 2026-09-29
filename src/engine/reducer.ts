@@ -33,6 +33,7 @@ import {
   deckToBottom,
   drawCards,
   moveHandCard,
+  returnFromConsumed,
   returnFromDiscard,
   shuffleDeck,
   toggleStatus,
@@ -217,6 +218,8 @@ function reduce(state: GameState, action: GameAction): GameState {
       return moveHandCard(drained, action.player, action.instanceId, action.to);
     case 'RETURN_FROM_DISCARD':
       return returnFromDiscard(drained, action.player, action.instanceId);
+    case 'RETURN_FROM_CONSUMED':
+      return returnFromConsumed(drained, action.player, action.instanceId);
     case 'DRAW_CARDS':
       return drawCards(drained, action.player, action.count);
     case 'SHUFFLE_DECK':

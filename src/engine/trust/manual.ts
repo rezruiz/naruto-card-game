@@ -89,6 +89,37 @@ export function moveHandCard(state: GameState, player: PlayerId, instanceId: str
   return appendLog(withPlayer(state, player, patch), `(manual) ${player} moves a card from hand to ${to === 'discard' ? 'the discard pile' : to === 'deck-top' ? 'the top of the deck' : 'the bottom of the deck'}.`);
 }
 
+/**
+ * SPEC.md §5.2 calls the Consumed pile "far more permanent" than the discard
+ * pile — retrievable only by some rare future effect, never by ordinary
+ * means. This is that rare exception, deliberately scoped to trust mode's
+ * mistake-fixing tools: undoes placing the WRONG card (or one too many) as a
+ * Chakra source. Every Consumed card has exactly one Chakra source placed
+ * alongside it (placeChakraSource always pushes to both piles together, and
+ * nothing else touches either), so they stay aligned index-for-index — this
+ * removes that same-index source too, refunding the Chakra it already made
+ * if it had been tapped, and reopens this turn's placement slot so the
+ * player can place the right card instead.
+ */
+export function returnFromConsumed(state: GameState, player: PlayerId, instanceId: string): GameState {
+  const p = state.players[player];
+  const index = p.consumedPile.findIndex((c) => c.instanceId === instanceId);
+  if (index === -1) return state;
+  const card = p.consumedPile[index];
+  const linkedSource = p.chakraSources[index];
+  const next = withPlayer(state, player, {
+    consumedPile: p.consumedPile.filter((_, i) => i !== index),
+    chakraSources: p.chakraSources.filter((_, i) => i !== index),
+    genericChakraAvailable: linkedSource?.tapped ? Math.max(0, p.genericChakraAvailable - 1) : p.genericChakraAvailable,
+    chakraSourcePlacedThisTurn: false,
+    hand: [...p.hand, { kind: 'card' as const, instanceId: card.instanceId, defId: card.defId }],
+  });
+  return appendLog(
+    next,
+    `(manual) ${player} retrieves a card from the Consumed pile, removing the Chakra source it produced${linkedSource?.tapped ? ' (that source had already been tapped — 1 Chakra is refunded too)' : ''}.`,
+  );
+}
+
 export function returnFromDiscard(state: GameState, player: PlayerId, instanceId: string): GameState {
   const p = state.players[player];
   const card = p.discardPile.find((c) => c.instanceId === instanceId);

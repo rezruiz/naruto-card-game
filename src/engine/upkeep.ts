@@ -89,6 +89,72 @@ function untappedSourceCount(state: GameState, player: PlayerId): number {
   return state.players[player].chakraSources.filter((s) => !s.tapped).length;
 }
 
+export interface UpkeepPreviewEntry {
+  instanceId: string;
+  name: string;
+  rank: CharacterInstance['rank'];
+  isStarting: boolean;
+  /** 'grant' = gains Chakra into its own Pool instead of paying; 'free' = costs 0; 'cost' = owes `amount` Chakra. */
+  kind: 'grant' | 'free' | 'cost';
+  amount: number;
+}
+
+/**
+ * A read-only preview of what this player's NEXT Upkeep Phase would do to
+ * each character currently in play, using today's board (Synergy/Terrain
+ * discounts can still change before it actually happens) — for a UI panel
+ * that lets a player see their Upkeep obligations ahead of time, not just
+ * after the fact in the log. Mirrors payUpkeep's own logic exactly but
+ * never mutates state.
+ */
+export function previewUpkeep(state: GameState, player: PlayerId): UpkeepPreviewEntry[] {
+  const p = state.players[player];
+  const startingId = p.startingCharacterInstanceId;
+  const entries: UpkeepPreviewEntry[] = [];
+
+  for (const character of p.backRow) {
+    if (!character) continue;
+    const isStarting = character.instanceId === startingId;
+    const treatment = isStarting ? startingCharacterTreatment(character.rank) : null;
+
+    if (treatment?.kind === 'grant') {
+      entries.push({ instanceId: character.instanceId, name: character.name, rank: character.rank, isStarting, kind: 'grant', amount: treatment.amount });
+    } else {
+      const cost = treatment?.kind === 'pay' ? treatment.amount : normalUpkeepCost(state, player, character);
+      entries.push({ instanceId: character.instanceId, name: character.name, rank: character.rank, isStarting, kind: cost === 0 ? 'free' : 'cost', amount: cost });
+    }
+  }
+  return entries;
+}
+
+/**
+ * A one-line reminder of what Upkeep will look like for a Character Deck
+ * card the player is currently choosing between (§3's Setup pick, or a §8
+ * Reinforcement draw) — shown on the reveal panel so the choice isn't made
+ * blind. `reason: 'setup'` means picking it makes it the STARTING character
+ * (the "1st character" exemption table, §6.5, applies); `reason:
+ * 'reinforcement'` means it goes to hand and will pay the normal per-rank
+ * table once played later.
+ */
+export function upkeepReminderText(rank: CharacterInstance['rank'], reason: 'setup' | 'reinforcement'): string {
+  if (reason === 'setup') {
+    const treatment = startingCharacterTreatment(rank);
+    if (treatment?.kind === 'grant') {
+      return `As your starting character: no upkeep — instead gains +${treatment.amount} Chakra into its own Pool every Upkeep.`;
+    }
+    if (treatment?.kind === 'pay') {
+      return treatment.amount === 0
+        ? 'As your starting character: upkeep is free.'
+        : `As your starting character: upkeep is ${treatment.amount} (reduced from the normal ${UPKEEP_BY_RANK[rank]}).`;
+    }
+    return `Rank ${rank} has no starting-character bonus — pays the normal Rank upkeep (${UPKEEP_BY_RANK[rank]}/turn) like any other character.`;
+  }
+  const base = UPKEEP_BY_RANK[rank];
+  return base === 0
+    ? 'Upkeep once played: free (Rank ' + rank + ').'
+    : `Upkeep once played: ${base} Chakra/turn (Rank ${rank}; Synergy or Terrain may reduce it further).`;
+}
+
 /**
  * SPEC.md §4.2/§6.5: pay per-character Upkeep at the start of this player's
  * Upkeep Phase. Payment is mandatory whenever affordable, paid in descending

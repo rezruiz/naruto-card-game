@@ -3,7 +3,7 @@ import { getHandCardDef } from '../../engine/cards/registry';
 import type { GameAction, GameState, PlayerId } from '../../engine/types';
 import { DetailsModal } from './DetailsModal';
 
-export type DeckTool = 'search' | 'top' | 'discard';
+export type DeckTool = 'search' | 'top' | 'discard' | 'consumed';
 
 const cardName = (defId: string) => getHandCardDef(defId)?.name ?? 'Unknown card';
 
@@ -72,6 +72,33 @@ export function DeckToolsModal({
                   To bottom
                 </button>
               </span>
+            </div>
+          ))}
+        </div>
+      </DetailsModal>
+    );
+  }
+
+  if (tool === 'consumed') {
+    return (
+      <DetailsModal
+        hideText
+        title="Consumed pile"
+        subtitle={`${p.consumedPile.length} cards consumed for Chakra — retrieving one also removes the Chakra source it produced`}
+        onClose={onClose}
+      >
+        <div className="deck-list">
+          {p.consumedPile.length === 0 && <span className="details-modal__note">Nothing has been Consumed for Chakra yet.</span>}
+          {p.consumedPile.map((c) => (
+            <div key={c.instanceId} className="deck-list__row">
+              <span>{cardName(c.defId)}</span>
+              <button
+                type="button"
+                title="Fixes an accidental or wrong Chakra placement — removes the linked source too"
+                onClick={() => dispatch({ type: 'RETURN_FROM_CONSUMED', player, instanceId: c.instanceId })}
+              >
+                Retrieve (undo placement)
+              </button>
             </div>
           ))}
         </div>

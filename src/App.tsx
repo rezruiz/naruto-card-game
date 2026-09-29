@@ -11,6 +11,8 @@ import { cardStage, newPendingCard, toHandCardContext, type PendingCard } from '
 import { getHandCardText } from './ui/cardInfo';
 import { ActionLog } from './ui/components/ActionLog';
 import { DeckToolsModal, type DeckTool } from './ui/components/DeckToolsModal';
+import { UpkeepPanel } from './ui/components/UpkeepPanel';
+import { previewUpkeep } from './engine/upkeep';
 import { StagedPanel } from './ui/components/StagedPanel';
 import { CharacterDetailsModal } from './ui/components/CharacterDetailsModal';
 import { DetailsModal } from './ui/components/DetailsModal';
@@ -325,6 +327,7 @@ function ViewGame({
           isYou={myPlayerId !== null && myPlayerId === playerId}
           onAdjust={trust && mine ? (delta) => dispatch({ type: 'ADJUST_PLAYER_HEALTH', player: playerId, delta }) : undefined}
         />
+        <UpkeepPanel entries={previewUpkeep(state, playerId)} />
         {player.pendingCharacterReveal && (
           <CharacterRevealPanel
             player={playerId}
@@ -364,6 +367,13 @@ function ViewGame({
             </button>
             <button type="button" onClick={() => setDeckTool({ player: playerId, tool: 'discard' })}>
               Discard pile ({player.discardPile.length})
+            </button>
+            <button
+              type="button"
+              title="Retrieve a card wrongly Consumed for a Chakra source (fixes an accidental or wrong placement)"
+              onClick={() => setDeckTool({ player: playerId, tool: 'consumed' })}
+            >
+              Consumed pile ({player.consumedPile.length})
             </button>
           </div>
         )}

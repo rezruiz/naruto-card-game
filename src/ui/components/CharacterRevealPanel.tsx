@@ -1,4 +1,5 @@
 import { getCharacterDeckEntry } from '../../engine/characters';
+import { upkeepReminderText } from '../../engine/upkeep';
 import type { PlayerId } from '../../engine/types';
 
 export function CharacterRevealPanel({
@@ -12,7 +13,7 @@ export function CharacterRevealPanel({
   player: PlayerId;
   revealed: string[];
   reason: 'setup' | 'reinforcement';
-  /** Reinforcement draws: what it will cost to play the chosen card from hand. */
+  /** Reinforcement draws: what it will cost to play the chosen card from hand (rank-independent, so one note for the whole panel). */
   taxNote?: string;
   interactive: boolean;
   onChoose: (entryId: string) => void;
@@ -27,9 +28,12 @@ export function CharacterRevealPanel({
         {revealed.map((entryId, i) => {
           const entry = getCharacterDeckEntry(entryId);
           return (
-            <button type="button" key={`${entryId}-${i}`} disabled={!interactive} onClick={() => onChoose(entryId)}>
-              {entry ? `${entry.name} (Rank ${entry.rank})` : 'Hidden character'}
-            </button>
+            <div className="reveal-panel__option" key={`${entryId}-${i}`}>
+              <button type="button" disabled={!interactive} onClick={() => onChoose(entryId)}>
+                {entry ? `${entry.name} (Rank ${entry.rank})` : 'Hidden character'}
+              </button>
+              {entry && <div className="reveal-panel__upkeep">{upkeepReminderText(entry.rank, reason)}</div>}
+            </div>
           );
         })}
       </div>

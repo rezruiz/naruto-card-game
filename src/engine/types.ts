@@ -273,6 +273,7 @@ export type GameAction =
   | { type: 'UNTAP_CHAKRA_SOURCE'; player: PlayerId; sourceIndex: number }
   | { type: 'MOVE_HAND_CARD'; player: PlayerId; instanceId: string; to: 'discard' | 'deck-top' | 'deck-bottom' }
   | { type: 'RETURN_FROM_DISCARD'; player: PlayerId; instanceId: string }
+  | { type: 'RETURN_FROM_CONSUMED'; player: PlayerId; instanceId: string }
   | { type: 'DRAW_CARDS'; player: PlayerId; count: number }
   | { type: 'SHUFFLE_DECK'; player: PlayerId }
   | { type: 'DECK_TAKE'; player: PlayerId; instanceId: string; shuffle: boolean }

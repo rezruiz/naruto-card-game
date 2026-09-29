@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gameReducer } from '../../src/engine/reducer';
-import { payUpkeep } from '../../src/engine/upkeep';
+import { payUpkeep, previewUpkeep, upkeepReminderText } from '../../src/engine/upkeep';
 import { dealDamage } from '../../src/engine/combat';
 import { applyPoison } from '../../src/engine/poison';
 import { registerCharacter } from '../../src/engine/characters/registry';
@@ -664,3 +664,102 @@ describe('§6.5b Retreat collapse: clearing the board forces Retreated character
 function dealDamageAction(s: GameState): GameState {
   return dealDamage(s, 'p2-t-C', 5).state;
 }
+
+describe('Manual: Consumed pile retrieval (fixing an accidental/wrong Chakra placement)', () => {
+  const setup = () => {
+    const cards = ['substitution', 'chakra-transfer'].map((d) => makeHandCardInstance(d));
+    let s: GameState = { ...freshMain1(), rules: 'trust' }; // these are trust-mode-only manual tools
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: cards.map((c) => ({ kind: 'card' as const, ...c })) } } };
+    return { s, cards };
+  };
+
+  it('returns the card to hand and removes the linked, still-untapped Chakra source', () => {
+    const { s, cards } = setup();
+    let state = run(s, { type: 'PLACE_CHAKRA_SOURCE', instanceId: cards[0].instanceId });
+    expect(state.players.p1.chakraSources).toHaveLength(1);
+    expect(state.players.p1.consumedPile).toHaveLength(1);
+
+    state = run(state, { type: 'RETURN_FROM_CONSUMED', player: 'p1', instanceId: cards[0].instanceId });
+    expect(state.players.p1.consumedPile).toHaveLength(0);
+    expect(state.players.p1.chakraSources).toHaveLength(0);
+    expect(state.players.p1.hand.some((h) => h.instanceId === cards[0].instanceId)).toBe(true);
+    expect(state.players.p1.chakraSourcePlacedThisTurn).toBe(false); // free to place again this turn
+  });
+
+  it('refunds 1 Chakra if the linked source had already been tapped, and only removes the matching source when two were placed', () => {
+    const { s, cards } = setup();
+    let state = run(s, { type: 'PLACE_CHAKRA_SOURCE', instanceId: cards[0].instanceId }, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 0 });
+    // Bingo Book B's bonus lets a 2nd placement through even though one was already placed this turn.
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, bonusChakraSourcePlacements: 1 } } };
+    state = run(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: cards[1].instanceId });
+    expect(state.players.p1.chakraSources).toHaveLength(2);
+    expect(state.players.p1.genericChakraAvailable).toBe(1);
+
+    // Retrieve the SECOND (wrongly Consumed) card — its own (untapped) source is removed, not the first, tapped one.
+    state = run(state, { type: 'RETURN_FROM_CONSUMED', player: 'p1', instanceId: cards[1].instanceId });
+    expect(state.players.p1.chakraSources).toHaveLength(1);
+    expect(state.players.p1.chakraSources[0].tapped).toBe(true); // the first source survives, untouched
+    expect(state.players.p1.genericChakraAvailable).toBe(1); // no refund — that source was never tapped
+
+    // Now retrieve the first (tapped) one too — its Chakra is refunded.
+    state = run(state, { type: 'RETURN_FROM_CONSUMED', player: 'p1', instanceId: cards[0].instanceId });
+    expect(state.players.p1.chakraSources).toHaveLength(0);
+    expect(state.players.p1.genericChakraAvailable).toBe(0);
+    expect(state.players.p1.hand.map((h) => h.instanceId).sort()).toEqual([cards[0].instanceId, cards[1].instanceId].sort());
+  });
+
+  it('does nothing for an unknown instance id, and is a no-op in strict mode', () => {
+    const { s, cards } = setup();
+    let state = run(s, { type: 'PLACE_CHAKRA_SOURCE', instanceId: cards[0].instanceId });
+    const before = state;
+    state = run(state, { type: 'RETURN_FROM_CONSUMED', player: 'p1', instanceId: 'no-such-card' });
+    expect(state.players.p1.consumedPile).toEqual(before.players.p1.consumedPile);
+
+    const strict = gameReducer(freshMain1(), { type: 'RETURN_FROM_CONSUMED', player: 'p1', instanceId: 'anything' } as GameAction);
+    expect(strict).toEqual(freshMain1());
+  });
+});
+
+describe('Upkeep preview and reminder text (for the standing panel and the character-reveal picker)', () => {
+  it('previews a grant for a C/B-rank starting character, a reduced/free cost for A/S, and the normal table for everyone else', () => {
+    const s = setBack(freshMain1(), 'p1', ['t-C', 't-B', 't-A', 't-S', null]);
+    for (const id of ['p1-t-C', 'p1-t-B', 'p1-t-A', 'p1-t-S']) {
+      const withStarting = { ...s, players: { ...s.players, p1: { ...s.players.p1, startingCharacterInstanceId: id } } };
+      const entries = previewUpkeep(withStarting, 'p1');
+      const starting = entries.find((e) => e.instanceId === id)!;
+      const rest = entries.filter((e) => e.instanceId !== id);
+      if (id === 'p1-t-C') expect(starting).toMatchObject({ kind: 'grant', amount: 2 });
+      if (id === 'p1-t-B') expect(starting).toMatchObject({ kind: 'grant', amount: 1 });
+      if (id === 'p1-t-A') expect(starting).toMatchObject({ kind: 'free', amount: 0 });
+      if (id === 'p1-t-S') expect(starting).toMatchObject({ kind: 'cost', amount: 2 });
+      // The other three (not the starting character) still use the normal per-rank table.
+      const byRank = Object.fromEntries(rest.map((e) => [e.rank, e]));
+      if (id !== 'p1-t-C') expect(byRank['C']).toMatchObject({ kind: 'free', amount: 0 });
+      if (id !== 'p1-t-B') expect(byRank['B']).toMatchObject({ kind: 'cost', amount: 1 });
+      if (id !== 'p1-t-A') expect(byRank['A']).toMatchObject({ kind: 'cost', amount: 2 });
+      if (id !== 'p1-t-S') expect(byRank['S']).toMatchObject({ kind: 'cost', amount: 3 });
+    }
+  });
+
+  it('matches what payUpkeep actually does', () => {
+    const s = setBack(freshMain1(), 'p1', ['kakuzu', 'hidan', null, null, null]);
+    const preview = previewUpkeep(s, 'p1');
+    const kakuzu = preview.find((e) => e.instanceId === 'p1-kakuzu')!;
+    expect(kakuzu.kind).toBe('cost');
+    const paid = payUpkeep(sources(s, 'p1', kakuzu.amount + preview.find((e) => e.instanceId === 'p1-hidan')!.amount), 'p1');
+    expect(char(paid, 'p1', 'p1-kakuzu').status.disabled).toBe(false);
+    expect(char(paid, 'p1', 'p1-hidan').status.disabled).toBe(false);
+  });
+
+  it('gives the right reminder text for a Setup pick (the "1st character" bonus) vs. a Reinforcement pick (the normal table)', () => {
+    expect(upkeepReminderText('C', 'setup')).toMatch(/no upkeep.*\+2 Chakra/);
+    expect(upkeepReminderText('B', 'setup')).toMatch(/no upkeep.*\+1 Chakra/);
+    expect(upkeepReminderText('A', 'setup')).toMatch(/upkeep is free/);
+    expect(upkeepReminderText('S', 'setup')).toMatch(/upkeep is 2 \(reduced from the normal 3\)/);
+    expect(upkeepReminderText('D', 'setup')).toMatch(/no starting-character bonus/i);
+
+    expect(upkeepReminderText('C', 'reinforcement')).toMatch(/free/);
+    expect(upkeepReminderText('B', 'reinforcement')).toMatch(/1 Chakra\/turn/);
+    expect(upkeepReminderText('S', 'reinforcement')).toMatch(/3 Chakra\/turn/);
+  });
+});
