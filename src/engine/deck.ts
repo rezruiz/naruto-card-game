@@ -3,6 +3,7 @@ import { applyHealthLoss } from './combat';
 import { appendLog } from './phases/phaseMachine';
 import { getHandCardDef } from './cards/registry';
 import { currentTax, reinforcementTax } from './playCharacter';
+import { enqueueChoice, registerChoiceResolver } from './choices';
 import type { GameState, HandCardInstance, PlayerId } from './types';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -59,32 +60,50 @@ export function buildHandDeck(manifest: { defId: string; copies: number }[] = HA
   return shuffle(cards);
 }
 
+/** Adds `taken` to hand and shuffles the other looked-at cards back into the deck. */
+function takeLookedAtCard(state: GameState, player: PlayerId, seen: HandCardInstance[], taken: HandCardInstance): GameState {
+  const p = state.players[player];
+  const handDeck = shuffle([...p.handDeck, ...seen.filter((c) => c.instanceId !== taken.instanceId)]);
+  const next = { ...state, players: { ...state.players, [player]: { ...p, handDeck, hand: [...p.hand, { kind: 'card' as const, ...taken }] } } };
+  return appendLog(next, `${player} adds ${getHandCardDef(taken.defId)?.name ?? 'a card'} to hand and shuffles the rest back.`);
+}
+
+registerChoiceResolver('look-and-take', (state, choice, optionIds) => {
+  const seen = choice.data.seen as HandCardInstance[];
+  const taken = seen.find((c) => c.instanceId === optionIds[0]) ?? seen[0];
+  return takeLookedAtCard(state, choice.player, seen, taken);
+});
+
 /**
- * "Look at the top N cards of your Hand Deck; you may add 1 [cardType]
- * card among them to your hand; shuffle the rest back" (Incoming Mission
- * Assignment, Battlefield Selection, §13b). A set effect, not an optional
- * choice (per the designer): the first matching card found is taken.
+ * "Look at the top N cards of your Hand Deck; add 1 [cardType] card among
+ * them to your hand; shuffle the rest back" (Incoming Mission Assignment,
+ * Battlefield Selection, §13b). N is fixed by the card (it states a value,
+ * with no choice). WHICH matching card is taken is the player's pick — the
+ * looked-at cards are set aside while they choose (hidden from the
+ * opponent); with only one match there's nothing to choose.
  */
 export function lookAndTakeCardType(state: GameState, player: PlayerId, count: number, cardType: string): GameState {
   const p = state.players[player];
   const seen = p.handDeck.slice(0, count);
   const rest = p.handDeck.slice(count);
-  const takeIndex = seen.findIndex((c) => getHandCardDef(c.defId)?.cardType === cardType);
+  const matches = seen.filter((c) => getHandCardDef(c.defId)?.cardType === cardType);
 
-  if (takeIndex === -1) {
+  if (matches.length === 0) {
     const next = { ...state, players: { ...state.players, [player]: { ...p, handDeck: shuffle([...rest, ...seen]) } } };
     return appendLog(next, `${player} finds no ${cardType} card among the top ${count} and shuffles them back.`);
   }
-  const taken = seen[takeIndex];
-  const shuffledBack = shuffle([...rest, ...seen.filter((_, i) => i !== takeIndex)]);
-  const next = {
-    ...state,
-    players: {
-      ...state.players,
-      [player]: { ...p, handDeck: shuffledBack, hand: [...p.hand, { kind: 'card' as const, instanceId: taken.instanceId, defId: taken.defId }] },
-    },
-  };
-  return appendLog(next, `${player} adds a ${cardType} card to hand.`);
+  const setAside: GameState = { ...state, players: { ...state.players, [player]: { ...p, handDeck: rest } } };
+  if (matches.length === 1) return takeLookedAtCard(setAside, player, seen, matches[0]);
+  return enqueueChoice(appendLog(setAside, `${player} looks at the top ${seen.length} card(s) of their Hand Deck.`), {
+    player,
+    prompt: `Take which ${cardType} card? (Looking at: ${seen.map((c) => getHandCardDef(c.defId)?.name ?? c.defId).join(', ')}.) The rest are shuffled back.`,
+    options: matches.map((c, i) => ({ id: c.instanceId, label: `${getHandCardDef(c.defId)?.name ?? c.defId}${matches.filter((m) => m.defId === c.defId).length > 1 ? ` (${i + 1})` : ''}` })),
+    min: 1,
+    max: 1,
+    resolverId: 'look-and-take',
+    data: { seen },
+    hidden: true,
+  });
 }
 
 let characterHandEntryCounter = 0;

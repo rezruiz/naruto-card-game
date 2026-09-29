@@ -271,6 +271,8 @@ export interface PendingChoice {
   max: number;
   resolverId: string;
   data: Record<string, unknown>;
+  /** The options (and prompt) come from a hidden zone — e.g. cards looked at from the top of a deck — so the opponent only sees that a choice is pending. */
+  hidden?: boolean;
 }
 
 export interface GameState {

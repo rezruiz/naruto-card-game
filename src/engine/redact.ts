@@ -33,9 +33,17 @@ export function redactStateFor(state: GameState, viewerId: PlayerId): GameState 
     return serializable as StackItem;
   });
 
+  // A choice over hidden cards (look at the top of your deck) stays private to its owner.
+  const pendingChoices = state.pendingChoices.map((c) =>
+    c.hidden && c.player === opponentId
+      ? { ...c, prompt: 'Choosing from cards only they can see…', options: c.options.map((o) => ({ id: o.id, label: 'Hidden card' })), data: {} }
+      : c,
+  );
+
   return {
     ...state,
     stack,
+    pendingChoices,
     players: {
       ...state.players,
       [opponentId]: {

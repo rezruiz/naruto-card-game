@@ -253,6 +253,39 @@ describe('Sasori enters with his Third Kazekage', () => {
   });
 });
 
+describe('Look at the top X: the player picks which matching card (X itself is fixed by the card)', () => {
+  it('Incoming Mission Assignment: two Missions in the top 6 — the player picks one, the rest go back; the opponent can’t see them', () => {
+    let s = giveChakra(freshMain1(), 'p1', 5);
+    const card = withHandCard(s, 'p1', 'incoming-mission-assignment');
+    s = card.state;
+    const deck = ['substitution', 'squad-formation', 'explosive-tag', 'unshakable-resolve', 'chakra-transfer', 'substitution', 'bingo-book-s'].map((d) => makeHandCardInstance(d));
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, handDeck: deck } } };
+    s = resolveTop(gameReducer(s, { type: 'PLAY_HAND_CARD', instanceId: card.id, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 }));
+
+    const choice = s.pendingChoices[0];
+    expect(choice.options.map((o) => o.label)).toEqual(['Squad Formation', 'Unshakable Resolve']); // only the 2 Missions among the top 6 (not the 7th card)
+    expect(s.players.p1.handDeck).toHaveLength(1); // the 6 looked at are set aside while choosing
+    const opponentView = redactStateFor(s, 'p2').pendingChoices[0];
+    expect(opponentView.options.every((o) => o.label === 'Hidden card')).toBe(true);
+
+    const pick = deck[3].instanceId; // Unshakable Resolve
+    s = gameReducer(s, { type: 'RESOLVE_CHOICE', choiceId: choice.id, optionIds: [pick] });
+    expect(s.players.p1.hand.some((h) => h.instanceId === pick)).toBe(true);
+    expect(s.players.p1.handDeck).toHaveLength(6); // 5 others shuffled back + the untouched 7th
+  });
+
+  it('with a single match there is nothing to choose — it is taken', () => {
+    let s = giveChakra(freshMain1(), 'p1', 5);
+    const card = withHandCard(s, 'p1', 'battlefield-selection');
+    s = card.state;
+    const deck = ['substitution', 'akatsuki-hideout', 'explosive-tag'].map((d) => makeHandCardInstance(d));
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, handDeck: deck } } };
+    s = resolveTop(gameReducer(s, { type: 'PLAY_HAND_CARD', instanceId: card.id, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 }));
+    expect(s.pendingChoices).toHaveLength(0);
+    expect(s.players.p1.hand.some((h) => h.instanceId === deck[1].instanceId)).toBe(true);
+  });
+});
+
 describe('Hand card defs used above exist', () => {
   it('field-intelligence and unshakable-resolve are registered', () => {
     expect(getHandCardDef('field-intelligence')).toBeDefined();
