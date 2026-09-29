@@ -14,12 +14,12 @@ describe('App (smoke)', () => {
   it('renders the lobby without crashing', () => {
     render(<App />);
     expect(screen.getByText(/naruto custom card game/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /play locally/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /single-player testing/i })).toBeTruthy();
   });
 
   it('starts a local hotseat game and renders the board without crashing', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /play locally/i }));
+    fireEvent.click(screen.getByRole('button', { name: /single-player testing/i }));
     // Setup is pending immediately after starting — a reveal panel or
     // mulligan control for at least one player should be present, and the
     // phase indicator should have mounted alongside it.
@@ -29,7 +29,7 @@ describe('App (smoke)', () => {
 
   it('lets both players pick a starting character through the reveal panel and reach the live board', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /play locally/i }));
+    fireEvent.click(screen.getByRole('button', { name: /single-player testing/i }));
 
     // Each player's reveal panel offers 3+ character buttons (Rank X) —
     // click the first one for whichever panel is still open, twice (P1 then
@@ -51,7 +51,7 @@ describe('App (smoke)', () => {
 
   it('shows minimized in-play cards and opens the full SPEC text in a popup on click', () => {
     const { container } = render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /play locally/i }));
+    fireEvent.click(screen.getByRole('button', { name: /single-player testing/i }));
     for (let i = 0; i < 2; i++) {
       const panel = screen.getAllByText(/choose a starting character/i)[0].closest('.reveal-panel')!;
       fireEvent.click(panel.querySelector('button')!);
@@ -78,7 +78,7 @@ describe('App (smoke)', () => {
 
   it('opens the same details popup from a card in hand, without triggering its Play button', () => {
     const { container } = render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /play locally/i }));
+    fireEvent.click(screen.getByRole('button', { name: /single-player testing/i }));
     for (let i = 0; i < 2; i++) {
       const panel = screen.getAllByText(/choose a starting character/i)[0].closest('.reveal-panel')!;
       fireEvent.click(panel.querySelector('button')!);

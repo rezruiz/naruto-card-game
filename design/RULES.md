@@ -55,7 +55,7 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 ### 1.2 Zones
 | Zone | What it is |
 |---|---|
-| **Hand Deck** | 40 shuffled cards: Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
+| **Hand Deck** | Up to **80** shuffled cards (the preset is 40): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
 | **Character Deck** | 12–18 shuffled Character cards (13 in the preset). Drawn only by triggers (§11). |
 | **Hand** | Holds both Hand Deck cards and drawn Character cards. **No maximum hand size** *(placeholder)*. |
 | **Back row** | Up to **5 Characters**, ordered left→right by entry order (§13.1). |
@@ -73,7 +73,7 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 ### 2.1 Sizes
 | Deck | Size | Drawn from |
 |---|---|---|
-| Hand Deck | exactly **40** | normal turn draws |
+| Hand Deck | **maximum 80** (minimum 40) **[Updated]** | normal turn draws |
 | Character Deck | **12–18** | only Character Deck triggers (§11) |
 
 ### 2.2 Character Deck caps
@@ -84,7 +84,7 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 - **Hand Deck: up to 3 copies** of any card. A Mission follows this limit unless marked **Unique** (then 1 copy).
 
 ### 2.4 The preset Akatsuki decks
-**Hand Deck (40):** 2× each of the 6 Missions (12); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **40**, no filler.
+**Hand Deck (the preset is 40 cards):** 2× each of the 6 Missions (12); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **40**, no filler.
 
 **Character Deck (13):** Kakuzu, Hidan, Deidara, Kisame, Itachi, Konan, Sasori, Zetsu, Juzo Biwa, Yahiko, Pain of the Six Paths, and **2× Amegakure Civilian Rebel**. Rank tally: S×3 (Kisame, Itachi, Pain), A×4 (Kakuzu, Deidara, Konan, Sasori), B×3 (Hidan, Zetsu, Juzo), C×1 (Yahiko), D×2 — all caps satisfied.
 
@@ -638,6 +638,9 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 8. ✔ **Passives:** a **Disabled** or **Retreated** character's triggered passives **do not trigger**, **except replacement-effect passives** (Five Hearts, Jashin's Blessing, Hollow Body).
 9. ✔ **Timing (cards):** non-combat Normal-speed cards (Terrain, Missions, deck searches, Deploy Medic Corps…) **cannot** be played in Combat; **Attack-type** Normal Jutsu are **Combat-only**; a Normal card may be played in Combat only if its effect **alters the immediate combat step** and triggers immediately.
 10. ✔ **Retreat collapse:** clearing a player's active characters in one combat step **forces their retreated characters out immediately** and grants the attacker a **second Combat** (unused attack actions only); forced out otherwise = no extra Combat.
+
+**Deck-size ruling**
+20. ✔ **Hand Deck maximum is 80 cards** (previously fixed at 40); the minimum remains 40. The preset Akatsuki Hand Deck remains 40 cards. (The build doesn't enforce any deck-size limit today; it only uses the fixed preset decks.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).

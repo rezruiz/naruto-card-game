@@ -53,15 +53,17 @@ mechanically tight, flavor-accurate, and easy to parse standalone.
 
 ## 2. Decks & Deck Composition
 
-Each player has **two separate decks**, totaling 52-58 cards depending on
-Character Deck size:
+Each player has **two separate decks**: a Hand Deck of **up to 80 cards**
+and a Character Deck of 12-18 cards.
 
 | Deck | Size | Contains | Drawn from |
 |---|---|---|---|
-| Hand Deck | 40 cards | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
+| Hand Deck | **Maximum 80 cards** (minimum 40) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
 | Character Deck | 12-18 cards | Character cards | Only via specific triggers (§8) |
 
-Character cards are **never** in the 40-card Hand Deck and are never drawn
+The preset Akatsuki Hand Deck used in this prototype is still 40 cards.
+
+Character cards are **never** in the Hand Deck and are never drawn
 by a normal draw step — they only enter your hand through the Character
 Deck triggers described in §8.
 
@@ -879,7 +881,7 @@ rest is deferred (§12):
 ### 10b. Mission Cards
 Mission rules are still early — only what's needed for the current
 example cards (§13a) is defined here, the rest is deferred (§12):
-- Mission cards live in the 40-card Hand Deck (§2) and are drawn
+- Mission cards live in the Hand Deck (§2) and are drawn
   normally, same as Jutsu cards.
 - **Copy limits:** a Mission follows the Hand Deck's normal copy limit
   (up to 3 copies, §2) unless it's marked **Unique**, in which case it's
@@ -907,7 +909,7 @@ example cards (§13a) is defined here, the rest is deferred (§12):
   only once its Condition is met.
 
 ### 10c. Jutsu Cards
-Jutsu cards live in the 40-card Hand Deck (§2) and are drawn normally.
+Jutsu cards live in the Hand Deck (§2) and are drawn normally.
 Unlike a character's own printed Abilities, a Jutsu card isn't tied to
 one specific character — it's a standalone effect any eligible
 character can enable. Each Jutsu card states:
@@ -1639,7 +1641,7 @@ finalized by design decision — adjust after playtesting:
   draft) — at least 3 more unique designs needed to fill out a full
   deck at the new minimum size.
 - Hand Deck contents: no standalone Jutsu cards exist yet to fill the
-  40-card Hand Deck — every ability so far lives on a Character card.
+  Hand Deck — every ability so far lives on a Character card.
 
 Resolved since first draft (no longer open):
 - **Play/Summon Cost** — your starting character is free; every character

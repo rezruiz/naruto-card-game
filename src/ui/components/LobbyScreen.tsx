@@ -59,7 +59,7 @@ export function LobbyScreen({
       <h1>Naruto Custom Card Game</h1>
       <div className="lobby-screen__menu">
         <button type="button" onClick={onPlayLocal}>
-          Play locally (hotseat, both boards on this screen)
+          Single-player testing (play both sides, no friend needed)
         </button>
         <button type="button" onClick={onHost}>
           Host a game (invite a friend)
