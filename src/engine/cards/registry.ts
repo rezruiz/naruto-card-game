@@ -3,7 +3,7 @@ import type { AbilitySpeed, AbilityType, GameState, PlayerId, Style } from '../t
 export interface HandCardContext {
   state: GameState;
   player: PlayerId;
-  /** The in-play character enabling this play (§5.3/§10c) — only a Jutsu card needs one; it's '' for Assist, Terrain and Mission cards, none of which are played "through" any particular character. */
+  /** The in-play character enabling this play (§5.3/§10c) — only a Jutsu with an ability Type needs one (see needsEnablingCharacter); it's '' for everything else, none of which is played "through" any particular character. */
   enablingInstanceId: string;
   targetInstanceIds: string[];
   /** A player-chosen numeric amount, for the rare card with a variable magnitude the controller picks (e.g. Chakra Transfer's X) — see HandCardDef.needsAmountChoice. Undefined when the card doesn't use one, or when resolved programmatically (tests) without picking one — cards reading this should fall back to their old auto-choice in that case. */
@@ -49,6 +49,18 @@ export interface HandCardDef {
   resolve: (ctx: HandCardContext) => GameState;
   /** Synergy tag(s), mainly relevant for Terrain cards (§10a) that other cards check for (e.g. Chidori Interception's cost discount "if an Akatsuki-Synergy Terrain is in play"). */
   synergy?: string[];
+}
+
+/**
+ * Whether playing this card needs an in-play character to enable it
+ * (§5.3/§10c's Style-affinity rule). Only a Jutsu that's an actual technique
+ * — one with an ability Type (Ninjutsu, Taijutsu, Bukijutsu, Genjutsu) — is
+ * played "through" a character. Everything else is exempt: Assist cards
+ * (§10c), Terrain (§10a), Missions (§10b), and Type: None tactical cards
+ * (Field Intelligence, Incoming Mission Assignment, Battlefield Selection).
+ */
+export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type'>): boolean {
+  return def.cardType === 'jutsu' && def.type !== 'None';
 }
 
 /** What just happened, offered to every in-play Mission so it can decide whether it cares (§10b's Condition is checked at a variety of different trigger points across the 6 example cards, not one shared moment). */

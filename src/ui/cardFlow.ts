@@ -1,4 +1,4 @@
-import type { HandCardContext, HandCardDef } from '../engine/cards/registry';
+import { needsEnablingCharacter, type HandCardContext, type HandCardDef } from '../engine/cards/registry';
 import type { GameState, PlayerId } from '../engine/types';
 
 export type PendingCard = {
@@ -18,11 +18,6 @@ export type PendingCard = {
 
 export type CardStage = 'enabler' | 'payFromPool' | 'target' | 'amount' | 'ready';
 
-/** Only Jutsu cards are played "through" an enabling character (§5.3/§10c) — Assist, Terrain and Mission cards all skip that stage entirely. */
-function needsEnabler(def: HandCardDef): boolean {
-  return def.cardType === 'jutsu';
-}
-
 /**
  * Where a card-in-progress is in its enabler -> pool-discount choice ->
  * target(s) -> amount pipeline — purely derived from what's been picked so
@@ -31,7 +26,8 @@ function needsEnabler(def: HandCardDef): boolean {
  * these stages entirely).
  */
 export function cardStage(p: PendingCard): CardStage {
-  if (needsEnabler(p.def) && !p.enablingInstanceId) return 'enabler';
+  // Only a Jutsu with an ability Type is played "through" a character (§5.3/§10c) — everything else skips this stage.
+  if (needsEnablingCharacter(p.def) && !p.enablingInstanceId) return 'enabler';
   if (p.def.offersPoolDiscount && p.payFromPool === null) return 'payFromPool';
   const maxTargets = p.def.maxTargets ?? 1;
   if (!p.targetsConfirmed && maxTargets > 0 && p.targets.length < maxTargets) return 'target';

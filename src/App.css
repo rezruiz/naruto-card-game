@@ -1188,6 +1188,160 @@
   outline: 2px solid #c33;
 }
 
+/* --- Cards stand out from the panels they sit on --- */
+.compact-card,
+.character-card,
+.token-card,
+.hand-card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+  box-shadow: var(--card-shadow);
+}
+
+.token-card {
+  border-style: dashed;
+}
+
+.compact-card:hover,
+.hand-card:hover {
+  background: var(--card-hover-bg);
+}
+
+.hand-card--hidden {
+  background: repeating-linear-gradient(45deg, var(--card-bg), var(--card-bg) 6px, var(--card-hover-bg) 6px, var(--card-hover-bg) 12px);
+}
+
+/* --- Character details: condensed card with clickable ability boxes --- */
+.details-modal__actions:has(.card-details) {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.card-details {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.trait-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ability-list__hint {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.details-modal__actions .ability-box,
+.ability-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  color: inherit;
+}
+
+.details-modal__actions .ability-box--usable {
+  cursor: pointer;
+  border-color: var(--accent);
+}
+
+.details-modal__actions .ability-box--usable:hover {
+  background: var(--accent-bg);
+}
+
+.ability-box__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ability-box__name {
+  font-weight: 600;
+}
+
+.ability-box__tags {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.ability-box__cost {
+  color: var(--accent);
+}
+
+.card-details__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.full-rules summary {
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.full-rules__text {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.45;
+  max-height: 240px;
+  overflow-y: auto;
+  opacity: 0.85;
+}
+
+/* --- Character Deck draw (pay the tax) --- */
+.character-deck-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.character-deck-bar__next,
+.character-deck-bar__reason {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.character-deck-bar__draw:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
 /* --- Squad Formation redirect --- */
 .in-play-cards__mission {
   display: inline-flex;

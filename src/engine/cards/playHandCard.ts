@@ -1,7 +1,7 @@
 import { findOccupant, isCharacter, patchCharacter } from '../board';
 import { canActivateNormalSpeed, pushStackItem } from '../stack';
 import { appendLog } from '../phases/phaseMachine';
-import { getHandCardDef } from './registry';
+import { getHandCardDef, needsEnablingCharacter } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
 import type { GameState, PlayerId } from '../types';
 
@@ -28,13 +28,11 @@ function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool: number
  * SPEC.md §10c: playing a Jutsu card requires an in-play, un-Disabled,
  * un-Retreated character able to enable it — Style: None cards accept any
  * character; otherwise the enabler's own Styles must include the card's
- * Style. This is a Jutsu-specific requirement (§5.3/§10c) — Assist cards
- * ignore it entirely (§10c), and it never applied to Terrain (§10a) or
- * Mission (§10b) cards at all: neither is played "through" any particular
- * character, so both are exempt the same way Assist is.
+ * Style. Only cards with an ability Type need one (see
+ * needsEnablingCharacter) — everything else is exempt.
  */
 function checkEnabler(state: GameState, player: PlayerId, def: HandCardDef, enablingInstanceId: string): Legality {
-  if (def.cardType === 'assist' || def.cardType === 'terrain' || def.cardType === 'mission') return { ok: true };
+  if (!needsEnablingCharacter(def)) return { ok: true };
   const found = findOccupant(state, enablingInstanceId);
   if (!found || !isCharacter(found.occupant) || found.player !== player) {
     return { ok: false, reason: `${player} has no such character to enable ${def.name}.` };
@@ -114,7 +112,7 @@ export function checkHandCardLegality(
 
   const cost = resolveCost(def, ctx, payFromPool);
   const enablerPool =
-    def.cardType === 'jutsu'
+    needsEnablingCharacter(def)
       ? (() => {
           const found = findOccupant(state, enablingInstanceId);
           return found && isCharacter(found.occupant) ? found.occupant.chakraPool.current : 0;

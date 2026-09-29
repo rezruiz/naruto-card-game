@@ -79,7 +79,11 @@ describe('App (smoke)', () => {
 
     fireEvent.click(card);
     const dialog = screen.getByRole('dialog');
-    expect(dialog.querySelector('.details-modal__text')!.textContent).toMatch(/Specialization|Traits|Abilities/);
+    // Abilities are condensed boxes, "[Cost] — [Text]"; the full printed wording is folded away under "Full rules text".
+    const boxes = dialog.querySelectorAll('.ability-box');
+    expect(boxes.length).toBeGreaterThan(0);
+    expect(boxes[0].querySelector('.ability-box__body')!.textContent).toMatch(/^(\d+ Chakra|.*Pool|.*Chakra.*) — ./);
+    expect(dialog.querySelector('.full-rules__text')!.textContent).toMatch(/Specialization|Traits|Abilities/);
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });

@@ -5,6 +5,7 @@ import { missionProgressText } from '../../src/engine/cards/missions';
 import { dealDamage } from '../../src/engine/combat';
 import { applyPoison } from '../../src/engine/poison';
 import { registerCharacter } from '../../src/engine/characters/registry';
+import { registerHandCard } from '../../src/engine/cards/registry';
 import { makeHandCardInstance } from '../../src/engine/deck';
 import { createSetupState } from '../../src/engine/state';
 import { freshCombat, freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
@@ -30,6 +31,9 @@ registerCharacter({
     { id: 'quick-hit', name: 'Quick Hit', cost: 0, speed: 'Quick', style: 'None', type: 'Ninjutsu', maxTargets: 0, resolve: (ctx) => ctx.state },
   ],
 });
+
+// A plain technique Jutsu (has an ability Type, so it needs an enabling character): 1 Chakra, Style: None, no targets.
+registerHandCard({ id: 't-jutsu', name: 'Test Jutsu', cardType: 'jutsu', cost: 1, speed: 'Normal', style: 'None', type: 'Ninjutsu', maxTargets: 0, resolve: (ctx) => ctx.state });
 
 const run = (s: GameState, ...actions: GameAction[]) => actions.reduce((acc, a) => gameReducer(acc, a), s);
 const untapped = (s: GameState, p: PlayerId) => s.players[p].chakraSources.filter((x) => !x.tapped).length;
@@ -143,7 +147,7 @@ describe('§6.5a Disabled', () => {
     expect(attempt.stack).toHaveLength(0);
     expect(attempt.log.at(-1)!.text).toMatch(/Disabled/);
 
-    const card = makeHandCardInstance('field-intelligence');
+    const card = makeHandCardInstance('t-jutsu');
     s = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [{ kind: 'card', ...card }] } } };
     const played = run(s, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p1-t-hitter', targetInstanceIds: [], payFromPool: 0 });
     expect(played.stack).toHaveLength(0);
@@ -282,7 +286,7 @@ describe('§5.3/§8 Costs: generic Chakra vs a character\'s own Pool', () => {
   });
 
   it("a hand card can only be paid from the ENABLING character's Pool, not another's", () => {
-    const card = makeHandCardInstance('field-intelligence'); // 1 Chakra, Style: None
+    const card = makeHandCardInstance('t-jutsu'); // 1 Chakra, Style: None
     const base = (enabler: string) => {
       let s = setup(0);
       s = patchChar(s, 'p1', 'p1-t-C', (c) => ({ chakraPool: { ...c.chakraPool, current: 4 } }));
@@ -421,7 +425,7 @@ describe('§6.5b Retreat', () => {
     const act = run(s, { type: 'ACTIVATE_ABILITY', instanceId: 'p1-t-hitter', abilityId: 'buff', targetInstanceIds: [], payFromPool: 0 });
     expect(act.stack).toHaveLength(0);
 
-    const card = makeHandCardInstance('field-intelligence');
+    const card = makeHandCardInstance('t-jutsu');
     const withCard = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [{ kind: 'card' as const, ...card }] } } };
     expect(run(withCard, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p1-t-hitter', targetInstanceIds: [], payFromPool: 0 }).stack).toHaveLength(0);
 
@@ -810,10 +814,18 @@ describe('§10a/§10b: Terrain and Mission cards are not enabled by a character'
     expect(s.log.at(-1)!.text).not.toMatch(/Can't play/);
   });
 
-  it('a Jutsu card still needs one (the requirement is Jutsu-specific, not "every non-Assist card")', () => {
-    const s = play('field-intelligence');
+  it('a technique Jutsu (one with an ability Type) still needs one', () => {
+    const s = play('t-jutsu');
     expect(s.log.at(-1)!.text).toMatch(/no such character to enable/);
     expect(s.players.p1.hand).toHaveLength(1); // rejected — the card never left hand
+  });
+
+  it('Type: None tactical cards (Field Intelligence, Incoming Mission Assignment, Battlefield Selection) need no enabling character', () => {
+    for (const defId of ['field-intelligence', 'incoming-mission-assignment', 'battlefield-selection']) {
+      const s = play(defId);
+      expect(s.log.at(-1)!.text, defId).not.toMatch(/Can't play/);
+      expect(s.stack, defId).toHaveLength(1);
+    }
   });
 });
 

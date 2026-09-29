@@ -451,7 +451,7 @@ Tokens (Clay Spider, Puppet Soldier, Path tokens, Zetsu Clones, …) have **HP**
 
 ### 15.3 Jutsu cards
 Jutsu cards are standalone effects any **eligible enabling character** can play. Each states **Style** (or None), **Speed**, **Cost**, **Type**, and effect text (colon/comma notation).
-- **Enabling:** playing a Jutsu (non-Assist) requires an **in-play, un-Disabled, un-Retreated** character whose Styles include the card's Style (any character for Style: None), at the moment it's played.
+- **Enabling:** playing a technique Jutsu — one with an ability **Type** (Ninjutsu, Taijutsu, Bukijutsu, Genjutsu) — requires an **in-play, un-Disabled, un-Retreated** character whose Styles include the card's Style (any character for Style: None), at the moment it's played. **[Updated]** **Type: None** tactical cards (Field Intelligence, Incoming Mission Assignment, Battlefield Selection), Assist, Terrain and Mission cards need **no** enabling character; they're paid from generic Chakra.
 - **Cost:** paid from the generic pool and/or the **enabling character's own Pool**; some cards are **cheaper when paid from that Pool** (§6.4).
 - **Once per turn** by name unless stated (§12.5).
 - **Ongoing-effect Jutsu** (a stated duration or multiple future triggers — e.g., Deploy Medic Corps) stay **face up in play** until finished or cancelled, then go to the discard pile. *(Build: the effect is tracked on the target; the card isn't shown in a separate in-play area yet — Part 20.)*

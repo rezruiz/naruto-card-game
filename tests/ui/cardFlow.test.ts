@@ -10,7 +10,7 @@ function def(overrides: Partial<HandCardDef>): HandCardDef {
     cost: 1,
     speed: 'Normal',
     style: 'None',
-    type: 'None',
+    type: 'Ninjutsu',
     resolve: (ctx) => ctx.state,
     ...overrides,
   };
@@ -27,6 +27,12 @@ describe('cardStage (the enabler -> pool-discount -> target(s) -> amount pipelin
   it('an Assist card skips the enabler stage entirely', () => {
     const p0 = newPendingCard('p1', 'c1', def({ cardType: 'assist', maxTargets: 0 }));
     expect(cardStage(p0)).toBe('ready');
+  });
+
+  it('Terrain, Mission and Type: None Jutsu cards skip the enabler stage too — only technique Jutsu need one', () => {
+    for (const overrides of [{ cardType: 'terrain' as const }, { cardType: 'mission' as const }, { type: 'None' as const }]) {
+      expect(cardStage(newPendingCard('p1', 'c1', def({ ...overrides, maxTargets: 0 })))).toBe('ready');
+    }
   });
 
   it('a pool-discount card inserts a payFromPool stage after the enabler, before any targets', () => {

@@ -478,6 +478,39 @@ function ViewGame({
             </button>
           </div>
         )}
+        {mine && !setupBlocked && (() => {
+          const tax = currentTax(state, playerId);
+          const onTime = isActive && MAIN_PHASES.has(state.phase);
+          const blocker =
+            player.characterDeck.length === 0
+              ? 'Your Character Deck is empty.'
+              : player.pendingCharacterReveal
+                ? 'Pick from your current Character Deck reveal first.'
+                : !onTime && !trust
+                  ? 'Only during your own Main Phase.'
+                  : !trust && player.genericChakraAvailable < tax
+                    ? `Needs ${tax} available Chakra — tap Chakra sources first (you have ${player.genericChakraAvailable}).`
+                    : undefined;
+          return (
+            <div className="character-deck-bar">
+              <span className="character-deck-bar__info">
+                <strong>Character Deck:</strong> {player.characterDeck.length} card(s) · tax <strong>{tax}</strong> Chakra
+                {tax < 8 && <span className="character-deck-bar__next"> (next paid draw: {Math.min(8, tax + 2)})</span>}
+              </span>
+              <button
+                type="button"
+                className="character-deck-bar__draw"
+                disabled={!!blocker}
+                title={blocker ?? `Pay ${tax} Chakra: look at the top 2 of your Character Deck and keep 1. Resolves immediately (no stack). Playing the kept card later is free.`}
+                onClick={() => dispatch({ type: 'DRAW_CHARACTER_DECK', player: playerId })}
+              >
+                Pay {tax} Chakra &amp; draw a character
+              </button>
+              {blocker && <span className="character-deck-bar__reason">{blocker}</span>}
+              {!blocker && trust && !onTime && <span className="character-deck-bar__reason">Not your Main Phase — allowed in trust mode (flagged).</span>}
+            </div>
+          );
+        })()}
       </div>
     );
     const chakra = (
@@ -719,14 +752,6 @@ function ViewGame({
                   {state.turn === 1 && state.activePlayer === state.firstPlayer ? 'Skip first-turn draw' : `Draw (Hand Deck: ${state.players[state.activePlayer].handDeck.length})`}
                 </button>
               )}
-              <button
-                type="button"
-                disabled={state.players[state.activePlayer].characterDeck.length === 0 || !!state.players[state.activePlayer].pendingCharacterReveal}
-                onClick={() => dispatch({ type: 'DRAW_CHARACTER_DECK', player: state.activePlayer })}
-                title="Pay the Character Deck tax to look at 2 and keep 1 (resolves immediately — no stack). Your own Main Phase. Each paid draw raises the tax: 3, 5, 7, then 8."
-              >
-                Character Deck ({state.players[state.activePlayer].characterDeck.length}) — draw for {currentTax(state, state.activePlayer)} Chakra
-              </button>
             </div>
           )}
           {pending && (

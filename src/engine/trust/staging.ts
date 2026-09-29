@@ -1,7 +1,7 @@
 import { findOccupant, isCharacter } from '../board';
 import { activateAbility, checkLegality, findAbility, type AbilityDef } from '../abilities';
 import { checkHandCardLegality, playHandCard } from '../cards/playHandCard';
-import { getHandCardDef } from '../cards/registry';
+import { getHandCardDef, needsEnablingCharacter } from '../cards/registry';
 import { getCharacterDef, getTokenDef } from '../characters/registry';
 import { appendLog } from '../phases/phaseMachine';
 import { resolveTopOfStack } from '../stack';
@@ -259,7 +259,7 @@ export function hasMeaningfulResponse(state: GameState, player: PlayerId): boole
     const def = getHandCardDef(entry.defId);
     if (!def || def.speed === 'Normal') continue;
     const multiTarget = (def.maxTargets ?? 1) > 1;
-    for (const enabler of def.cardType === 'assist' ? [''] : enablers) {
+    for (const enabler of needsEnablingCharacter(def) ? enablers : ['']) {
       for (const targets of targetSets(def.maxTargets)) {
         for (const pay of payOptions) {
           if (checkHandCardLegality(probe, player, entry.instanceId, enabler, targets, pay, undefined, { ignoreCondition: multiTarget }).ok) return true;

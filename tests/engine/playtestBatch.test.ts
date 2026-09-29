@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { activateAbility, findAbility } from '../../src/engine/abilities';
 import { placeToken } from '../../src/engine/board';
-import { makeThirdKazekage } from '../../src/engine/characters';
+import { getCharacterDef, getTokenDef, makeThirdKazekage } from '../../src/engine/characters';
+import { abilityCostText, abilityText, traitLines } from '../../src/ui/abilityText';
 import { DISPLAYED_EXTRA_KEYS, trackedResources } from '../../src/engine/characters/progressText';
 import { makeHandCardInstance } from '../../src/engine/deck';
 import { redactStateFor } from '../../src/engine/redact';
@@ -32,7 +33,7 @@ describe('Field Intelligence: the opponent really reveals 2 cards of their choic
     p2 = { ...p2, hand: [a, b, c].map((x) => ({ kind: 'card' as const, ...x })) };
     s = { ...s, players: { ...s.players, p2 } };
 
-    s = gameReducer(s, { type: 'PLAY_HAND_CARD', instanceId: fi.id, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: [], payFromPool: 0 });
+    s = gameReducer(s, { type: 'PLAY_HAND_CARD', instanceId: fi.id, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
     s = resolveTop(s);
     expect(s.players.p2.pendingHandReveal).toEqual({ requestedBy: 'p1', count: 2 });
 
@@ -191,6 +192,28 @@ describe('Every tracked resource is visible (progressText guard)', () => {
     const kakuzu = s.players.p1.backRow.find((c) => c?.defId === 'kakuzu')!;
     expect(trackedResources(s, deidara)).toContainEqual({ label: 'Clay Charges', value: '1', key: true });
     expect(trackedResources(s, kakuzu)).toContainEqual({ label: 'Hearts', value: '5/5', key: true });
+  });
+});
+
+describe('Condensed ability text (the clickable ability boxes)', () => {
+  it('every character and token ability has condensed text and a cost label, and every unit has trait lines on file', () => {
+    const characters = ['kakuzu', 'hidan', 'deidara', 'kisame', 'itachi', 'konan', 'sasori-hiruko', 'sasori-hollow-body', 'zetsu', 'juzo', 'yahiko', 'amegakure-civilian-rebel'];
+    const tokens = ['deva-path', 'asura-path', 'human-path', 'animal-path', 'preta-path', 'naraka-path', 'ku-three-headed-hound', 'war-rhino', 'giant-drill-beaked-bird', 'third-kazekage', 'puppet-soldier', 'white-zetsu-clone', 'zetsu-golem'];
+    const s = freshMain1();
+    const missing: string[] = [];
+    for (const id of characters) {
+      const def = getCharacterDef(id)!;
+      expect(def, id).toBeDefined();
+      for (const a of [...def.abilities, ...(def.ultimate ? [def.ultimate] : [])]) {
+        if (!abilityText(a)) missing.push(`${id}: ${a.id}`);
+        expect(abilityCostText(s, 'p1-kakuzu', a), a.id).toMatch(/Chakra|Pool|cost/);
+      }
+    }
+    for (const id of tokens) {
+      for (const a of getTokenDef(id)?.abilities ?? []) if (!abilityText(a)) missing.push(`${id}: ${a.id}`);
+    }
+    expect(missing).toEqual([]);
+    for (const id of [...characters, ...tokens]) expect(traitLines(id), id).toBeInstanceOf(Array);
   });
 });
 

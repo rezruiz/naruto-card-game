@@ -23,6 +23,9 @@ export function DeckToolsModal({
 }) {
   const p = state.players[player];
   const [topCount, setTopCount] = useState(3);
+  /** Look at top: the exact cards seen (null until the player picks how many), and those already taken/bottomed. */
+  const [seenIds, setSeenIds] = useState<string[] | null>(null);
+  const [handledIds, setHandledIds] = useState<string[]>([]);
 
   if (tool === 'search') {
     const sorted = p.handDeck.slice().sort((a, b) => cardName(a.defId).localeCompare(cardName(b.defId)));
@@ -50,30 +53,70 @@ export function DeckToolsModal({
   }
 
   if (tool === 'top') {
-    const top = p.handDeck.slice(0, topCount);
+    // Step 1: choose how many to look at — nothing is revealed until you commit to a number.
+    if (seenIds === null) {
+      const max = p.handDeck.length;
+      return (
+        <DetailsModal hideText title="Look at the top of your deck" subtitle="Choose how many cards to look at first" onClose={onClose}>
+          <div className="deck-list">
+            {max === 0 ? (
+              <span className="details-modal__note">The deck is empty.</span>
+            ) : (
+              <>
+                <label className="deck-list__count">
+                  Look at the top{' '}
+                  <input
+                    type="number"
+                    min={1}
+                    max={max}
+                    value={Math.min(topCount, max)}
+                    onChange={(e) => setTopCount(Math.max(1, Math.min(max, Number(e.target.value) || 1)))}
+                  />{' '}
+                  card(s)
+                </label>
+                <button type="button" onClick={() => setSeenIds(p.handDeck.slice(0, Math.min(topCount, max)).map((c) => c.instanceId))}>
+                  Look
+                </button>
+              </>
+            )}
+          </div>
+        </DetailsModal>
+      );
+    }
+
+    // Step 2: only those exact cards — taking or bottoming one removes it from view; no new cards are revealed.
+    const remaining = p.handDeck.filter((c, i) => seenIds.includes(c.instanceId) && !handledIds.includes(c.instanceId) && i < seenIds.length);
+    const handle = (instanceId: string, action: GameAction) => {
+      setHandledIds((prev) => [...prev, instanceId]);
+      dispatch(action);
+    };
     return (
-      <DetailsModal hideText title={`Top ${topCount} of deck`} subtitle="Take a card, or send it to the bottom — the rest stay in order on top" onClose={onClose}>
+      <DetailsModal
+        hideText
+        title={`Looking at ${seenIds.length} card(s)`}
+        subtitle="Take a card or send it to the bottom. Whatever you leave stays on top in this order."
+        onClose={onClose}
+      >
         <div className="deck-list">
-          <label className="deck-list__count">
-            Look at top{' '}
-            <input type="number" min={1} max={Math.max(1, p.handDeck.length)} value={topCount} onChange={(e) => setTopCount(Math.max(1, Number(e.target.value) || 1))} /> cards
-          </label>
-          {top.length === 0 && <span className="details-modal__note">The deck is empty.</span>}
-          {top.map((c, i) => (
+          {remaining.length === 0 && <span className="details-modal__note">Done — nothing left from the cards you looked at.</span>}
+          {remaining.map((c, i) => (
             <div key={c.instanceId} className="deck-list__row">
               <span>
                 {i + 1}. {cardName(c.defId)}
               </span>
               <span>
-                <button type="button" onClick={() => dispatch({ type: 'DECK_TAKE', player, instanceId: c.instanceId, shuffle: false })}>
+                <button type="button" onClick={() => handle(c.instanceId, { type: 'DECK_TAKE', player, instanceId: c.instanceId, shuffle: false })}>
                   Take to hand
                 </button>
-                <button type="button" onClick={() => dispatch({ type: 'DECK_TO_BOTTOM', player, instanceId: c.instanceId })}>
+                <button type="button" onClick={() => handle(c.instanceId, { type: 'DECK_TO_BOTTOM', player, instanceId: c.instanceId })}>
                   To bottom
                 </button>
               </span>
             </div>
           ))}
+          <button type="button" onClick={onClose}>
+            Done
+          </button>
         </div>
       </DetailsModal>
     );

@@ -939,10 +939,16 @@ character can enable. Each Jutsu card states:
 - **Type** (Ninjutsu, Taijutsu, or Genjutsu, §6.8) and **effect text**,
   using the same colon/comma notation as abilities (§6.8a).
 
-Playing/activating a Jutsu card still requires an eligible enabling
-character to be in play, un-Disabled, and un-Retreated (§6.5a, §6.5b) at
-the moment it's played — same restrictions as using that character's
-own abilities. Unless a specific card says otherwise, a named Jutsu
+Playing/activating a Jutsu card that is a technique — one with an ability
+**Type** (Ninjutsu, Taijutsu, Bukijutsu, or Genjutsu) — still requires an
+eligible enabling character to be in play, un-Disabled, and un-Retreated
+(§6.5a, §6.5b) at the moment it's played — same restrictions as using
+that character's own abilities. A **Type: None** Jutsu card (a tactical
+card rather than a technique, e.g. Field Intelligence, Incoming Mission
+Assignment, Battlefield Selection) isn't played through any character and
+needs no enabling character; its cost is paid from generic Chakra.
+Terrain (§10a), Mission (§10b) and Assist cards (below) never need one
+either. Unless a specific card says otherwise, a named Jutsu
 card is limited to once per turn, same as a character ability (§9).
 
 **Ongoing-effect Jutsu cards stay in play, not the discard pile, until
