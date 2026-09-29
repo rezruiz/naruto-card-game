@@ -1315,6 +1315,11 @@
   opacity: 0.85;
 }
 
+.upkeep-row__math {
+  opacity: 0.65;
+  font-size: 11px;
+}
+
 /* --- Character Deck draw (pay the tax) --- */
 .character-deck-bar {
   display: flex;

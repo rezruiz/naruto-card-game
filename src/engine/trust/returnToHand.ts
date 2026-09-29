@@ -7,6 +7,42 @@ import type { GameState, HandEntry } from '../types';
 let returnCounter = 0;
 
 /**
+ * Trust mode's manual correction for a Mission or Terrain put into play by
+ * mistake: the card goes back to its owner's hand as it was. Its in-play
+ * progress is gone (Unshakable Resolve's Untap count, Squad Formation's
+ * group), and Squad Formation's group markers come off the characters.
+ */
+export function returnInPlayCardToHand(state: GameState, instanceId: string): GameState {
+  for (const player of ['p1', 'p2'] as const) {
+    const p = state.players[player];
+    if (p.terrainInPlay?.instanceId === instanceId) {
+      const card = p.terrainInPlay;
+      const next = { ...state, players: { ...state.players, [player]: { ...p, terrainInPlay: null, hand: [...p.hand, { kind: 'card' as const, ...card }] } } };
+      return appendLog(next, `${player} returns the Terrain in play to hand (manual).`);
+    }
+    const mission = p.missionsInPlay.find((m) => m.instanceId === instanceId);
+    if (mission) {
+      const clearSquad = <T extends { extra: Record<string, unknown> } | null>(u: T): T =>
+        u && u.extra.squadFormationGroup ? { ...u, extra: { ...u.extra, squadFormationGroup: undefined } } : u;
+      const next = {
+        ...state,
+        players: {
+          ...state.players,
+          [player]: {
+            ...p,
+            missionsInPlay: p.missionsInPlay.filter((m) => m.instanceId !== instanceId),
+            hand: [...p.hand, { kind: 'card' as const, instanceId: mission.instanceId, defId: mission.defId }],
+            backRow: mission.defId === 'squad-formation' ? p.backRow.map(clearSquad) : p.backRow,
+          },
+        },
+      };
+      return appendLog(next, `${player} returns a Mission in play to hand (manual) — its progress resets.`);
+    }
+  }
+  return appendLog(state, 'No such Mission or Terrain in play to return to hand.');
+}
+
+/**
  * Trust mode's manual correction for a character played by mistake (dragged
  * from the battlefield back to hand): the card goes back to its owner's
  * hand as a fresh Character card — its damage, Pool and tracked resources

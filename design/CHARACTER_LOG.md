@@ -1259,13 +1259,15 @@ The deck's first Terrain card. Interpretive calls, flagged for review:
   otherwise for it to affect both sides symmetrically, and this text
   doesn't — so playing it is a genuine one-sided advantage even in the
   mirror, not a wash.
-- **Stacks with the existing Synergy upkeep discount (§6.5)** rather
-  than being floored separately — all applicable upkeep reductions on a
-  given character (the per-matching-character Synergy discount, plus
-  this Terrain's flat -1) sum together first, and only the *combined*
-  total is floored at 0. There's no reading where the Synergy discount
-  gets floored to 0 on its own and then this Terrain's -1 tries to apply
-  on top of that already-floored number.
+- **Cost: 2 Chakra [Updated]** (previously 0) — paid from generic
+  Chakra when played (a Terrain needs no enabling character, §10c).
+  With the Synergy discount now capped at −2 for the whole board (§6.5),
+  the Hideout's −1 per Akatsuki character is the bigger saving on a full
+  board, so it's no longer free to put down.
+- **Stacks with the Synergy upkeep discount (§6.5)** — the Hideout's −1
+  applies to each Akatsuki-Synergy character you control (not capped),
+  and the board-wide Synergy discount (max −2) then comes off your
+  most expensive remaining upkeep; no character goes below 0.
 - **Doesn't touch starting-character Upkeep Phase effects (§6.5)** — a
   starting character follows its own bespoke Rank-scaled table (free
   upkeep, a Chakra gain, etc.), not the standard per-rank Upkeep table

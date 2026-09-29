@@ -369,12 +369,17 @@ any character played afterward simply follows the normal Rank-based
 upkeep table above, with no special exemption unless a card says
 otherwise.
 
-**Synergy discount:** each additional character in play sharing a Synergy
-tag with a given character reduces that character's upkeep by 1 Chakra per
-matching character in play (stacking), to a floor of 0.
-> Example: you control 3 Akatsuki characters. The second and third each
-> get -1 for the 1 Akatsuki character sharing synergy with them at minimum;
-> a character sharing synergy with *both* others gets -2.
+**Synergy discount:** your total upkeep is reduced by 1 Chakra for each
+character in play **past the first** that shares a Synergy tag (counted over
+your largest group sharing one tag), **to a maximum of −2 in total** — the
+discount is for your whole board, not per character. It is taken off your
+most expensive upkeep first, never reducing any single character below 0,
+and it applies to your starting character's upkeep too.
+> Examples (all Akatsuki, none of them your starting character): two
+> S-Rank characters normally cost 3 + 3 = 6 — with the discount, 5 (−1 for
+> the one character past the first). Two S-Ranks and a C-Rank cost
+> 3 + 3 + 0 = 6 — with the discount, 4 (−2, the maximum). Adding more
+> Akatsuki characters never takes it past −2.
 
 **Falling short of upkeep is legal — it Disables the character instead of
 defeating it.** See §4.2 for payment rules and §6.5a for what Disabled
@@ -1629,7 +1634,7 @@ or reduce it.
 
 ## 13c. Example Terrain Cards
 
-**Akatsuki Hideout** — Synergy: Akatsuki, 0 Chakra. *(full nuance:
+**Akatsuki Hideout** — Synergy: Akatsuki, 2 Chakra. *(full nuance:
 design/CHARACTER_LOG.md)*
 Effect: Akatsuki-Synergy characters you control have their Upkeep
 (§6.5) reduced by 1 (minimum 0).

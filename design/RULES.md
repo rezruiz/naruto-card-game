@@ -13,7 +13,7 @@
 **Part I — Foundations:** §0 Rule precedence & scope · §1 Card types & zones · §2 Decks & deck construction · §3 Setup
 **Part II — Turn structure:** §4 The turn: phases in order · §5 Speed, timing & the resolution queue
 **Part III — Resources:** §6 Chakra: sources, the generic pool, personal Pools
-**Part IV — Characters:** §7 Character basics · §8 Board limit, Upkeep & Disabled · §9 Retreat · §10 Summoning sickness, Ambush & Retaliation · §11 Character Deck draws, reinforcements & the Reinforcement Tax · §12 Passives, abilities & effect notation
+**Part IV — Characters:** §7 Character basics · §8 Board limit, Upkeep & Disabled · §9 Retreat · §10 Summoning sickness, Ambush & Retaliation · §11 Character Deck draws, reinforcements & the Character Deck Tax · §12 Passives, abilities & effect notation
 **Part V — Combat:** §13 Combat, targeting & board geometry
 **Part VI — Non-character cards:** §14 Tokens · §15 Terrain, Mission, Jutsu & Assist cards (with the timing table)
 **Part VII — Winning:** §16 Health, defeat & victory
@@ -207,7 +207,7 @@ Each character has a **Chakra Pool** with a maximum **capacity set per card** (n
 - **Pooling in:** at **sorcery speed** (your own Main Phase), you may move any amount of your **available generic Chakra** into **one** character's Pool, up to its remaining capacity. Chakra moved this way leaves the generic pool immediately — this is how it survives past End Phase. There's no per-turn cap on how much you pool in one action beyond remaining capacity.
 - **Pooling taps the character:** a character pooled into this turn **cannot activate any active ability for the rest of the turn** (passives are unaffected). The reverse also holds: a character that has **already used an active ability this turn cannot be pooled into**. Each turn a character either **acts** or **is pooled into**, never both. (Physically: a tapped character is turned sideways.)
 - **Spending pooled Chakra:** it can be spent whenever the ability/card's speed allows — so Quick/Reactive uses can spend from a Pool on your opponent's turn. Spent Chakra is gone until re-pooled.
-- **Restriction — a Pool only pays for its own character:** pooled Chakra can pay only for **that same character's own abilities**, or **Hand Deck cards enabled/used by that character**. It can **never** pay for another character's abilities, nor for a card being enabled by a different character. There is **no** "styleless card can be paid by anyone" exception — a styleless card is still enabled by one specific character, and only that character's Pool can fund it. Put simply: pooled Chakra can only pay for something done *through* the character it's pooled on. It **cannot** pay for costs tied to no in-play character — e.g., the **Reinforcement Tax** (§11.4).
+- **Restriction — a Pool only pays for its own character:** pooled Chakra can pay only for **that same character's own abilities**, or **Hand Deck cards enabled/used by that character**. It can **never** pay for another character's abilities, nor for a card being enabled by a different character. There is **no** "styleless card can be paid by anyone" exception — a styleless card is still enabled by one specific character, and only that character's Pool can fund it. Put simply: pooled Chakra can only pay for something done *through* the character it's pooled on. It **cannot** pay for costs tied to no in-play character — e.g., the **Character Deck Tax** (§11.4).
 - **Shared Pools:** a few effects let units share a Pool (Zetsu's Shared Reservoir; Pain's Path tokens each pool individually — Rinnegan Reservoir). Those are card-specific (see Appendix B).
 - **Capacity drops:** if a character's capacity later falls below what's pooled (e.g., Kakuzu losing a Heart), the excess is lost *(default; see §20)*.
 
@@ -260,7 +260,7 @@ Name & Rank · Specialization (≤2 roles) · Styles · Synergy · **HP** · **C
 |---|---|---|---|---|---|---|---|
 | Upkeep | 0 | 0 | 1 | 2 | 3 | 4 | 5 |
 
-- **Synergy discount:** each **other** character in play sharing at least one Synergy tag with a given character reduces that character's upkeep by **1** (stacking, floor 0). A character sharing Synergy with both others gets −2.
+- **Synergy discount [Updated]:** board-wide, not per character — your total upkeep is reduced by **1 for each character past the first** sharing a Synergy tag (your largest same-tag group), **capped at −2 total**. It comes off your most expensive upkeep first (no character below 0) and applies to the starting character's upkeep too. *Examples (all Akatsuki, none starting):* two S-Ranks 6 → **5**; two S-Ranks + a C-Rank 6 → **4** (the cap). **[Playtest]** The Next Upkeep panel shows the math (e.g. "3 − 1 Synergy = 2").
 - **Terrain discount:** a Terrain whose Synergy matches the character (Akatsuki Hideout vs Akatsuki characters) reduces that character's upkeep by **1** (min 0), on top of the Synergy discount.
 - The table is a **default**, not a fixed rule.
 
@@ -286,7 +286,7 @@ Falling short of upkeep is **legal** — it **Disables** the character instead o
 - A character with 0 upkeep (C/D, discounted-to-0) is never Disabled by upkeep.
 
 ### 8.4 Upkeep payment mechanics (as implemented)
-Upkeep is taken directly from **untapped sources** (it never passes through the spendable generic pool). Characters are processed in **descending cost**; if a character is unaffordable it is Disabled and processing continues with cheaper ones, so a lower-cost character can still be paid when a higher-cost one can't. Cost-0 characters are cleared of Disabled automatically.
+Upkeep is taken directly from **untapped sources** (it never passes through the spendable generic pool). Characters are processed in **descending cost** (after discounts); if a character is unaffordable it is Disabled and processing continues with cheaper ones, so a lower-cost character can still be paid when a higher-cost one can't. **[Updated]** When the sources cover only some of several characters **tied** at the same cost, **you choose** which of them to pay. Cost-0 characters are cleared of Disabled automatically.
 
 ---
 
@@ -329,7 +329,7 @@ If a player has retreated characters but **no non-Retreated character left**, al
 
 ---
 
-## 11. Character Deck draws, reinforcements & the Reinforcement Tax
+## 11. Character Deck draws, reinforcements & the Character Deck Tax
 
 ### 11.1 The draw — a state-based action **[Updated]**
 A **Character Deck draw**: reveal **2** cards from your Character Deck, choose **1** to add to your hand, put the other on the **bottom**. It's a **state-based action** — never on the stack, can't be responded to, resolves immediately; its timing comes from whatever caused it. **Playing a Character card from hand is always free** (5-character limit and summoning sickness still apply). **[Playtest]** Reveals are private (§19); pick a card, check **Details**, then **Confirm**.
@@ -438,7 +438,7 @@ Tokens (Clay Spider, Puppet Soldier, Path tokens, Zetsu Clones, …) have **HP**
 ### 15.1 Terrain
 - **One at a time:** playing a Terrain **replaces** your existing one (the old is discarded).
 - **One-way by default:** unless text says otherwise, a Terrain's effect applies to one side only.
-- Terrain is a **Main-Phase** play (§15.6). *Akatsuki Hideout* (Synergy: Akatsuki, 0 Chakra): Akatsuki-Synergy characters you control have upkeep −1 (min 0).
+- Terrain is a **Main-Phase** play (§15.6). *Akatsuki Hideout* (Synergy: Akatsuki, **2 Chakra** **[Updated]**): Akatsuki-Synergy characters you control have upkeep −1 (min 0).
 
 ### 15.2 Missions
 - Live in the Hand Deck; drawn normally; copy limit 3 (Unique: 1).
@@ -472,7 +472,7 @@ Full text is in Appendix A. Timing and implementation:
 | **Chakra Transfer** | Normal, **Main only**, 0 | Choose two of your characters; remove X (≥1, **your choice, ≤ the first's Pool**) from the first's Pool and add X−1 (min 1) to the second's, capped by its room. |
 | **Field Intelligence** | Normal, **Main only**, 1 | Opponent reveals 2 cards of their choice; you draw 1. *(Build: the reveal has no mechanical effect; the draw does.)* |
 | **Deploy Medic Corps** | Normal, **Main only**, 2 | Target one of **your Retreated** characters (explicit exception to Retreat immunity). At the start of each of your next **4** Upkeeps, heal it 1 HP; **cancelled** if it stops being Retreated. |
-| **Akatsuki Hideout** (Terrain) | Normal, **Main only**, 0 | Upkeep −1 for Akatsuki-Synergy characters (min 0). |
+| **Akatsuki Hideout** (Terrain) | Normal, **Main only**, **2** | Upkeep −1 for Akatsuki-Synergy characters (min 0). |
 | **Missions (6)** | Normal, **Main only** | See Appendix A. |
 
 ### 15.5 Assist cards
@@ -608,25 +608,23 @@ On any character or token (either side): **HP −1/+1** (kept between 1 and max)
 - **Kakuzu:** revive HP is 1 (like Hidan's "stays at 1 HP"); the Style he loses per revive follows a fixed order — **Fire, Lightning, Wind, Earth** — rather than a player choice; if a lost Heart drops his Pool capacity below what's pooled, the excess is **lost**.
 - **Deidara's Combine:** the player chooses which spiders to sacrifice when more than needed exist.
 - **"Turn cycle":** a cycle ends at the start of the affected character's controller's own next turn.
-- **Damage-modifier stacking order** (no card needs it yet): flat reductions → clamp to 0 → floor-clamps → "cannot be prevented" bypasses everything.
-- **Upkeep ties:** broken by board position (no prompt).
+- **Damage-modifier order** (as built): redirect adjustment → attacker bonuses (Rallying Words) → Banshō Ten'in's +1 → Fire vs Paper Body +1 → the target's reductions (Iron Skin, Paper Body, Iron-Forged Body, Sharingan Foresight; skipped by "cannot be reduced", and Iron Skin by Banshō) → the damage-prevention pool (skipped by "cannot be reduced" and Banshō). Floor 0 (Iron-Forged Body: floor 1).
+- **Synergy discount allocation:** the board-wide discount (max −2) comes off the most expensive upkeep first.
+- **Self Detonate:** the detonating Clay Spiders are destroyed (implied by "detonate"); the activating spider is always one of them.
+- **Deidara's Combine / Self Detonate:** which spiders go is automatic — they're identical.
+- **Yahiko Sacrifices Himself "would defeat it":** checked by simulating the waiting attack against the current board (after every reduction).
 
-### 20.2 Automatic choices (no player prompt yet)
-- **Mission replacement at the limit:** replaces the **oldest** Mission.
-- **Mission rewards needing "a character":** apply to the controller's **first character in play.**
-- **Squad Formation:** selects the first 3 characters; redirects each hit to the group member (other than the target) with the **most HP**; the redirected hit is never redirected again.
-- **Bingo Book: Threat Level S:** the "look at 4 instead of 2" bonus is delivered as an **immediate 4-card Character Deck reveal (keep 1)**; the fully-stunned next character skips Pain (six tokens, no single character).
-- **Incoming Mission Assignment / Battlefield Selection:** automatically take the **first matching card** among the top 6.
-- **Deidara's Detonation Art / Konan's Paper Bomb Tag:** spend a banked Charge **automatically** when one exists.
-- **Zetsu's Absorbed Vitality:** X is auto-maximized to the Reservoir.
-- **Pain's Rampaging Charge:** only the "Straight" path is implemented.
-- **Target-negation "redirect" abilities** (Yahiko's Ultimate, Puppet Shell Guard, Mechanized Guard, Paper/Crow Clone…) are implemented as **full negation** of the action.
+### 20.2 Automatic choices (no player prompt)
+The rule is that the player makes every choice the rules give them (**[Updated]** — see §21 rulings 31–33). What's still automatic:
+- **Kakuzu's Five Hearts:** the Style lost on each revive follows a fixed order (Fire, Lightning, Wind, Earth).
+- **Squad Formation:** selects the first 3 characters (the redirect itself is a standing player choice).
+- **Death is an Explosion (Version 2) / Kakuzu reviving Hidan:** the engine holds the dying character at 0 HP and **asks** the controller — a live prompt, not automatic — because damage can't pause mid-resolution for a Reactive activation.
 
 ### 20.3 Rules in SPEC.md the build does not yet model
 - **Item cards** (not defined).
 - **Played Jutsu/Assist cards and completed or failed Missions don't yet move to the discard pile** after they resolve (only a *replaced* Terrain or Mission does), and ongoing-effect Jutsu (Deploy Medic Corps) aren't shown in a separate "in play" area (§15.3).
-- **A damage-source attribution system** (who dealt the damage) and a **general damage-modifier system** don't exist; several per-card clauses depend on them (Appendix C).
-- **Hidden info in the strict engine** is not applied (only the networked build redacts).
+- **Banshō Ten'in's "pull an enemy closer"** has no defined meaning on the 2-row board (§22).
+- **Hidden info in the strict (local) engine** is not applied — local hotseat shows both hands by design; the networked build hides the opponent's hand from **both** host and guest.
 - **Strict-mode stack is last-in-first-out**, not the designed first-in-first-out (§5.2).
 - **The "Combat ability" timing for support abilities** is permissive: non-damaging Normal-speed abilities are accepted in Main **and** Combat.
 
@@ -648,6 +646,35 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 9. ✔ **Timing (cards):** non-combat Normal-speed cards (Terrain, Missions, deck searches, Deploy Medic Corps…) **cannot** be played in Combat; **Attack-type** Normal Jutsu are **Combat-only**; a Normal card may be played in Combat only if its effect **alters the immediate combat step** and triggers immediately.
 10. ✔ **Retreat collapse:** clearing a player's active characters in one combat step **forces their retreated characters out immediately** and grants the attacker a **second Combat** (unused attack actions only); forced out otherwise = no extra Combat.
 
+**Designer rulings — playtest feedback session (Setup, economy, choices, visibility)**
+21. ✔ **Setup:** pick a starting character with a **Details** view and an explicit **Confirm**; **Mulligan** is each player's independent choice, available until **they** confirm (confirming keeps the hand); the **first-player coin flip happens after both confirm** (SPEC §3's order).
+22. ✔ **Draw Phase draw is a manual click**, not automatic (SPEC §4.3); it can be undone.
+23. ✔ **Playing a character from hand is always free.** The tax is paid when **drawing** from the Character Deck, not when playing (SPEC §8).
+24. ✔ **Character Deck Tax: 3 / 5 / 7 / 8, capped at 8.** Only a **paid manual draw** (your own Main Phase) raises it.
+25. ✔ **Drawing from the Character Deck is a state-based action** — never on the stack, can't be responded to; its timing comes from its trigger (manual draw: your Main Phase; Reinforcement: the moment of the defeat, either player's turn).
+26. ✔ **Reinforcement:** a **C-rank or higher** defeat offers an **optional** draw at your **current** tax (the tax doesn't rise). A **D-rank** defeat triggers nothing.
+27. ✔ **Last C+ character defeated** (D-ranks on the board and in hand are ignored): if you hold a C+ character card you **must play one immediately** (free, any timing); otherwise you may take a **free** draw. Neither raises the tax. Replaces the Empty-Board Waiver.
+28. ✔ **Field Intelligence:** the **opponent chooses** which 2 cards to reveal; the caster sees them.
+29. ✔ **Hidden information:** in a 2-player game **neither** player sees the other's hand (the host used to).
+30. ✔ **Only technique Jutsu need an enabling character** — Jutsu with an ability Type (Ninjutsu, Taijutsu, Bukijutsu, Genjutsu). **Type: None** tactical cards (Field Intelligence, Incoming Mission Assignment, Battlefield Selection), Assist, Terrain and Mission cards don't.
+31. ✔ **Player choice:** a card is the player's choice whenever it has an **alternative cost**, or an **additional or alternative effect that depends on spending a resource or meeting a condition** (Deidara's / Konan's charge spends, Iron Sand Wall's +X, Absorbed Vitality's X, Rampaging Charge's Straight/Bent and side). The engine always asks; it never spends or picks for you. **Set effects** (e.g. "look at the top 6") resolve as written.
+32. ✔ **Look at the top X:** X is **fixed** when the card states a value with no indication of choice; **which** matching card you take **is** your choice.
+33. ✔ **Selections the rules give you are yours:** which Mission a new one replaces at the limit, which character gets a Mission reward, which of several **tied** characters you pay Upkeep for, Squad Formation's redirect (a standing choice, Off by default).
+34. ✔ **Every tracked resource is visible** — Clay Charges, Hearts, Shikigami Charges, absorbed Chakra, Curse target, cooldowns, pending effects… on the card (key ones) and in its details.
+35. ✔ **Synergy discount is board-wide:** −1 upkeep for each character **past the first** sharing a Synergy tag, **capped at −2 total** (applies to the starting character's upkeep too). Two Akatsuki S-Ranks: 6 → 5; two S-Ranks + a C: 6 → 4. (SPEC §6.5.)
+36. ✔ **Undo** exists for actions a player can't fix by hand (draws, mulligans, Character Deck picks, reveals, choices); **Restart** keeps the network connection; **trust mode** can be toggled from the sidebar. **[Playtest]** In trust mode a character, **Mission or Terrain** put into play by mistake can be dragged back to hand (or use its **Return to hand** button); it returns as a fresh card — its progress, damage and tracked resources reset.
+45. ✔ **Akatsuki Hideout costs 2 Chakra** (was 0). (SPEC §13c.)
+
+**Engine completions — every "simplified" card effect now works as printed**
+37. **Damage knows its source** (the attacking unit and the ability's Type/Style/speed), which makes these apply: **Iron Skin** (−2 physical / −1 elemental through the next turn), **Paper Body** (−2 Taijutsu, +1 Fire), **Iron-Forged Body** (−1 Taijutsu, min 1), **Sharingan Foresight** (−1 vs Quick), **Rallying Words** (+1 on each ally's next attack), **Banshō Ten'in** (+1 for the rest of the turn, can't be protected).
+38. **Cost modifiers:** +1 Chakra to target a **transformed Kisame**; **Uchiha Prodigy** −1 on Quick Jutsu cards; **Bingo Book C** −2 on the killer's next ability.
+39. **Kills and damage are tracked:** Hidan's Curse needs an enemy he has damaged, and his own side can't target him while Cursing; **Patchwork Threads** needs a kill that turn and takes an elemental Style (your choice); **Tsukuyomi**'s ≤6-damage limit; **Water Prison** ends when Kisame is hit.
+40. **Redirects move the attack** (every part of it) instead of cancelling it: Puppet Shell Guard (onto Hiruko, −2), Mechanized Guard (onto Asura, −1), Chakra Absorption (onto Preta, to 0, +1 Chakra), Absorb Impact (onto Preta, −1), Yahiko Sacrifices Himself (onto Yahiko, only vs a hit that would defeat the ally).
+41. **Pain:** Almighty Push must be the first Path ability that turn, locks the other Paths until it lands and Deva for 3 turn cycles; Path Beasts go on a 2-Upkeep cooldown when defeated; **Rinnegan Reservoir** lets any Path spend any Path's Pool; Soul Rip draws on a kill; Rampaging Charge's **Bent** path.
+42. **Deidara:** **Death is an Explosion** (both versions) and the **Clay Spider** token's **Self Detonate** / **Combine**. **Sasori** enters with his **Third Kazekage**. **Kakuzu can revive Hidan** at 3 HP (you're asked). **Zetsu Golem Regeneration**; **Spore Technique** blocks the target's own negations (Crow Clone, Paper Clone, Shinra Tensei V2, Substitution cards).
+43. **Paying from a Pool:** abilities can be paid from the character's Pool (you choose the split when there's a real choice); "entire Pool" costs spend the whole Pool; Pool-only costs are handled automatically.
+44. **Bingo Book S**'s full stun also covers Pain's Path tokens and Sasori's Kazekage.
+
 **Deck-size ruling**
 20. ✔ **Hand Deck maximum is 80 cards** (previously fixed at 40); the minimum remains 40. The preset Akatsuki Hand Deck remains 40 cards. (The build doesn't enforce any deck-size limit today; it only uses the fixed preset decks.)
 
@@ -662,20 +689,20 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 18. **Deploy Medic Corps** can now target a Retreated character (explicit exception).
 19. **Yahiko's Inspiring Leader** doesn't apply while its source is Disabled/Retreated.
 
-**Earlier rule revisions recorded in the design docs** (already reflected above): no automatic base Chakra income (Chakra only from tapped sources); Chakra sources are separate Chakra cards with a per-player **Consumed pile**; "Instant" renamed **Quick Technique**, and **Reactive Technique** added; the every-3rd-turn Character Deck draw was removed; escalating **Reinforcement Tax** and the **Empty-Board Waiver**; unpaid upkeep **Disables** instead of defeating; **Retreat** added; **Pool restriction** tightened (a Pool only pays through its own character — no "styleless" exception); **Assist** cards added; **D Rank** added with its draw rule.
+**Earlier rule revisions recorded in the design docs** (already reflected above): no automatic base Chakra income (Chakra only from tapped sources); Chakra sources are separate Chakra cards with a per-player **Consumed pile**; "Instant" renamed **Quick Technique**, and **Reactive Technique** added; the every-3rd-turn Character Deck draw was removed; escalating **Reinforcement Tax** and the **Empty-Board Waiver** (both since replaced — rulings 23–27); unpaid upkeep **Disables** instead of defeating; **Retreat** added; **Pool restriction** tightened (a Pool only pays through its own character — no "styleless" exception); **Assist** cards added; **D Rank** added with its draw rule.
 
 ---
 
 ## 22. Open questions
 
 1. **§4.5 vs §4.4:** are non-damaging Normal-speed abilities allowed *during* Combat as well as Main? (The build allows both.)
-2. **Upkeep ties:** should the player choose between equal-cost characters (currently board order)?
-3. **Hidan ⇄ Kakuzu revive clause** and **Hidan's Curse condition** — not implemented (Appendix C).
-4. **Damage attribution:** several clauses need "who dealt the damage" (Kakuzu's Patchwork trigger and Style steal, Itachi's Tsukuyomi condition, Bingo Book C, Hidan's Curse condition).
-5. **A generic damage-modifier system** (Iron Skin, Paper Body, Iron-Forged Body, Rallying Words, Banshō Ten'in) — designer sign-off on stacking order.
-6. **Whether Jutsu cards should sit in an "in play" area** while an ongoing effect runs (SPEC §10c says yes; not built).
-7. **Redirect vs. negate:** should redirect-style abilities (Yahiko's Ultimate, Puppet Shell Guard, Mechanized Guard) become true redirects?
-8. **Per-card open questions** flagged in the character log are collected in Appendix B under each card.
+2. **Banshō Ten'in's "pull an enemy closer":** what does it mean on the 2-row board? (Its +1 damage / can't-be-protected parts work; the pull does nothing yet.)
+3. **Damage-modifier order** (§20.1) — designer sign-off on the stacking order as built.
+4. **Whether Jutsu cards should sit in an "in play" area** while an ongoing effect runs (SPEC §10c says yes; not built).
+5. **Bingo Book A's wording** ("reduce the cost of your next reinforcement by 2") — the build applies it to your next **paid Character Deck draw**, since the tax now applies to draws (ruling 23).
+6. **Per-card open questions** flagged in the character log are collected in Appendix B under each card.
+
+*Resolved this session:* upkeep ties (you choose — ruling 33), the Hidan ⇄ Kakuzu revival and Hidan's Curse condition, damage attribution, the damage-modifier system, and true redirects (rulings 37–42).
 
 ---
 
@@ -1273,7 +1300,7 @@ or reduce it.
 
 ## A.4 Terrain cards
 
-**Akatsuki Hideout** — Synergy: Akatsuki, 0 Chakra. *(full nuance:
+**Akatsuki Hideout** — Synergy: Akatsuki, 2 Chakra. *(full nuance:
 design/CHARACTER_LOG.md)*
 Effect: Akatsuki-Synergy characters you control have their Upkeep
 (§6.5) reduced by 1 (minimum 0).
@@ -2543,13 +2570,15 @@ The deck's first Terrain card. Interpretive calls, flagged for review:
   otherwise for it to affect both sides symmetrically, and this text
   doesn't — so playing it is a genuine one-sided advantage even in the
   mirror, not a wash.
-- **Stacks with the existing Synergy upkeep discount (§6.5)** rather
-  than being floored separately — all applicable upkeep reductions on a
-  given character (the per-matching-character Synergy discount, plus
-  this Terrain's flat -1) sum together first, and only the *combined*
-  total is floored at 0. There's no reading where the Synergy discount
-  gets floored to 0 on its own and then this Terrain's -1 tries to apply
-  on top of that already-floored number.
+- **Cost: 2 Chakra [Updated]** (previously 0) — paid from generic
+  Chakra when played (a Terrain needs no enabling character, §10c).
+  With the Synergy discount now capped at −2 for the whole board (§6.5),
+  the Hideout's −1 per Akatsuki character is the bigger saving on a full
+  board, so it's no longer free to put down.
+- **Stacks with the Synergy upkeep discount (§6.5)** — the Hideout's −1
+  applies to each Akatsuki-Synergy character you control (not capped),
+  and the board-wide Synergy discount (max −2) then comes off your
+  most expensive remaining upkeep; no character goes below 0.
 - **Doesn't touch starting-character Upkeep Phase effects (§6.5)** — a
   starting character follows its own bespoke Rank-scaled table (free
   upkeep, a Chakra gain, etc.), not the standard per-rank Upkeep table
@@ -2829,38 +2858,24 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: Akatsuki
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
 | Explosive Tag | 2 | jutsu | 1 | Normal | None | Bukijutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
 | Battlefield Selection | 2 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |
-| Akatsuki Hideout | 3 | terrain | 0 | Normal | None | None | Main only | none/auto | Synergy: Akatsuki |
+| Akatsuki Hideout | 3 | terrain | 2 | Normal | None | None | Main only | none/auto | Synergy: Akatsuki |
 | Chidori Interception | 2 | assist | variable | Reactive | Lightning | Ninjutsu | — | none/auto | — |
 
 ## C.2 Implementation status by card
 
-This lists, per card, the parts of the **printed text the engine does not yet model exactly** (taken from the notes in the code). Anything not listed here is implemented as printed. "Auto" means the engine chooses instead of prompting.
+**[Updated]** Every character, token and hand card is implemented as printed, with these exceptions only (details and defaults: §20):
 
-**Kakuzu** — *Iron Skin:* only the "strikes for 2 physical damage" half is implemented; the temporary damage reduction is not wired (no general damage-modifier system yet). *Patchwork Threads:* the trigger "whenever Kakuzu defeats any shinobi" is not enforced — it can be activated any time its Chakra condition (≥2 pooled) is met; the Style-steal clause is dropped. Five Hearts, dynamic Pool capacity ((Hearts−1)×2) and Elemental Versatility are implemented.
+**Pain of the Six Paths** — *Banshō Ten'in:* the "pull an enemy closer" movement has no defined meaning on the 2-row board yet (open question, §22); its damage, +1-for-the-turn and can't-be-protected parts work.
 
-**Hidan** — *Jashin's Blessing:* the first-defeat survival and End-Phase regen are implemented; the **Kakuzu cross-character revival clause is not**. *Curse Technique:* the Condition ("target an enemy Hidan has already damaged") is **not enforced**, and "can't be targeted by friendly attacks" is **not enforced**.
+**Kakuzu** — *Five Hearts:* the Style lost on each revive follows a fixed order (Fire, Lightning, Wind, Earth) rather than a choice.
 
-**Deidara** — *Detonation Art:* auto-spends a Clay Charge for the 4-damage version whenever one exists (the printed card lets the player choose). C3, Shi-Suri requires a full Pool and 5 Charges (enforced).
+**Missions** — *Squad Formation:* selects the first 3 characters; the redirect is a standing choice on the Mission (which member absorbs hits, or Off), since damage can't pause for a live prompt. *Bingo Book A:* its discount applies to the next paid Character Deck draw (§22).
 
-**Itachi** — *Crow Clone:* true target-negation. *Amaterasu:* delayed ticks implemented; "cannot be reduced" bypasses the prevention pool. *Tsukuyomi:* the condition "must not have dealt more than 6 damage to Itachi this game" is **not enforced** (no damage attribution).
-
-**Kisame** — *Water Prison Jutsu:* the 3-turn "can't use targeted abilities" lock is enforced, but not the "or until Kisame takes damage" early exit. *Samehada Shark Transformation:* the "attackers targeting Kisame pay +1 Chakra while transformed" clause is **not wired**.
-
-**Konan** — *Paper Body:* the incoming-damage modifiers (−2 vs Taijutsu, +1 vs Fire) are **not wired**. *Paper Bomb Tag:* auto-spends a banked Charge. Paper Person of God's delayed second wave is implemented.
-
-**Sasori** — *Puppet Shell Guard:* implemented as **full negation** instead of redirect-and-reduce. *Iron Sand Wall:* fixed at −2; the "+X Chakra for +X reduction (up to X=4)" scaling is dropped.
-
-**Pain of the Six Paths** — *Shinra Tensei V2* and *Mechanized Guard:* full negation rather than a redirect. *Banshō Ten'in:* damage only; the "pull closer" movement and the "+1 damage / can't be protected" buff are not implemented. *Almighty Push:* reduced to its core (full-Pool condition, delayed blanket 8 damage at the controller's next End Phase); the multi-turn ability lockouts are not enforced. *Soul Rip:* the "draw 1 card" clause is dropped. *Rampaging Charge:* only the "Straight" path is implemented.
-
-**Zetsu** — *Absorbed Vitality:* X is auto-maximized to the Reservoir. *Spore Technique:* the Taijutsu lock and the two delayed Absorb ticks are implemented; the clause about the affected enemy's own kit not negating damage to itself is not wired. *Golem:* its Regeneration trait ("heal 1 if it took no damage last turn") is not wired.
-
-**Juzo Biwa** — *Iron-Forged Body:* the −1 Taijutsu damage reduction is **not wired**.
-
-**Yahiko** — *Rallying Words:* sets a flag for allies' attacks; the +1 damage is a scaffold, **not applied to every ability**. *Yahiko Sacrifices Himself:* implemented as **full negation** (the threatened ally takes no damage) rather than redirecting the damage onto Yahiko.
-
-**Amegakure Civilian Rebel** — *Shinobi Strike* fully implemented.
-
-**Missions** — *Unshakable Resolve:* fully implemented (6th Untap, fails at −10 Health since play); reward goes to the first character in play. *Bingo Book S:* immediate 4-card reveal instead of a modified next draw. *Bingo Book A:* discount and Ambush implemented. *Bingo Book B:* +3 Pool to the first character, draw, and the extra Chakra-source placement implemented. *Bingo Book C:* draw implemented; the "next ability by the character that defeated it costs 2 less" clause is dropped (no damage attribution). *Squad Formation:* auto-selects the first 3 characters; redirects each hit to the highest-HP other member; ends when one of the three is defeated or Retreated.
+How the rest works in the build, where it isn't obvious from the card:
+- **Player choices are asked, never auto-picked:** Detonation Art / Paper Bomb Tag charge spends, Iron Sand Wall's +X, Absorbed Vitality's X, Rampaging Charge's Straight/Bent and side, Patchwork Threads' Style, Self Detonate's spider count, Mission replacement and reward targets, tied Upkeep, look-at-top-X picks.
+- **"When it would be defeated" choices** (Death is an Explosion V2, Kakuzu reviving Hidan): the character is held at 0 HP and its controller is asked.
+- **Redirects** rewrite the waiting attack's target, and the reduction applies to the new target.
+- **Pain's Paths** can be pooled into individually and can spend each other's Pools.
 
 **Jutsu / Assist / Terrain** — see §15.4 and §20.2.
 

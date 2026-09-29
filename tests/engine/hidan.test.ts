@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { dealDamage } from '../../src/engine/combat';
-import { freshCombat, giveChakra, resolveTop } from './testUtils';
+import { enableAll, freshCombat, giveChakra, resolveTop } from './testUtils';
 import type { GameState } from '../../src/engine/types';
 
 /** Curse Technique's condition: Hidan must already have damaged the target (combat.ts records it). */
@@ -47,6 +47,7 @@ describe('Hidan', () => {
     // self-target restriction clears, and so we're back on p1's own turn
     // (Normal-speed abilities require the activating player to be active).
     for (let i = 0; i < 14; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
+    state = enableAll(state); // no Chakra sources to pay upkeep in this fixture — not what's being tested
     expect(state.activePlayer).toBe('p1');
     state = giveChakra(state, 'p1', 0); // 0 generic Chakra left — self-target must still be legal (costs 0)
 

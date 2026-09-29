@@ -1,3 +1,4 @@
+import { onlyStartingCharacter } from './testUtils';
 import { describe, expect, it } from 'vitest';
 import { createInitialState } from '../../src/engine/state';
 import { gameReducer } from '../../src/engine/reducer';
@@ -68,7 +69,7 @@ describe('Chakra sources (§5.2)', () => {
   });
 
   it('total available Chakra grows turn over turn as sources accumulate, from a starting point of zero', () => {
-    let state = toMain1(createInitialState('p1'));
+    let state = onlyStartingCharacter(toMain1(createInitialState('p1')), 'p1'); // no upkeep to tap sources
     state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
     state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: 0 });
     expect(state.players.p1.genericChakraAvailable).toBe(1); // 1 source, no base income
@@ -107,7 +108,7 @@ describe('Personal Chakra Pooling (§5.3)', () => {
   });
 
   it('cannot pool beyond the character’s capacity', () => {
-    let state = toMain1(createInitialState('p1'));
+    let state = onlyStartingCharacter(toMain1(createInitialState('p1')), 'p1'); // no upkeep to tap sources
     // Kakuzu's starting capacity is (5 Hearts - 1) * 2 = 8. Accumulate 9
     // sources over 9 of p1's turns, then tap all of them together in one
     // turn to have 9 Chakra available — more than the character can hold.

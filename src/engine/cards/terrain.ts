@@ -6,7 +6,7 @@ const akatsukiHideout: HandCardDef = {
   id: 'akatsuki-hideout',
   name: 'Akatsuki Hideout',
   cardType: 'terrain',
-  cost: 0,
+  cost: 2,
   speed: 'Normal',
   style: 'None',
   type: 'None',

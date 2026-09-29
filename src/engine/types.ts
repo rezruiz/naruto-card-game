@@ -353,6 +353,7 @@ export type GameAction =
   | { type: 'DECK_TAKE'; player: PlayerId; instanceId: string; shuffle: boolean }
   | { type: 'DECK_TO_BOTTOM'; player: PlayerId; instanceId: string }
   | { type: 'RETURN_CHARACTER_TO_HAND'; instanceId: string }
+  | { type: 'RETURN_IN_PLAY_CARD_TO_HAND'; instanceId: string }
   | { type: 'RETREAT'; instanceId: string }
   | { type: 'RETURN_FROM_RETREAT'; instanceId: string }
   | { type: 'CHOOSE_CHARACTER'; player: PlayerId; entryId: string }

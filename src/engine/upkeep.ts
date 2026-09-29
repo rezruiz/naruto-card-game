@@ -29,17 +29,23 @@ function startingCharacterTreatment(
   }
 }
 
-/** SPEC.md §6.5 — 1 less Chakra per OTHER in-play character sharing at least one Synergy tag with this one, floor 0. */
-function synergyDiscount(state: GameState, player: PlayerId, character: CharacterInstance): number {
-  const mySynergy = getCharacterDef(character.defId)?.synergy ?? [];
-  if (mySynergy.length === 0) return 0;
-  let matches = 0;
-  for (const other of state.players[player].backRow) {
-    if (!other || other.instanceId === character.instanceId) continue;
-    const theirSynergy = getCharacterDef(other.defId)?.synergy ?? [];
-    if (theirSynergy.some((tag) => mySynergy.includes(tag))) matches += 1;
+/** SPEC.md §6.5's cap on the whole board's Synergy discount. */
+export const SYNERGY_DISCOUNT_CAP = 2;
+
+/**
+ * SPEC.md §6.5 — the Synergy discount is board-wide: −1 upkeep for each
+ * character past the first in your largest group sharing a Synergy tag,
+ * capped at −2 in total (e.g. two Akatsuki characters: −1; three or more:
+ * −2). How it's spread across characters: see upkeepCosts.
+ */
+export function boardSynergyDiscount(state: GameState, player: PlayerId): number {
+  const counts = new Map<string, number>();
+  for (const c of state.players[player].backRow) {
+    if (!c) continue;
+    for (const tag of new Set(getCharacterDef(c.defId)?.synergy ?? [])) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
-  return matches;
+  const largest = Math.max(0, ...counts.values());
+  return Math.min(SYNERGY_DISCOUNT_CAP, Math.max(0, largest - 1));
 }
 
 /** SPEC.md §10a — a Terrain in play may reduce a matching-Synergy character's Upkeep by 1 (e.g. Akatsuki Hideout), on top of the character-count discount above. */
@@ -52,8 +58,48 @@ function terrainDiscount(state: GameState, player: PlayerId, character: Characte
   return terrainSynergy.some((tag) => mySynergy.includes(tag)) ? 1 : 0;
 }
 
-function normalUpkeepCost(state: GameState, player: PlayerId, character: CharacterInstance): number {
-  return Math.max(0, UPKEEP_BY_RANK[character.rank] - synergyDiscount(state, player, character) - terrainDiscount(state, player, character));
+interface UpkeepLine {
+  character: CharacterInstance;
+  isStarting: boolean;
+  /** The starting character's C/B treatment: gains Chakra instead of paying. */
+  grant?: number;
+  base: number;
+  terrain: number;
+  synergy: number;
+  amount: number;
+}
+
+/**
+ * What every character of this player owes this Upkeep: its base (the Rank
+ * table, or the starting character's own amount), minus a matching Terrain,
+ * then the board-wide Synergy discount spread over the most expensive costs
+ * first (so it always saves as much as it can; never below 0 each).
+ */
+function upkeepCosts(state: GameState, player: PlayerId): UpkeepLine[] {
+  const p = state.players[player];
+  const lines: UpkeepLine[] = [];
+  for (const character of p.backRow) {
+    if (!character) continue;
+    const isStarting = character.instanceId === p.startingCharacterInstanceId;
+    const treatment = isStarting ? startingCharacterTreatment(character.rank) : null;
+    if (treatment?.kind === 'grant') {
+      lines.push({ character, isStarting, grant: treatment.amount, base: 0, terrain: 0, synergy: 0, amount: 0 });
+      continue;
+    }
+    const base = treatment?.kind === 'pay' ? treatment.amount : UPKEEP_BY_RANK[character.rank];
+    const terrain = treatment?.kind === 'pay' ? 0 : Math.min(base, terrainDiscount(state, player, character));
+    lines.push({ character, isStarting, base, terrain, synergy: 0, amount: base - terrain });
+  }
+  let discount = boardSynergyDiscount(state, player);
+  const byCost = lines.filter((l) => l.grant === undefined).sort((a, b) => b.amount - a.amount);
+  while (discount > 0) {
+    const target = byCost.filter((l) => l.amount > 0).sort((a, b) => b.amount - a.amount)[0];
+    if (!target) break;
+    target.amount -= 1;
+    target.synergy += 1;
+    discount -= 1;
+  }
+  return lines;
 }
 
 function setDisabled(state: GameState, instanceId: string, disabled: boolean): GameState {
@@ -99,6 +145,8 @@ export interface UpkeepPreviewEntry {
   /** 'grant' = gains Chakra into its own Pool instead of paying; 'free' = costs 0; 'cost' = owes `amount` Chakra. */
   kind: 'grant' | 'free' | 'cost';
   amount: number;
+  /** How the amount was reached (normal characters only): the Rank's base upkeep and each discount taken off it. */
+  breakdown?: { base: number; synergy: number; terrain: number };
 }
 
 /**
@@ -110,23 +158,11 @@ export interface UpkeepPreviewEntry {
  * never mutates state.
  */
 export function previewUpkeep(state: GameState, player: PlayerId): UpkeepPreviewEntry[] {
-  const p = state.players[player];
-  const startingId = p.startingCharacterInstanceId;
-  const entries: UpkeepPreviewEntry[] = [];
-
-  for (const character of p.backRow) {
-    if (!character) continue;
-    const isStarting = character.instanceId === startingId;
-    const treatment = isStarting ? startingCharacterTreatment(character.rank) : null;
-
-    if (treatment?.kind === 'grant') {
-      entries.push({ instanceId: character.instanceId, name: character.name, rank: character.rank, isStarting, kind: 'grant', amount: treatment.amount });
-    } else {
-      const cost = treatment?.kind === 'pay' ? treatment.amount : normalUpkeepCost(state, player, character);
-      entries.push({ instanceId: character.instanceId, name: character.name, rank: character.rank, isStarting, kind: cost === 0 ? 'free' : 'cost', amount: cost });
-    }
-  }
-  return entries;
+  return upkeepCosts(state, player).map((l) => {
+    const common = { instanceId: l.character.instanceId, name: l.character.name, rank: l.character.rank, isStarting: l.isStarting };
+    if (l.grant !== undefined) return { ...common, kind: 'grant' as const, amount: l.grant };
+    return { ...common, kind: l.amount === 0 ? ('free' as const) : ('cost' as const), amount: l.amount, breakdown: { base: l.base, synergy: l.synergy, terrain: l.terrain } };
+  });
 }
 
 /**
@@ -221,22 +257,14 @@ registerChoiceResolver('upkeep-tie', (state, choice, optionIds) => {
  */
 export function payUpkeep(state: GameState, player: PlayerId): GameState {
   let next = state;
-  const p = next.players[player];
-  const startingId = p.startingCharacterInstanceId;
-
   const payable: { instanceId: string; cost: number }[] = [];
-  for (const character of p.backRow) {
-    if (!character) continue;
-    const isStarting = character.instanceId === startingId;
-    const treatment = isStarting ? startingCharacterTreatment(character.rank) : null;
-
-    if (treatment?.kind === 'grant') {
-      next = grantDirectly(next, character.instanceId, treatment.amount);
-      next = setDisabled(next, character.instanceId, false);
+  for (const line of upkeepCosts(state, player)) {
+    if (line.grant !== undefined) {
+      next = grantDirectly(next, line.character.instanceId, line.grant);
+      next = setDisabled(next, line.character.instanceId, false);
       continue;
     }
-    const cost = treatment?.kind === 'pay' ? treatment.amount : normalUpkeepCost(next, player, character);
-    payable.push({ instanceId: character.instanceId, cost });
+    payable.push({ instanceId: line.character.instanceId, cost: line.amount });
   }
 
   for (const entry of payable.filter((e) => e.cost === 0)) {

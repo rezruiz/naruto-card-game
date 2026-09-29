@@ -73,6 +73,56 @@ describe('Trust mode: return a played character to hand (manual correction)', ()
   });
 });
 
+describe('Trust mode: return a Mission or Terrain in play to hand (manual correction)', () => {
+  it('a Terrain goes back to its owner’s hand', () => {
+    let s = giveChakra({ ...freshMain1(), rules: 'trust' as const }, 'p1', 5);
+    const card = withHandCard(s, 'p1', 'akatsuki-hideout');
+    s = gameReducer(card.state, { type: 'PLAY_HAND_CARD', instanceId: card.id, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
+    const terrain = s.players.p1.terrainInPlay!;
+    expect(terrain.defId).toBe('akatsuki-hideout');
+    s = gameReducer(s, { type: 'RETURN_IN_PLAY_CARD_TO_HAND', instanceId: terrain.instanceId });
+    expect(s.players.p1.terrainInPlay).toBeNull();
+    expect(s.players.p1.hand.some((h) => h.kind === 'card' && h.defId === 'akatsuki-hideout')).toBe(true);
+  });
+
+  it('a Mission goes back to hand with its progress reset — Squad Formation’s group markers come off', () => {
+    let s = { ...freshMain1(), rules: 'trust' as const };
+    const group = ['p1-kakuzu', 'p1-hidan', 'p1-deidara'];
+    s = {
+      ...s,
+      players: {
+        ...s.players,
+        p1: {
+          ...s.players.p1,
+          missionsInPlay: [{ instanceId: 'm-1', defId: 'squad-formation', owner: 'p1', extra: { active: true, group } }],
+          backRow: s.players.p1.backRow.map((c) => (c && group.includes(c.instanceId) ? { ...c, extra: { ...c.extra, squadFormationGroup: group } } : c)),
+        },
+      },
+    };
+    s = gameReducer(s, { type: 'RETURN_IN_PLAY_CARD_TO_HAND', instanceId: 'm-1' });
+    expect(s.players.p1.missionsInPlay).toHaveLength(0);
+    expect(s.players.p1.hand.some((h) => h.kind === 'card' && h.defId === 'squad-formation')).toBe(true);
+    expect(s.players.p1.backRow.every((c) => !c?.extra.squadFormationGroup)).toBe(true);
+  });
+
+  it("isn't available under the strict rules", () => {
+    let s = freshMain1();
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, missionsInPlay: [{ instanceId: 'm-1', defId: 'squad-formation', owner: 'p1', extra: {} }] } } };
+    expect(gameReducer(s, { type: 'RETURN_IN_PLAY_CARD_TO_HAND', instanceId: 'm-1' }).players.p1.missionsInPlay).toHaveLength(1);
+  });
+});
+
+describe('Akatsuki Hideout costs 2 Chakra', () => {
+  it('is refused with 1 Chakra and costs 2 when played', () => {
+    const card = withHandCard(giveChakra(freshMain1(), 'p1', 1), 'p1', 'akatsuki-hideout');
+    expect(gameReducer(card.state, { type: 'PLAY_HAND_CARD', instanceId: card.id, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 }).players.p1.terrainInPlay).toBeNull();
+    const rich = withHandCard(giveChakra(freshMain1(), 'p1', 3), 'p1', 'akatsuki-hideout');
+    const played = gameReducer(rich.state, { type: 'PLAY_HAND_CARD', instanceId: rich.id, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
+    expect(played.players.p1.terrainInPlay?.defId).toBe('akatsuki-hideout');
+    expect(played.players.p1.genericChakraAvailable).toBe(1);
+  });
+});
+
 describe('Trust mode toggle (SET_RULES)', () => {
   it('switches modes, but not while actions are declared', () => {
     let s = gameReducer(freshMain1(), { type: 'SET_RULES', rules: 'trust' });

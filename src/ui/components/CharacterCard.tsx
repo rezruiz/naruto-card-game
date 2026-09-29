@@ -4,6 +4,8 @@ import { trackedResources } from '../../engine/characters/progressText';
 
 /** The drag payload type for a character being dragged back to hand. */
 export const CHARACTER_DRAG_TYPE = 'application/x-naruto-character';
+/** The drag payload type for a Mission or Terrain in play being dragged back to hand. */
+export const IN_PLAY_CARD_DRAG_TYPE = 'application/x-naruto-in-play-card';
 
 /**
  * A minimized in-play card: just the name plus a one-line vitals readout.

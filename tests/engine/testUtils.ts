@@ -35,8 +35,28 @@ export function clearSummoningSickness(state: GameState): GameState {
   };
 }
 
+/** Clears Disabled on both boards — for tests that advance whole turns without Chakra sources to pay upkeep, but aren't testing upkeep. */
+export function enableAll(state: GameState): GameState {
+  const enable = (p: GameState['players']['p1']) => ({ ...p, backRow: p.backRow.map((c) => (c ? { ...c, status: { ...c.status, disabled: false } } : c)) });
+  return { ...state, players: { p1: enable(state.players.p1), p2: enable(state.players.p2) } };
+}
+
+/** Leaves `player` with only their (free-upkeep) starting character — for tests counting Chakra sources, so upkeep never taps any. */
+export function onlyStartingCharacter(state: GameState, player: PlayerId): GameState {
+  const p = state.players[player];
+  return { ...state, players: { ...state.players, [player]: { ...p, backRow: p.backRow.map((c) => (c && c.instanceId === p.startingCharacterInstanceId ? c : null)) } } };
+}
+
+/**
+ * Both sides' default 5-character roster at p1's Main 1, ready to act. The
+ * fixture has no Chakra sources, so its first Upkeep can't pay the (capped)
+ * Synergy-discounted upkeep — that Disabling is cleared here, the same way
+ * summoning sickness is, so ability tests start from usable characters.
+ */
 export function freshMain1(): GameState {
-  return clearSummoningSickness(toMain1(createInitialState('p1')));
+  const state = clearSummoningSickness(toMain1(createInitialState('p1')));
+  const enable = (p: GameState['players']['p1']) => ({ ...p, backRow: p.backRow.map((c) => (c ? { ...c, status: { ...c.status, disabled: false } } : c)) });
+  return { ...state, players: { p1: enable(state.players.p1), p2: enable(state.players.p2) } };
 }
 
 /**

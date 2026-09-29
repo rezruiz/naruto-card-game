@@ -3,7 +3,7 @@ import { activateAbility, findAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { dealDamage } from '../../src/engine/combat';
 import type { GameState } from '../../src/engine/types';
-import { freshCombat, freshMain1, giveChakra, resolveTop } from './testUtils';
+import { enableAll, freshCombat, freshMain1, giveChakra, resolveTop } from './testUtils';
 
 const deidaraOf = (s: GameState) => s.players.p1.backRow.find((c) => c?.defId === 'deidara');
 const setDeidara = (s: GameState, patch: (d: NonNullable<ReturnType<typeof deidaraOf>>) => object): GameState => ({
@@ -180,6 +180,7 @@ describe('Deidara', () => {
     // Pooling taps Deidara for the rest of *this* turn (§5.3's pool-XOR-act
     // rule) — advance to a later turn before activating his Ultimate.
     for (let i = 0; i < 15; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
+    state = enableAll(state); // no Chakra sources to pay upkeep in this fixture — not what's being tested
     expect(state.activePlayer).toBe('p1');
     expect(state.phase).toBe('Combat'); // damaging Normal-speed abilities are a Combat action (§4.5)
     state = {

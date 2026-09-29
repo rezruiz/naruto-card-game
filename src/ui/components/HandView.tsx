@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { HandEntry } from '../../engine/types';
-import { CHARACTER_DRAG_TYPE } from './CharacterCard';
+import { CHARACTER_DRAG_TYPE, IN_PLAY_CARD_DRAG_TYPE } from './CharacterCard';
 import { getHandCardDef } from '../../engine/cards/registry';
 import { getCharacterDeckEntry } from '../../engine/characters';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
@@ -18,6 +18,7 @@ export function HandView({
   onMoveCard,
   characterPlay,
   onDropCharacter,
+  onDropInPlayCard,
   mustPlayCPlus = false,
 }: {
   hand: HandEntry[];
@@ -37,6 +38,8 @@ export function HandView({
   characterPlay?: (entryId: string) => { label: string; hint: string; disabled: boolean; reason?: string };
   /** Trust mode, own hand: a character dragged here from the battlefield returns to hand. */
   onDropCharacter?: (instanceId: string) => void;
+  /** Trust mode, own hand: a Mission or Terrain dragged here from play returns to hand. */
+  onDropInPlayCard?: (instanceId: string) => void;
   /** This player must play a C+ character now (their last C+ fell) — highlights the cards that satisfy it. */
   mustPlayCPlus?: boolean;
 }) {
@@ -45,22 +48,29 @@ export function HandView({
     <div
       className={`hand-view${dragOver ? ' hand-view--drop' : ''}`}
       onDragOver={(e) => {
-        if (!onDropCharacter || !e.dataTransfer.types.includes(CHARACTER_DRAG_TYPE)) return;
+        const accepts =
+          (onDropCharacter && e.dataTransfer.types.includes(CHARACTER_DRAG_TYPE)) || (onDropInPlayCard && e.dataTransfer.types.includes(IN_PLAY_CARD_DRAG_TYPE));
+        if (!accepts) return;
         e.preventDefault();
         setDragOver(true);
       }}
       onDragLeave={() => setDragOver(false)}
       onDrop={(e) => {
         setDragOver(false);
-        const id = e.dataTransfer.getData(CHARACTER_DRAG_TYPE);
-        if (id && onDropCharacter) {
+        const characterId = e.dataTransfer.getData(CHARACTER_DRAG_TYPE);
+        const cardId = e.dataTransfer.getData(IN_PLAY_CARD_DRAG_TYPE);
+        if (characterId && onDropCharacter) {
           e.preventDefault();
-          onDropCharacter(id);
+          onDropCharacter(characterId);
+        } else if (cardId && onDropInPlayCard) {
+          e.preventDefault();
+          onDropInPlayCard(cardId);
         }
       }}
     >
       <span className="hand-view__label">
-        Hand ({hand.length}){onDropCharacter && <span className="hand-view__drop-hint"> — drag a character here to return it to hand</span>}
+        Hand ({hand.length})
+        {(onDropCharacter || onDropInPlayCard) && <span className="hand-view__drop-hint"> — drag a character, Mission or Terrain here to return it to hand</span>}
       </span>
       <div className="hand-view__cards">
         {hand.map((entry) => {

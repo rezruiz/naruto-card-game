@@ -24,6 +24,13 @@ export function UpkeepPanel({ entries }: { entries: UpkeepPreviewEntry[] }) {
               {e.isStarting ? ', starting' : ''})
             </span>
             <span className="upkeep-row__amount">
+              {e.breakdown && (e.breakdown.synergy > 0 || e.breakdown.terrain > 0) && (
+                <span className="upkeep-row__math">
+                  {e.breakdown.base}
+                  {e.breakdown.synergy > 0 && ` − ${e.breakdown.synergy} Synergy`}
+                  {e.breakdown.terrain > 0 && ` − ${e.breakdown.terrain} Terrain`} ={' '}
+                </span>
+              )}
               {e.kind === 'grant' && `+${e.amount} → Pool`}
               {e.kind === 'free' && 'Free'}
               {e.kind === 'cost' && `−${e.amount}`}

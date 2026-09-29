@@ -118,10 +118,22 @@ describe('§4.2/§6.5 Upkeep', () => {
     expect(s.players.p1.backRow[0]!.status.disabled).toBe(false);
   });
 
-  it('reduces upkeep by 1 per other character sharing a Synergy tag, floor 0 (Kakuzu + Hidan are both Akatsuki)', () => {
-    const s = payUpkeep(sources(setBack(freshMain1(), 'p1', ['kakuzu', 'hidan', null, null, null]), 'p1', 5), 'p1');
-    // Kakuzu A(2) -1 = 1; Hidan B(1) -1 = 0.
-    expect(5 - untapped(s, 'p1')).toBe(1);
+  it('Synergy discount is board-wide: −1 per character past the first sharing a tag, capped at −2 total, taken off the costliest first', () => {
+    // Kakuzu A(2) + Hidan B(1), both Akatsuki: 3 − 1 = 2 (the −1 comes off Kakuzu).
+    let s = payUpkeep(sources(setBack(freshMain1(), 'p1', ['kakuzu', 'hidan', null, null, null]), 'p1', 5), 'p1');
+    expect(5 - untapped(s, 'p1')).toBe(2);
+    // Two S-ranks (Kisame, Itachi — both Akatsuki): 6 − 1 = 5.
+    s = payUpkeep(sources(setBack(freshMain1(), 'p1', ['kisame', 'itachi', null, null, null]), 'p1', 9), 'p1');
+    expect(9 - untapped(s, 'p1')).toBe(5);
+    // Two S-ranks and a C (Yahiko): 6 + 0 − 2 = 4 — the cap.
+    s = payUpkeep(sources(setBack(freshMain1(), 'p1', ['kisame', 'itachi', 'yahiko', null, null]), 'p1', 9), 'p1');
+    expect(9 - untapped(s, 'p1')).toBe(4);
+    // Five Akatsuki (the default roster: A, B, A, S, S = 11): still only −2.
+    s = payUpkeep(sources(setBack(freshMain1(), 'p1', ['kakuzu', 'hidan', 'deidara', 'kisame', 'itachi']), 'p1', 12), 'p1');
+    expect(12 - untapped(s, 'p1')).toBe(9);
+    // The preview shows the same math.
+    const preview = previewUpkeep(setBack(freshMain1(), 'p1', ['kisame', 'itachi', 'yahiko', null, null]), 'p1');
+    expect(preview.reduce((sum, e) => sum + (e.breakdown?.synergy ?? 0), 0)).toBe(2);
   });
 
   it("gives the starting character its own treatment: C +2 pooled, B +1 pooled, A free, S costs 2 — and it doesn't transfer", () => {

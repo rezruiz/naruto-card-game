@@ -22,7 +22,7 @@ import { StagedPanel } from './ui/components/StagedPanel';
 import { CharacterDetailsModal } from './ui/components/CharacterDetailsModal';
 import { DetailsModal } from './ui/components/DetailsModal';
 import { ChakraSourceRow } from './ui/components/ChakraSourceRow';
-import { CharacterCard } from './ui/components/CharacterCard';
+import { CharacterCard, IN_PLAY_CARD_DRAG_TYPE } from './ui/components/CharacterCard';
 import { CharacterRevealPanel } from './ui/components/CharacterRevealPanel';
 import { LobbyScreen } from './ui/components/LobbyScreen';
 import { TokenCard } from './ui/components/TokenCard';
@@ -54,13 +54,45 @@ type PendingAbility = {
 
 type Pending = PendingAbility | PendingCard | null;
 
-type Details = { kind: 'occupant'; instanceId: string } | { kind: 'card'; name: string; subtitle: string; text?: string } | null;
+type Details =
+  | { kind: 'occupant'; instanceId: string }
+  /** returnInstanceId: a Mission/Terrain in play the viewer can take back to hand (trust mode). */
+  | { kind: 'card'; name: string; subtitle: string; text?: string; returnInstanceId?: string }
+  | null;
 
 /** A Terrain/Mission in play: its name and, for a Mission, a live progress readout (e.g. "2/6 Untaps"). Clicking opens the full card text. Face-down (hidden) Missions show no name and can't be opened. */
-function InPlayChip({ label, name, progress, onOpen }: { label: string; name: string | undefined; progress?: string; onOpen: (name: string) => void }) {
-  if (!name) return <span className="in-play-chip in-play-chip--hidden">Face-down {label}</span>;
+function InPlayChip({
+  label,
+  name,
+  progress,
+  onOpen,
+  dragInstanceId,
+}: {
+  label: string;
+  name: string | undefined;
+  progress?: string;
+  onOpen: (name: string) => void;
+  /** Trust mode, own card: can be dragged onto its owner's hand to take back an accidental play. */
+  dragInstanceId?: string;
+}) {
+  const drag = dragInstanceId
+    ? {
+        draggable: true,
+        onDragStart: (e: React.DragEvent) => {
+          e.dataTransfer.setData(IN_PLAY_CARD_DRAG_TYPE, dragInstanceId);
+          e.dataTransfer.effectAllowed = 'move';
+        },
+      }
+    : {};
+  if (!name) {
+    return (
+      <span className="in-play-chip in-play-chip--hidden" {...drag} title={dragInstanceId ? 'Drag onto your hand to return it to hand' : undefined}>
+        Face-down {label}
+      </span>
+    );
+  }
   return (
-    <button type="button" className="in-play-chip" title="Click for card text" onClick={() => onOpen(name)}>
+    <button type="button" className="in-play-chip" title={dragInstanceId ? 'Click for card text · drag onto your hand to return it' : 'Click for card text'} onClick={() => onOpen(name)} {...drag}>
       {label}: {name}
       {progress && <span className="in-play-chip__progress"> · {progress}</span>}
     </button>
@@ -593,6 +625,16 @@ function ViewGame({
         }}
         mustPlayCPlus={mine && player.mustPlayCharacter}
         onDropCharacter={trust && mine ? (instanceId) => dispatch({ type: 'RETURN_CHARACTER_TO_HAND', instanceId }) : undefined}
+        onDropInPlayCard={
+          trust && mine
+            ? (instanceId) => {
+                // Only this player's own Mission/Terrain.
+                if (player.terrainInPlay?.instanceId === instanceId || player.missionsInPlay.some((m) => m.instanceId === instanceId)) {
+                  dispatch({ type: 'RETURN_IN_PLAY_CARD_TO_HAND', instanceId });
+                }
+              }
+            : undefined
+        }
         onOpenDetails={(name, subtitle, text) => setDetails({ kind: 'card', name, subtitle, text })}
       />
     );
@@ -639,7 +681,10 @@ function ViewGame({
           <InPlayChip
             label="Terrain"
             name={getHandCardDef(player.terrainInPlay.defId)?.name}
-            onOpen={(name) => setDetails({ kind: 'card', name, subtitle: 'Terrain in play', text: getHandCardText(name) })}
+            dragInstanceId={trust && mine ? player.terrainInPlay.instanceId : undefined}
+            onOpen={(name) =>
+              setDetails({ kind: 'card', name, subtitle: 'Terrain in play', text: getHandCardText(name), returnInstanceId: trust && mine ? player.terrainInPlay!.instanceId : undefined })
+            }
           />
         )}
         {player.missionsInPlay.map((m) => (
@@ -648,7 +693,10 @@ function ViewGame({
               label="Mission"
               name={m.defId === '__hidden__' ? undefined : getHandCardDef(m.defId)?.name}
               progress={m.defId === '__hidden__' ? undefined : missionProgressText(m.defId, m.extra)}
-              onOpen={(name) => setDetails({ kind: 'card', name, subtitle: 'Mission in play', text: getHandCardText(name) })}
+              dragInstanceId={trust && mine ? m.instanceId : undefined}
+              onOpen={(name) =>
+                setDetails({ kind: 'card', name, subtitle: 'Mission in play', text: getHandCardText(name), returnInstanceId: trust && mine ? m.instanceId : undefined })
+              }
             />
             {m.defId === 'squad-formation' && !!m.extra.active && (
               <SquadRedirectSelect
@@ -886,7 +934,20 @@ function ViewGame({
       )}
       {deckTool && <DeckToolsModal state={state} player={deckTool.player} tool={deckTool.tool} dispatch={dispatch} onClose={() => setDeckTool(null)} />}
       {details?.kind === 'card' && (
-        <DetailsModal title={details.name} subtitle={details.subtitle} text={details.text} onClose={() => setDetails(null)} />
+        <DetailsModal title={details.name} subtitle={details.subtitle} text={details.text} onClose={() => setDetails(null)}>
+          {details.returnInstanceId && (
+            <button
+              type="button"
+              title="Undo putting this into play: back to your hand (you can also drag its chip onto your hand)"
+              onClick={() => {
+                dispatch({ type: 'RETURN_IN_PLAY_CARD_TO_HAND', instanceId: details.returnInstanceId! });
+                setDetails(null);
+              }}
+            >
+              Return to hand
+            </button>
+          )}
+        </DetailsModal>
       )}
     </div>
   );

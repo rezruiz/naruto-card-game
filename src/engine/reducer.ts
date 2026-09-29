@@ -12,7 +12,7 @@ import { currentTax, playCharacter } from './playCharacter';
 import { getCharacterDeckEntry } from './characters';
 import { revealHandCards } from './handReveal';
 import { resolveChoice } from './choices';
-import { returnCharacterToHand } from './trust/returnToHand';
+import { returnCharacterToHand, returnInPlayCardToHand } from './trust/returnToHand';
 import { playHandCard } from './cards/playHandCard';
 import { runMissionTrigger } from './cards/missionRunner';
 import { forceOutOfRetreat } from './retreatCollapse';
@@ -359,6 +359,8 @@ function reduce(state: GameState, action: GameAction): GameState {
       return deckToBottom(drained, action.player, action.instanceId);
     case 'RETURN_CHARACTER_TO_HAND':
       return returnCharacterToHand(drained, action.instanceId);
+    case 'RETURN_IN_PLAY_CARD_TO_HAND':
+      return returnInPlayCardToHand(drained, action.instanceId);
     default:
       return drained;
   }
