@@ -49,19 +49,30 @@ function firstOwnedCharacter(state: GameState, owner: PlayerId): string | undefi
 
 // --- Unshakable Resolve ----------------------------------------------------
 
-const unshakableResolve = missionCard('unshakable-resolve', 'Unshakable Resolve', 1, false);
+// The health baseline and Untap count are captured the moment it enters
+// play (its own resolve, not the generic missionCard() factory, since that
+// needs to read the controller's CURRENT Health at play time) — not lazily
+// on the first tick. SPEC.md's "reach your 6th Untap Phase after this
+// Mission was played" counts 6 Untaps from the moment it was played; capturing
+// the baseline on the first tick instead of at play time was an off-by-one
+// bug that made it silently take 7 Untaps to fire.
+const unshakableResolve: HandCardDef = {
+  id: 'unshakable-resolve',
+  name: 'Unshakable Resolve',
+  cardType: 'mission',
+  cost: 1,
+  speed: 'Normal',
+  style: 'None',
+  type: 'None',
+  maxTargets: 0,
+  resolve: (ctx) => enterPlayAsMission(ctx, 'unshakable-resolve', { healthAtPlay: ctx.state.players[ctx.player].health, untaps: 0 }),
+};
 registerMission({
   id: 'unshakable-resolve',
   tick: (state, owner, missionInstanceId, trigger) => {
     if (trigger.kind !== 'untap') return { state, discard: false };
     const mission = state.players[owner].missionsInPlay.find((m) => m.instanceId === missionInstanceId);
     if (!mission) return { state, discard: false };
-
-    if (mission.extra.healthAtPlay === undefined) {
-      // First Untap seen since being played — record the baseline.
-      const withBaseline = patchMission(state, owner, missionInstanceId, { healthAtPlay: state.players[owner].health, untaps: 0 });
-      return { state: withBaseline, discard: false };
-    }
 
     const healthAtPlay = mission.extra.healthAtPlay as number;
     if (state.players[owner].health <= healthAtPlay - 10) {
@@ -81,6 +92,18 @@ registerMission({
     return { state: appendLog(next, 'Unshakable Resolve succeeds!'), discard: true };
   },
 });
+
+/** A short, human-readable progress readout for a Mission currently in play — so its Condition's progress (an Untap count, whether Squad Formation has locked in its group, ...) is actually visible somewhere, not just tracked invisibly in `extra`. `undefined` for a Mission with nothing meaningful to show yet (or a face-down one, which the UI should call this with only once revealed). */
+export function missionProgressText(defId: string, extra: Record<string, unknown>): string | undefined {
+  if (defId === 'unshakable-resolve') {
+    const untaps = extra.untaps as number | undefined;
+    return untaps === undefined ? undefined : `${untaps}/6 Untaps`;
+  }
+  if (defId === 'squad-formation') {
+    return extra.active ? 'Active — protecting its group of 3' : 'Waiting for 3 characters in play';
+  }
+  return undefined;
+}
 
 function patchMission(state: GameState, owner: PlayerId, missionInstanceId: string, patch: Record<string, unknown>): GameState {
   const p = state.players[owner];

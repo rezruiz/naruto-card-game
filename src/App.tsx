@@ -6,6 +6,7 @@ import { findAbility } from './engine/abilities';
 import { getCharacterDeckEntry } from './engine/characters';
 import { reinforcementCost } from './engine/playCharacter';
 import { getHandCardDef } from './engine/cards/registry';
+import { missionProgressText } from './engine/cards/missions';
 import type { GameState, HandEntry, PlayerId } from './engine/types';
 import { cardStage, newPendingCard, toHandCardContext, type PendingCard } from './ui/cardFlow';
 import { getHandCardText } from './ui/cardInfo';
@@ -45,12 +46,13 @@ type Pending = PendingAbility | PendingCard | null;
 
 type Details = { kind: 'occupant'; instanceId: string } | { kind: 'card'; name: string; subtitle: string; text?: string } | null;
 
-/** A Terrain/Mission in play: just its name; clicking opens the full card text. Face-down (hidden) Missions show no name and can't be opened. */
-function InPlayChip({ label, name, onOpen }: { label: string; name: string | undefined; onOpen: (name: string) => void }) {
+/** A Terrain/Mission in play: its name and, for a Mission, a live progress readout (e.g. "2/6 Untaps"). Clicking opens the full card text. Face-down (hidden) Missions show no name and can't be opened. */
+function InPlayChip({ label, name, progress, onOpen }: { label: string; name: string | undefined; progress?: string; onOpen: (name: string) => void }) {
   if (!name) return <span className="in-play-chip in-play-chip--hidden">Face-down {label}</span>;
   return (
     <button type="button" className="in-play-chip" title="Click for card text" onClick={() => onOpen(name)}>
       {label}: {name}
+      {progress && <span className="in-play-chip__progress"> · {progress}</span>}
     </button>
   );
 }
@@ -470,6 +472,7 @@ function ViewGame({
             key={m.instanceId}
             label="Mission"
             name={m.defId === '__hidden__' ? undefined : getHandCardDef(m.defId)?.name}
+            progress={m.defId === '__hidden__' ? undefined : missionProgressText(m.defId, m.extra)}
             onOpen={(name) => setDetails({ kind: 'card', name, subtitle: 'Mission in play', text: getHandCardText(name) })}
           />
         ))}

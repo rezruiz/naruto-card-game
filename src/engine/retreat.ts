@@ -20,42 +20,44 @@ export function retreatCost(rank: CharacterInstance['rank']): number {
 export function retreat(state: GameState, instanceId: string): GameState {
   const relaxed = state.rules === 'trust';
   const player = (relaxed ? findOccupant(state, instanceId)?.player : undefined) ?? state.activePlayer;
-  if (!relaxed && !MAIN_PHASES.has(state.phase)) {
-    return appendLog(state, `${player} can only Retreat a character during their own Main Phase.`);
+  let working = state;
+  if (!MAIN_PHASES.has(state.phase)) {
+    if (!relaxed) return appendLog(state, `${player} can only Retreat a character during their own Main Phase.`);
+    working = appendLog(working, `${player} Retreats outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
 
-  const found = findOccupant(state, instanceId);
+  const found = findOccupant(working, instanceId);
   if (!found || !isCharacter(found.occupant) || found.player !== player) {
-    return appendLog(state, `${player} has no such character to Retreat.`);
+    return appendLog(working, `${player} has no such character to Retreat.`);
   }
   const character = found.occupant;
 
   if (character.status.retreated) {
-    return appendLog(state, `${character.name} is already Retreated.`);
+    return appendLog(working, `${character.name} is already Retreated.`);
   }
   const stunUntil = character.extra.stunnedUntilTurn as number | undefined;
   if (!relaxed && stunUntil !== undefined && state.turn <= stunUntil) {
-    return appendLog(state, `${character.name} is stunned and can't Retreat right now.`);
+    return appendLog(working, `${character.name} is stunned and can't Retreat right now.`);
   }
   if (!relaxed && character.status.usedAbilitiesThisTurn.length > 0) {
-    return appendLog(state, `${character.name} has already acted this turn and can't Retreat.`);
+    return appendLog(working, `${character.name} has already acted this turn and can't Retreat.`);
   }
-  const others = state.players[player].backRow.filter((c) => c && !c.status.retreated && c.instanceId !== instanceId);
+  const others = working.players[player].backRow.filter((c) => c && !c.status.retreated && c.instanceId !== instanceId);
   if (!relaxed && others.length === 0) {
-    return appendLog(state, `${player} must keep at least 1 non-Retreated character in play.`);
+    return appendLog(working, `${player} must keep at least 1 non-Retreated character in play.`);
   }
 
   const fullCost = retreatCost(character.rank);
-  const cost = relaxed ? Math.min(fullCost, state.players[player].genericChakraAvailable) : fullCost;
-  if (!relaxed && cost > state.players[player].genericChakraAvailable) {
-    return appendLog(state, `${player} doesn't have ${cost} Chakra available to Retreat ${character.name}.`);
+  const cost = relaxed ? Math.min(fullCost, working.players[player].genericChakraAvailable) : fullCost;
+  if (!relaxed && cost > working.players[player].genericChakraAvailable) {
+    return appendLog(working, `${player} doesn't have ${cost} Chakra available to Retreat ${character.name}.`);
   }
 
   let next: GameState = {
-    ...state,
+    ...working,
     players: {
-      ...state.players,
-      [player]: { ...state.players[player], genericChakraAvailable: state.players[player].genericChakraAvailable - cost },
+      ...working.players,
+      [player]: { ...working.players[player], genericChakraAvailable: working.players[player].genericChakraAvailable - cost },
     },
   };
   next = patchCharacter(next, instanceId, (c) => ({ ...c, status: { ...c.status, retreated: true } }));
@@ -69,18 +71,20 @@ export function retreat(state: GameState, instanceId: string): GameState {
 export function returnFromRetreat(state: GameState, instanceId: string): GameState {
   const relaxed = state.rules === 'trust';
   const player = (relaxed ? findOccupant(state, instanceId)?.player : undefined) ?? state.activePlayer;
-  if (!relaxed && !MAIN_PHASES.has(state.phase)) {
-    return appendLog(state, `${player} can only return a character from Retreat during their own Main Phase.`);
+  let working = state;
+  if (!MAIN_PHASES.has(state.phase)) {
+    if (!relaxed) return appendLog(state, `${player} can only return a character from Retreat during their own Main Phase.`);
+    working = appendLog(working, `${player} returns a character from Retreat outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
-  const found = findOccupant(state, instanceId);
+  const found = findOccupant(working, instanceId);
   if (!found || !isCharacter(found.occupant) || found.player !== player) {
-    return appendLog(state, `${player} has no such character to return from Retreat.`);
+    return appendLog(working, `${player} has no such character to return from Retreat.`);
   }
   if (!found.occupant.status.retreated) {
-    return appendLog(state, `${found.occupant.name} isn't Retreated.`);
+    return appendLog(working, `${found.occupant.name} isn't Retreated.`);
   }
 
-  const next = patchCharacter(state, instanceId, (c) => ({
+  const next = patchCharacter(working, instanceId, (c) => ({
     ...c,
     status: { ...c.status, retreated: false, enteredTurn: state.turn },
   }));

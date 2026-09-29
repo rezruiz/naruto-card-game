@@ -3,7 +3,7 @@ import type { AbilitySpeed, AbilityType, GameState, PlayerId, Style } from '../t
 export interface HandCardContext {
   state: GameState;
   player: PlayerId;
-  /** The in-play character enabling this play (§5.3/§10c) — '' for an Assist card played with no chosen enabler (they don't need one). */
+  /** The in-play character enabling this play (§5.3/§10c) — only a Jutsu card needs one; it's '' for Assist, Terrain and Mission cards, none of which are played "through" any particular character. */
   enablingInstanceId: string;
   targetInstanceIds: string[];
   /** A player-chosen numeric amount, for the rare card with a variable magnitude the controller picks (e.g. Chakra Transfer's X) — see HandCardDef.needsAmountChoice. Undefined when the card doesn't use one, or when resolved programmatically (tests) without picking one — cards reading this should fall back to their old auto-choice in that case. */

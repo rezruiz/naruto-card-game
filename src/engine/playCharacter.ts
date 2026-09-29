@@ -31,31 +31,33 @@ export function playCharacter(state: GameState, instanceId: string): GameState {
     (relaxed ? (['p1', 'p2'] as const).find((id) => state.players[id].hand.some((h) => h.instanceId === instanceId)) : undefined) ?? state.activePlayer;
   const p = state.players[player];
 
-  if (!relaxed && !MAIN_PHASES.has(state.phase)) {
-    return appendLog(state, `${player} can only play a character during their own Main Phase.`);
+  let working = state;
+  if (!MAIN_PHASES.has(state.phase)) {
+    if (!relaxed) return appendLog(state, `${player} can only play a character during their own Main Phase.`);
+    working = appendLog(working, `${player} plays a character outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   const handEntry = p.hand.find((h) => h.instanceId === instanceId);
   if (!handEntry || handEntry.kind !== 'character') {
-    return appendLog(state, `${player} has no such Character card in hand.`);
+    return appendLog(working, `${player} has no such Character card in hand.`);
   }
   const entry = getCharacterDeckEntry(handEntry.entryId);
-  if (!entry) return appendLog(state, `Unknown Character card: ${handEntry.entryId}.`);
-  if (!entry.hasRoom(state, player)) {
-    return appendLog(state, `${player} doesn't have room in play for ${entry.name}.`);
+  if (!entry) return appendLog(working, `Unknown Character card: ${handEntry.entryId}.`);
+  if (!entry.hasRoom(working, player)) {
+    return appendLog(working, `${player} doesn't have room in play for ${entry.name}.`);
   }
 
   // Empty-Board Waiver / Bingo Book: Threat Level A's one-time discount (§13a) — see reinforcementCost.
-  const { cost: fullCost, waived } = reinforcementCost(state, player);
+  const { cost: fullCost, waived } = reinforcementCost(working, player);
   const discount = waived ? 0 : Math.min(reinforcementTax(p.reinforcementsPlayed), p.nextReinforcementDiscount);
   const cost = relaxed ? Math.min(fullCost, p.genericChakraAvailable) : fullCost;
   if (!relaxed && cost > p.genericChakraAvailable) {
-    return appendLog(state, `${player} doesn't have ${cost} Chakra available for the Reinforcement Tax.`);
+    return appendLog(working, `${player} doesn't have ${cost} Chakra available for the Reinforcement Tax.`);
   }
 
-  const beforeBackRow = state.players[player].backRow;
+  const beforeBackRow = working.players[player].backRow;
   // Retaliation (§6.6) or Bingo Book: Threat Level A's Ambush reward — either grants Ambush to this entry.
   const hasAmbush = p.retaliationPending;
-  let next = entry.spawn(state, player, state.turn, hasAmbush);
+  let next = entry.spawn(working, player, working.turn, hasAmbush);
   const np = next.players[player];
   next = {
     ...next,

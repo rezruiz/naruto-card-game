@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { gameReducer } from '../../src/engine/reducer';
 import { payUpkeep, previewUpkeep, upkeepReminderText } from '../../src/engine/upkeep';
+import { missionProgressText } from '../../src/engine/cards/missions';
 import { dealDamage } from '../../src/engine/combat';
 import { applyPoison } from '../../src/engine/poison';
 import { registerCharacter } from '../../src/engine/characters/registry';
@@ -761,5 +762,126 @@ describe('Upkeep preview and reminder text (for the standing panel and the chara
     expect(upkeepReminderText('C', 'reinforcement')).toMatch(/free/);
     expect(upkeepReminderText('B', 'reinforcement')).toMatch(/1 Chakra\/turn/);
     expect(upkeepReminderText('S', 'reinforcement')).toMatch(/3 Chakra\/turn/);
+  });
+});
+
+describe('§10a/§10b: Terrain and Mission cards are not enabled by a character', () => {
+  const play = (defId: string) => {
+    const s = giveChakra(setBack(freshMain1(), 'p1', ['t-C', null, null, null, null]), 'p1', 3);
+    const card = makeHandCardInstance(defId);
+    const withCard = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [{ kind: 'card' as const, ...card }] } } };
+    // '' — deliberately no enabling character, unlike a Jutsu card.
+    return run(withCard, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
+  };
+
+  it('a Terrain card plays with no enabling character', () => {
+    const s = play('akatsuki-hideout');
+    expect(s.players.p1.terrainInPlay?.defId).toBe('akatsuki-hideout');
+    expect(s.log.at(-1)!.text).not.toMatch(/Can't play/);
+  });
+
+  it('a Mission card plays with no enabling character', () => {
+    const s = play('unshakable-resolve');
+    expect(s.players.p1.missionsInPlay).toHaveLength(1);
+    expect(s.log.at(-1)!.text).not.toMatch(/Can't play/);
+  });
+
+  it('a Jutsu card still needs one (the requirement is Jutsu-specific, not "every non-Assist card")', () => {
+    const s = play('field-intelligence');
+    expect(s.log.at(-1)!.text).toMatch(/no such character to enable/);
+    expect(s.players.p1.hand).toHaveLength(1); // rejected — the card never left hand
+  });
+});
+
+describe("§10b Unshakable Resolve: the 6-Untap timing (an off-by-one bug meant it used to take 7)", () => {
+  const setup = () => {
+    let s = giveChakra(setBack(freshMain1(), 'p1', ['t-C', null, null, null, null]), 'p1', 1);
+    // A real (non-empty) Hand Deck for both players — freshMain1()'s default is empty, which would otherwise
+    // deal 3 Health deck-out damage on every one of these many Draw Phases and confound the Health-loss check below.
+    const filler = Array.from({ length: 20 }, () => makeHandCardInstance('field-intelligence'));
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, handDeck: filler }, p2: { ...s.players.p2, handDeck: filler } } };
+    const card = makeHandCardInstance('unshakable-resolve');
+    const withCard = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [{ kind: 'card' as const, ...card }] } } };
+    return run(withCard, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
+  };
+  const mission = (s: GameState) => s.players.p1.missionsInPlay[0];
+  /** Advances until the next time it becomes p1's own Untap Phase. */
+  const toNextP1Untap = (s: GameState): GameState => {
+    let n = gameReducer(s, { type: 'ADVANCE_PHASE' });
+    while (!(n.activePlayer === 'p1' && n.phase === 'Untap')) n = gameReducer(n, { type: 'ADVANCE_PHASE' });
+    return n;
+  };
+
+  it('records its Health baseline and starts at 0/6 the instant it is played — not on the first tick', () => {
+    const s = setup();
+    expect(mission(s).extra).toMatchObject({ healthAtPlay: 20, untaps: 0 });
+  });
+
+  it('fires on the 6th of its own Untap Phases after being played, not the 7th', () => {
+    let s = setup();
+    for (let i = 1; i <= 5; i++) {
+      s = toNextP1Untap(s);
+      expect(mission(s)?.extra.untaps, `after Untap #${i}`).toBe(i);
+      expect(s.players.p1.missionsInPlay, `after Untap #${i}`).toHaveLength(1); // not yet resolved
+    }
+    s = toNextP1Untap(s); // the 6th
+    expect(s.players.p1.missionsInPlay).toHaveLength(0); // resolved and discarded
+    expect(s.log.some((l) => /Unshakable Resolve succeeds/.test(l.text))).toBe(true);
+    expect(char(s, 'p1', 'p1-t-C').chakraPool.current).toBe(5);
+    expect(char(s, 'p1', 'p1-t-C').currentHP).toBe(char(s, 'p1', 'p1-t-C').maxHP); // healed 5, capped at max
+  });
+
+  it('fails instead if the controller has lost 10+ Health since it was played', () => {
+    let s = setup();
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, health: 9 } } }; // 20 -> 9, an 11-Health drop
+    s = toNextP1Untap(s);
+    expect(s.players.p1.missionsInPlay).toHaveLength(0);
+    expect(s.log.some((l) => /Unshakable Resolve fails/.test(l.text))).toBe(true);
+  });
+});
+
+describe('Mission progress display (missionProgressText)', () => {
+  it('reports N/6 Untaps for Unshakable Resolve, and Squad Formation\'s active state', () => {
+    expect(missionProgressText('unshakable-resolve', { untaps: 3 })).toBe('3/6 Untaps');
+    expect(missionProgressText('unshakable-resolve', {})).toBeUndefined(); // not yet played (no state to show)
+    expect(missionProgressText('squad-formation', { active: false })).toMatch(/waiting/i);
+    expect(missionProgressText('squad-formation', { active: true })).toMatch(/active/i);
+    expect(missionProgressText('bingo-book-s', {})).toBeUndefined(); // no visible progress to report
+  });
+});
+
+describe('Trust mode: Chakra-source-placement timing is flagged, not silently ignored', () => {
+  const withCard = () => {
+    const s = { ...freshMain1(), rules: 'trust' as const };
+    const card = makeHandCardInstance('substitution');
+    return { s: { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [{ kind: 'card' as const, ...card }] } } }, card };
+  };
+
+  it('placing outside a Main Phase still succeeds, but logs an advisory warning', () => {
+    const { s, card } = withCard();
+    const inCombat = { ...s, phase: 'Combat' as const };
+    const after = run(inCombat, { type: 'PLACE_CHAKRA_SOURCE', instanceId: card.instanceId });
+    expect(after.players.p1.chakraSources).toHaveLength(1); // still placed
+    expect(after.log.some((l) => /outside a Main Phase.*not legal under the strict rules/.test(l.text))).toBe(true);
+  });
+
+  it('placing a second one in the same turn still succeeds, but logs an advisory warning', () => {
+    const { s, card } = withCard();
+    const card2 = makeHandCardInstance('substitution');
+    let state = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [...s.players.p1.hand, { kind: 'card' as const, ...card2 }] } } };
+    state = run(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: card.instanceId });
+    expect(state.log.at(-1)!.text).not.toMatch(/not legal/); // the first one this turn is perfectly legal
+    state = run(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: card2.instanceId });
+    expect(state.players.p1.chakraSources).toHaveLength(2); // still placed
+    expect(state.log.some((l) => /more than one Chakra source.*not legal under the strict rules/.test(l.text))).toBe(true);
+  });
+
+  it('the same violation in strict mode is still rejected outright', () => {
+    const s = { ...freshMain1(), phase: 'Combat' as const };
+    const card = makeHandCardInstance('substitution');
+    const withHand = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [{ kind: 'card' as const, ...card }] } } };
+    const after = run(withHand, { type: 'PLACE_CHAKRA_SOURCE', instanceId: card.instanceId });
+    expect(after.players.p1.chakraSources).toHaveLength(0);
+    expect(after.log.at(-1)!.text).toMatch(/cannot place a Chakra source outside a Main Phase/);
   });
 });

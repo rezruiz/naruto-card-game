@@ -595,6 +595,11 @@
   opacity: 0.7;
 }
 
+.in-play-chip__progress {
+  opacity: 0.75;
+  font-weight: 400;
+}
+
 /* ---- Card details popup ---- */
 .details-overlay {
   position: fixed;

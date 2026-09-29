@@ -18,6 +18,11 @@ export type PendingCard = {
 
 export type CardStage = 'enabler' | 'payFromPool' | 'target' | 'amount' | 'ready';
 
+/** Only Jutsu cards are played "through" an enabling character (§5.3/§10c) — Assist, Terrain and Mission cards all skip that stage entirely. */
+function needsEnabler(def: HandCardDef): boolean {
+  return def.cardType === 'jutsu';
+}
+
 /**
  * Where a card-in-progress is in its enabler -> pool-discount choice ->
  * target(s) -> amount pipeline — purely derived from what's been picked so
@@ -26,7 +31,7 @@ export type CardStage = 'enabler' | 'payFromPool' | 'target' | 'amount' | 'ready
  * these stages entirely).
  */
 export function cardStage(p: PendingCard): CardStage {
-  if (p.def.cardType !== 'assist' && !p.enablingInstanceId) return 'enabler';
+  if (needsEnabler(p.def) && !p.enablingInstanceId) return 'enabler';
   if (p.def.offersPoolDiscount && p.payFromPool === null) return 'payFromPool';
   const maxTargets = p.def.maxTargets ?? 1;
   if (!p.targetsConfirmed && maxTargets > 0 && p.targets.length < maxTargets) return 'target';

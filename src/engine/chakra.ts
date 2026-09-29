@@ -23,29 +23,32 @@ export function placeChakraSource(state: GameState, instanceId: string): GameSta
   // Trust mode: either player may act any time, so the actor is whoever holds the card, not whoever's turn it is.
   const player = (relaxed ? (['p1', 'p2'] as PlayerId[]).find((id) => state.players[id].hand.some((h) => h.instanceId === instanceId)) : undefined) ?? state.activePlayer;
   const p = state.players[player];
+  let working = state;
 
-  if (!relaxed && !MAIN_PHASES.has(state.phase)) {
-    return appendLog(state, `${player} cannot place a Chakra source outside a Main Phase.`);
+  if (!MAIN_PHASES.has(state.phase)) {
+    if (!relaxed) return appendLog(state, `${player} cannot place a Chakra source outside a Main Phase.`);
+    working = appendLog(working, `${player} places a Chakra source outside a Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   // Bingo Book: Threat Level B's reward (§13a) lets this placement go ahead
   // even if one was already placed this turn, consuming the bonus instead.
   const usingBonus = p.chakraSourcePlacedThisTurn && p.bonusChakraSourcePlacements > 0;
-  if (!relaxed && p.chakraSourcePlacedThisTurn && !usingBonus) {
-    return appendLog(state, `${player} has already placed a Chakra source this turn.`);
+  if (p.chakraSourcePlacedThisTurn && !usingBonus) {
+    if (!relaxed) return appendLog(state, `${player} has already placed a Chakra source this turn.`);
+    working = appendLog(working, `${player} places more than one Chakra source this turn — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   const entry = p.hand.find((h) => h.instanceId === instanceId);
   if (!entry) {
-    return appendLog(state, `${player} has no such card in hand to place as a Chakra source.`);
+    return appendLog(working, `${player} has no such card in hand to place as a Chakra source.`);
   }
   // IMPLEMENTATION_PLAN.md's flagged assumption: only Hand Deck cards
   // (Jutsu/Mission/Terrain/Assist) can be Consumed this way, not an
   // as-yet-unplayed Character card.
   if (entry.kind !== 'card') {
-    return appendLog(state, `${player} can't Consume a Character card as a Chakra source.`);
+    return appendLog(working, `${player} can't Consume a Character card as a Chakra source.`);
   }
 
   const hand = p.hand.filter((h) => h.instanceId !== instanceId);
-  const next = updatePlayer(state, player, {
+  const next = updatePlayer(working, player, {
     hand,
     consumedPile: [...p.consumedPile, { instanceId: entry.instanceId, defId: entry.defId }],
     chakraSources: [...p.chakraSources, { tapped: false }],
@@ -91,37 +94,39 @@ export function poolChakra(state: GameState, instanceId: string, amount: number)
     p.backRow.find((c) => c?.instanceId === instanceId) ?? p.frontRow.find((t) => t?.instanceId === instanceId) ?? undefined;
   const pool = unit?.chakraPool;
 
-  if (!relaxed && !MAIN_PHASES.has(state.phase)) {
-    return appendLog(state, `${player} cannot pool Chakra outside a Main Phase.`);
-  }
   if (amount <= 0) {
     return state;
   }
+  let working = state;
+  if (!MAIN_PHASES.has(state.phase)) {
+    if (!relaxed) return appendLog(state, `${player} cannot pool Chakra outside a Main Phase.`);
+    working = appendLog(working, `${player} pools Chakra outside a Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+  }
   if (!unit || !pool) {
-    return appendLog(state, `${player} has no such unit with a Pool to pool Chakra into.`);
+    return appendLog(working, `${player} has no such unit with a Pool to pool Chakra into.`);
   }
   const stunUntil = unit.extra.stunnedUntilTurn as number | undefined;
   if (!relaxed && stunUntil !== undefined && state.turn <= stunUntil) {
-    return appendLog(state, `${unit.name} is stunned and can't be pooled into.`);
+    return appendLog(working, `${unit.name} is stunned and can't be pooled into.`);
   }
   if (!relaxed && isCharacter(unit) && getCharacterDef(unit.defId)?.noSelfPooling) {
-    return appendLog(state, `${unit.name}'s Pool can't be filled by pooling — only by absorption.`);
+    return appendLog(working, `${unit.name}'s Pool can't be filled by pooling — only by absorption.`);
   }
   // Pool-XOR-act (§5.3): a unit that's already used an active ability this
   // turn can't be pooled into, and pooling into it blocks it from acting for
   // the rest of the turn (checked in abilities.ts's checkLegality).
   if (!relaxed && unit.status.usedAbilitiesThisTurn.length > 0) {
-    return appendLog(state, `${unit.name} has already acted this turn and can't be pooled into.`);
+    return appendLog(working, `${unit.name} has already acted this turn and can't be pooled into.`);
   }
   if (amount > p.genericChakraAvailable) {
-    return appendLog(state, `${player} doesn't have ${amount} Chakra available to pool.`);
+    return appendLog(working, `${player} doesn't have ${amount} Chakra available to pool.`);
   }
   const room = pool.capacity - pool.current;
   if (amount > room) {
-    return appendLog(state, `${player} can't pool ${amount} into ${unit.name}'s Chakra Pool — only ${room} room left.`);
+    return appendLog(working, `${player} can't pool ${amount} into ${unit.name}'s Chakra Pool — only ${room} room left.`);
   }
 
-  let next = patchOccupant(state, instanceId, (o) => ({
+  let next = patchOccupant(working, instanceId, (o) => ({
     ...o,
     chakraPool: { current: o.chakraPool!.current + amount, capacity: pool.capacity },
     status: { ...o.status, pooledThisTurn: true },
