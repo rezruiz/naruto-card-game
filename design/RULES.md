@@ -448,7 +448,7 @@ Tokens (Clay Spider, Puppet Soldier, Path tokens, Zetsu Clones, …) have **HP**
 - Each has a **Condition** and a **Reward**. When the Condition becomes true, resolve the Reward and **discard** the Mission.
 - **Limit:** at most **1 Mission in play per character you control.** Playing past the limit **replaces** one of your choice (discarded incomplete, no Reward); the limit gates *playing*, not staying — Missions aren't discarded retroactively if your character count drops. *(Build: replaces the oldest automatically.)*
 - Missions don't count toward the 5-character board limit; they can be **Consumed as Chakra** (§6.2) like any Hand Deck card.
-- Default **face up**. Bingo Book cards may be played **face down**, revealed when their Condition is met. **[Playtest]** An opponent sees a face-down Mission only as "Face-down Mission."
+- **[Updated]** Default **face down**: the opponent sees only "Face-down Mission," not its Condition or Reward. It's **revealed when its Condition is met**; a Mission that stays in play after that (Squad Formation) stays face up. A card overrides this only by saying it's played face up.
 - The seven Missions: Unshakable Resolve; Bingo Book S / A / B / C; Squad Formation; Emergency Relief (full text: Appendix A).
 
 ### 15.3 Jutsu cards
@@ -690,6 +690,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 51. ✔ **New Mission: Emergency Relief** (0 Chakra). Condition: lose 2 of your own characters (any rank, any cause) after it's played. Reward: an **immediate free Character Deck draw** (look at 2, keep 1) — its own trigger, not a Reinforcement — that doesn't raise the tax. **3 copies** added; the preset Hand Deck is now **50** cards, exactly the minimum. (SPEC §13a.)
 52. ✔ **Pain's full defeat is a character defeat:** when his last Path token falls, Pain of the Six Paths is defeated as an **S-Rank character** — his controller loses 7 Health, it triggers Reinforcement and Retaliation, counts for Missions (Emergency Relief, the opponent's Bingo Book S), and the last Path's attacker gets kill credit. Individual Path tokens are token losses only. While any Path stands, Pain counts as a C+ character in play for the "last C+" Reinforcement rule. *(Previously none of this happened — the build treated his Paths as unrelated tokens.)* (SPEC §13, §8, §11.)
 53. ✔ **Bingo Book: Threat Level A reworded** for the draw-time tax: "Your next Character Deck draw you pay for costs 2 less. The next character you play from hand gains Ambush." The −2 goes to the next **paid** draw (manual or an accepted paid Reinforcement; a free draw doesn't use it up); Ambush goes to the next character **played**, which may be a different character. Behaviour unchanged — this confirms how the build already worked. (SPEC §13a.)
+54. ✔ **Missions are played face down by default** (was face up, with the Bingo Books as the exception), revealed when their Condition is met; one that stays in play afterwards (Squad Formation) stays face up. A card can say it's played face up. The Bingo Books' "Can be played face down; reveal it once its Condition is met" line was removed as redundant. All 7 current Missions now enter face down. (SPEC §10b.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -1188,20 +1189,17 @@ The following four cards form a themed family — the Bingo Book series,
 scaling by the Rank of the enemy character defeated:
 
 Bingo Book: Threat Level S — 0 Chakra
-*Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat an S Rank character.
 Reward: Draw from your Character Deck as normal, but look at the top 4
 instead of the top 2, Your next character played cannot use any
 abilities the turn it enters, Draw a card.
 
 Bingo Book: Threat Level A — 0 Chakra
-*Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat an A Rank character.
 Reward: Your next Character Deck draw you pay for costs 2 less. The
 next character you play from hand gains Ambush.
 
 Bingo Book: Threat Level B — 0 Chakra
-*Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat a B Rank character.
 Reward: Add 3 Chakra to a character's Chakra Pool, Draw a card, The next
 time you place a Chakra source, you may place 1 additional one that
@@ -1209,7 +1207,6 @@ turn (the additional source still requires Consuming a card, as
 normal).
 
 Bingo Book: Threat Level C — 0 Chakra
-*Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat a C Rank character.
 Reward: The cost of the next ability used by the character that
 defeated it is reduced by 2, Draw a card.

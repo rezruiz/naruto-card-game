@@ -931,10 +931,11 @@ example cards (§13a) is defined here, the rest is deferred (§12):
   limit is Character cards only, same as Tokens (§10).
 - Mission cards can be Consumed as Chakra (§5.2) like any other Hand
   Deck card, unless a specific Mission's text says otherwise.
-- By default, a Mission is played face up, with its Condition and
-  Reward public information. A specific card can override this (§0) —
-  e.g. the Bingo Book series (§13a) can be played face down and revealed
-  only once its Condition is met.
+- **By default, a Mission is played face down**: your opponent sees
+  only that you have a face-down Mission, not its Condition or Reward.
+  Reveal it once its Condition is met — a Mission that stays in play
+  after that (e.g. Squad Formation) stays face up. A specific card can
+  override this by saying it's played face up (§0).
 
 ### 10c. Jutsu Cards
 Jutsu cards live in the Hand Deck (§2) and are drawn normally.
@@ -1526,20 +1527,17 @@ The following four cards form a themed family — the Bingo Book series,
 scaling by the Rank of the enemy character defeated:
 
 Bingo Book: Threat Level S — 0 Chakra
-*Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat an S Rank character.
 Reward: Draw from your Character Deck as normal, but look at the top 4
 instead of the top 2, Your next character played cannot use any
 abilities the turn it enters, Draw a card.
 
 Bingo Book: Threat Level A — 0 Chakra
-*Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat an A Rank character.
 Reward: Your next Character Deck draw you pay for costs 2 less. The
 next character you play from hand gains Ambush.
 
 Bingo Book: Threat Level B — 0 Chakra
-*Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat a B Rank character.
 Reward: Add 3 Chakra to a character's Chakra Pool, Draw a card, The next
 time you place a Chakra source, you may place 1 additional one that
@@ -1547,7 +1545,6 @@ turn (the additional source still requires Consuming a card, as
 normal).
 
 Bingo Book: Threat Level C — 0 Chakra
-*Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat a C Rank character.
 Reward: The cost of the next ability used by the character that
 defeated it is reduced by 2, Draw a card.

@@ -35,12 +35,15 @@ function discardMission(state: GameState, owner: PlayerId, missionInstanceId: st
 registerChoiceResolver('mission-replace', (state, choice, optionIds) => discardMission(state, choice.player, optionIds[0]));
 
 /**
- * SPEC.md §10b: enters play. At the controlled-character-count cap, the
+ * SPEC.md §10b: enters play — face down by default (its Condition and Reward
+ * hidden from the opponent until it's revealed when the Condition is met),
+ * unless the card says it's played face up. At the controlled-character-count cap, the
  * controller chooses which existing Mission it replaces ("one of your
  * choice") — asked, never picked for them. With only one candidate there's
  * nothing to choose.
  */
-function enterPlayAsMission(ctx: HandCardContext, defId: string, extra: Record<string, unknown> = {}): GameState {
+function enterPlayAsMission(ctx: HandCardContext, defId: string, initialExtra: Record<string, unknown> = {}, faceUp = false): GameState {
+  const extra = faceUp ? initialExtra : { ...initialExtra, faceDown: true };
   const p = ctx.state.players[ctx.player];
   const controlledCount = p.backRow.filter((c) => c !== null).length;
   const atCap = p.missionsInPlay.length >= Math.max(1, controlledCount);
@@ -100,7 +103,8 @@ function applyCharacterReward(state: GameState, reward: string, target: string):
 
 registerChoiceResolver('mission-reward', (state, choice, optionIds) => applyCharacterReward(state, choice.data.reward as string, optionIds[0]));
 
-function missionCard(id: string, name: string, cost: number, faceDown: boolean, initialExtra: Record<string, unknown> = {}): HandCardDef {
+/** A Mission card. `faceUp` is for a card whose text says it's played face up — every other Mission enters face down (§10b). */
+function missionCard(id: string, name: string, cost: number, initialExtra: Record<string, unknown> = {}, faceUp = false): HandCardDef {
   return {
     id,
     name,
@@ -110,7 +114,7 @@ function missionCard(id: string, name: string, cost: number, faceDown: boolean, 
     style: 'None',
     type: 'None',
     maxTargets: 0,
-    resolve: (ctx) => enterPlayAsMission(ctx, id, faceDown ? { ...initialExtra, faceDown: true } : initialExtra),
+    resolve: (ctx) => enterPlayAsMission(ctx, id, initialExtra, faceUp),
   };
 }
 
@@ -221,10 +225,10 @@ function bingoBookReward(rank: 'S' | 'A' | 'B' | 'C'): MissionDef['tick'] {
   };
 }
 
-const bingoBookS = missionCard('bingo-book-s', 'Bingo Book: Threat Level S', 0, true);
-const bingoBookA = missionCard('bingo-book-a', 'Bingo Book: Threat Level A', 0, true);
-const bingoBookB = missionCard('bingo-book-b', 'Bingo Book: Threat Level B', 0, true);
-const bingoBookC = missionCard('bingo-book-c', 'Bingo Book: Threat Level C', 0, true);
+const bingoBookS = missionCard('bingo-book-s', 'Bingo Book: Threat Level S', 0);
+const bingoBookA = missionCard('bingo-book-a', 'Bingo Book: Threat Level A', 0);
+const bingoBookB = missionCard('bingo-book-b', 'Bingo Book: Threat Level B', 0);
+const bingoBookC = missionCard('bingo-book-c', 'Bingo Book: Threat Level C', 0);
 registerMission({ id: 'bingo-book-s', tick: bingoBookReward('S') });
 registerMission({ id: 'bingo-book-a', tick: bingoBookReward('A') });
 registerMission({ id: 'bingo-book-b', tick: bingoBookReward('B') });
@@ -232,7 +236,7 @@ registerMission({ id: 'bingo-book-c', tick: bingoBookReward('C') });
 
 // --- Squad Formation ---------------------------------------------------------
 
-const squadFormation = missionCard('squad-formation', 'Squad Formation', 0, false, { active: false });
+const squadFormation = missionCard('squad-formation', 'Squad Formation', 0, { active: false });
 registerMission({
   id: 'squad-formation',
   tick: (state, owner, missionInstanceId, trigger) => {
@@ -248,8 +252,9 @@ registerMission({
       for (const id of group) {
         next = patchOccupant(next, id, (o) => ({ ...o, extra: { ...o.extra, squadFormationGroup: group } }));
       }
-      next = patchMission(next, owner, missionInstanceId, { active: true, group });
-      return { state: appendLog(next, 'Squad Formation selects its 3 characters.'), discard: false };
+      // Its Condition is met: revealed, and it stays in play face up while its effect runs.
+      next = patchMission(next, owner, missionInstanceId, { active: true, group, faceDown: false });
+      return { state: appendLog(next, `${owner} reveals Squad Formation — it selects its 3 characters.`), discard: false };
     }
 
     const group = (mission.extra.group as string[]) ?? [];
@@ -271,7 +276,7 @@ registerMission({
 // immediate free Character Deck draw (look at 2, keep 1) — its own trigger,
 // not a Reinforcement, and the tax doesn't move. If a reveal is already
 // waiting to be picked from, this one queues as a free draw to take after it.
-const emergencyRelief = missionCard('emergency-relief', 'Emergency Relief', 0, false, { losses: 0 });
+const emergencyRelief = missionCard('emergency-relief', 'Emergency Relief', 0, { losses: 0 });
 registerMission({
   id: 'emergency-relief',
   tick: (state, owner, missionInstanceId, trigger) => {

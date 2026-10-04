@@ -3,6 +3,7 @@ import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { dealDamage } from '../../src/engine/combat';
 import { makeHandCardInstance } from '../../src/engine/deck';
+import { redactStateFor } from '../../src/engine/redact';
 import { freshMain1, giveChakra, resolveTop } from './testUtils';
 import type { GameState } from '../../src/engine/types';
 
@@ -308,6 +309,15 @@ describe('Missions (SPEC.md §13a)', () => {
     expect(state.players.p1.hand.filter((h) => h.kind === 'card').length).toBe(cardsInHandBefore + 1); // "Draw a card"
   });
 
+  it('every Mission enters face down — the opponent sees only that a Mission is there', () => {
+    for (const defId of ['unshakable-resolve', 'bingo-book-s', 'bingo-book-a', 'bingo-book-b', 'bingo-book-c', 'squad-formation', 'emergency-relief']) {
+      const { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 1), 'p1', defId);
+      const next = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
+      expect(next.players.p1.missionsInPlay[0]?.extra.faceDown).toBe(true);
+      expect(redactStateFor(next, 'p2').players.p1.missionsInPlay[0].defId).toBe('__hidden__');
+    }
+  });
+
   it('Squad Formation selects a group of 3 once control reaches 3, and redirects damage among them', () => {
     let { state, instanceId } = withHandCard(freshMain1(), 'p1', 'squad-formation');
     state = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: [], payFromPool: 0 });
@@ -328,6 +338,7 @@ describe('Missions (SPEC.md §13a)', () => {
 
     // With a redirect chosen, a hit on any other member goes to the chosen one instead.
     const mission = state.players.p1.missionsInPlay[0];
+    expect(mission.extra.faceDown).toBe(false); // revealed once its Condition was met
     state = gameReducer(state, { type: 'SET_SQUAD_REDIRECT', missionInstanceId: mission.instanceId, redirectTo: absorber });
     result = dealDamage(state, target, 1);
     expect(hp(result.state, target)).toBe(hp(state, target)); // untouched — redirected away
