@@ -68,6 +68,8 @@ export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type
 /** What just happened, offered to every in-play Mission so it can decide whether it cares (§10b's Condition is checked at a variety of different trigger points across the 6 example cards, not one shared moment). */
 export type MissionTrigger =
   | { kind: 'untap' }
+  /** Run after every action: a Mission whose Condition has failed (or whose ongoing effect has ended) is discarded right then, not at its next scheduled trigger. */
+  | { kind: 'check' }
   | { kind: 'defeat'; rank: import('../types').CharacterInstance['rank']; byInstanceId?: string }
   /** One of the Mission controller's OWN characters was defeated (any rank, any cause; tokens don't count). */
   | { kind: 'own-loss'; rank: import('../types').CharacterInstance['rank'] };

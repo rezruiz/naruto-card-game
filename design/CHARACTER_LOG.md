@@ -27,8 +27,8 @@ has no specified order — assume the controller chooses which of his
 remaining Styles to drop each time.
 **Open question:** the card doesn't say whether "revives" means
 re-entering with full HP (like a character freshly entering play) or
-something else — treat it as a fresh entry (full HP, new summoning
-sickness) until stated otherwise.
+something else — treat it as a fresh entry (full HP, new Field
+Orientation) until stated otherwise.
 
 ### Iron Skin
 "Physical" and "elemental" aren't formally defined terms elsewhere in
@@ -186,7 +186,7 @@ Two different ways a Beast can leave play, with different consequences:
   Path comes back (e.g. via Naraka Path's Outer Path: Samsara of
   Heavenly Life Technique), Summon can
   immediately recreate any Beast that fizzled this way, even the same
-  turn Animal Path returns (subject to its own summoning sickness for
+  turn Animal Path returns (subject to its own Field Orientation for
   non-damaging use, §6.6).
 Keeping HP at a flat 4 across all three is a deliberate design choice —
 they're meant to be cheap, disposable, and worth losing, not investments
@@ -315,6 +315,11 @@ Itachi has used Mind Prison on a given enemy character, he can never use
 it on that same character again for the rest of the game, even if that
 character leaves and re-enters play.
 
+**[Updated] Duration:** the stun covers **only its controller's turn**,
+never a whole turn cycle. Cast on Itachi's turn, it lasts through their
+next turn; cast during their turn (it's Quick), it lasts for the rest of
+that turn. Previously it ran through Itachi's following turn as well.
+
 ### Crow Clone
 Ties directly into §9's negating-a-target timing model — this is a
 self-directed target-negation Reactive Technique, triggered after an
@@ -349,6 +354,8 @@ do so again on them after this), and (2) it must not have dealt more
 than 6 damage to Itachi across the whole game so far — a permanent,
 cumulative, whole-game damage tracker on that specific enemy character,
 not a per-turn or per-encounter check.
+
+**[Updated] Duration:** the stun lasts **1 turn cycle** (was 2).
 
 ---
 
@@ -437,10 +444,10 @@ opponent's on-defeat effects (e.g. Kakuzu's own Ultimate, "whenever
 Kakuzu defeats any shinobi") the way actually killing a character would,
 because Sasori isn't being defeated at that moment, just changing form.
 Hollow Body enters at its own full HP/Pool (not a continuation of
-whatever damage Hiruko had taken) and with summoning sickness (§6.6) —
+whatever damage Hiruko had taken) and with Field Orientation (§6.6) —
 an explicit ruling, since the alternative (letting Hollow Body act
 immediately, treating this as pure narrative continuation rather than a
-fresh entry) was also defensible; summoning sickness was chosen as the
+fresh entry) was also defensible; Field Orientation was chosen as the
 safer default, consistent with how every other "enters/re-enters play"
 moment in the game works (Retreat's return, Naraka Path's Outer Path:
 Samsara of Heavenly Life Technique, a fresh character played from the
@@ -1195,7 +1202,7 @@ calls, flagged for review:
 - **No Retreat exception** — unlike Deploy Medic Corps, the card text
   doesn't override Retreat's targeting immunity (§6.5b), so a Retreated
   character can't be targeted.
-- **Timing:** a non-combat Normal-speed card — Main Phase only (§15.6).
+- **Timing:** a healing card — Main or Combat Phase (§15.6).
 - **Enabler:** it has a Type (Ninjutsu), so like every technique Jutsu
   it needs an enabling character in play; Style: None means any of your
   characters can enable it.
@@ -1206,7 +1213,7 @@ calls, flagged for review:
 **[New]** Added with 3 copies in the preset Hand Deck. Interpretive
 calls, flagged for review:
 - **"Until its controller's next turn" is read as *through* that turn**
-  (the same duration as Mind Prison and Kakuzu's revival stun). Enemies
+  (the same duration as Kakuzu's revival stun). Enemies
   only pool on their own turn, so a lock that ended as their turn began
   would do nothing when this is cast on your own turn. Cast on your
   turn, it covers their next turn; cast on their turn (it's Quick), it
@@ -1357,7 +1364,8 @@ The deck's first Terrain card. Interpretive calls, flagged for review:
 - **Stacks with the Synergy upkeep discount (§6.5)** — the Hideout's −1
   applies to each Akatsuki-Synergy character you control (not capped),
   and the board-wide Synergy discount (max −2) then comes off your
-  most expensive remaining upkeep; no character goes below 0.
+  most expensive remaining upkeep; no character goes below 1 (one that
+  already costs 0 stays free).
 - **Doesn't touch starting-character Upkeep Phase effects (§6.5)** — a
   starting character follows its own bespoke Rank-scaled table (free
   upkeep, a Chakra gain, etc.), not the standard per-rank Upkeep table

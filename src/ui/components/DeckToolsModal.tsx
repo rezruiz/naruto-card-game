@@ -2,10 +2,26 @@ import { useState } from 'react';
 import { getHandCardDef } from '../../engine/cards/registry';
 import type { GameAction, GameState, PlayerId } from '../../engine/types';
 import { DetailsModal } from './DetailsModal';
+import { getHandCardText } from '../cardInfo';
 
 export type DeckTool = 'search' | 'top' | 'discard' | 'consumed';
 
 const cardName = (defId: string) => getHandCardDef(defId)?.name ?? 'Unknown card';
+
+/** A Details toggle for a card listed by name — shows its full text inline, so a card can be read before it's taken, bottomed or returned. */
+function CardDetailsToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" aria-expanded={open} onClick={onToggle}>
+      {open ? 'Hide details' : 'Details'}
+    </button>
+  );
+}
+
+function CardDetailsText({ defId }: { defId: string }) {
+  const def = getHandCardDef(defId);
+  const text = def ? getHandCardText(def.name) : undefined;
+  return <div className="deck-list__details">{text ?? 'No card text available.'}</div>;
+}
 
 /** Deck search, look-at-the-top-X, and the discard pile — the engine does the shuffling/moving, the player just picks. */
 export function DeckToolsModal({
@@ -26,6 +42,12 @@ export function DeckToolsModal({
   /** Look at top: the exact cards seen (null until the player picks how many), and those already taken/bottomed. */
   const [seenIds, setSeenIds] = useState<string[] | null>(null);
   const [handledIds, setHandledIds] = useState<string[]>([]);
+  /** Which listed card's full text is expanded (one at a time). */
+  const [openId, setOpenId] = useState<string | null>(null);
+  const details = (instanceId: string) => (
+    <CardDetailsToggle open={openId === instanceId} onToggle={() => setOpenId((id) => (id === instanceId ? null : instanceId))} />
+  );
+  const detailsText = (instanceId: string, defId: string) => (openId === instanceId ? <CardDetailsText defId={defId} /> : null);
 
   if (tool === 'search') {
     const sorted = p.handDeck.slice().sort((a, b) => cardName(a.defId).localeCompare(cardName(b.defId)));
@@ -34,17 +56,23 @@ export function DeckToolsModal({
         <div className="deck-list">
           {sorted.length === 0 && <span className="details-modal__note">The deck is empty.</span>}
           {sorted.map((c) => (
-            <div key={c.instanceId} className="deck-list__row">
-              <span>{cardName(c.defId)}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  dispatch({ type: 'DECK_TAKE', player, instanceId: c.instanceId, shuffle: true });
-                  onClose();
-                }}
-              >
-                Take to hand
-              </button>
+            <div key={c.instanceId} className="deck-list__entry">
+              <div className="deck-list__row">
+                <span>{cardName(c.defId)}</span>
+                <span>
+                  {details(c.instanceId)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dispatch({ type: 'DECK_TAKE', player, instanceId: c.instanceId, shuffle: true });
+                      onClose();
+                    }}
+                  >
+                    Take to hand
+                  </button>
+                </span>
+              </div>
+              {detailsText(c.instanceId, c.defId)}
             </div>
           ))}
         </div>
@@ -100,11 +128,13 @@ export function DeckToolsModal({
         <div className="deck-list">
           {remaining.length === 0 && <span className="details-modal__note">Done — nothing left from the cards you looked at.</span>}
           {remaining.map((c, i) => (
-            <div key={c.instanceId} className="deck-list__row">
+            <div key={c.instanceId} className="deck-list__entry">
+            <div className="deck-list__row">
               <span>
                 {i + 1}. {cardName(c.defId)}
               </span>
               <span>
+                {details(c.instanceId)}
                 <button type="button" onClick={() => handle(c.instanceId, { type: 'DECK_TAKE', player, instanceId: c.instanceId, shuffle: false })}>
                   Take to hand
                 </button>
@@ -112,6 +142,8 @@ export function DeckToolsModal({
                   To bottom
                 </button>
               </span>
+            </div>
+            {detailsText(c.instanceId, c.defId)}
             </div>
           ))}
           <button type="button" onClick={onClose}>
@@ -133,15 +165,21 @@ export function DeckToolsModal({
         <div className="deck-list">
           {p.consumedPile.length === 0 && <span className="details-modal__note">Nothing has been Consumed for Chakra yet.</span>}
           {p.consumedPile.map((c) => (
-            <div key={c.instanceId} className="deck-list__row">
-              <span>{cardName(c.defId)}</span>
-              <button
-                type="button"
-                title="Fixes an accidental or wrong Chakra placement — removes the linked source too"
-                onClick={() => dispatch({ type: 'RETURN_FROM_CONSUMED', player, instanceId: c.instanceId })}
-              >
-                Retrieve (undo placement)
-              </button>
+            <div key={c.instanceId} className="deck-list__entry">
+              <div className="deck-list__row">
+                <span>{cardName(c.defId)}</span>
+                <span>
+                  {details(c.instanceId)}
+                  <button
+                    type="button"
+                    title="Fixes an accidental or wrong Chakra placement — removes the linked source too"
+                    onClick={() => dispatch({ type: 'RETURN_FROM_CONSUMED', player, instanceId: c.instanceId })}
+                  >
+                    Retrieve (undo placement)
+                  </button>
+                </span>
+              </div>
+              {detailsText(c.instanceId, c.defId)}
             </div>
           ))}
         </div>
@@ -154,11 +192,17 @@ export function DeckToolsModal({
       <div className="deck-list">
         {p.discardPile.length === 0 && <span className="details-modal__note">The discard pile is empty.</span>}
         {p.discardPile.map((c) => (
-          <div key={c.instanceId} className="deck-list__row">
-            <span>{cardName(c.defId)}</span>
-            <button type="button" onClick={() => dispatch({ type: 'RETURN_FROM_DISCARD', player, instanceId: c.instanceId })}>
-              Return to hand
-            </button>
+          <div key={c.instanceId} className="deck-list__entry">
+            <div className="deck-list__row">
+              <span>{cardName(c.defId)}</span>
+              <span>
+                {details(c.instanceId)}
+                <button type="button" onClick={() => dispatch({ type: 'RETURN_FROM_DISCARD', player, instanceId: c.instanceId })}>
+                  Return to hand
+                </button>
+              </span>
+            </div>
+            {detailsText(c.instanceId, c.defId)}
           </div>
         ))}
       </div>

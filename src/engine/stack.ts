@@ -24,7 +24,7 @@ export function pushStackItem(state: GameState, item: StackItem): GameState {
     priorityPlayer: otherPlayer(item.controllerId),
     passesInARow: 0,
   };
-  return appendLog(next, `${item.controllerId} activates ${item.sourceName}: ${item.abilityName}.`);
+  return appendLog(next, `${item.controllerId} activates ${item.sourceName}: ${item.abilityName}${item.costText ? ` — paid ${item.costText}` : ''}.`);
 }
 
 /**
@@ -67,4 +67,14 @@ export function resolveTopOfStack(state: GameState): GameState {
   };
   next = top.resolve(next, top);
   return { ...next, resolving: outer, priorityPlayer: next.activePlayer, passesInARow: 0 };
+}
+
+/** "3 Chakra: 2 generic + 1 from Pool" — how a cost was paid, for the log. Undefined for a free action. */
+export function describeCost(cost: number, payFromPool: number): string | undefined {
+  if (cost <= 0) return undefined;
+  const fromPool = Math.max(0, Math.min(payFromPool, cost));
+  const generic = cost - fromPool;
+  if (fromPool === 0) return `${cost} Chakra`;
+  if (generic === 0) return `${cost} Chakra from Pool`;
+  return `${cost} Chakra: ${generic} generic + ${fromPool} from Pool`;
 }

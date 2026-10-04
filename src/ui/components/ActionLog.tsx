@@ -9,7 +9,10 @@ export function ActionLog({ log }: { log: LogEntry[] }) {
           .slice()
           .reverse()
           .map((entry) => (
-            <li key={entry.id}>{entry.text}</li>
+            <li key={entry.id} className={entry.warning ? 'action-log__warning' : undefined}>
+              {entry.warning ? '⚠ ' : ''}
+              {entry.text}
+            </li>
           ))}
       </ul>
     </div>

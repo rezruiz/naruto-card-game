@@ -177,7 +177,7 @@ PlayerHealthBar/GameOverScreen.
 2. Chakra system (sources, tapping, personal pooling, Style-affinity,
    End-Phase loss) against one placeholder character
 3. Board/targeting/combat core (board order, adjacency, free targeting,
-   damage/heal, SBA defeat, Disabled status, summoning sickness +
+   damage/heal, SBA defeat, Disabled status, Field Orientation +
    Retaliation, 5-unit limit, win condition)
 4. Stack & priority (all speeds go on the stack, 2-pass resolution,
    auto-pass with zero legal responses)

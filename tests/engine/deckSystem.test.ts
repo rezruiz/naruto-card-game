@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSetupState } from '../../src/engine/state';
 import { gameReducer } from '../../src/engine/reducer';
+import { payUpkeep, previewUpkeep } from '../../src/engine/upkeep';
 import { dealDamage } from '../../src/engine/combat';
 import type { GameState } from '../../src/engine/types';
 
@@ -112,7 +113,7 @@ describe('Setup (SPEC.md §3)', () => {
     expect(state.firstPlayerPending).toBe(false);
     expect(state.activePlayer).toBe(state.firstPlayer);
     expect(state.log.some((l) => /coin flip: p[12] goes first/.test(l.text))).toBe(true);
-    // Starting characters' summoning sickness follows the flip: turn 1 for the first player, turn 2 for the second.
+    // Starting characters' Field Orientation follows the flip: turn 1 for the first player, turn 2 for the second.
     const second = state.firstPlayer === 'p1' ? 'p2' : 'p1';
     const firstUnits = [...state.players[state.firstPlayer].backRow, ...state.players[state.firstPlayer].frontRow].filter(Boolean);
     const secondUnits = [...state.players[second].backRow, ...state.players[second].frontRow].filter(Boolean);
@@ -122,15 +123,15 @@ describe('Setup (SPEC.md §3)', () => {
 });
 
 describe('Draw Phase (SPEC.md §4.3) — a manual draw, never automatic', () => {
-  it("entering the Draw Phase draws nothing; the Draw click draws 1, once; the first player's first turn is skipped", () => {
+  it("entering the Draw Phase draws nothing; the Draw click draws 1, once — the first player draws on turn 1 too", () => {
     let state = createSetupState('p1');
     state = chooseBoth(state);
     const p1HandDeckBefore = state.players.p1.handDeck.length;
 
     state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Upkeep
     state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Draw
-    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' }); // skipped for p1 on turn 1
-    expect(state.players.p1.handDeck).toHaveLength(p1HandDeckBefore);
+    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' }); // p1 draws on turn 1 too
+    expect(state.players.p1.handDeck).toHaveLength(p1HandDeckBefore - 1);
 
     // Finish p1's turn, into p2's turn.
     for (let i = 0; i < 5; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Main1,Combat,Main2,End,Untap(p2)
@@ -164,10 +165,13 @@ describe('Draw Phase (SPEC.md §4.3) — a manual draw, never automatic', () => 
     expect(state.players.p1.health).toBe(healthBefore - 3);
   });
 
-  it('trust mode stops at the Draw Phase until the draw is taken, then moves on to Main 1', () => {
+  it('with Auto-draw off, trust mode stops at the Draw Phase until the draw is taken, then moves on to Main 1', () => {
     let state = createSetupState('p2', 'trust');
+    state = gameReducer(state, { type: 'SET_OPTION', option: 'autoDraw', value: false });
     state = chooseBoth(state);
-    // p2 went first, so its skipped first Draw passes straight through to Main 1.
+    // p2 goes first and, with Auto-draw off, waits at its turn-1 Draw too.
+    expect(state.phase).toBe('Draw');
+    state = gameReducer(state, { type: 'DRAW_PHASE_CARD' });
     expect(state.phase).toBe('Main1');
     let guard = 0;
     while (!(state.activePlayer === 'p1' && state.phase === 'Draw') && guard++ < 20) state = gameReducer(state, { type: 'FINALIZE_PHASE', player: state.activePlayer });
@@ -176,6 +180,16 @@ describe('Draw Phase (SPEC.md §4.3) — a manual draw, never automatic', () => 
     state = gameReducer(state, { type: 'DRAW_PHASE_CARD' });
     expect(state.players.p1.handDeck).toHaveLength(before - 1);
     expect(state.phase).toBe('Main1');
+  });
+
+  it('Auto-draw (on by default in trust mode) takes the Draw Phase draw and moves on to Main 1', () => {
+    let state = chooseBoth(createSetupState('p2', 'trust'));
+    const before = state.players.p1.handDeck.length;
+    let guard = 0;
+    while (state.activePlayer !== 'p1' && guard++ < 20) state = gameReducer(state, { type: 'FINALIZE_PHASE', player: state.activePlayer });
+    expect(state.phase).toBe('Main1');
+    expect(state.players.p1.handDeck).toHaveLength(before - 1);
+    expect(state.players.p1.drawnThisDrawPhase).toBe(true);
   });
 });
 
@@ -416,5 +430,35 @@ describe('Pain of the Six Paths as a character (his 6 Path tokens)', () => {
     expect(state.players.p1.health).toBe(healthBefore - 7); // S-rank Health loss
     expect(state.players.p1.missionsInPlay[0].extra.losses).toBe(1); // Emergency Relief counts Pain
     expect(state.players.p1.reinforcementOffers).toEqual(['paid']); // Juzo is still a C+ in play
+  });
+});
+
+describe("Pain's Upkeep (he's his Path tokens)", () => {
+  it('pays S-rank Upkeep while any Path stands, and an unpaid Pain Disables every Path', () => {
+    let state = economyState(['juzo', 'pain']);
+    const pain = previewUpkeep(state, 'p1').find((e) => e.name === 'Pain of the Six Paths');
+    expect(pain).toBeDefined();
+    expect(pain!.rank).toBe('S');
+    expect(pain!.breakdown?.base).toBe(3);
+
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, chakraSources: [] } } };
+    state = payUpkeep(state, 'p1');
+    expect(state.players.p1.frontRow.filter((t) => t?.extra.painPath).every((t) => t!.status.disabled)).toBe(true);
+  });
+});
+
+describe("The second player's first turn", () => {
+  it('may place 2 Chakra sources (the first player only 1)', () => {
+    let state = chooseBoth(createSetupState('p1'));
+    const place = (s: GameState, p: 'p1' | 'p2') => {
+      const card = s.players[p].hand.find((h) => h.kind === 'card')!;
+      return gameReducer(s, { type: 'PLACE_CHAKRA_SOURCE', instanceId: card.instanceId });
+    };
+    while (state.phase !== 'Main1') state = gameReducer(state, { type: 'ADVANCE_PHASE' });
+    state = place(place(state, 'p1'), 'p1');
+    expect(state.players.p1.chakraSources).toHaveLength(1); // turn 1, first player: just 1
+    while (!(state.activePlayer === 'p2' && state.phase === 'Main1')) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
+    state = place(place(place(state, 'p2'), 'p2'), 'p2');
+    expect(state.players.p2.chakraSources).toHaveLength(2); // turn 2, second player: 2, not 3
   });
 });

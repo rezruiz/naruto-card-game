@@ -1,5 +1,5 @@
 import { appendLog, otherPlayer } from './phases/phaseMachine';
-import { findOccupant, isCharacter, patchOccupant } from './board';
+import { findOccupant, isCharacter, occupantIds, patchOccupant, purgeReferencesTo } from './board';
 import type { AbilitySpeed, AbilityType, BoardOccupant, CharacterInstance, GameState, PlayerId, Style } from './types';
 import { HEALTH_LOST_ON_DEFEAT } from './ranks';
 import { getCharacterDef, getTokenDef } from './characters/registry';
@@ -327,7 +327,15 @@ function setCurrentHP(
   return { ...state, players: { ...state.players, [player]: { ...p, frontRow } } };
 }
 
-function applyDefeat(
+/** applyDefeatInner, then forget everything other units were tracking about the units that just left play (the defeated one and any tokens that fizzled with it). */
+function applyDefeat(state: GameState, player: PlayerId, zone: 'back' | 'front', index: number, killerInstanceId?: string): GameState {
+  const before = occupantIds(state);
+  const next = applyDefeatInner(state, player, zone, index, killerInstanceId);
+  const after = occupantIds(next);
+  return purgeReferencesTo(next, [...before].filter((id) => !after.has(id)));
+}
+
+function applyDefeatInner(
   state: GameState,
   player: PlayerId,
   zone: 'back' | 'front',

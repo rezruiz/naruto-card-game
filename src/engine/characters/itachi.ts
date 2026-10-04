@@ -35,9 +35,9 @@ const greatFireballTechnique: AbilityDef = {
   },
 };
 
-// NOTE (interpretation): "through its controller's next turn" is read the
-// same way Kakuzu's Iron Skin reads "next turn cycle" (design/CHARACTER_LOG.md)
-// — approximated as +2 ply (state.turn) from activation.
+// The stun covers the target's controller's turn only, never a whole turn
+// cycle: cast on Itachi's turn, it lasts through their next turn; cast on
+// their own turn (it's Quick), it lasts for the rest of that turn.
 const genjutsuMindPrison: AbilityDef = {
   id: 'genjutsu-mind-prison',
   name: 'Genjutsu: Mind Prison',
@@ -62,15 +62,17 @@ const genjutsuMindPrison: AbilityDef = {
   resolve: (ctx) => {
     const targetId = ctx.targetInstanceIds[0];
     if (!targetId) return ctx.state;
+    const controller = findOccupant(ctx.state, targetId)?.player;
+    const until = controller === ctx.state.activePlayer ? ctx.state.turn : ctx.state.turn + 1;
     let state = patchCharacter(ctx.state, targetId, (t) => ({
       ...t,
-      extra: { ...t.extra, stunnedUntilTurn: ctx.state.turn + 2 },
+      extra: { ...t.extra, stunnedUntilTurn: until },
     }));
     state = patchCharacter(state, ctx.sourceInstanceId, (k) => ({
       ...k,
       extra: { ...k.extra, mindPrisonUsedOn: [...((k.extra.mindPrisonUsedOn as string[]) ?? []), targetId] },
     }));
-    return appendLog(state, `Mind Prison stuns its target — no abilities or Chakra pooling for now.`);
+    return appendLog(state, `Mind Prison stuns its target for its controller's turn — no abilities or Chakra pooling.`);
   },
 };
 
@@ -169,8 +171,8 @@ const tsukuyomiInfiniteAgony: AbilityDef = {
     const targetId = ctx.targetInstanceIds[0];
     if (!targetId) return ctx.state;
     let state = dealDamage(ctx.state, targetId, 6).state;
-    state = patchCharacter(state, targetId, (t) => ({ ...t, extra: { ...t.extra, stunnedUntilTurn: ctx.state.turn + 4 } }));
-    return appendLog(state, 'Tsukuyomi stuns its target for the next 2 turn cycles.');
+    state = patchCharacter(state, targetId, (t) => ({ ...t, extra: { ...t.extra, stunnedUntilTurn: ctx.state.turn + 2 } }));
+    return appendLog(state, 'Tsukuyomi stuns its target for the next turn cycle.');
   },
 };
 

@@ -127,7 +127,7 @@ describe('Trust mode toggle (SET_RULES)', () => {
   it('switches modes, but not while actions are declared', () => {
     let s = gameReducer(freshMain1(), { type: 'SET_RULES', rules: 'trust' });
     expect(s.rules).toBe('trust');
-    s = gameReducer(s, { type: 'STAGE_ABILITY', instanceId: 'p1-deidara', abilityId: 'explosive-clay', targetInstanceIds: [], payFromPool: 0 });
+    s = gameReducer(s, { type: 'STAGE_ABILITY', instanceId: 'p1-deidara', abilityId: 'explosive-clay', targetInstanceIds: [], payFromPool: 0, force: true });
     expect(s.staged).toHaveLength(1);
     s = gameReducer(s, { type: 'SET_RULES', rules: 'strict' });
     expect(s.rules).toBe('trust');
@@ -154,7 +154,7 @@ describe('Optional choices are the player’s (J1)', () => {
   it('Pain, Rampaging Charge: Straight continues along the row in the chosen direction; Bent turns into the back row', () => {
     const rhinoState = () => {
       let s = freshCombat();
-      const rhino = { ...makeThirdKazekage('p1', 'p1-kakuzu'), defId: 'war-rhino', name: 'The War Rhino', instanceId: 'p1-rhino', status: { ...makeThirdKazekage('p1', 'p1-kakuzu').status, enteredTurn: -1 } };
+      const rhino = { ...makeThirdKazekage('p1', 'p1-kakuzu'), defId: 'war-rhino', name: 'The War Rhino', instanceId: 'p1-rhino', status: { ...makeThirdKazekage('p1', 'p1-kakuzu').status, enteredTurn: 0 } };
       s = placeToken(s, 'p1', rhino);
       return giveChakra(s, 'p1', 3);
     };
@@ -271,7 +271,7 @@ describe('"N + entire Pool" costs and Soul Rip', () => {
   it('Almighty Push spends Deva Path’s whole Pool plus 6 generic, even though the UI asks to pay 0 from the Pool', () => {
     let s = giveChakra(freshMain1(), 'p1', 6);
     const deva = createSixPaths('p1')[0];
-    s = placeToken(s, 'p1', { ...deva, chakraPool: { current: 3, capacity: 3 } });
+    s = placeToken(s, 'p1', { ...deva, chakraPool: { current: 3, capacity: 3 }, status: { ...deva.status, enteredTurn: 0 } });
     s = activateAbility(s, deva.instanceId, 'almighty-push', [], 0);
     expect(s.stack).toHaveLength(1);
     expect(s.players.p1.genericChakraAvailable).toBe(0);
@@ -281,7 +281,7 @@ describe('"N + entire Pool" costs and Soul Rip', () => {
   it('Soul Rip draws a card when it defeats its target', () => {
     let s = { ...freshCombat(), players: { ...freshCombat().players } };
     const human = createSixPaths('p1')[2];
-    s = placeToken(giveChakra(s, 'p1', 2), 'p1', human);
+    s = placeToken(giveChakra(s, 'p1', 2), 'p1', { ...human, status: { ...human.status, enteredTurn: 0 } });
     s = { ...s, players: { ...s.players, p1: { ...s.players.p1, handDeck: [makeHandCardInstance('substitution')] }, p2: { ...s.players.p2, backRow: s.players.p2.backRow.map((c, i) => (i === 3 && c ? { ...c, currentHP: 2 } : c)) } } };
     const target = s.players.p2.backRow[3]!.instanceId; // Kisame: no defeat-replacement
     const handBefore = s.players.p1.hand.length;

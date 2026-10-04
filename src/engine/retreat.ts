@@ -1,5 +1,5 @@
 import { findOccupant, isCharacter, patchCharacter } from './board';
-import { appendLog } from './phases/phaseMachine';
+import { appendLog, appendWarning } from './phases/phaseMachine';
 import type { CharacterInstance, GameState } from './types';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -23,7 +23,7 @@ export function retreat(state: GameState, instanceId: string): GameState {
   let working = state;
   if (!MAIN_PHASES.has(state.phase)) {
     if (!relaxed) return appendLog(state, `${player} can only Retreat a character during their own Main Phase.`);
-    working = appendLog(working, `${player} Retreats outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+    working = appendWarning(working, `${player} Retreats outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
 
   const found = findOccupant(working, instanceId);
@@ -61,12 +61,12 @@ export function retreat(state: GameState, instanceId: string): GameState {
     },
   };
   next = patchCharacter(next, instanceId, (c) => ({ ...c, status: { ...c.status, retreated: true } }));
-  return appendLog(next, `${character.name} Retreats.`);
+  return appendLog(next, `${character.name} Retreats${cost > 0 ? ` — paid ${cost} Chakra` : ''}.`);
 }
 
 /**
  * SPEC.md §6.5b: returns a Retreated character to normal — free, and it's
- * treated exactly like it just entered play for summoning sickness (§6.6).
+ * treated exactly like it just entered play for Field Orientation (§6.6).
  */
 export function returnFromRetreat(state: GameState, instanceId: string): GameState {
   const relaxed = state.rules === 'trust';
@@ -74,7 +74,7 @@ export function returnFromRetreat(state: GameState, instanceId: string): GameSta
   let working = state;
   if (!MAIN_PHASES.has(state.phase)) {
     if (!relaxed) return appendLog(state, `${player} can only return a character from Retreat during their own Main Phase.`);
-    working = appendLog(working, `${player} returns a character from Retreat outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+    working = appendWarning(working, `${player} returns a character from Retreat outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   const found = findOccupant(working, instanceId);
   if (!found || !isCharacter(found.occupant) || found.player !== player) {

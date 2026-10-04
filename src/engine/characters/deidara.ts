@@ -1,6 +1,6 @@
 import { countTokensOfType, findOccupant, getCrossPatternTargets, isCharacter, patchCharacter, placeToken } from '../board';
 import { dealDamage, registerDefeatHook } from '../combat';
-import { appendLog, otherPlayer } from '../phases/phaseMachine';
+import { appendLog, appendWarning, otherPlayer } from '../phases/phaseMachine';
 import { enqueueChoice, registerChoiceResolver } from '../choices';
 import type { AbilityDef } from '../abilities';
 import { registerCharacter, registerTokenDef } from './registry';
@@ -62,6 +62,7 @@ const explosiveClay: AbilityDef = {
 // card-specific number on top of the flat 10-slot front row (SPEC.md §10).
 const clSpiderAbility: AbilityDef = {
   id: 'c1-shi-wan',
+  summons: [{ defId: CLAY_SPIDER_DEF_ID, name: 'Clay Spider' }],
   name: 'C1, Shi-Wan: Clay Spider',
   cost: 1,
   speed: 'Normal',
@@ -78,7 +79,8 @@ const clSpiderAbility: AbilityDef = {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     if (!found) return ctx.state;
     const token = makeClaySpider(found.player, ctx.sourceInstanceId);
-    const next = placeToken(ctx.state, found.player, token);
+    // Clay Spiders have Ambush — no Field Orientation; they can act the turn they're made.
+    const next = placeToken(ctx.state, found.player, { ...token, status: { ...token.status, hasAmbush: true } }, { askPosition: true });
     return appendLog(next, 'Deidara creates a Clay Spider token.');
   },
 };
@@ -267,7 +269,7 @@ registerChoiceResolver(V2_ID, (state, choice, optionIds) => {
   if (generic < 6 && !relaxed) {
     return deidaraDies(appendLog(state, `Not enough Chakra for Death is an Explosion (needs 6 available, has ${generic}) — Deidara falls.`), instanceId);
   }
-  let next = generic < 6 ? appendLog(state, `${player} is short ${6 - generic} Chakra for Death is an Explosion (trust mode — allowed).`) : state;
+  let next = generic < 6 ? appendWarning(state, `${player} is short ${6 - generic} Chakra for Death is an Explosion (trust mode — allowed).`) : state;
   next = { ...next, players: { ...next.players, [player]: { ...next.players[player], genericChakraAvailable: Math.max(0, generic - 6) } } };
   next = patchCharacter(next, instanceId, (d) => ({ ...d, chakraPool: { ...d.chakraPool, current: 0 } }));
   next = addClayCharges(next, instanceId, -5);

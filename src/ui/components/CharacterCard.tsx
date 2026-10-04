@@ -1,5 +1,5 @@
 import type { CharacterInstance, GameState } from '../../engine/types';
-import { isSummoningSick } from '../../engine/board';
+import { hasFieldOrientation } from '../../engine/board';
 import { trackedResources } from '../../engine/characters/progressText';
 
 /** The drag payload type for a character being dragged back to hand. */
@@ -34,7 +34,7 @@ export function CharacterCard({
   draggable?: boolean;
 }) {
   const { chakraPool } = character;
-  const sick = isSummoningSick(state, character);
+  const sick = hasFieldOrientation(state, character);
   const resources = trackedResources(state, character).filter((t) => t.key);
 
   function handleClick() {
@@ -70,10 +70,23 @@ export function CharacterCard({
       <div className="compact-card__vitals">
         HP {character.currentHP}/{character.maxHP} · Pool {chakraPool.current}/{Number.isFinite(chakraPool.capacity) ? chakraPool.capacity : '∞'}
       </div>
+      {character.styles.length > 0 && (
+        <div className="compact-card__styles" title="Styles — which Style abilities and Jutsu cards this character can use or enable">
+          {character.styles.map((style) => (
+            <span key={style} className={`style-chip style-chip--${style.toLowerCase()}`}>
+              {style}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="compact-card__badges">
         {character.status.retreated && <span className="badge badge--retreated">Retreated</span>}
         {character.status.disabled && <span className="badge badge--disabled">Disabled</span>}
-        {sick && <span className="badge badge--sick">Sick</span>}
+        {sick && (
+          <span className="badge badge--orientation" title="Field Orientation: it entered play this turn, so it can't use damage-dealing abilities until its controller's next turn. Non-damaging abilities are fine.">
+            Field Orientation
+          </span>
+        )}
         {resources.map((t, i) => (
           <span className="badge badge--resource" key={`${t.label}-${i}`} title={`${t.label}: ${t.value}`}>
             {t.label}: {t.value}

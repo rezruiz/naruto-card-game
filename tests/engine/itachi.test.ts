@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { activateAbility, checkLegality, findAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
+import { dealDamage } from '../../src/engine/combat';
 import { freshCombat, giveChakra, resolveTop } from './testUtils';
 
 describe('Itachi', () => {
@@ -23,7 +24,7 @@ describe('Itachi', () => {
     expect(state.players.p1.genericChakraAvailable).toBe(2); // paid 1, not 3
     state = resolveTop(state);
 
-    expect(state.players.p2.backRow[0]!.extra.stunnedUntilTurn).toBe(state.turn + 2);
+    expect(state.players.p2.backRow[0]!.extra.stunnedUntilTurn).toBe(state.turn + 1); // through p2's next turn only, not a whole cycle
 
     const ability = findAbility('kakuzu', 'earth-grudge-fear')!;
     const legality = checkLegality(state, 'p2-kakuzu', ability, ['p1-kakuzu'], 0);
@@ -34,6 +35,14 @@ describe('Itachi', () => {
     state = { ...state, activePlayer: 'p2' };
     const pooled = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p2-kakuzu', amount: 1 });
     expect(pooled.players.p2.backRow[0]!.chakraPool.current).toBe(poolBefore);
+  });
+
+  it("Mind Prison cast on the opponent's own turn stuns them for the rest of that turn only", () => {
+    let state = giveChakra(freshCombat(), 'p1', 3);
+    state = { ...state, activePlayer: 'p2' };
+    state = activateAbility(state, 'p1-itachi', 'genjutsu-mind-prison', ['p2-kakuzu'], 0);
+    state = resolveTop(state);
+    expect(state.players.p2.backRow[0]!.extra.stunnedUntilTurn).toBe(state.turn);
   });
 
   it("Mind Prison can't be used on the same character twice, ever", () => {
@@ -84,5 +93,31 @@ describe('Itachi', () => {
     for (let i = 0; i < 14; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
     expect(state.players.p2.backRow[4]!.currentHP).toBe(hpBefore - 7); // 3 + 2 + 2
     expect(state.players.p1.backRow[4]!.extra.amaterasuSchedule).toEqual([]);
+  });
+});
+
+describe('Lingering effects on a defeated unit are dropped', () => {
+  it("Amaterasu's scheduled burn and Itachi's per-target tallies forget a target once it's defeated", () => {
+    let state = freshCombat();
+    const itachiIndex = state.players.p1.backRow.findIndex((c) => c?.defId === 'itachi');
+    state = {
+      ...state,
+      players: {
+        ...state.players,
+        p1: {
+          ...state.players.p1,
+          backRow: state.players.p1.backRow.map((c, i) =>
+            i === itachiIndex && c
+              ? { ...c, extra: { ...c.extra, amaterasuSchedule: [{ targetInstanceId: 'p2-kisame', ticksLeft: 2 }], mindPrisonUsedOn: ['p2-kisame'], damageTakenFrom: { 'p2-kisame': 3 } } }
+              : c,
+          ),
+        },
+      },
+    };
+    state = dealDamage(state, 'p2-kisame', 9999).state;
+    const itachi = state.players.p1.backRow[itachiIndex]!;
+    expect(itachi.extra.amaterasuSchedule).toEqual([]);
+    expect(itachi.extra.mindPrisonUsedOn).toEqual([]);
+    expect(itachi.extra.damageTakenFrom).toEqual({});
   });
 });

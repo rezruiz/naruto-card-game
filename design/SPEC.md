@@ -100,8 +100,9 @@ same card.
    before starting the other):
    - **Starting character:** draw the top 3 cards of your Character
      Deck, choose 1 to be your starting character (played into the board
-     immediately, with summoning sickness — see §6.6), and shuffle the
-     other 2 back into your Character Deck.
+     immediately, with Field Orientation — see §6.6), and shuffle the
+     other 2 back into your Character Deck. **Your pick stays secret**
+     until both players have confirmed; then both are revealed together.
    - **Starting hand & mulligan:** draw a starting hand of 6 cards from
      your Hand Deck. You may then mulligan: shuffle your hand back into
      your Hand Deck and draw again. Your **first mulligan is free** — you
@@ -115,8 +116,10 @@ same card.
 3. Once both players have finished step 2, determine the first player
    **(placeholder: coin flip / random choice)** — so neither player knows
    who goes first while deciding whether to mulligan.
-4. The first player's first turn skips their Draw Phase (§4.3) — they do
-   not draw on their very first turn.
+4. **Both players draw from their first turn on** — the first player no
+   longer skips their turn-1 Draw (§4.3). To balance going second, the
+   second player may place **2** Chakra sources on their first turn
+   instead of 1 (§5.2).
 
 ---
 
@@ -149,8 +152,8 @@ Untap all of your tapped Chakra sources. Nothing else untaps.
      of being defeated — see §6.5a.
 
 ### 4.3 Draw Phase
-Draw 1 card from your Hand Deck (skipped on the first player's first turn
-only). The draw is taken by the player (a deliberate action, not
+Draw 1 card from your Hand Deck — every turn, including the first
+player's first turn. The draw is taken by the player (a deliberate action, not
 automatic). If your Hand Deck is empty and you're required to draw, you instead
 take **3 player-Health damage (placeholder)** and draw nothing.
 
@@ -165,14 +168,18 @@ cards, activate non-combat effects, etc. This is also when you may:
 ### 4.5 Combat Phase
 This is when characters do things to each other. See §9 for full detail.
 Briefly:
-- Activate character abilities (Normal-speed abilities can *only* be
-  activated here; Quick Technique abilities can be activated here or
-  anytime either player has priority; Reactive Technique abilities can be
-  activated here or anytime their response condition is met).
-- You may also play **Attack-type Jutsu cards** from hand here, even
-  though they're Normal speed — this is the one exception to "Normal
-  speed only in Main Phases." No other Normal-speed card types may be
-  played during Combat.
+- Activate character abilities. Normal-speed **damage-dealing**
+  abilities can *only* be activated here. Normal-speed **healing/support**
+  (non-damaging) abilities may be activated here or in a Main Phase.
+  Quick Technique abilities can be activated here or anytime either
+  player has priority; Reactive Technique abilities can be activated here
+  or anytime their response condition is met.
+- You may also play **Attack-type Jutsu cards** (Combat only) and
+  **healing/support Jutsu cards** (Main or Combat — e.g. Medical Chakra
+  Infusion, Deploy Medic Corps, Chakra Transfer) from hand here. Terrain,
+  Missions, and deck-search or information cards (Incoming Mission
+  Assignment, Battlefield Selection, Field Intelligence) are Main Phase
+  only.
 - Each character's abilities, and each Attack-type Jutsu card by name, can
   each only be used **once per turn**, unless their text says otherwise —
   this cap applies regardless of speed.
@@ -205,7 +212,8 @@ persist and stack over time.
 
 ### 5.2 Chakra Sources
 Once per turn, during either of your Main Phases, you may place 1
-Chakra source. This is a Normal-speed action (§7) — it can only be done
+Chakra source. **Exception:** on the second player's first turn, they may
+place **2** (Consuming 2 cards). This is a Normal-speed action (§7) — it can only be done
 during one of your own Main Phases, same as any other Normal-speed
 play. This is a **physical convenience change from earlier drafts, not a
 mechanical one** — see the note below for why.
@@ -382,8 +390,12 @@ otherwise.
 character in play **past the first** that shares a Synergy tag (counted over
 your largest group sharing one tag), **to a maximum of −2 in total** — the
 discount is for your whole board, not per character. It is taken off your
-most expensive upkeep first, never reducing any single character below 0,
-and it applies to your starting character's upkeep too.
+most expensive upkeep first and applies to your starting character's
+upkeep too.
+
+**Minimum upkeep:** discounts (Synergy, Terrain) can't reduce a
+character's upkeep below **1**. A character whose upkeep is already 0
+(C and D Rank, or a free starting character) stays free.
 > Examples (all Akatsuki, none of them your starting character): two
 > S-Rank characters normally cost 3 + 3 = 6 — with the discount, 5 (−1 for
 > the one character past the first). Two S-Ranks and a C-Rank cost
@@ -463,19 +475,25 @@ second separate rule).
 
 **Returning** from Retreated costs 0 Chakra — just flip the status off.
 A character that returns is treated exactly like it just entered play
-for summoning sickness purposes (§6.6): it cannot use damage-dealing
+for Field Orientation purposes (§6.6): it cannot use damage-dealing
 abilities that turn, but non-damaging abilities and Passives work
 immediately.
 
-### 6.6 Summoning Sickness
+### 6.6 Field Orientation
+*(Formerly called "summoning sickness.")*
+
 A character cannot use damage-dealing abilities the turn it enters play,
 but it can use non-damaging abilities (buffs, heals, Quick Technique
 defenses, etc.) immediately. This applies equally to Ultimates and
 Forbidden Techniques — there's no separate multi-turn lockout on them
 beyond this normal entry-turn restriction.
 
+**Tokens too:** a token also has Field Orientation the turn it's created
+— it can't use damage-dealing abilities until your next turn — unless its
+card gives it Ambush (e.g. Deidara's Clay Spiders).
+
 **Exception — Retaliation:** if a player has a character defeated, the
-next character that player plays is exempt from summoning sickness
+next character that player plays is exempt from Field Orientation
 entirely — it may use any of its damage-dealing abilities, including
 Ultimates and Forbidden Techniques, the same turn it enters play. This
 exemption is one-time, applying only to that next character played, not
@@ -483,7 +501,7 @@ to every character played afterward.
 
 **Keyword — Ambush:** the general-purpose version of the same exemption
 (Magic: The Gathering players will recognize this as a Haste
-equivalent). A character with Ambush ignores summoning sickness — it may
+equivalent). A character with Ambush ignores Field Orientation — it may
 use its damage-dealing abilities the turn it enters play. Unlike
 Retaliation, Ambush isn't tied to a defeat trigger — it's granted
 directly, either as a keyword printed on a character's own card (an
@@ -493,8 +511,8 @@ if those aren't obvious from context (e.g. "the next character you
 play from hand gains Ambush" grants it to one specific future character,
 once).
 
-Like every gameplay rule in this document, all of §6.6 (summoning
-sickness, Retaliation, and Ambush) is a default subject to Rule
+Like every gameplay rule in this document, all of §6.6 (Field
+Orientation, Retaliation, and Ambush) is a default subject to Rule
 Precedence (§0) — specific card text can override any part of it on an
 "unless otherwise stated" basis.
 
@@ -634,9 +652,9 @@ Iron Skin) — that's an override of this default, not the norm.
 Three speeds:
 - **Normal** — the default. **Implied on every ability/card unless its
   text says otherwise** — you never need to write the word "Normal" on a
-  card. Playable only during your own Main Phase 1/2 (or Combat, for
-  Attack-type Jutsu only). Used for attacks, summons, rituals,
-  transformations.
+  card. Playable only during your own Main Phase 1/2 or Combat Phase —
+  damage-dealing ones in Combat only, healing/support ones in either
+  (§4.5). Used for attacks, summons, rituals, transformations.
 - **Quick Technique** — playable any time you have priority, including on
   your opponent's turn. Used for reactions, counters, defenses, quick
   techniques. (Formerly called "Instant" earlier in this doc's history —
@@ -724,7 +742,7 @@ more.
   bottom of your Character Deck as normal, in the order you choose.
 
 **Playing a Character card from hand is always free** (subject to the
-5-character board limit and summoning sickness). The cost of a new
+5-character board limit and Field Orientation). The cost of a new
 character is paid when it is *drawn*, not when it is played.
 
 **Character Deck Tax — the cost of a Character Deck draw:** paid from
@@ -756,10 +774,18 @@ starting-character treatment.)
 **Board order — two rows per player:** each player's board has a **back
 row** (Characters, up to 5, §6.5) and a **front row** (Tokens, up to 10 —
 a flat cap that exists on top of any card-specific token cap, e.g. Clay
-Spider's own 5-token limit, §13). Within each row, occupants are ordered
-left to right in the order they entered play (a newly played/created
-character or token joins at the right end of its own row, unless a card
-says otherwise) — this part is unchanged from the old single-row rule.
+Spider's own 5-token limit, §13).
+
+**Positioning [Updated]:** you choose where a new unit goes.
+- **Characters:** play a new character into a back-row slot of your
+  choice — **beside one of your characters** if you have any (with none in
+  play, any slot). You may also play it **onto an occupied slot**: the
+  characters there shift one step toward the nearest empty slot to make
+  room.
+- **Tokens:** a new token goes **beside one of your tokens** if you have
+  any (otherwise any empty front slot); with other tokens already out,
+  you choose which of those slots. Tokens never push other tokens aside,
+  and a token **can't be repositioned** after it's created.
 
 **Columns:** the front row is divided into 5 column-pairs (2 token slots
 each), and each pair aligns with one back-row column — so front-row
@@ -805,7 +831,7 @@ controller's* rows, never reaching into the opponent's board.
 - Each character ability and each named Attack-type Jutsu card is limited
   to **once per turn**, regardless of speed, unless its text overrides
   this.
-- A character with summoning sickness (§6.6) cannot be the source of a
+- A character with Field Orientation (§6.6) cannot be the source of a
   damage-dealing ability the turn it enters, but can still be targeted by
   the opponent, and can still use non-damaging abilities.
 
@@ -920,6 +946,12 @@ example cards (§13a) is defined here, the rest is deferred (§12):
 - Each Mission states a **Condition** and a **Reward**. Once its
   Condition becomes true, resolve its Reward, then discard the Mission —
   its job is done.
+- **A failed Mission is discarded immediately.** The moment its
+  Condition can no longer be met (e.g. Unshakable Resolve's "without
+  losing 10 or more Health"), discard it with no Reward — don't wait for
+  its next check (such as an Untap). Likewise, a Mission with an ongoing
+  effect ends the moment its end condition is met (e.g. Squad Formation
+  when one of its three is defeated or Retreated).
 - **Missions in play limit:** you may have at most 1 Mission in play per
   character you currently control. Playing a new Mission while already
   at that limit **replaces** an existing one of your choice — the
@@ -1069,7 +1101,7 @@ Pool Capacity is intentionally left **TBD** per card — assign it during
 card balancing.
 
 ### Kakuzu (A Rank)
-**HP: 6** · Pool Capacity: (Hearts − 1) × 2 — starts at 8 with all 5 Hearts
+**HP: 5** · Pool Capacity: (Hearts − 1) × 2 — starts at 8 with all 5 Hearts
 Specialization: Assault / Vanguard · Styles: Earth, Wind, Lightning, Fire · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
@@ -1133,7 +1165,8 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   6 Path tokens are defeated — that's a full S-Rank character defeat
   (Health loss, Reinforcement, Missions). A single Path being defeated
   is a token loss, not a character loss. While any Path stands, Pain is
-  a C-Rank-or-higher character in play (§8).
+  a C-Rank-or-higher character in play (§8), and he pays S-Rank Upkeep
+  (§6.5) as one character — if it isn't paid, every Path is Disabled.
 - Rinnegan Reservoir — each Path token still pools Chakra individually
   into its own Pool (Capacity per the table below, exception to §10) —
   Chakra is not merged into one combined pool. However, any Path's
@@ -1143,7 +1176,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
 
 | Path | Role | HP | Chakra Pool Capacity |
 |---|---|---|---|
-| Deva | Commander, strongest combatant | 8 | 3 |
+| Deva | Commander, strongest combatant | 7 | 3 |
 | Asura | Heavy weapons | 6 | 2 |
 | Animal | Summons / recon / control | 5 | 2 |
 | Preta | Defensive counter to ninjutsu | 5 | 2 |
@@ -1162,7 +1195,7 @@ Abilities (each ability belongs to the named Path token, not to Pain):
 - Preta Path: Chakra Absorption — Reactive Technique, 2 Chakra, Style: None, Type: Ninjutsu: Redirect a targeted Ninjutsu attack onto Preta, reduce to 0, gain 1 Chakra to Preta Path's Pool. Targeted-only (§9).
 - Preta Path: Absorb Impact — Reactive Technique, 1 Chakra, Style: None, Type: Taijutsu: Redirect a targeted Physical (Taijutsu or Bukijutsu, §6.8) attack onto Preta, taking it −1 (min 0). Targeted-only (§9).
 - Naraka Path: King of Hell's Judgment — 4 Chakra, Style: None, Type: Ninjutsu: Choose a Path token (including Naraka). At your next Upkeep, heal it 3 HP. Cancelled if Naraka Path dies first.
-- Naraka Path: Outer Path — Samsara of Heavenly Life Technique — 7 Chakra, Style: None, Type: Ninjutsu: Choose 1 defeated Path token; revives at full HP (with summoning sickness, §6.6) at your next Upkeep. Cancelled if Naraka Path dies first.
+- Naraka Path: Outer Path — Samsara of Heavenly Life Technique — 7 Chakra, Style: None, Type: Ninjutsu: Choose 1 defeated Path token; revives at full HP (with Field Orientation, §6.6) at your next Upkeep. Cancelled if Naraka Path dies first.
 
 Deva Path's Ultimate — Almighty Push (6 Chakra + Deva Path's entire
 Chakra Pool spent in full, Style: Gravity, Type: Ninjutsu):
@@ -1212,6 +1245,7 @@ Abilities:
 
 **Clay Spider Token** (HP: 1)
 - Fizzles if Deidara dies. Max 5 in play at once.
+- Ambush — no Field Orientation; it can act the turn it's created.
 - Self Detonate — 1 Chakra, Quick Technique, Style: Explosion, Type: Ninjutsu: Choose any number of your Clay Spider tokens and 1 target; they all detonate against it for 1 damage each. 1 Chakra total per activation, regardless of spider count. Usable any number of times per turn.
 - Combine — Style: Explosion, Type: Ninjutsu: 4 Clay Spider tokens revert to clay and are destroyed, generating 2 Clay Charges.
 
@@ -1263,7 +1297,7 @@ Traits:
 Abilities: *(full nuance: design/CHARACTER_LOG.md)*
 - Crow Shuriken Barrage — 2 Chakra, Style: None, Type: Taijutsu: Deal 2 damage.
 - Great Fireball Technique — 3 Chakra, Style: Fire, Type: Ninjutsu: Deal 3 damage.
-- Genjutsu: Mind Prison — 3 Chakra, Quick Technique, Style: None, Type: Genjutsu: Stun the target through its controller's next turn — can't pool Chakra or use abilities/Jutsu cards. Once per individual character, ever. Costs 1 Chakra if Itachi outranks the target.
+- Genjutsu: Mind Prison — 3 Chakra, Quick Technique, Style: None, Type: Genjutsu: Stun the target for its controller's turn only — through their next turn, or the rest of the current one if cast during their turn — can't pool Chakra or use abilities/Jutsu cards. Once per individual character, ever. Costs 1 Chakra if Itachi outranks the target.
 - Crow Clone — 2 Chakra, Reactive Technique, Style: None, Type: Ninjutsu: Itachi phases out, negating any targeting of him. Once per character targeting him.
 
 Passive — Sharingan Foresight (Style: None): Whenever an enemy targets
@@ -1276,8 +1310,8 @@ next 2 turns. Damage cannot be reduced.
 Forbidden Technique — Mangekyō Sharingan: Tsukuyomi - Infinite Agony (7
 Chakra, Style: None, Type: Genjutsu): Condition: target must already be
 affected by Mind Prison, and must not have dealt more than 6 damage to
-Itachi this game. Target takes 6 damage and is stunned for the next 2
-turn cycles.
+Itachi this game. Target takes 6 damage and is stunned for the next
+turn cycle.
 
 ### Konan (A Rank)
 **HP: 11** · Pool Capacity: 4 (placeholder)
@@ -1319,7 +1353,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   battle shell (stats and abilities below). Whenever Hiruko would be
   defeated, instead of Sasori being defeated, he transforms: Hollow
   Body (his true form) takes over, entering at its own full HP/Pool
-  with summoning sickness (§6.6). Only once Hollow Body is also
+  with Field Orientation (§6.6). Only once Hollow Body is also
   defeated is Sasori truly defeated.
 - Chakra Strings: Third Kazekage — When Sasori enters play, also create
   the Third Kazekage token (below) — a separate Puppet under his
@@ -1498,7 +1532,7 @@ attack can trigger this; a blanket/untargeted effect cannot.
 
 ### Amegakure Civilian Rebel (D Rank)
 **HP: 3** · Pool Capacity: 1
-Specialization: Vanguard · Styles: None · Synergy: Akatsuki
+Specialization: Vanguard · Styles: None · Synergy: None
 
 *Note: finalized. Deliberately weak and generic — deck filler
 representing one of the Amegakure civilians who rallied to Yahiko's
@@ -1675,7 +1709,7 @@ or reduce it.
 **Akatsuki Hideout** — Synergy: Akatsuki, 2 Chakra. *(full nuance:
 design/CHARACTER_LOG.md)*
 Effect: Akatsuki-Synergy characters you control have their Upkeep
-(§6.5) reduced by 1 (minimum 0).
+(§6.5) reduced by 1 (minimum 1).
 
 ---
 

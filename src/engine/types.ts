@@ -12,11 +12,22 @@ export const PHASE_ORDER = [
 
 export type Phase = (typeof PHASE_ORDER)[number];
 
+export interface GameOptions {
+  /** Trust mode: take the Draw Phase draw automatically (default on). The manual Draw buttons still work. */
+  autoDraw?: boolean;
+  /** Trust mode: every declared round waits for both players to confirm, even when one has no meaningful response (default off). */
+  alwaysConfirm?: boolean;
+}
+
 export interface LogEntry {
   id: string;
   turn: number;
   phase: Phase;
   text: string;
+  /** Trust mode: an action that isn't legal under the strict rules went ahead anyway — shown as a warning, not just a log line. */
+  warning?: boolean;
+  /** Only this player may see the entry (e.g. what they declared, before the round is finalized); the other player's copy leaves it out. */
+  visibleTo?: PlayerId;
 }
 
 export interface ChakraSource {
@@ -44,7 +55,7 @@ export type AbilitySpeed = 'Normal' | 'Quick' | 'Reactive';
 export interface CharacterStatus {
   disabled: boolean;
   retreated: boolean;
-  /** Turn number this unit entered play on — used to check summoning sickness (SPEC.md §6.6). */
+  /** Turn number this unit entered play on — used to check Field Orientation (SPEC.md §6.6). */
   enteredTurn: number;
   hasAmbush: boolean;
   usedAbilitiesThisTurn: string[];
@@ -115,6 +126,8 @@ export interface PlayerState {
   genericChakraAvailable: number;
   chakraSources: ChakraSource[];
   chakraSourcePlacedThisTurn: boolean;
+  /** The second player's first turn allows a second Chakra source placement (§5.2) — set once it's used. */
+  firstTurnExtraPlacementUsed: boolean;
   hand: HandEntry[];
   backRow: (CharacterInstance | null)[];
   frontRow: (TokenInstance | null)[];
@@ -168,7 +181,7 @@ export interface PlayerState {
   missionsInPlay: MissionInstance[];
   /** Enemy characters defeated by this player, awaiting a Mission tick (e.g. the Bingo Book family) — drained by the reducer each action, same pattern as pendingReinforcementDraws. */
   pendingDefeatEvents: { rank: CharacterInstance['rank']; byInstanceId?: string }[];
-  /** Bingo Book: Threat Level S's reward — the next character this player plays is fully stunned (no abilities at all) the turn it enters, stricter than the normal summoning-sickness default. */
+  /** Bingo Book: Threat Level S's reward — the next character this player plays is fully stunned (no abilities at all) the turn it enters, stricter than the normal Field Orientation default. */
   nextCharacterFullyStunned: boolean;
   /** Bingo Book: Threat Level A's reward — Chakra discount applied to this player's next-paid Reinforcement Tax (§8). */
   nextReinforcementDiscount: number;
@@ -194,6 +207,8 @@ export interface StackItem {
   abilityId: string;
   abilityName: string;
   targets: string[];
+  /** What was paid to put this on the stack, for the log (e.g. "3 Chakra: 2 generic + 1 from Pool"); absent when it was free. */
+  costText?: string;
   /**
    * Pure resolution function — applied to state when this item resolves off
    * the stack. Receives the item itself as it stands at that moment, so a
@@ -242,6 +257,8 @@ export interface StagedAction {
   choices?: AbilityChoices;
   /** Advisory only — why the strict rules would have blocked this, computed when it was declared/retargeted. */
   warnings: string[];
+  /** The player declined to cover a shortfall from the Pool when asked at resolution — next time they're told to tap Chakra instead. */
+  poolDeclined?: boolean;
 }
 
 /** Trust mode's 'Resolve Actions' / 'Finalize Phase' handshake: resolves once every player has approved (or had no meaningful response to make). */
@@ -287,6 +304,8 @@ export interface GameState {
   /** Retreated characters that stay immune for the whole of the round currently resolving, even if their controller's last non-Retreated character falls mid-resolution (they're forced out only once the step is over). */
   resolutionShield: string[];
   rules: RulesMode;
+  /** Table options either player can change any time (shared, so both sides see the same). Missing = the default. */
+  options?: GameOptions;
   staged: StagedAction[];
   pendingFinalize: PendingFinalize | null;
   turn: number;
@@ -320,6 +339,8 @@ export type GameAction =
     }
   | { type: 'PASS_PRIORITY' }
   | { type: 'SET_RULES'; rules: RulesMode }
+  | { type: 'SET_OPTION'; option: keyof GameOptions; value: boolean }
+  | { type: 'GO_TO_PHASE'; phase: Phase }
   | { type: 'DRAW_PHASE_CARD' }
   | { type: 'DRAW_CHARACTER_DECK'; player: PlayerId }
   | { type: 'ACCEPT_REINFORCEMENT'; player: PlayerId }
@@ -328,8 +349,8 @@ export type GameAction =
   | { type: 'RESOLVE_CHOICE'; choiceId: string; optionIds: string[] }
   | { type: 'SET_SQUAD_REDIRECT'; missionInstanceId: string; redirectTo: string | null }
   // --- Trust mode: staging & resolution ---
-  | { type: 'STAGE_ABILITY'; instanceId: string; abilityId: string; targetInstanceIds: string[]; payFromPool: number; choices?: AbilityChoices }
-  | { type: 'STAGE_CARD'; instanceId: string; enablingInstanceId: string; targetInstanceIds: string[]; payFromPool: number; amount?: number }
+  | { type: 'STAGE_ABILITY'; instanceId: string; abilityId: string; targetInstanceIds: string[]; payFromPool: number; choices?: AbilityChoices; /** Declare it even though the strict rules wouldn't allow it. */ force?: boolean }
+  | { type: 'STAGE_CARD'; instanceId: string; enablingInstanceId: string; targetInstanceIds: string[]; payFromPool: number; amount?: number; force?: boolean }
   | { type: 'RETARGET_STAGED'; stagedId: string; targetInstanceIds: string[] }
   | { type: 'UNSTAGE'; stagedId: string }
   | { type: 'MOVE_STAGED'; stagedId: string; direction: 'earlier' | 'later' }
@@ -358,7 +379,7 @@ export type GameAction =
   | { type: 'RETURN_FROM_RETREAT'; instanceId: string }
   | { type: 'CHOOSE_CHARACTER'; player: PlayerId; entryId: string }
   | { type: 'MULLIGAN'; player: PlayerId }
-  | { type: 'PLAY_CHARACTER'; instanceId: string }
+  | { type: 'PLAY_CHARACTER'; instanceId: string; /** Back-row slot chosen for it (§9 positioning); omitted = the first legal slot. */ slot?: number }
   | {
       type: 'PLAY_HAND_CARD';
       instanceId: string;

@@ -1,7 +1,7 @@
 import { findOccupant, isCharacter, patchCharacter } from '../board';
-import { canActivateNormalSpeed, pushStackItem } from '../stack';
+import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan, targetingSurcharge } from '../abilities';
-import { appendLog } from '../phases/phaseMachine';
+import { appendLog, appendWarning } from '../phases/phaseMachine';
 import { getHandCardDef, needsEnablingCharacter } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
 import type { GameState, PlayerId } from '../types';
@@ -33,7 +33,7 @@ function uchihaProdigyApplies(state: GameState, player: PlayerId, def: HandCardD
   );
 }
 
-function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool: number): number {
+export function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool: number): number {
   let cost = typeof def.cost === 'function' ? def.cost(ctx, payFromPool) : def.cost;
   if (uchihaProdigyApplies(ctx.state, ctx.player, def) && cost > 1) cost -= 1;
   return cost + targetingSurcharge(ctx.state, ctx.player, ctx.targetInstanceIds);
@@ -158,7 +158,7 @@ function payCost(state: GameState, player: PlayerId, enablingInstanceId: string,
     const fromPool = Math.min(payFromPool, poolCurrent);
     const fromGeneric = Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
     if (fromPool + fromGeneric < cost) {
-      next = appendLog(next, `${player} is short ${cost - fromPool - fromGeneric} Chakra paying for this card (trust mode — allowed).`);
+      next = appendWarning(next, `${player} is short ${cost - fromPool - fromGeneric} Chakra paying for this card (trust mode — allowed).`);
     }
     payFromPool = fromPool;
     cost = fromPool + fromGeneric;
@@ -223,10 +223,13 @@ export function playHandCard(
       abilityId: def.id,
       abilityName: def.name,
       targets: targetInstanceIds,
+      costText: describeCost(cost, payFromPool),
       resolve: (resolveState, item) => def.resolve({ ...stackCtx, state: resolveState, targetInstanceIds: item?.targets ?? targetInstanceIds }),
     });
   }
 
   // Terrain/Mission cards resolve (enter play) immediately, not via the stack.
+  const paid = describeCost(cost, payFromPool);
+  if (paid) next = appendLog(next, `${player} pays ${paid} to play ${def.cardType === 'mission' ? 'a Mission' : def.name}.`);
   return def.resolve({ ...ctx, state: next });
 }

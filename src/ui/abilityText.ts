@@ -37,10 +37,10 @@ const ABILITY_TEXT: Record<string, string> = {
   // Itachi
   'crow-shuriken-barrage': 'Deal 2 damage.',
   'great-fireball-technique': 'Deal 3 damage.',
-  'genjutsu-mind-prison': 'Stun the target through its controller’s next turn (no pooling, abilities or Jutsu cards). Once per character, ever.',
+  'genjutsu-mind-prison': 'Stun the target for its controller’s turn only (no pooling, abilities or Jutsu cards). Once per character, ever.',
   'crow-clone': 'Negate an attack targeting Itachi. Once per attacker.',
   amaterasu: 'Deal 3 damage, then 2 more at each of your next 2 Upkeeps. Can’t be reduced.',
-  'tsukuyomi-infinite-agony': 'Target already hit by Mind Prison: deal 6 and stun it for 2 turn cycles.',
+  'tsukuyomi-infinite-agony': 'Target already hit by Mind Prison: deal 6 and stun it for 1 turn cycle.',
   // Konan
   'paper-shuriken-storm': 'Deal 2 damage to up to 2 enemy characters.',
   'fold-shikigami': 'Gain 1 Shikigami Charge. Up to 2×/turn.',

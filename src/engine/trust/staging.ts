@@ -1,9 +1,10 @@
 import { findOccupant, isCharacter } from '../board';
-import { activateAbility, checkLegality, findAbility, type AbilityDef } from '../abilities';
-import { checkHandCardLegality, playHandCard } from '../cards/playHandCard';
+import { activateAbility, checkLegality, findAbility, poolAvailableFor, resolveCost as abilityCost, type AbilityDef } from '../abilities';
+import { checkHandCardLegality, playHandCard, resolveCost as cardCost } from '../cards/playHandCard';
 import { getHandCardDef, needsEnablingCharacter } from '../cards/registry';
 import { getCharacterDef, getTokenDef } from '../characters/registry';
-import { appendLog } from '../phases/phaseMachine';
+import { appendLog, appendPrivateLog, appendWarning } from '../phases/phaseMachine';
+import { enqueueChoice, registerChoiceResolver } from '../choices';
 import { resolveTopOfStack } from '../stack';
 import type { AbilityChoices, BoardOccupant, GameState, PlayerId, StackItem, StagedAction } from '../types';
 
@@ -109,6 +110,18 @@ function cardWarnings(
   return result.ok ? [] : [result.reason ?? 'Not legal under the strict rules.'];
 }
 
+/** Why the strict rules would refuse declaring this ability right now (empty = legal) — the UI asks before forcing it through. */
+export function abilityDeclarationWarnings(state: GameState, sourceId: string, abilityId: string, targets: string[], payFromPool: number, choices?: AbilityChoices): string[] {
+  const found = findOccupant(state, sourceId);
+  return found ? abilityWarnings(state, found.player, sourceId, abilityId, targets, payFromPool, choices) : [];
+}
+
+/** Same as abilityDeclarationWarnings, for playing a hand card. */
+export function cardDeclarationWarnings(state: GameState, cardInstanceId: string, enablerId: string, targets: string[], payFromPool: number, amount: number | undefined): string[] {
+  const owner = PLAYERS.find((id) => state.players[id].hand.some((h) => h.instanceId === cardInstanceId));
+  return owner ? cardWarnings(state, owner, cardInstanceId, enablerId, targets, payFromPool, amount) : [];
+}
+
 /**
  * Where a new action lands in the queue. A response goes right *ahead of*
  * the first opposing action aimed at what it protects or targets (so a
@@ -136,26 +149,36 @@ export function stageAbility(
   payFromPool: number,
   hooks: TrustHooks,
   choices?: AbilityChoices,
+  force = false,
 ): GameState {
   const found = findOccupant(state, instanceId);
   if (!found) return state;
   const ability = findAbility(found.occupant.defId, abilityId);
   if (!ability) return appendLog(state, `No such ability: ${abilityId}.`);
+  const label = `${found.occupant.name}: ${ability.name}`;
+  const warnings = abilityWarnings(state, found.player, instanceId, abilityId, targets, payFromPool, choices);
+  if (warnings.length > 0 && !force) return refuseIllegal(state, found.player, label, warnings);
   stagedCounter += 1;
-  const action: StagedAction = {
-    id: `staged-${stagedCounter}`,
-    owner: found.player,
-    kind: 'ability',
-    sourceInstanceId: instanceId,
-    abilityId,
-    label: `${found.occupant.name}: ${ability.name}`,
-    targets,
-    payFromPool,
-    choices,
-    warnings: abilityWarnings(state, found.player, instanceId, abilityId, targets, payFromPool, choices),
-  };
-  const next = appendLog({ ...state, staged: insertStaged(state.staged, action) }, `${found.player} declares ${action.label}.`);
-  return afterStagedChange(next, found.player, hooks);
+  const action: StagedAction = { id: `staged-${stagedCounter}`, owner: found.player, kind: 'ability', sourceInstanceId: instanceId, abilityId, label, targets, payFromPool, choices, warnings };
+  return afterStagedChange(logDeclaration({ ...state, staged: insertStaged(state.staged, action) }, action), found.player, hooks);
+}
+
+/** An illegal declaration isn't made at all (nobody else ever sees it) unless the player forces it through. */
+function refuseIllegal(state: GameState, player: PlayerId, label: string, warnings: string[]): GameState {
+  return appendPrivateLog(state, player, `${label} isn't legal under the strict rules: ${warnings.join(' ')} Declare it with Force to push it through anyway.`, true);
+}
+
+/** What the opponent may know about a declaration: that one was made — its details stay with its owner until the round is finalized. */
+function logDeclaration(state: GameState, action: StagedAction): GameState {
+  let next = appendPrivateLog(state, action.owner, `${action.owner} declares ${action.label}.`);
+  for (const warning of action.warnings) next = appendPrivateLog(next, action.owner, `${action.label}: ${warning} (forced through — trust mode).`, true);
+  return appendLog(next, `${action.owner} declares an action.`);
+}
+
+/** How a declared action is named once it's revealed: a face-down card (a Mission) is never named. */
+function publicLabel(action: StagedAction): string {
+  const def = action.cardDefId ? getHandCardDef(action.cardDefId) : undefined;
+  return def?.cardType === 'mission' ? 'a face-down Mission' : action.label;
 }
 
 export function stageCard(
@@ -166,6 +189,7 @@ export function stageCard(
   payFromPool: number,
   amount: number | undefined,
   hooks: TrustHooks,
+  force = false,
 ): GameState {
   const owner = PLAYERS.find((id) => state.players[id].hand.some((h) => h.instanceId === cardInstanceId && h.kind === 'card'));
   if (!owner) return appendLog(state, 'No such card in hand to play.');
@@ -174,6 +198,9 @@ export function stageCard(
   const def = entry && entry.kind === 'card' ? getHandCardDef(entry.defId) : undefined;
   if (!def) return appendLog(state, 'Unknown card.');
   const enabler = enablingInstanceId ? findOccupant(state, enablingInstanceId) : undefined;
+  const label = enabler ? `${def.name} (enabled by ${enabler.occupant.name})` : def.name;
+  const warnings = cardWarnings(state, owner, cardInstanceId, enablingInstanceId, targets, payFromPool, amount);
+  if (warnings.length > 0 && !force) return refuseIllegal(state, owner, label, warnings);
   stagedCounter += 1;
   const action: StagedAction = {
     id: `staged-${stagedCounter}`,
@@ -182,14 +209,13 @@ export function stageCard(
     sourceInstanceId: enablingInstanceId,
     cardInstanceId,
     cardDefId: def.id,
-    label: enabler ? `${def.name} (enabled by ${enabler.occupant.name})` : def.name,
+    label,
     targets,
     payFromPool,
     amount,
-    warnings: cardWarnings(state, owner, cardInstanceId, enablingInstanceId, targets, payFromPool, amount),
+    warnings,
   };
-  const next = appendLog({ ...state, staged: insertStaged(state.staged, action) }, `${owner} plays ${action.label}.`);
-  return afterStagedChange(next, owner, hooks);
+  return afterStagedChange(logDeclaration({ ...state, staged: insertStaged(state.staged, action) }, action), owner, hooks);
 }
 
 export function retargetStaged(state: GameState, stagedId: string, targets: string[], hooks: TrustHooks): GameState {
@@ -200,7 +226,7 @@ export function retargetStaged(state: GameState, stagedId: string, targets: stri
       ? abilityWarnings(state, action.owner, action.sourceInstanceId, action.abilityId!, targets, action.payFromPool, action.choices)
       : cardWarnings(state, action.owner, action.cardInstanceId!, action.sourceInstanceId, targets, action.payFromPool, action.amount);
   const updated = { ...action, targets, warnings };
-  const next = appendLog({ ...state, staged: state.staged.map((a) => (a.id === stagedId ? updated : a)) }, `${action.owner} changes the target of ${action.label}.`);
+  const next = appendPrivateLog({ ...state, staged: state.staged.map((a) => (a.id === stagedId ? updated : a)) }, action.owner, `${action.owner} changes the target of ${action.label}.`);
   return afterStagedChange(next, action.owner, hooks);
 }
 
@@ -212,13 +238,13 @@ export function moveStaged(state: GameState, stagedId: string, direction: 'earli
   const list = state.staged.slice();
   [list[index], list[target]] = [list[target], list[index]];
   const owner = state.staged[index].owner;
-  return afterStagedChange(appendLog({ ...state, staged: list }, `${owner} moves ${state.staged[index].label} ${direction} in the queue.`), owner, hooks);
+  return afterStagedChange(appendPrivateLog({ ...state, staged: list }, owner, `${owner} moves ${state.staged[index].label} ${direction} in the queue.`), owner, hooks);
 }
 
 export function unstage(state: GameState, stagedId: string, hooks: TrustHooks): GameState {
   const action = state.staged.find((a) => a.id === stagedId);
   if (!action) return state;
-  const next = appendLog({ ...state, staged: state.staged.filter((a) => a.id !== stagedId) }, `${action.owner} withdraws ${action.label}.`);
+  const next = appendLog(appendPrivateLog({ ...state, staged: state.staged.filter((a) => a.id !== stagedId) }, action.owner, `${action.owner} withdraws ${action.label}.`), `${action.owner} withdraws a declared action.`);
   return afterStagedChange(next, action.owner, hooks);
 }
 
@@ -233,7 +259,11 @@ export function unstage(state: GameState, stagedId: string, hooks: TrustHooks): 
  * action: a player with nothing to respond with is never asked.
  */
 export function hasMeaningfulResponse(state: GameState, player: PlayerId): boolean {
-  const probe = probeState(state, player, state.staged);
+  // Chakra already committed to this player's own declared actions isn't free to respond with.
+  const committed = state.staged.filter((a) => a.owner === player).reduce((sum, a) => sum + Math.max(0, stagedCost(state, a).cost - a.payFromPool), 0);
+  const base = probeState(state, player, state.staged);
+  const bp = base.players[player];
+  const probe = { ...base, players: { ...base.players, [player]: { ...bp, genericChakraAvailable: Math.max(0, bp.genericChakraAvailable - committed) } } };
   const mine = occupantsOf(probe, player);
   const everyone = PLAYERS.flatMap((id) => occupantsOf(probe, id)).map((o) => o.instanceId);
   const payOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -279,6 +309,11 @@ function resolveAllStaged(state: GameState): GameState {
     return p.backRow.some((c) => c && !c.status.retreated) ? p.backRow.filter((c) => c?.status.retreated).map((c) => c!.instanceId) : [];
   });
   let next: GameState = { ...state, staged: [], resolutionShield: shield };
+  // The round is finalized: what was declared is revealed to both players (a face-down card stays unnamed).
+  for (const a of list) {
+    next = appendLog(next, `${a.owner}'s declared action is revealed: ${publicLabel(a)}.`);
+    for (const warning of a.warnings) next = appendWarning(next, `${publicLabel(a)} was forced through: ${warning}`);
+  }
   for (const a of list) {
     next =
       a.kind === 'ability'
@@ -306,16 +341,99 @@ export function progressFinalize(state: GameState, hooks: TrustHooks): GameState
     PLAYERS.forEach((p) => approvals.add(p));
   } else {
     for (const p of PLAYERS) {
-      if (!approvals.has(p) && !hasMeaningfulResponse(state, p)) approvals.add(p);
+      // "Always confirm" makes every player confirm the round themselves, even with nothing to respond with.
+      if (!approvals.has(p) && !state.options?.alwaysConfirm && !hasMeaningfulResponse(state, p)) approvals.add(p);
     }
   }
   const next: GameState = { ...state, pendingFinalize: { ...pending, approvals: [...approvals] } };
   return approvals.size === PLAYERS.length ? completeFinalize(next, hooks) : next;
 }
 
+/** What a declared action costs, and how much of that can only come out of a Pool (Pool-only and "entire Pool" costs). */
+function stagedCost(state: GameState, a: StagedAction): { cost: number; poolOnly: number; poolUnit: string } {
+  if (a.kind === 'ability') {
+    const found = findOccupant(state, a.sourceInstanceId);
+    const ability = found ? findAbility(found.occupant.defId, a.abilityId!) : undefined;
+    if (!found || !ability) return { cost: 0, poolOnly: 0, poolUnit: a.sourceInstanceId };
+    const cost = abilityCost(ability, { state, sourceInstanceId: a.sourceInstanceId, targetInstanceIds: a.targets, choices: a.choices });
+    const poolOnly = ability.spendsEntirePool ? Math.min(cost, poolAvailableFor(state, a.sourceInstanceId)) : ability.requiresFullPoolPayment ? cost : 0;
+    return { cost, poolOnly, poolUnit: a.sourceInstanceId };
+  }
+  const def = a.cardDefId ? getHandCardDef(a.cardDefId) : undefined;
+  if (!def) return { cost: 0, poolOnly: 0, poolUnit: a.sourceInstanceId };
+  const cost = cardCost(def, { state, player: a.owner, enablingInstanceId: a.sourceInstanceId, targetInstanceIds: a.targets, amount: a.amount }, a.payFromPool);
+  return { cost, poolOnly: 0, poolUnit: a.sourceInstanceId };
+}
+
+function poolOf(state: GameState, unitId: string, isAbility: boolean): number {
+  if (!unitId) return 0;
+  if (isAbility) return poolAvailableFor(state, unitId);
+  const found = findOccupant(state, unitId);
+  return found?.occupant.chakraPool?.current ?? 0;
+}
+
+const POOL_TOP_UP = 'staged-pool-top-up';
+
+/**
+ * Costs are paid when the round resolves, from the Chakra the player has
+ * actually tapped (§5) — plus their Pool only if they opt in. Checked in
+ * queue order before anything resolves: a shortfall a Pool could cover is
+ * asked about; anything else stops the resolve with a warning to tap Chakra
+ * and try again.
+ */
+function checkPayments(state: GameState): GameState | null {
+  const generic: Record<PlayerId, number> = { p1: state.players.p1.genericChakraAvailable, p2: state.players.p2.genericChakraAvailable };
+  const poolSpent: Record<string, number> = {};
+  for (const a of state.staged) {
+    const { cost, poolOnly, poolUnit } = stagedCost(state, a);
+    if (cost <= 0) continue;
+    const isAbility = a.kind === 'ability';
+    const poolLeft = poolOf(state, poolUnit, isAbility) - (poolSpent[poolUnit] ?? 0);
+    const fromPool = Math.min(poolLeft, Math.max(poolOnly, a.payFromPool));
+    const needGeneric = cost - fromPool;
+    if (needGeneric <= generic[a.owner]) {
+      generic[a.owner] -= needGeneric;
+      poolSpent[poolUnit] = (poolSpent[poolUnit] ?? 0) + fromPool;
+      continue;
+    }
+    const shortfall = needGeneric - generic[a.owner];
+    const unitName = findOccupant(state, poolUnit)?.occupant.name ?? 'the character';
+    if (!a.poolDeclined && poolLeft - fromPool >= shortfall) {
+      return enqueueChoice(state, {
+        player: a.owner,
+        prompt: `${a.label} costs ${cost} Chakra but only ${generic[a.owner]} is tapped. Pay the other ${shortfall} from ${unitName}'s Pool?`,
+        options: [
+          { id: 'yes', label: `Yes — ${shortfall} from the Pool` },
+          { id: 'no', label: "No — I'll tap Chakra" },
+        ],
+        min: 1,
+        max: 1,
+        resolverId: POOL_TOP_UP,
+        data: { stagedId: a.id, shortfall },
+      });
+    }
+    return appendWarning(
+      state,
+      `${a.owner} can't pay for ${a.label} yet (costs ${cost}, ${generic[a.owner] + fromPool} available) — tap your Chakra sources${a.poolDeclined ? '' : ' or pool Chakra'}, then resolve again.`,
+    );
+  }
+  return null;
+}
+
+registerChoiceResolver(POOL_TOP_UP, (state, choice, optionIds) => {
+  const stagedId = choice.data.stagedId as string;
+  const shortfall = choice.data.shortfall as number;
+  const yes = optionIds[0] === 'yes';
+  const staged = state.staged.map((a) => (a.id === stagedId ? (yes ? { ...a, payFromPool: a.payFromPool + shortfall } : { ...a, poolDeclined: true }) : a));
+  return appendPrivateLog({ ...state, staged }, choice.player, yes ? `${choice.player} will pay ${shortfall} from the Pool — resolve again to continue.` : `${choice.player} won't use the Pool — tap Chakra, then resolve again.`);
+});
+
 export function startFinalize(state: GameState, player: PlayerId, advance: boolean, hooks: TrustHooks): GameState {
   if (state.pendingFinalize) return state;
   if (player !== state.activePlayer) return appendLog(state, `Only the active player (${state.activePlayer}) can finalize.`);
+  if (state.pendingChoices.some((c) => c.resolverId === POOL_TOP_UP)) return appendLog(state, 'Answer the Pool payment question first.');
+  const unpaid = state.staged.length > 0 ? checkPayments(state) : null;
+  if (unpaid) return unpaid;
   const next = appendLog(
     { ...state, pendingFinalize: { by: player, advance, approvals: [player] } },
     advance ? `${player} finalizes the ${state.phase} phase.` : `${player} asks to resolve the declared actions.`,

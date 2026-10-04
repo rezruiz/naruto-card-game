@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { getCharacterDef, getTokenDef } from '../../engine/characters/registry';
 import { retreatCost } from '../../engine/retreat';
-import { findOccupant, isCharacter } from '../../engine/board';
+import { findOccupant, hasFieldOrientation, isCharacter } from '../../engine/board';
 import type { AbilityDef } from '../../engine/abilities';
 import { trackedResources } from '../../engine/characters/progressText';
 import type { GameState } from '../../engine/types';
@@ -39,12 +40,39 @@ function AbilityBox({ state, instanceId, ability, usable, onUse }: { state: Game
       </span>
     </>
   );
-  return usable && !ability.triggeredOnly ? (
-    <button type="button" className="ability-box ability-box--usable" title={`Use ${ability.name}`} onClick={onUse}>
-      {content}
-    </button>
-  ) : (
-    <div className="ability-box">{content}</div>
+  const box =
+    usable && !ability.triggeredOnly ? (
+      <button type="button" className="ability-box ability-box--usable" title={`Use ${ability.name}`} onClick={onUse}>
+        {content}
+      </button>
+    ) : (
+      <div className="ability-box">{content}</div>
+    );
+  if (!ability.summons?.length) return box;
+  return (
+    <div className="ability-box-wrap">
+      {box}
+      <SummonDetails summons={ability.summons} />
+    </div>
+  );
+}
+
+/** What a summoning ability creates — each token's own card text, folded behind a Details button. */
+function SummonDetails({ summons }: { summons: { defId: string; name: string }[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="summon-details">
+      <button type="button" className="summon-details__toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        {open ? 'Hide details' : `Details: ${summons.map((s) => s.name).join(', ')}`}
+      </button>
+      {open &&
+        summons.map((s) => (
+          <div key={s.defId} className="summon-details__text">
+            <strong>{s.name}</strong>
+            <div>{getTokenCardText(s.defId, s.name)}</div>
+          </div>
+        ))}
+    </div>
   );
 }
 
@@ -96,7 +124,7 @@ export function CharacterDetailsModal({
 
   const pool = occupant.chakraPool;
   const capacity = pool ? (Number.isFinite(pool.capacity) ? pool.capacity : '∞') : undefined;
-  const status = [retreated && 'Retreated', occupant.status.disabled && 'Disabled'].filter(Boolean).join(', ');
+  const status = [retreated && 'Retreated', occupant.status.disabled && 'Disabled', hasFieldOrientation(state, occupant) && 'Field Orientation (no damaging abilities this turn)'].filter(Boolean).join(', ');
   const subtitle = [
     character ? `Rank ${character.rank}` : 'Token',
     `HP ${occupant.currentHP}/${occupant.maxHP}`,

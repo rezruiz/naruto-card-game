@@ -1,4 +1,4 @@
-import { findOccupant, isCharacter } from '../board';
+import { findOccupant, isCharacter, occupantIds, purgeReferencesTo } from '../board';
 import { fizzleOwnedTokens } from '../combat';
 import { getCharacterDeckEntry } from '../characters';
 import { appendLog } from '../phases/phaseMachine';
@@ -63,6 +63,9 @@ export function returnCharacterToHand(state: GameState, instanceId: string): Gam
   const handEntry: HandEntry = { kind: 'character', instanceId: `${player}-char-returned-${returnCounter}`, entryId };
   // startingCharacterInstanceId is deliberately left alone — it's Setup's "done" marker (setupPending), and a stale id just means no character gets the starting-character Upkeep treatment.
   let next: GameState = { ...state, players: { ...state.players, [player]: { ...p, backRow, hand: [...p.hand, handEntry] } } };
+  const before = occupantIds(state);
   next = fizzleOwnedTokens(next, player, occupant.instanceId);
+  const after = occupantIds(next);
+  next = purgeReferencesTo(next, [...before].filter((id) => !after.has(id)));
   return appendLog(next, `${player} returns ${occupant.name} to hand (manual) — its damage, Pool and tracked resources reset.`);
 }

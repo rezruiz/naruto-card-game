@@ -1,4 +1,4 @@
-import { countTokensOfType, findOccupant, getCrossPatternTargets, patchOccupant, placeToken } from '../board';
+import { countTokensOfType, findOccupant, getCrossPatternTargets, painUnitId, patchOccupant, placeToken } from '../board';
 import { dealDamage, healOccupant } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
 import { findAbility } from '../abilities';
@@ -46,7 +46,7 @@ function makePathToken(defId: string, name: string, owner: PlayerId, hp: number,
     // nominal grouping id that never matches a real Character, so the
     // default fizzle-on-owner-defeat rule (combat.ts) never fires for them;
     // each Path is defeated (or not) entirely independently.
-    ownerCharacterInstanceId: `pain-${owner}`,
+    ownerCharacterInstanceId: painUnitId(owner),
     status: freshTokenStatus(),
     // Marks the six Paths (not the Beasts): Pain is defeated when none remain (combat.ts).
     extra: { painPath: true },
@@ -56,7 +56,7 @@ function makePathToken(defId: string, name: string, owner: PlayerId, hp: number,
 
 export function createSixPaths(owner: PlayerId): TokenInstance[] {
   return [
-    makePathToken(DEVA_ID, 'Deva Path', owner, 8, 3),
+    makePathToken(DEVA_ID, 'Deva Path', owner, 7, 3),
     makePathToken(ASURA_ID, 'Asura Path', owner, 6, 2),
     makePathToken(HUMAN_ID, 'Human Path', owner, 4, 2),
     makePathToken(ANIMAL_ID, 'Animal Path', owner, 5, 2),
@@ -74,7 +74,7 @@ function makeBeast(defId: string, name: string, owner: PlayerId, animalPathInsta
     name,
     maxHP: defId === BIRD_ID ? 2 : 4,
     currentHP: defId === BIRD_ID ? 2 : 4,
-    ownerCharacterInstanceId: `pain-${owner}`,
+    ownerCharacterInstanceId: painUnitId(owner),
     status: freshTokenStatus(),
     // Defeated (not fizzled) → on cooldown for 2 of its controller's Upkeeps before it can be resummoned (combat.ts).
     extra: { fizzlesIfInstanceIdDefeated: animalPathInstanceId, cooldownOnDefeat: { holderId: animalPathInstanceId, key: defId, upkeeps: 2 }, ...extra },
@@ -304,6 +304,7 @@ function summonBeast(id: string, name: string, factory: (owner: PlayerId, animal
   return {
     id: `summon-${id}`,
     name: `Animal Path: Summon (${name})`,
+    summons: [{ defId: id, name }],
     cost: 1,
     speed: 'Normal',
     style: 'None',
@@ -318,7 +319,7 @@ function summonBeast(id: string, name: string, factory: (owner: PlayerId, animal
     resolve: (ctx) => {
       const found = findOccupant(ctx.state, ctx.sourceInstanceId);
       if (!found) return ctx.state;
-      return placeToken(ctx.state, found.player, factory(found.player, ctx.sourceInstanceId));
+      return placeToken(ctx.state, found.player, factory(found.player, ctx.sourceInstanceId), { askPosition: true });
     },
   };
 }
@@ -595,8 +596,8 @@ registerTokenDef({
         const info = pathHpByDefId[entry.reviveDefId];
         if (info) {
           const token = makePathToken(entry.reviveDefId, info.name, owner, info.hp, info.poolCapacity);
-          token.status.enteredTurn = next.turn; // fresh summoning sickness (§6.6)
-          next = placeToken(next, owner, token);
+          token.status.enteredTurn = next.turn; // fresh Field Orientation (§6.6)
+          next = placeToken(next, owner, token, { askPosition: true });
         }
       }
     }

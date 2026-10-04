@@ -11,7 +11,7 @@ function withSixPaths(state: GameState, player: PlayerId): { state: GameState; i
   let next = state;
   const ids: Record<string, string> = {};
   for (const token of createSixPaths(player)) {
-    next = placeToken(next, player, token);
+    next = placeToken(next, player, { ...token, status: { ...token.status, enteredTurn: 0 } }); // in play since before this turn
     ids[token.defId] = token.instanceId;
   }
   return { state: next, ids };
@@ -127,7 +127,7 @@ describe('Pain of the Six Paths', () => {
     expect(state.players.p1.frontRow.find((t) => t?.instanceId === ids['deva-path'])!.currentHP).toBe(4); // 1 + 3
   });
 
-  it('Samsara of Heavenly Life Technique revives a defeated Path at full HP with summoning sickness', () => {
+  it('Samsara of Heavenly Life Technique revives a defeated Path at full HP with Field Orientation', () => {
     const { state: base, ids } = withSixPaths(freshCombat(), 'p1');
     let state = dealDamage(base, ids['human-path'], 10).state; // defeat Human Path (4 HP)
     expect(state.players.p1.frontRow.some((t) => t?.instanceId === ids['human-path'])).toBe(false);
@@ -142,6 +142,6 @@ describe('Pain of the Six Paths', () => {
     const revived = state.players.p1.frontRow.find((t) => t?.defId === 'human-path');
     expect(revived).toBeDefined();
     expect(revived!.currentHP).toBe(4);
-    expect(revived!.status.enteredTurn).toBe(state.turn); // fresh summoning sickness
+    expect(revived!.status.enteredTurn).toBe(state.turn); // fresh Field Orientation
   });
 });

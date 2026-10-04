@@ -13,7 +13,7 @@
 **Part I — Foundations:** §0 Rule precedence & scope · §1 Card types & zones · §2 Decks & deck construction · §3 Setup
 **Part II — Turn structure:** §4 The turn: phases in order · §5 Speed, timing & the resolution queue
 **Part III — Resources:** §6 Chakra: sources, the generic pool, personal Pools
-**Part IV — Characters:** §7 Character basics · §8 Board limit, Upkeep & Disabled · §9 Retreat · §10 Summoning sickness, Ambush & Retaliation · §11 Character Deck draws, reinforcements & the Character Deck Tax · §12 Passives, abilities & effect notation
+**Part IV — Characters:** §7 Character basics · §8 Board limit, Upkeep & Disabled · §9 Retreat · §10 Field Orientation, Ambush & Retaliation · §11 Character Deck draws, reinforcements & the Character Deck Tax · §12 Passives, abilities & effect notation
 **Part V — Combat:** §13 Combat, targeting & board geometry
 **Part VI — Non-character cards:** §14 Tokens · §15 Terrain, Mission, Jutsu & Assist cards (with the timing table)
 **Part VII — Winning:** §16 Health, defeat & victory
@@ -96,14 +96,14 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 
 1. Each player shuffles their Hand Deck and Character Deck separately.
 2. Each player does both of the following (independently, in either order):
-   - **Starting character:** reveal the top **3** cards of your Character Deck; choose **1** to be your starting character. It enters play immediately, **free**, and **with summoning sickness** (§10). The unchosen cards are **shuffled back** into the Character Deck. **[Updated]** — the engine previously put them on the bottom; Setup now shuffles them back as written.
+   - **Starting character:** reveal the top **3** cards of your Character Deck; choose **1** to be your starting character. It enters play immediately, **free**, and **with Field Orientation** (§10). The unchosen cards are **shuffled back** into the Character Deck. **[Updated]** — the engine previously put them on the bottom; Setup now shuffles them back as written.
      - The **D-Rank rule** (§11.3) applies to this draw too.
    - **Starting hand & mulligan:** draw **6** cards from the Hand Deck. You may **mulligan** any number of times: shuffle your hand back and redraw. **The first mulligan is free** (a full new 6). Each later mulligan draws **1 fewer** than the previous draw (5, then 4, …), down to 0. **[Updated]** Mulligan is available until you **confirm** your starting character (confirming keeps your hand); each player decides independently.
    - **[Updated]** The first-player coin flip (step 3) happens **after** both players confirm.
 3. Determine the first player *(placeholder: coin flip)*.
 4. **The first player skips the Draw Phase of their very first turn only.**
 
-**Starting character's first turn [Updated]:** the starting character is summoning-sick on **its controller's first turn**. For the player going second, that is **turn 2** (not turn 1).
+**Starting character's first turn [Updated]:** the starting character is in Field Orientation on **its controller's first turn**. For the player going second, that is **turn 2** (not turn 1).
 
 ---
 
@@ -126,7 +126,7 @@ Untap all of **your** tapped Chakra sources. Nothing else untaps. **[Updated]** 
 3. Start-of-Upkeep delayed effects fire here (poison ticks at *every* Upkeep of either player; scheduled heals; Spore drains, etc.).
 
 ### 4.3 Draw Phase
-Draw **1** card from the Hand Deck (skipped on the first player's first turn only). **[Updated]** The draw is a manual click (sidebar **Draw** button), not automatic; **[Playtest]** it can be undone. If your Hand Deck is empty and you must draw, take **3 Health damage** *(placeholder)* and draw nothing.
+Draw **1** card from the Hand Deck — every turn, including the first player's first turn **[Updated]**. **[Updated]** The draw is a manual click (sidebar **Draw** button), not automatic; **[Playtest]** it can be undone. If your Hand Deck is empty and you must draw, take **3 Health damage** *(placeholder)* and draw nothing.
 
 ### 4.4 Main Phase 1
 Normal-speed actions. You may:
@@ -134,15 +134,15 @@ Normal-speed actions. You may:
 - **Pool Chakra** into a character's personal Pool (§6.3).
 - **Play Character cards** from hand (free — the tax is paid when drawing them, §11.4).
 - **Draw from your Character Deck** by paying the Character Deck Tax (§11.2).
-- Play **non-combat Normal-speed cards**: Terrain, Missions, deck searches, Field Intelligence, Chakra Transfer, Deploy Medic Corps, etc. (§15.6).
-- Activate **non-damaging (support) Normal-speed abilities** **[Updated]** (§5.4).
+- Play **Main-only Normal-speed cards**: Terrain, Missions, deck searches, Field Intelligence (§15.6).
+- Play **healing/support Jutsu** (Medical Chakra Infusion, Deploy Medic Corps, Chakra Transfer) and activate **non-damaging (healing/support) Normal-speed abilities** — these also work in Combat **[Updated]** (§5.4, §15.6).
 - **Retreat** or **return** characters (§9).
 
 ### 4.5 Combat Phase
 This is when characters do things to each other (§13). In the Combat Phase:
-- **Normal-speed damage-dealing abilities can only be activated here.** **[Updated]** (Non-damaging Normal-speed abilities work in a Main Phase; the build also accepts them in Combat.)
+- **Normal-speed damage-dealing abilities can only be activated here.** **[Updated]** Non-damaging (healing/support) Normal-speed abilities work here **or** in a Main Phase.
 - **Attack-type Jutsu cards** (Normal speed) can only be played here, each named card **once per turn**. **[Updated]**
-- Normal-speed cards with a **combat-implicating effect that resolves immediately** (none in the current deck) may also be played here. Non-combat Normal cards (Terrain, Missions, deck searches, Deploy Medic Corps…) **cannot**. **[Updated]** (§15.6)
+- **Healing/support Jutsu** (Medical Chakra Infusion, Deploy Medic Corps, Chakra Transfer) may also be played here. Terrain, Missions, deck searches and Field Intelligence **cannot**. **[Updated]** (§15.6)
 - Quick and Reactive abilities/cards can be used here or any time their timing allows.
 - Each character ability, and each named Attack-type Jutsu, can be used **once per turn** unless its text says otherwise.
 - **Second Combat:** a combat step that clears a player's active characters can earn the attacker another Combat (§13.9). **[Updated]**
@@ -178,7 +178,7 @@ In the strict engine: every activation goes on a stack; the active player has pr
 | Ability | When (Normal speed) |
 |---|---|
 | Damage-dealing | Combat Phase only |
-| Non-damaging / support (buffs, heals, utility) | Main Phase (also accepted in Combat) |
+| Non-damaging / healing / support (buffs, heals, summons, utility) | Main **or** Combat Phase |
 | Quick / Reactive | any time their timing/condition allows |
 
 ### 5.5 Negating a target vs. negating damage
@@ -196,7 +196,7 @@ There are two layers: the shared **generic pool** you produce each turn, and eac
 You gain **no Chakra** simply by reaching a phase or turn. The only way to make generic Chakra is to **tap Chakra sources**; the only way your total per turn grows is by placing more sources, which persist. With zero sources you have zero generic Chakra.
 
 ### 6.2 Chakra sources
-- **Placing:** once per turn, in either of your Main Phases, you may place **1** Chakra source. To do it, **Consume 1 card from your hand** (a Hand Deck card; a Character card can't be Consumed) into your Consumed pile, and put a textless Chakra card from your Chakra Card Stack into play as the source. **[Playtest]** In the build this is the **"🌀 Discard for Chakra"** button on a hand card; the placed source is shown as a small card with a spiral symbol.
+- **Placing:** once per turn, in either of your Main Phases, you may place **1** Chakra source (**2** on the second player's first turn **[Updated]**). To do it, **Consume 1 card from your hand** (a Hand Deck card; a Character card can't be Consumed) into your Consumed pile, and put a textless Chakra card from your Chakra Card Stack into play as the source. **[Playtest]** In the build this is the **"🌀 Discard for Chakra"** button on a hand card; the placed source is shown as a small card with a spiral symbol.
 - **Tapping:** tapping an untapped source gives **+1 generic Chakra** (like tapping a land in Magic). Tapped sources are shown rotated. Untapped sources are available. **[Playtest]** In trust mode you can also **untap** a mis-tapped source (undoes the +1).
 - **Untapping:** all your sources untap automatically in your **Untap Phase**.
 - A source has no text, isn't a character/item/terrain/mission, and can't be interacted with unless an effect explicitly references Chakra sources.
@@ -262,8 +262,9 @@ Name & Rank · Specialization (≤2 roles) · Styles · Synergy · **HP** · **C
 |---|---|---|---|---|---|---|---|
 | Upkeep | 0 | 0 | 1 | 2 | 3 | 4 | 5 |
 
-- **Synergy discount [Updated]:** board-wide, not per character — your total upkeep is reduced by **1 for each character past the first** sharing a Synergy tag (your largest same-tag group), **capped at −2 total**. It comes off your most expensive upkeep first (no character below 0) and applies to the starting character's upkeep too. *Examples (all Akatsuki, none starting):* two S-Ranks 6 → **5**; two S-Ranks + a C-Rank 6 → **4** (the cap). **[Playtest]** The Next Upkeep panel shows the math (e.g. "3 − 1 Synergy = 2").
-- **Terrain discount:** a Terrain whose Synergy matches the character (Akatsuki Hideout vs Akatsuki characters) reduces that character's upkeep by **1** (min 0), on top of the Synergy discount.
+- **Synergy discount [Updated]:** board-wide, not per character — your total upkeep is reduced by **1 for each character past the first** sharing a Synergy tag (your largest same-tag group), **capped at −2 total**. It comes off your most expensive upkeep first and applies to the starting character's upkeep too. *Examples (all Akatsuki, none starting):* two S-Ranks 6 → **5**; two S-Ranks + a C-Rank 6 → **4** (the cap). **[Playtest]** The Next Upkeep panel shows the math (e.g. "3 − 1 Synergy = 2").
+- **Terrain discount:** a Terrain whose Synergy matches the character (Akatsuki Hideout vs Akatsuki characters) reduces that character's upkeep by **1**, on top of the Synergy discount.
+- **Minimum upkeep [Updated]:** discounts can't take a character's upkeep below **1**; a character that already costs 0 (C/D Rank, a free starting character) stays free.
 - The table is a **default**, not a fixed rule.
 
 ### 8.2 The starting character's special treatment
@@ -310,7 +311,7 @@ You **cannot Retreat**: your **only** character (you must keep ≥1 non-Retreate
 - It pays upkeep like any character.
 
 ### 9.3 Returning
-Returning costs **0**; flip the status off (Main Phase). A returning character is treated **exactly like it just entered play** for summoning sickness: **no damage-dealing abilities that turn**, but non-damaging abilities and passives work immediately. **Deploy Medic Corps** keeps healing only while its target stays Retreated (§15.4).
+Returning costs **0**; flip the status off (Main Phase). A returning character is treated **exactly like it just entered play** for Field Orientation: **no damage-dealing abilities that turn**, but non-damaging abilities and passives work immediately. **Deploy Medic Corps** keeps healing only while its target stays Retreated (§15.4).
 
 ### 9.4 Retreat collapse and the second Combat **[Updated]**
 If a player has retreated characters but **no non-Retreated character left**, all their Retreated characters are **immediately forced out of Retreat** (treated as re-entering play, like a voluntary return).
@@ -321,12 +322,12 @@ If a player has retreated characters but **no non-Retreated character left**, al
 
 ---
 
-## 10. Summoning sickness, Ambush & Retaliation
+## 10. Field Orientation, Ambush & Retaliation
 
-- **Summoning sickness:** a character can't use **damage-dealing abilities** the turn it enters play (including Ultimates and Forbidden Techniques — there is no separate multi-turn lockout beyond this). It **can** use non-damaging abilities (buffs, heals, Quick defenses) at once, and it can be targeted. Playing a *hand card* isn't "using an ability," so an enabling character's sickness doesn't block a damaging Jutsu card.
+- **Field Orientation:** a character can't use **damage-dealing abilities** the turn it enters play (including Ultimates and Forbidden Techniques — there is no separate multi-turn lockout beyond this). It **can** use non-damaging abilities (buffs, heals, Quick defenses) at once, and it can be targeted. Playing a *hand card* isn't "using an ability," so an enabling character's sickness doesn't block a damaging Jutsu card.
 - **"The turn it enters":** a character is sick during the turn number it entered. The starting character's entry turn is its controller's first turn (turn 1 for the first player, turn 2 for the second). A character returning from (or forced out of) Retreat is treated as entering on the current turn.
-- **Retaliation:** when one of your characters is defeated, the **next character you play** is exempt from summoning sickness entirely (it may use any damage-dealing ability, Ultimates and Forbidden Techniques included). One-time only; consumed when that character enters.
-- **Ambush** (keyword): the general form — a character with Ambush ignores summoning sickness. It's either printed on a card or granted by an effect (e.g., Bingo Book: Threat Level A's "the next character you play from hand gains Ambush," one specific future character, once).
+- **Retaliation:** when one of your characters is defeated, the **next character you play** is exempt from Field Orientation entirely (it may use any damage-dealing ability, Ultimates and Forbidden Techniques included). One-time only; consumed when that character enters.
+- **Ambush** (keyword): the general form — a character with Ambush ignores Field Orientation. It's either printed on a card or granted by an effect (e.g., Bingo Book: Threat Level A's "the next character you play from hand gains Ambush," one specific future character, once).
 - All of this is a default subject to §0.2.
 
 ---
@@ -334,7 +335,7 @@ If a player has retreated characters but **no non-Retreated character left**, al
 ## 11. Character Deck draws, reinforcements & the Character Deck Tax
 
 ### 11.1 The draw — a state-based action **[Updated]**
-A **Character Deck draw**: reveal **2** cards from your Character Deck, choose **1** to add to your hand, put the other on the **bottom**. It's a **state-based action** — never on the stack, can't be responded to, resolves immediately; its timing comes from whatever caused it. **Playing a Character card from hand is always free** (5-character limit and summoning sickness still apply). **[Playtest]** Reveals are private (§19); pick a card, check **Details**, then **Confirm**.
+A **Character Deck draw**: reveal **2** cards from your Character Deck, choose **1** to add to your hand, put the other on the **bottom**. It's a **state-based action** — never on the stack, can't be responded to, resolves immediately; its timing comes from whatever caused it. **Playing a Character card from hand is always free** (5-character limit and Field Orientation still apply). **[Playtest]** Reveals are private (§19); pick a card, check **Details**, then **Confirm**.
 
 ### 11.2 When you draw **[Updated]**
 1. **Manual draw** — your own Main Phase: pay the **Character Deck Tax** (§11.4) and draw. The **only** thing that raises the tax. **[Playtest]** Sidebar button "Character Deck (N) — draw for X Chakra".
@@ -405,7 +406,7 @@ Each player has a **back row** (Characters, ≤5) and a **front row** (Tokens, �
 - **Free targeting:** an attack may target **any single enemy** in play; no forced-target ("taunt") rules.
 - **Enemy-only by default.** A card must say **"any target"** to be able to hit allies or itself (Kakuzu's Earth Grudge Fear is the example).
 - Legal targets must **exist**, be on the correct side (**enemy** default; **ally** and **any** are per-ability), and **not be Retreated** (§9.2 — except when their controller has no non-Retreated character).
-- A summoning-sick character can be targeted (only its own damaging abilities are blocked).
+- A character in Field Orientation can be targeted (only its own damaging abilities are blocked).
 - There is **no declare-attackers/blockers step**: a damaging ability simply resolves against its chosen target when it resolves.
 
 ### 13.4 Default targeting inference
@@ -440,7 +441,7 @@ Tokens (Clay Spider, Puppet Soldier, Path tokens, Zetsu Clones, …) have **HP**
 ### 15.1 Terrain
 - **One at a time:** playing a Terrain **replaces** your existing one (the old is discarded).
 - **One-way by default:** unless text says otherwise, a Terrain's effect applies to one side only.
-- Terrain is a **Main-Phase** play (§15.6). *Akatsuki Hideout* (Synergy: Akatsuki, **2 Chakra** **[Updated]**): Akatsuki-Synergy characters you control have upkeep −1 (min 0).
+- Terrain is a **Main-Phase** play (§15.6). *Akatsuki Hideout* (Synergy: Akatsuki, **2 Chakra** **[Updated]**): Akatsuki-Synergy characters you control have upkeep −1 (min 1).
 
 ### 15.2 Missions
 - Live in the Hand Deck; drawn normally; copy limit 3 (Unique: 1).
@@ -471,13 +472,13 @@ Full text is in Appendix A. Timing and implementation:
 | **Explosive Tag** (Bukijutsu) | **Normal, Attack-type — Combat only**, 1 | 1 damage to a target, 1 to a second character adjacent to it (front/behind/left/right). **Once per turn.** |
 | **Incoming Mission Assignment** | Normal, **Main only**, 0 | Look at the top 6 of your Hand Deck; add 1 Mission to hand; shuffle the rest back. |
 | **Battlefield Selection** | Normal, **Main only**, 0 | As above for a Terrain. |
-| **Chakra Transfer** | Normal, **Main only**, 0 | Choose two of your characters; remove X (≥1, **your choice, ≤ the first's Pool**) from the first's Pool and add X−1 (min 1) to the second's, capped by its room. |
+| **Chakra Transfer** | Normal, **Main or Combat**, 0 | Choose two of your characters; remove X (≥1, **your choice, ≤ the first's Pool**) from the first's Pool and add X−1 (min 1) to the second's, capped by its room. |
 | **Field Intelligence** | Normal, **Main only**, 1 | Opponent reveals 2 cards of their choice; you draw 1. |
-| **Deploy Medic Corps** | Normal, **Main only**, 2 | Target one of **your Retreated** characters (explicit exception to Retreat immunity). At the start of each of your next **4** Upkeeps, heal it 1 HP; **cancelled** if it stops being Retreated. |
-| **Medical Chakra Infusion** | Normal, **Main only**, 1 | Heal 2 HP to one of your characters (not above max HP; not a token, not a Retreated character). |
+| **Deploy Medic Corps** | Normal, **Main or Combat**, 2 | Target one of **your Retreated** characters (explicit exception to Retreat immunity). At the start of each of your next **4** Upkeeps, heal it 1 HP; **cancelled** if it stops being Retreated. |
+| **Medical Chakra Infusion** | Normal, **Main or Combat**, 1 | Heal 2 HP to one of your characters (not above max HP; not a token, not a Retreated character). |
 | **Fire Style: Fireball Jutsu** (Fire) | **Normal, Attack-type — Combat only**, 4 / 3 from Pool | 3 damage to a target, 1 to each of up to 2 characters adjacent to it (your choice). **Once per turn.** |
 | **Chakra Suppression** (Sealing) | **Quick**, 2 | Target enemy character can't be pooled into **through** its controller's next turn. Characters only, not tokens. |
-| **Akatsuki Hideout** (Terrain) | Normal, **Main only**, **2** | Upkeep −1 for Akatsuki-Synergy characters (min 0). |
+| **Akatsuki Hideout** (Terrain) | Normal, **Main only**, **2** | Upkeep −1 for Akatsuki-Synergy characters (min 1). |
 | **Missions (7)** | Normal, **Main only** | See Appendix A. **Emergency Relief** counts your own characters defeated (any rank, tokens don't count) after it's played; at 2, you immediately take a free Character Deck draw (look at 2, keep 1) that doesn't raise the tax. |
 
 ### 15.5 Assist cards
@@ -487,8 +488,8 @@ An **Assist** card is a Jutsu card in every respect (same deck, Speed/Cost/Type 
 | Kind of Normal-speed card | When playable |
 |---|---|
 | **Attack-type Jutsu** (Explosive Tag, Fireball Jutsu) | **Combat Phase only**; each named card **once per turn** |
-| **Non-combat cards** — Terrain, Missions, deck searches, Field Intelligence, Chakra Transfer, Deploy Medic Corps, Medical Chakra Infusion, etc. | **Main Phase only** — *not* in Combat |
-| A Normal-speed card whose effect **implicates combat and triggers immediately** (it must somehow alter the immediate combat step) | Main Phase **or** Combat *(no card in the current deck qualifies; a card opts in with a timing setting)* |
+| **Healing/support Jutsu** — Medical Chakra Infusion, Deploy Medic Corps, Chakra Transfer | Main Phase **or** Combat |
+| **Non-combat cards** — Terrain, Missions, deck searches (Incoming Mission Assignment, Battlefield Selection), Field Intelligence | **Main Phase only** — *not* in Combat |
 | **Quick / Reactive** cards | per their own speed, any time their condition is met |
 
 In every case the card still needs its enabling character (except Assist), a legal target, and payable Chakra.
@@ -537,7 +538,7 @@ Only the **active player** starts a resolution:
 If **nothing is declared**, Finalize Phase simply advances. Either button opens the approval handshake below when something is declared.
 
 ### 17.3 Advisory warnings
-When an action is declared or re-aimed, the engine checks it against the strict rules and, if it would have been illegal (wrong timing, not enough Chakra, wrong Style, disabled/retreated source, bad target, summoning sickness…), shows a **⚠ "Not legal under the strict rules: …"** warning on that action. The warning is **advisory only** — the action can still be resolved. It exists so the opponent can call it out.
+When an action is declared or re-aimed, the engine checks it against the strict rules and, if it would have been illegal (wrong timing, not enough Chakra, wrong Style, disabled/retreated source, bad target, Field Orientation…), shows a **⚠ "Not legal under the strict rules: …"** warning on that action. The warning is **advisory only** — the action can still be resolved. It exists so the opponent can call it out.
 
 ### 17.4 The approval handshake
 1. The active player clicks Resolve Actions or Finalize Phase → **their** approval is recorded.
@@ -566,10 +567,10 @@ Declared actions resolve **first-declared, first-resolved.** A responding player
 3. The committed stack is flipped so the **first** queued action is on top, and they resolve **one by one, first to last.**
 4. **Retreat collapse** is checked (§9.4); if it earns the attacker a second Combat and this was a Finalize Combat, the phase holds for a second Combat instead of advancing.
 5. Queued Character Deck draws, defeat-triggered Mission checks, etc. are settled.
-6. If this was **Finalize Phase**, the next phase begins. **Untap and Upkeep run automatically**, so a new turn lands on the **Draw Phase**; clicking **Draw** takes the card and moves on to **Main Phase 1** (the first player's skipped first draw passes straight through). Upkeep payments, poison/heal ticks and Untap-triggered Missions happen in that run.
+6. If this was **Finalize Phase**, the next phase begins. **Untap and Upkeep run automatically**, so a new turn lands on the **Draw Phase**; clicking **Draw** takes the card and moves on to **Main Phase 1**. Upkeep payments, poison/heal ticks and Untap-triggered Missions happen in that run.
 
 ### 17.8 What trust mode does not enforce
-Not gated (advisory warnings only, where a strict rule would have applied): **which phase** you act in; **speed/priority**; **once-per-turn** limits; **pooled-vs-acted** exclusivity; **Style, Disabled, Retreated, summoning-sickness, target-side and Retreat-immunity-at-declaration** checks; **sufficient Chakra** at the moment of declaring; **Chakra-source placement** limits (one per turn, Main Phase) and the **Main-Phase-only** rule for pooling, Retreat, Return and playing Characters; Retreat's "not your only character", "not stunned" and "not already acted" conditions.
+Not gated (advisory warnings only, where a strict rule would have applied): **which phase** you act in; **speed/priority**; **once-per-turn** limits; **pooled-vs-acted** exclusivity; **Style, Disabled, Retreated, Field Orientation, target-side and Retreat-immunity-at-declaration** checks; **sufficient Chakra** at the moment of declaring; **Chakra-source placement** limits (one per turn, Main Phase) and the **Main-Phase-only** rule for pooling, Retreat, Return and playing Characters; Retreat's "not your only character", "not stunned" and "not already acted" conditions.
 Still **enforced** even in trust mode (physical/state consistency): the card or unit **must exist**; Pool **capacity**; you can't pool more than you have **available**; you can't Consume a Character card for Chakra; a played Character needs **room on the board**; actions belong to the **owner** of the card or unit.
 
 ### 17.9 Strict mode
@@ -646,9 +647,9 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 4. ✔ **Trust mode:** players handle timing and legality verbally; the engine only needs targets/effects; stack handled by players; a **Resolve Actions** button and a **Finalize Phase** button; declared actions editable until finalized (retarget, change ability); the opponent is prompted **only** if they have a meaningful legal response; manual adjustments and automated deck operations (search, look at top X, shuffle, bottom, draw, damage calculation).
 5. ✔ **Resolution order:** first activated, first resolved; the responding player inserts responses at chosen points in the queue (replaces the MTG-style last-in-first-out stack).
 6. ✔ **"Could they respond" check:** the opponent can target *anything at all* with an affordable activated ability or hand card (Pool or generic Chakra); multi-target needs only one valid target.
-7. ✔ **Timing (abilities):** Normal-speed **damage-dealing** abilities → **Combat only**; **non-damaging** (support) Normal abilities → outside combat (Main).
+7. ✔ **Timing (abilities):** Normal-speed **damage-dealing** abilities → **Combat only**; **non-damaging** (healing/support) Normal abilities → **Main or Combat** **[Updated]**.
 8. ✔ **Passives:** a **Disabled** or **Retreated** character's triggered passives **do not trigger**, **except replacement-effect passives** (Five Hearts, Jashin's Blessing, Hollow Body).
-9. ✔ **Timing (cards):** non-combat Normal-speed cards (Terrain, Missions, deck searches, Deploy Medic Corps…) **cannot** be played in Combat; **Attack-type** Normal Jutsu are **Combat-only**; a Normal card may be played in Combat only if its effect **alters the immediate combat step** and triggers immediately.
+9. ✔ **Timing (cards):** Terrain, Missions, deck searches and information cards (Field Intelligence) **cannot** be played in Combat; **Attack-type** Normal Jutsu are **Combat-only**; **healing/support Jutsu** (Medical Chakra Infusion, Deploy Medic Corps, Chakra Transfer) may be played in **Main or Combat** **[Updated]**.
 10. ✔ **Retreat collapse:** clearing a player's active characters in one combat step **forces their retreated characters out immediately** and grants the attacker a **second Combat** (unused attack actions only); forced out otherwise = no extra Combat.
 
 **Designer rulings — playtest feedback session (Setup, economy, choices, visibility)**
@@ -691,6 +692,25 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 52. ✔ **Pain's full defeat is a character defeat:** when his last Path token falls, Pain of the Six Paths is defeated as an **S-Rank character** — his controller loses 7 Health, it triggers Reinforcement and Retaliation, counts for Missions (Emergency Relief, the opponent's Bingo Book S), and the last Path's attacker gets kill credit. Individual Path tokens are token losses only. While any Path stands, Pain counts as a C+ character in play for the "last C+" Reinforcement rule. *(Previously none of this happened — the build treated his Paths as unrelated tokens.)* (SPEC §13, §8, §11.)
 53. ✔ **Bingo Book: Threat Level A reworded** for the draw-time tax: "Your next Character Deck draw you pay for costs 2 less. The next character you play from hand gains Ambush." The −2 goes to the next **paid** draw (manual or an accepted paid Reinforcement; a free draw doesn't use it up); Ambush goes to the next character **played**, which may be a different character. Behaviour unchanged — this confirms how the build already worked. (SPEC §13a.)
 54. ✔ **Missions are played face down by default** (was face up, with the Bingo Books as the exception), revealed when their Condition is met; one that stays in play afterwards (Squad Formation) stays face up. A card can say it's played face up. The Bingo Books' "Can be played face down; reveal it once its Condition is met" line was removed as redundant. All 7 current Missions now enter face down. (SPEC §10b.)
+55. ✔ **Itachi's stuns shortened:** Genjutsu: Mind Prison stuns for its target's controller's turn only (through their next turn, or the rest of the current one if cast during it), not a whole turn cycle. Tsukuyomi - Infinite Agony stuns for 1 turn cycle (was 2). (SPEC §13 Itachi.)
+56. ✔ **Kakuzu's base HP is 5** (was 6). (SPEC §13 Kakuzu.)
+57. ✔ **Failed Missions are discarded immediately:** a Mission whose Condition can no longer be met (Unshakable Resolve losing 10+ Health) is discarded the moment it fails, not at its next Untap; an ongoing Mission (Squad Formation) likewise ends the moment its end condition is met. (SPEC §10b.)
+58. ✔ **Tokens have Field Orientation:** a token can't use damage-dealing abilities the turn it's created (Zetsu Clones, Golem, Path Beasts, Pain's Paths when Pain enters, Third Kazekage). **Exception: Deidara's Clay Spiders have Ambush.** *(Previously tokens never had Field Orientation — including Pain's Paths on the turn Pain entered.)* (SPEC §6.6.)
+59. ✔ **Deva Path HP is 7** (was 8). (SPEC §13 Pain.)
+60. ✔ **Pain pays Upkeep:** while any of his Path tokens is in play, Pain of the Six Paths pays S-Rank Upkeep as one character (2 if he's your starting character), counts toward Synergy (Akatsuki) and Terrain discounts, and if it isn't paid every Path is Disabled. *(Previously he paid no Upkeep at all.)* (SPEC §6.5, §13.)
+61. ✔ **Lingering effects end with the unit:** when a unit leaves play (defeated, fizzled, or returned to hand), every effect other units were tracking about it is dropped — scheduled burns or heals aimed at it (Amaterasu, King of Hell's Judgment), per-target tallies (Mind Prison, Crow Clone, Tsukuyomi's damage count, Hidan's damaged enemies), a Curse or target lock on it. Nothing keeps happening to, or crediting anyone for, a unit that's gone.
+62. ✔ **Summoning sickness is renamed Field Orientation.** Same rule; it's shown as a **Field Orientation** badge on every character and token it applies to, and in the unit's details. (SPEC §6.6.)
+63. ✔ **[Playtest]** Trust mode shows a **warning banner** for any action the strict rules would refuse (pooling into a stunned, suppressed or already-acted unit; declaring an ability for a unit that was pooled into; out-of-phase plays; short payments) — it still goes through. The action log also shows what each ability, card or Retreat **cost**.
+64. ✔ **Minimum upkeep is 1:** Synergy and Terrain discounts can't take a character's upkeep below 1 (was 0). A character that already costs 0 — C/D Rank, or a free starting character — stays free. Akatsuki Hideout's "minimum 0" is now "minimum 1". (SPEC §6.5, §13c.)
+65. ✔ **Healing/support in Main or Combat:** every non-damaging Normal-speed ability (heals, buffs, summons, utility) and the healing/support Jutsu (Medical Chakra Infusion, Deploy Medic Corps, Chakra Transfer) can be used in a Main Phase **or** the Combat Phase, still subject to speed. Terrain, Missions, deck searches and Field Intelligence stay Main Phase only. (SPEC §4.5.)
+66. ✔ **Amegakure Civilian Rebel has no Synergy** (was Akatsuki) — it no longer counts toward the Akatsuki Synergy discount or Akatsuki Hideout. (SPEC §13.)
+67. ✔ **The first player draws on turn 1** (no longer skipped), and **the second player may place 2 Chakra sources on their first turn** instead of 1. (SPEC §3, §4.3, §5.2.)
+68. ✔ **Positioning:** a new character is played into a back-row slot you choose — beside one of your characters if you have any, or onto one of them, pushing the characters there toward the nearest gap. A new token goes beside one of your tokens; with tokens already out you choose which slot; tokens never push others aside and can't be moved after creation. (SPEC §9.)
+69. ✔ **Starting picks are secret until both confirm:** neither player sees the other's starting character (on the board or in the log) until both have confirmed; then both are revealed together. (SPEC §3.)
+70. ✔ **[Trust mode] Costs are paid at resolution:** a declared action's cost comes out of the Chakra you've actually tapped when the round resolves. If that's short and the acting unit's Pool could cover the rest, you're asked whether to use the Pool (it's never used unless you say yes). Otherwise — or if you decline — nothing resolves and you're warned to tap your Chakra and resolve again. Declaring no longer asks how much to pay from the Pool.
+71. ✔ **[Trust mode] Declarations are private until finalized:** your opponent sees only that you declared an action (and how many) — what it is, its targets and any edits stay hidden until the round is finalized, then everything is revealed. An **illegal** declaration isn't made at all (only you are told why) unless you **force it through**; a forced one is flagged when it's revealed. A face-down card (a Mission) is never named, even when revealed.
+72. ✔ **[Trust mode] Options:** **Auto-draw** (on by default) takes the Draw Phase draw automatically — the manual Draw buttons still work. **Always confirm** (off by default; either player can turn it on) makes every round wait for both players' OK, even when one has nothing to respond with.
+73. ✔ **[Playtest] Phases are clickable:** click a later phase to skip ahead (the phases in between run normally); in trust mode you can click an earlier one to go back (nothing is undone or re-run).
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -731,7 +751,7 @@ Pool Capacity is intentionally left **TBD** per card — assign it during
 card balancing.
 
 ### Kakuzu (A Rank)
-**HP: 6** · Pool Capacity: (Hearts − 1) × 2 — starts at 8 with all 5 Hearts
+**HP: 5** · Pool Capacity: (Hearts − 1) × 2 — starts at 8 with all 5 Hearts
 Specialization: Assault / Vanguard · Styles: Earth, Wind, Lightning, Fire · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
@@ -795,7 +815,8 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   6 Path tokens are defeated — that's a full S-Rank character defeat
   (Health loss, Reinforcement, Missions). A single Path being defeated
   is a token loss, not a character loss. While any Path stands, Pain is
-  a C-Rank-or-higher character in play (§8).
+  a C-Rank-or-higher character in play (§8), and he pays S-Rank Upkeep
+  (§6.5) as one character — if it isn't paid, every Path is Disabled.
 - Rinnegan Reservoir — each Path token still pools Chakra individually
   into its own Pool (Capacity per the table below, exception to §10) —
   Chakra is not merged into one combined pool. However, any Path's
@@ -805,7 +826,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
 
 | Path | Role | HP | Chakra Pool Capacity |
 |---|---|---|---|
-| Deva | Commander, strongest combatant | 8 | 3 |
+| Deva | Commander, strongest combatant | 7 | 3 |
 | Asura | Heavy weapons | 6 | 2 |
 | Animal | Summons / recon / control | 5 | 2 |
 | Preta | Defensive counter to ninjutsu | 5 | 2 |
@@ -824,7 +845,7 @@ Abilities (each ability belongs to the named Path token, not to Pain):
 - Preta Path: Chakra Absorption — Reactive Technique, 2 Chakra, Style: None, Type: Ninjutsu: Redirect a targeted Ninjutsu attack onto Preta, reduce to 0, gain 1 Chakra to Preta Path's Pool. Targeted-only (§9).
 - Preta Path: Absorb Impact — Reactive Technique, 1 Chakra, Style: None, Type: Taijutsu: Redirect a targeted Physical (Taijutsu or Bukijutsu, §6.8) attack onto Preta, taking it −1 (min 0). Targeted-only (§9).
 - Naraka Path: King of Hell's Judgment — 4 Chakra, Style: None, Type: Ninjutsu: Choose a Path token (including Naraka). At your next Upkeep, heal it 3 HP. Cancelled if Naraka Path dies first.
-- Naraka Path: Outer Path — Samsara of Heavenly Life Technique — 7 Chakra, Style: None, Type: Ninjutsu: Choose 1 defeated Path token; revives at full HP (with summoning sickness, §6.6) at your next Upkeep. Cancelled if Naraka Path dies first.
+- Naraka Path: Outer Path — Samsara of Heavenly Life Technique — 7 Chakra, Style: None, Type: Ninjutsu: Choose 1 defeated Path token; revives at full HP (with Field Orientation, §6.6) at your next Upkeep. Cancelled if Naraka Path dies first.
 
 Deva Path's Ultimate — Almighty Push (6 Chakra + Deva Path's entire
 Chakra Pool spent in full, Style: Gravity, Type: Ninjutsu):
@@ -874,6 +895,7 @@ Abilities:
 
 **Clay Spider Token** (HP: 1)
 - Fizzles if Deidara dies. Max 5 in play at once.
+- Ambush — no Field Orientation; it can act the turn it's created.
 - Self Detonate — 1 Chakra, Quick Technique, Style: Explosion, Type: Ninjutsu: Choose any number of your Clay Spider tokens and 1 target; they all detonate against it for 1 damage each. 1 Chakra total per activation, regardless of spider count. Usable any number of times per turn.
 - Combine — Style: Explosion, Type: Ninjutsu: 4 Clay Spider tokens revert to clay and are destroyed, generating 2 Clay Charges.
 
@@ -925,7 +947,7 @@ Traits:
 Abilities: *(full nuance: design/CHARACTER_LOG.md)*
 - Crow Shuriken Barrage — 2 Chakra, Style: None, Type: Taijutsu: Deal 2 damage.
 - Great Fireball Technique — 3 Chakra, Style: Fire, Type: Ninjutsu: Deal 3 damage.
-- Genjutsu: Mind Prison — 3 Chakra, Quick Technique, Style: None, Type: Genjutsu: Stun the target through its controller's next turn — can't pool Chakra or use abilities/Jutsu cards. Once per individual character, ever. Costs 1 Chakra if Itachi outranks the target.
+- Genjutsu: Mind Prison — 3 Chakra, Quick Technique, Style: None, Type: Genjutsu: Stun the target for its controller's turn only — through their next turn, or the rest of the current one if cast during their turn — can't pool Chakra or use abilities/Jutsu cards. Once per individual character, ever. Costs 1 Chakra if Itachi outranks the target.
 - Crow Clone — 2 Chakra, Reactive Technique, Style: None, Type: Ninjutsu: Itachi phases out, negating any targeting of him. Once per character targeting him.
 
 Passive — Sharingan Foresight (Style: None): Whenever an enemy targets
@@ -938,8 +960,8 @@ next 2 turns. Damage cannot be reduced.
 Forbidden Technique — Mangekyō Sharingan: Tsukuyomi - Infinite Agony (7
 Chakra, Style: None, Type: Genjutsu): Condition: target must already be
 affected by Mind Prison, and must not have dealt more than 6 damage to
-Itachi this game. Target takes 6 damage and is stunned for the next 2
-turn cycles.
+Itachi this game. Target takes 6 damage and is stunned for the next
+turn cycle.
 
 ### Konan (A Rank)
 **HP: 11** · Pool Capacity: 4 (placeholder)
@@ -981,7 +1003,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   battle shell (stats and abilities below). Whenever Hiruko would be
   defeated, instead of Sasori being defeated, he transforms: Hollow
   Body (his true form) takes over, entering at its own full HP/Pool
-  with summoning sickness (§6.6). Only once Hollow Body is also
+  with Field Orientation (§6.6). Only once Hollow Body is also
   defeated is Sasori truly defeated.
 - Chakra Strings: Third Kazekage — When Sasori enters play, also create
   the Third Kazekage token (below) — a separate Puppet under his
@@ -1160,7 +1182,7 @@ attack can trigger this; a blanket/untargeted effect cannot.
 
 ### Amegakure Civilian Rebel (D Rank)
 **HP: 3** · Pool Capacity: 1
-Specialization: Vanguard · Styles: None · Synergy: Akatsuki
+Specialization: Vanguard · Styles: None · Synergy: None
 
 *Note: finalized. Deliberately weak and generic — deck filler
 representing one of the Amegakure civilians who rallied to Yahiko's
@@ -1337,7 +1359,7 @@ or reduce it.
 **Akatsuki Hideout** — Synergy: Akatsuki, 2 Chakra. *(full nuance:
 design/CHARACTER_LOG.md)*
 Effect: Akatsuki-Synergy characters you control have their Upkeep
-(§6.5) reduced by 1 (minimum 0).
+(§6.5) reduced by 1 (minimum 1).
 
 ---
 
@@ -1372,8 +1394,8 @@ has no specified order — assume the controller chooses which of his
 remaining Styles to drop each time.
 **Open question:** the card doesn't say whether "revives" means
 re-entering with full HP (like a character freshly entering play) or
-something else — treat it as a fresh entry (full HP, new summoning
-sickness) until stated otherwise.
+something else — treat it as a fresh entry (full HP, new Field
+Orientation) until stated otherwise.
 
 ### Iron Skin
 "Physical" and "elemental" aren't formally defined terms elsewhere in
@@ -1531,7 +1553,7 @@ Two different ways a Beast can leave play, with different consequences:
   Path comes back (e.g. via Naraka Path's Outer Path: Samsara of
   Heavenly Life Technique), Summon can
   immediately recreate any Beast that fizzled this way, even the same
-  turn Animal Path returns (subject to its own summoning sickness for
+  turn Animal Path returns (subject to its own Field Orientation for
   non-damaging use, §6.6).
 Keeping HP at a flat 4 across all three is a deliberate design choice —
 they're meant to be cheap, disposable, and worth losing, not investments
@@ -1660,6 +1682,11 @@ Itachi has used Mind Prison on a given enemy character, he can never use
 it on that same character again for the rest of the game, even if that
 character leaves and re-enters play.
 
+**[Updated] Duration:** the stun covers **only its controller's turn**,
+never a whole turn cycle. Cast on Itachi's turn, it lasts through their
+next turn; cast during their turn (it's Quick), it lasts for the rest of
+that turn. Previously it ran through Itachi's following turn as well.
+
 ### Crow Clone
 Ties directly into §9's negating-a-target timing model — this is a
 self-directed target-negation Reactive Technique, triggered after an
@@ -1694,6 +1721,8 @@ do so again on them after this), and (2) it must not have dealt more
 than 6 damage to Itachi across the whole game so far — a permanent,
 cumulative, whole-game damage tracker on that specific enemy character,
 not a per-turn or per-encounter check.
+
+**[Updated] Duration:** the stun lasts **1 turn cycle** (was 2).
 
 ---
 
@@ -1782,10 +1811,10 @@ opponent's on-defeat effects (e.g. Kakuzu's own Ultimate, "whenever
 Kakuzu defeats any shinobi") the way actually killing a character would,
 because Sasori isn't being defeated at that moment, just changing form.
 Hollow Body enters at its own full HP/Pool (not a continuation of
-whatever damage Hiruko had taken) and with summoning sickness (§6.6) —
+whatever damage Hiruko had taken) and with Field Orientation (§6.6) —
 an explicit ruling, since the alternative (letting Hollow Body act
 immediately, treating this as pure narrative continuation rather than a
-fresh entry) was also defensible; summoning sickness was chosen as the
+fresh entry) was also defensible; Field Orientation was chosen as the
 safer default, consistent with how every other "enters/re-enters play"
 moment in the game works (Retreat's return, Naraka Path's Outer Path:
 Samsara of Heavenly Life Technique, a fresh character played from the
@@ -2540,7 +2569,7 @@ calls, flagged for review:
 - **No Retreat exception** — unlike Deploy Medic Corps, the card text
   doesn't override Retreat's targeting immunity (§6.5b), so a Retreated
   character can't be targeted.
-- **Timing:** a non-combat Normal-speed card — Main Phase only (§15.6).
+- **Timing:** a healing card — Main or Combat Phase (§15.6).
 - **Enabler:** it has a Type (Ninjutsu), so like every technique Jutsu
   it needs an enabling character in play; Style: None means any of your
   characters can enable it.
@@ -2551,7 +2580,7 @@ calls, flagged for review:
 **[New]** Added with 3 copies in the preset Hand Deck. Interpretive
 calls, flagged for review:
 - **"Until its controller's next turn" is read as *through* that turn**
-  (the same duration as Mind Prison and Kakuzu's revival stun). Enemies
+  (the same duration as Kakuzu's revival stun). Enemies
   only pool on their own turn, so a lock that ended as their turn began
   would do nothing when this is cast on your own turn. Cast on your
   turn, it covers their next turn; cast on their turn (it's Quick), it
@@ -2702,7 +2731,8 @@ The deck's first Terrain card. Interpretive calls, flagged for review:
 - **Stacks with the Synergy upkeep discount (§6.5)** — the Hideout's −1
   applies to each Akatsuki-Synergy character you control (not capped),
   and the board-wide Synergy discount (max −2) then comes off your
-  most expensive remaining upkeep; no character goes below 0.
+  most expensive remaining upkeep; no character goes below 1 (one that
+  already costs 0 stays free).
 - **Doesn't touch starting-character Upkeep Phase effects (§6.5)** — a
   starting character follows its own bespoke Rank-scaled table (free
   upkeep, a Chakra gain, etc.), not the standard per-rank Upkeep table
@@ -2956,7 +2986,7 @@ Engine flags: Elemental Versatility (first elemental jutsu each turn −1); Insp
 
 ### Amegakure Civilian Rebel — D Rank
 
-HP 3 · Pool capacity 1 · Styles: None · Synergy: Akatsuki
+HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 
 | Ability | Cost | Speed | Style | Type | Damaging | Targets | Target side | Notes |
 |---|---|---|---|---|---|---|---|---|
@@ -2977,10 +3007,10 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: Akatsuki
 | Lightning Substitution | 3 | jutsu | variable | Reactive | Lightning | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
 | Water Substitution | 3 | jutsu | variable | Reactive | Water | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
 | Incoming Mission Assignment | 2 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |
-| Chakra Transfer | 2 | jutsu | 0 | Normal | None | Ninjutsu | Main only | 2 (ally) | player chooses amount |
+| Chakra Transfer | 2 | jutsu | 0 | Normal | None | Ninjutsu | Main or Combat | 2 (ally) | player chooses amount |
 | Field Intelligence | 2 | jutsu | 1 | Normal | None | None | Main only | none/auto | — |
-| Deploy Medic Corps | 2 | jutsu | 2 | Normal | None | Ninjutsu | Main only | 1 (ally) | may target a Retreated ally |
-| Medical Chakra Infusion | 3 | jutsu | 1 | Normal | None | Ninjutsu | Main only | 1 (ally) | characters only, not tokens |
+| Deploy Medic Corps | 2 | jutsu | 2 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | may target a Retreated ally |
+| Medical Chakra Infusion | 3 | jutsu | 1 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | characters only, not tokens |
 | Chakra Suppression | 3 | jutsu | 2 | Quick | None | Sealing | — | 1 (enemy) | characters only, not tokens |
 | Fire Style: Fireball Jutsu | 1 | jutsu | variable | Normal | Fire | Ninjutsu | Combat only | 3 (any) | Attack-type (once/turn by name); cheaper if paid from enabler's Pool |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |

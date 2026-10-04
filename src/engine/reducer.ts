@@ -1,5 +1,6 @@
+import { PHASE_ORDER } from './types';
 import { placeChakraSource, poolChakra, tapChakraSource } from './chakra';
-import { advancePhase, appendLog } from './phases/phaseMachine';
+import { advancePhase, appendLog, appendWarning } from './phases/phaseMachine';
 import { activateAbility } from './abilities';
 import { passPriority } from './stack';
 import { tickAllPoison } from './poison';
@@ -43,7 +44,7 @@ import {
   toggleStatus,
   untapChakraSource,
 } from './trust/manual';
-import type { GameAction, GameState, PlayerId, PlayerState } from './types';
+import type { GameAction, GameState, PlayerId, PlayerState, Phase } from './types';
 
 /**
  * SPEC.md §3: initial Setup isn't done until both players have chosen a
@@ -107,7 +108,7 @@ function drainPendingReinforcements(state: GameState): GameState {
 /**
  * SPEC.md §3: the first-player coin flip happens once BOTH players have
  * finished Setup. Starting characters were placed before anyone knew who
- * goes first, so their summoning-sickness turn is set here (turn 1 for the
+ * goes first, so their Field Orientation turn is set here (turn 1 for the
  * first player, turn 2 for the second).
  */
 function flipForFirstPlayer(state: GameState): GameState {
@@ -123,10 +124,17 @@ function flipForFirstPlayer(state: GameState): GameState {
       frontRow: p.frontRow.map((t) => (t ? { ...t, status: { ...t.status, enteredTurn } } : t)),
     };
   }
-  return appendLog(
+  // Both picks were kept secret until now (§3) — reveal them together.
+  const startingName = (id: PlayerId) => {
+    const p = players[id];
+    if (p.frontRow.some((t) => t?.extra.painPath)) return 'Pain of the Six Paths';
+    return p.backRow.find((c) => c?.instanceId === p.startingCharacterInstanceId)?.name ?? 'a character';
+  };
+  const revealed = appendLog(
     { ...state, players, firstPlayerPending: false, firstPlayer: first, activePlayer: first, priorityPlayer: first },
-    `Setup complete — coin flip: ${first} goes first (and skips their first Draw).`,
+    `Starting characters revealed — p1: ${startingName('p1')}, p2: ${startingName('p2')}.`,
   );
+  return appendLog(revealed, `Setup complete — coin flip: ${first} goes first.`);
 }
 
 /** Anything a player still has to answer before the game should move to the next phase — null when nothing is outstanding. */
@@ -217,16 +225,45 @@ function guardedAdvance(state: GameState, advance: (s: GameState) => GameState):
   const outstanding = outstandingDecision(state);
   if (!outstanding) return advance(state);
   if (state.rules !== 'trust') return appendLog(state, `Can't move to the next phase yet: ${outstanding}`);
-  return advance(appendLog(state, `Moving on with a decision still open — ${outstanding} (trust mode — allowed).`));
+  return advance(appendWarning(state, `Moving on with a decision still open — ${outstanding} (trust mode — allowed).`));
 }
 
 const AUTO_PHASES = new Set(['Untap', 'Upkeep']);
 
+/**
+ * Clicking a phase (this turn): forward steps through each phase with its
+ * normal automation (Upkeep payment, auto-draw) and checks; back just moves
+ * the marker — nothing is re-run — and is a trust-mode correction only.
+ */
+function goToPhase(state: GameState, target: Phase): GameState {
+  if (state.staged.length > 0 || state.pendingFinalize) return appendLog(state, 'Resolve or withdraw the declared actions before changing phase.');
+  const from = PHASE_ORDER.indexOf(state.phase);
+  const to = PHASE_ORDER.indexOf(target);
+  if (to === from) return state;
+  if (to < from) {
+    if (state.rules !== 'trust') return appendLog(state, `Can't go back to ${target} under the strict rules.`);
+    return appendWarning({ ...state, phase: target }, `${state.activePlayer} goes back to ${target} (manual) — nothing from the phases in between is undone or re-run (trust mode).`);
+  }
+  let next = state;
+  const turn = state.turn;
+  while (next.phase !== target && next.turn === turn && !next.winner) {
+    const before = next;
+    if (next.rules === 'trust' && next.phase === 'Draw' && next.options?.autoDraw !== false && !next.players[next.activePlayer].drawnThisDrawPhase) {
+      next = drawForDrawPhase(next);
+    }
+    next = guardedAdvance(next, advanceOnePhase);
+    if (next.phase === before.phase && next.turn === before.turn) break; // blocked (an open decision under the strict rules)
+  }
+  return next;
+}
+
 /** Trust mode: nobody needs to click through Untap/Upkeep — a new turn lands on the Draw Phase, waiting for the manual draw. */
 function runToMainPhase(state: GameState): GameState {
   let next = state;
-  const skippedFirstDraw = (s: GameState) => s.phase === 'Draw' && s.turn === 1 && s.activePlayer === s.firstPlayer;
-  while (next.rules === 'trust' && (AUTO_PHASES.has(next.phase) || skippedFirstDraw(next)) && !next.winner && !setupPending(next) && !next.firstPlayerPending) {
+  // Auto-draw (on by default): the Draw Phase takes its draw and moves on, like Untap/Upkeep.
+  const autoDraw = (s: GameState) => s.phase === 'Draw' && s.options?.autoDraw !== false;
+  while (next.rules === 'trust' && (AUTO_PHASES.has(next.phase) || autoDraw(next)) && !next.winner && !setupPending(next) && !next.firstPlayerPending) {
+    if (autoDraw(next) && !next.players[next.activePlayer].drawnThisDrawPhase) next = drawForDrawPhase(next);
     next = advanceOnePhase(next);
   }
   return next;
@@ -234,8 +271,17 @@ function runToMainPhase(state: GameState): GameState {
 
 const trustHooks: TrustHooks = { advance: (s) => runToMainPhase(advanceOnePhase(s)) };
 
+/** SPEC.md §10b: a Mission is discarded the moment its Condition fails — checked after every action. */
+function checkMissions(state: GameState): GameState {
+  let next = state;
+  for (const player of ['p1', 'p2'] as PlayerId[]) {
+    if (next.players[player].missionsInPlay.length > 0) next = runMissionTrigger(next, player, { kind: 'check' });
+  }
+  return next;
+}
+
 function drainAll(state: GameState): GameState {
-  return drainPendingMissionDefeatEvents(drainPendingReinforcements(state));
+  return checkMissions(drainPendingMissionDefeatEvents(drainPendingReinforcements(state)));
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -244,7 +290,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   return result.rules === 'trust' ? runToMainPhase(result) : result;
 }
 
-const SETUP_ACTIONS = new Set<GameAction['type']>(['CHOOSE_CHARACTER', 'MULLIGAN', 'SET_RULES']);
+const SETUP_ACTIONS = new Set<GameAction['type']>(['CHOOSE_CHARACTER', 'MULLIGAN', 'SET_RULES', 'SET_OPTION']);
 
 function reduce(state: GameState, action: GameAction): GameState {
   const drained = drainAll(state);
@@ -258,6 +304,13 @@ function reduce(state: GameState, action: GameAction): GameState {
       return guardedAdvance(drained, advanceOnePhase);
     case 'SET_RULES':
       return setRules(drained, action.rules);
+    case 'GO_TO_PHASE':
+      return goToPhase(drained, action.phase);
+    case 'SET_OPTION':
+      return appendLog(
+        { ...drained, options: { ...drained.options, [action.option]: action.value } },
+        `${action.option === 'autoDraw' ? 'Auto-draw' : 'Always confirm'} turned ${action.value ? 'on' : 'off'}.`,
+      );
     case 'DRAW_PHASE_CARD': {
       const drawn = drawForDrawPhase(drained);
       // Trust mode: nothing else happens in the Draw Phase, so taking the draw moves straight on to Main Phase 1.
@@ -301,7 +354,7 @@ function reduce(state: GameState, action: GameAction): GameState {
     case 'MULLIGAN':
       return mulligan(drained, action.player);
     case 'PLAY_CHARACTER':
-      return playCharacter(drained, action.instanceId);
+      return playCharacter(drained, action.instanceId, action.slot);
     case 'PLAY_HAND_CARD': {
       // A hand card's controller is whoever's hand it's in — not necessarily
       // the active player (Reactive-speed cards are played on the opponent's
@@ -315,9 +368,9 @@ function reduce(state: GameState, action: GameAction): GameState {
   if (!trust) return drained;
   switch (action.type) {
     case 'STAGE_ABILITY':
-      return stageAbility(drained, action.instanceId, action.abilityId, action.targetInstanceIds, action.payFromPool, trustHooks, action.choices);
+      return stageAbility(drained, action.instanceId, action.abilityId, action.targetInstanceIds, action.payFromPool, trustHooks, action.choices, action.force);
     case 'STAGE_CARD':
-      return stageCard(drained, action.instanceId, action.enablingInstanceId, action.targetInstanceIds, action.payFromPool, action.amount, trustHooks);
+      return stageCard(drained, action.instanceId, action.enablingInstanceId, action.targetInstanceIds, action.payFromPool, action.amount, trustHooks, action.force);
     case 'RETARGET_STAGED':
       return retargetStaged(drained, action.stagedId, action.targetInstanceIds, trustHooks);
     case 'UNSTAGE':

@@ -1,4 +1,5 @@
-import { otherPlayer } from './phases/phaseMachine';
+import { appendLog, otherPlayer } from './phases/phaseMachine';
+import { enqueueChoice, registerChoiceResolver } from './choices';
 import type {
   BoardOccupant,
   CharacterInstance,
@@ -24,13 +25,103 @@ export function isCharacter(occ: BoardOccupant): occ is CharacterInstance {
  * 10-slot cap, separate from any card-specific token cap the caller should
  * check itself before calling this).
  */
-export function placeToken(state: GameState, player: PlayerId, token: TokenInstance): GameState {
+export function placeToken(state: GameState, player: PlayerId, token: TokenInstance, opts: { askPosition?: boolean } = {}): GameState {
   const p = state.players[player];
-  const openIndex = p.frontRow.findIndex((t) => t === null);
-  if (openIndex === -1) return state;
+  const legal = legalTokenSlots(state, player);
+  if (legal.length === 0) return state;
   const frontRow = p.frontRow.slice();
-  frontRow[openIndex] = token;
-  return { ...state, players: { ...state.players, [player]: { ...p, frontRow } } };
+  // A token has Field Orientation the turn it's created (§6.6), like a
+  // character — unless it has Ambush (e.g. Deidara's Clay Spiders) or its
+  // creator already set the turn it entered.
+  frontRow[legal[0]] = token.status.enteredTurn === -1 ? { ...token, status: { ...token.status, enteredTurn: state.turn } } : token;
+  const next = { ...state, players: { ...state.players, [player]: { ...p, frontRow } } };
+  // With other tokens already out, its controller picks where it goes (next to one of them), as part
+  // of creating it — tokens can't be moved afterwards (§9). The first token on an empty row just goes in.
+  const hadTokens = p.frontRow.some((t) => t !== null);
+  if (!opts.askPosition || !hadTokens || legal.length < 2) return next;
+  return enqueueChoice(next, {
+    player,
+    prompt: `Where does the new ${token.name} go?`,
+    options: legal.map((i) => ({ id: String(i), label: `Front slot ${i + 1}` })),
+    min: 1,
+    max: 1,
+    resolverId: TOKEN_SLOT_CHOICE,
+    data: { tokenId: token.instanceId },
+  });
+}
+
+/**
+ * SPEC.md §9 positioning: a new character goes next to one of yours if it
+ * can — into an empty slot beside a character, or into an occupied slot,
+ * pushing the characters there aside. With no character in play, any slot.
+ */
+export function legalCharacterSlots(state: GameState, player: PlayerId): number[] {
+  const row = state.players[player].backRow;
+  const filled = row.flatMap((c, i) => (c ? [i] : []));
+  if (filled.length === row.length) return [];
+  if (filled.length === 0) return row.map((_, i) => i);
+  const besideOne = row.flatMap((c, i) => (c === null && (row[i - 1] || row[i + 1]) ? [i] : []));
+  return [...besideOne, ...filled].sort((a, b) => a - b);
+}
+
+/**
+ * Tokens: a new token goes next to one of your tokens if it can (any empty
+ * front slot otherwise). Unlike characters, tokens never push others aside —
+ * once created, a token isn't repositioned.
+ */
+export function legalTokenSlots(state: GameState, player: PlayerId, ignoreId?: string): number[] {
+  const row = state.players[player].frontRow.map((t) => (t && t.instanceId === ignoreId ? null : t));
+  const empty = row.flatMap((t, i) => (t === null ? [i] : []));
+  if (empty.length === row.length) return empty;
+  const beside = empty.filter((i) => row[i - 1] || row[i + 1]);
+  return beside.length > 0 ? beside : empty;
+}
+
+/** Puts `item` at `index`; if that slot is taken, the occupants between it and the nearest empty slot each shift one step toward that gap. */
+function insertIntoRow<T>(row: (T | null)[], index: number, item: T): (T | null)[] | null {
+  const out = row.slice();
+  if (out[index] === null) {
+    out[index] = item;
+    return out;
+  }
+  let gap = -1;
+  for (let d = 1; d < out.length && gap === -1; d++) {
+    if (index + d < out.length && out[index + d] === null) gap = index + d;
+    else if (index - d >= 0 && out[index - d] === null) gap = index - d;
+  }
+  if (gap === -1) return null;
+  if (gap > index) for (let i = gap; i > index; i--) out[i] = out[i - 1];
+  else for (let i = gap; i < index; i++) out[i] = out[i + 1];
+  out[index] = item;
+  return out;
+}
+
+const TOKEN_SLOT_CHOICE = 'token-slot';
+
+registerChoiceResolver(TOKEN_SLOT_CHOICE, (state, choice, optionIds) => {
+  const tokenId = choice.data.tokenId as string;
+  const slot = Number(optionIds[0]);
+  const p = state.players[choice.player];
+  const from = p.frontRow.findIndex((t) => t?.instanceId === tokenId);
+  if (from === -1 || from === slot) return state;
+  // Re-check against the row as it is now (another new token may have landed since).
+  if (!legalTokenSlots(state, choice.player, tokenId).includes(slot) || p.frontRow[slot] !== null) {
+    return appendLog(state, `Front slot ${slot + 1} isn't available any more — the token stays where it is.`);
+  }
+  const frontRow = p.frontRow.slice();
+  frontRow[slot] = frontRow[from];
+  frontRow[from] = null;
+  return { ...state, players: { ...state.players, [choice.player]: { ...p, frontRow } } };
+});
+
+/** Pain of the Six Paths has no CharacterInstance — his 6 Path tokens all point at this nominal id. */
+export function painUnitId(player: PlayerId): string {
+  return `pain-${player}`;
+}
+
+/** This player's Pain Path tokens in play (not his Beasts) — while any remain, Pain is a character in play. */
+export function painPaths(state: GameState, player: PlayerId): TokenInstance[] {
+  return state.players[player].frontRow.filter((t): t is TokenInstance => !!t?.extra.painPath);
 }
 
 export function countTokensOfType(state: GameState, player: PlayerId, defId: string): number {
@@ -43,12 +134,14 @@ export function countTokensOfType(state: GameState, player: PlayerId, defId: str
  * (with a log note) if the back row is full (§6.5's 5-character cap) — the
  * caller should generally check room before paying any cost.
  */
-export function placeCharacter(state: GameState, player: PlayerId, character: CharacterInstance): GameState {
+export function placeCharacter(state: GameState, player: PlayerId, character: CharacterInstance, slot?: number): GameState {
   const p = state.players[player];
-  const openIndex = p.backRow.findIndex((c) => c === null);
-  if (openIndex === -1) return state;
-  const backRow = p.backRow.slice();
-  backRow[openIndex] = character;
+  const legal = legalCharacterSlots(state, player);
+  if (legal.length === 0) return state;
+  // The chosen slot if it's legal; otherwise the first empty legal slot.
+  const target = slot !== undefined && legal.includes(slot) ? slot : (legal.find((i) => p.backRow[i] === null) ?? legal[0]);
+  const backRow = insertIntoRow(p.backRow, target, character);
+  if (!backRow) return state;
   return { ...state, players: { ...state.players, [player]: { ...p, backRow } } };
 }
 
@@ -167,7 +260,7 @@ export function getCrossPatternTargets(
   return [left, right, front, back].filter((o): o is BoardOccupant => o !== null);
 }
 
-export function isSummoningSick(state: GameState, occ: BoardOccupant): boolean {
+export function hasFieldOrientation(state: GameState, occ: BoardOccupant): boolean {
   if (occ.status.hasAmbush) return false;
   return occ.status.enteredTurn === state.turn;
 }
@@ -199,4 +292,49 @@ export function getLegalTargets(
     return results;
   }
   return results;
+}
+
+/** Every unit id currently on the board, both players, both rows. */
+export function occupantIds(state: GameState): Set<string> {
+  const ids = new Set<string>();
+  for (const player of ['p1', 'p2'] as PlayerId[]) {
+    for (const o of [...state.players[player].backRow, ...state.players[player].frontRow]) if (o) ids.add(o.instanceId);
+  }
+  return ids;
+}
+
+/** Removes every mention of `goneId` from a tracked value: list entries naming it, record keys equal to it, fields pointing at it. */
+function scrub(value: unknown, goneId: string): unknown {
+  if (value === goneId) return undefined;
+  if (Array.isArray(value)) {
+    return value
+      .filter((x) => !(x === goneId || (x && typeof x === 'object' && Object.values(x as object).includes(goneId))))
+      .map((x) => scrub(x, goneId));
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      if (key === goneId) continue;
+      const kept = scrub(v, goneId);
+      if (kept !== undefined) out[key] = kept;
+    }
+    return out;
+  }
+  return value;
+}
+
+/**
+ * A unit left play (defeated, fizzled, returned to hand): lingering effects
+ * other units track about it — scheduled burns or heals aimed at it, per-target
+ * tallies, a Curse or target lock on it — are dropped, so nothing keeps
+ * "happening" to a unit that's gone or credits anyone for it.
+ */
+export function purgeReferencesTo(state: GameState, goneIds: Iterable<string>): GameState {
+  let next = state;
+  for (const goneId of goneIds) {
+    for (const id of occupantIds(next)) {
+      next = patchOccupant(next, id, (o) => ({ ...o, extra: scrub(o.extra, goneId) as Record<string, unknown> }));
+    }
+  }
+  return next;
 }

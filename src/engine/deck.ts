@@ -1,6 +1,7 @@
+import { painUnitId } from './board';
 import { getCharacterDeckEntry } from './characters';
 import { applyHealthLoss } from './combat';
-import { appendLog } from './phases/phaseMachine';
+import { appendLog, appendWarning } from './phases/phaseMachine';
 import { getHandCardDef } from './cards/registry';
 import { currentTax, reinforcementTax } from './playCharacter';
 import { enqueueChoice, registerChoiceResolver } from './choices';
@@ -128,12 +129,9 @@ export function drawForDrawPhase(state: GameState): GameState {
   let working = state;
   if (state.phase !== 'Draw') {
     if (!relaxed) return appendLog(state, `${player} can only take their Draw Phase draw during the Draw Phase.`);
-    working = appendLog(working, `${player} takes their Draw Phase draw outside the Draw Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+    working = appendWarning(working, `${player} takes their Draw Phase draw outside the Draw Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   if (p.drawnThisDrawPhase) return appendLog(working, `${player} has already drawn this turn.`);
-  if (state.turn === 1 && player === state.firstPlayer) {
-    return appendLog(working, `${player} goes first, so their very first turn skips the Draw Phase draw.`);
-  }
   let next = drawCard(working, player);
   next = { ...next, players: { ...next.players, [player]: { ...next.players[player], drawnThisDrawPhase: true } } };
   return appendLog(next, `${player} draws for the turn.`);
@@ -159,7 +157,7 @@ export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 
   if (p.characterDeck.length === 0) return appendLog(state, `${player}'s Character Deck is empty.`);
   if (mode === 'manual' && !(MAIN_PHASES.has(state.phase) && state.activePlayer === player)) {
     if (!relaxed) return appendLog(state, `${player} can only draw from the Character Deck during their own Main Phase.`);
-    working = appendLog(working, `${player} draws from the Character Deck outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+    working = appendWarning(working, `${player} draws from the Character Deck outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
 
   const wp = working.players[player];
@@ -167,7 +165,7 @@ export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 
   const discountUsed = mode === 'reinforcement-free' ? 0 : Math.min(reinforcementTax(wp.reinforcementsPlayed), wp.nextReinforcementDiscount);
   if (fullCost > wp.genericChakraAvailable) {
     if (!relaxed) return appendLog(working, `${player} doesn't have ${fullCost} Chakra available for the Character Deck draw.`);
-    working = appendLog(working, `${player} is short ${fullCost - wp.genericChakraAvailable} Chakra for the Character Deck draw (trust mode — allowed).`);
+    working = appendWarning(working, `${player} is short ${fullCost - wp.genericChakraAvailable} Chakra for the Character Deck draw (trust mode — allowed).`);
   }
   const paid = Math.min(fullCost, wp.genericChakraAvailable);
   let next: GameState = {
@@ -291,13 +289,14 @@ export function chooseCharacter(state: GameState, player: PlayerId, mainPickId: 
   };
 
   if (pending.reason === 'setup') {
-    // §3: the starting character has summoning sickness — on its controller's first turn, which is turn 2 for whoever goes second.
+    // §3: the starting character has Field Orientation — on its controller's first turn, which is turn 2 for whoever goes second.
     next = mainEntry.spawn(next, player, player === next.firstPlayer ? 1 : 2, false);
     next = {
       ...next,
-      players: { ...next.players, [player]: { ...next.players[player], startingCharacterInstanceId: findLatestSpawnedId(next, player) } },
+      players: { ...next.players, [player]: { ...next.players[player], startingCharacterInstanceId: mainEntry.id === 'pain' ? painUnitId(player) : findLatestSpawnedId(next, player) } },
     };
-    next = appendLog(next, `${player} chooses ${mainEntry.name} as their starting character.`);
+    // Kept secret until both players have confirmed (revealed together when Setup completes, §3).
+    next = appendLog(next, `${player} has chosen their starting character.`);
   } else {
     characterHandEntryCounter += 1;
     const mainEntryHandItem = { kind: 'character' as const, instanceId: `${player}-char-hand-${characterHandEntryCounter}`, entryId: mainPickId };

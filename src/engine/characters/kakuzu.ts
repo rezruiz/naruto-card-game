@@ -163,7 +163,7 @@ registerCharacter({
   id: DEF_ID,
   name: 'Kakuzu',
   rank: 'A',
-  baseMaxHP: 6,
+  baseMaxHP: 5,
   basePoolCapacity: poolCapacityForHearts(5),
   styles: ['Earth', 'Wind', 'Lightning', 'Fire'],
   abilities: [earthGrudgeFear, ironSkin, pressureDamage, searingMigraine, falseDarkness],

@@ -1,4 +1,4 @@
-import { patchCharacter } from './board';
+import { painPaths, painUnitId, patchCharacter, patchOccupant } from './board';
 import { getCharacterDef } from './characters/registry';
 import { getHandCardDef } from './cards/registry';
 import { UPKEEP_BY_RANK } from './ranks';
@@ -12,7 +12,7 @@ import type { CharacterInstance, GameState, PlayerId } from './types';
  * C/B/A/S are covered by the card text; an uncovered rank (D, SS, SSS) falls
  * back to the normal table rather than being silently free.
  */
-function startingCharacterTreatment(
+export function startingCharacterTreatment(
   rank: CharacterInstance['rank'],
 ): { kind: 'grant'; amount: number } | { kind: 'pay'; amount: number } | null {
   switch (rank) {
@@ -32,6 +32,9 @@ function startingCharacterTreatment(
 /** SPEC.md §6.5's cap on the whole board's Synergy discount. */
 export const SYNERGY_DISCOUNT_CAP = 2;
 
+/** SPEC.md §6.5: Synergy/Terrain discounts never take a character's Upkeep below 1 (a character whose Upkeep is already 0 stays free). */
+export const MIN_DISCOUNTED_UPKEEP = 1;
+
 /**
  * SPEC.md §6.5 — the Synergy discount is board-wide: −1 upkeep for each
  * character past the first in your largest group sharing a Synergy tag,
@@ -40,26 +43,44 @@ export const SYNERGY_DISCOUNT_CAP = 2;
  */
 export function boardSynergyDiscount(state: GameState, player: PlayerId): number {
   const counts = new Map<string, number>();
-  for (const c of state.players[player].backRow) {
-    if (!c) continue;
-    for (const tag of new Set(getCharacterDef(c.defId)?.synergy ?? [])) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  for (const c of upkeepUnits(state, player)) {
+    for (const tag of new Set(c.synergy)) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
   const largest = Math.max(0, ...counts.values());
   return Math.min(SYNERGY_DISCOUNT_CAP, Math.max(0, largest - 1));
 }
 
 /** SPEC.md §10a — a Terrain in play may reduce a matching-Synergy character's Upkeep by 1 (e.g. Akatsuki Hideout), on top of the character-count discount above. */
-function terrainDiscount(state: GameState, player: PlayerId, character: CharacterInstance): number {
+function terrainDiscount(state: GameState, player: PlayerId, unit: UpkeepUnit): number {
   const terrain = state.players[player].terrainInPlay;
   if (!terrain) return 0;
-  const terrainDef = getHandCardDef(terrain.defId);
-  const mySynergy = getCharacterDef(character.defId)?.synergy ?? [];
-  const terrainSynergy = terrainDef?.synergy ?? [];
-  return terrainSynergy.some((tag) => mySynergy.includes(tag)) ? 1 : 0;
+  const terrainSynergy = getHandCardDef(terrain.defId)?.synergy ?? [];
+  return terrainSynergy.some((tag) => unit.synergy.includes(tag)) ? 1 : 0;
+}
+
+/** Something that pays Upkeep as one character: a back-row character, or Pain of the Six Paths (his Path tokens, while any stands). */
+interface UpkeepUnit {
+  instanceId: string;
+  name: string;
+  rank: CharacterInstance['rank'];
+  synergy: string[];
+}
+
+/** Pain's Synergy (SPEC §13) — he has no CharacterDef of his own to read it from. */
+const PAIN_SYNERGY = ['Akatsuki'];
+
+function upkeepUnits(state: GameState, player: PlayerId): UpkeepUnit[] {
+  const units: UpkeepUnit[] = state.players[player].backRow
+    .filter((c): c is CharacterInstance => c !== null)
+    .map((c) => ({ instanceId: c.instanceId, name: c.name, rank: c.rank, synergy: getCharacterDef(c.defId)?.synergy ?? [] }));
+  if (painPaths(state, player).length > 0) {
+    units.push({ instanceId: painUnitId(player), name: 'Pain of the Six Paths', rank: 'S', synergy: PAIN_SYNERGY });
+  }
+  return units;
 }
 
 interface UpkeepLine {
-  character: CharacterInstance;
+  character: UpkeepUnit;
   isStarting: boolean;
   /** The starting character's C/B treatment: gains Chakra instead of paying. */
   grant?: number;
@@ -73,13 +94,13 @@ interface UpkeepLine {
  * What every character of this player owes this Upkeep: its base (the Rank
  * table, or the starting character's own amount), minus a matching Terrain,
  * then the board-wide Synergy discount spread over the most expensive costs
- * first (so it always saves as much as it can; never below 0 each).
+ * first (so it always saves as much as it can). Discounts stop at 1 per
+ * character; a character that already costs 0 stays free.
  */
 function upkeepCosts(state: GameState, player: PlayerId): UpkeepLine[] {
   const p = state.players[player];
   const lines: UpkeepLine[] = [];
-  for (const character of p.backRow) {
-    if (!character) continue;
+  for (const character of upkeepUnits(state, player)) {
     const isStarting = character.instanceId === p.startingCharacterInstanceId;
     const treatment = isStarting ? startingCharacterTreatment(character.rank) : null;
     if (treatment?.kind === 'grant') {
@@ -87,13 +108,14 @@ function upkeepCosts(state: GameState, player: PlayerId): UpkeepLine[] {
       continue;
     }
     const base = treatment?.kind === 'pay' ? treatment.amount : UPKEEP_BY_RANK[character.rank];
-    const terrain = treatment?.kind === 'pay' ? 0 : Math.min(base, terrainDiscount(state, player, character));
+    // Discounts can't take a paying character below 1 (§6.5); one that's already free stays free.
+    const terrain = treatment?.kind === 'pay' ? 0 : Math.min(Math.max(0, base - MIN_DISCOUNTED_UPKEEP), terrainDiscount(state, player, character));
     lines.push({ character, isStarting, base, terrain, synergy: 0, amount: base - terrain });
   }
   let discount = boardSynergyDiscount(state, player);
   const byCost = lines.filter((l) => l.grant === undefined).sort((a, b) => b.amount - a.amount);
   while (discount > 0) {
-    const target = byCost.filter((l) => l.amount > 0).sort((a, b) => b.amount - a.amount)[0];
+    const target = byCost.filter((l) => l.amount > MIN_DISCOUNTED_UPKEEP).sort((a, b) => b.amount - a.amount)[0];
     if (!target) break;
     target.amount -= 1;
     target.synergy += 1;
@@ -103,7 +125,18 @@ function upkeepCosts(state: GameState, player: PlayerId): UpkeepLine[] {
 }
 
 function setDisabled(state: GameState, instanceId: string, disabled: boolean): GameState {
+  // Pain is his Path tokens: Disabling (or re-enabling) Pain applies to every Path.
+  const pain = (['p1', 'p2'] as PlayerId[]).find((pl) => painUnitId(pl) === instanceId);
+  if (pain) {
+    let next = state;
+    for (const path of painPaths(state, pain)) next = patchOccupant(next, path.instanceId, (o) => ({ ...o, status: { ...o.status, disabled } }));
+    return next;
+  }
   return patchCharacter(state, instanceId, (c) => ({ ...c, status: { ...c.status, disabled } }));
+}
+
+function unitName(state: GameState, player: PlayerId, instanceId: string): string {
+  return upkeepUnits(state, player).find((u) => u.instanceId === instanceId)?.name ?? 'A character';
 }
 
 function grantDirectly(state: GameState, instanceId: string, amount: number): GameState {
@@ -200,7 +233,7 @@ function payOne(state: GameState, player: PlayerId, entry: Owed): GameState {
 }
 
 function disableOne(state: GameState, player: PlayerId, entry: Owed): GameState {
-  const name = state.players[player].backRow.find((c) => c?.instanceId === entry.instanceId)?.name ?? 'A character';
+  const name = unitName(state, player, entry.instanceId);
   return appendLog(setDisabled(state, entry.instanceId, true), `${name}'s Upkeep (${entry.cost}) can't be paid — it's Disabled.`);
 }
 
@@ -223,7 +256,7 @@ function payInOrder(state: GameState, player: PlayerId, owed: Owed[]): GameState
     } else if (affordable === 0) {
       for (const e of group) next = disableOne(next, player, e);
     } else {
-      const nameOf = (id: string) => next.players[player].backRow.find((c) => c?.instanceId === id)?.name ?? id;
+      const nameOf = (id: string) => unitName(next, player, id);
       return enqueueChoice(next, {
         player,
         prompt: `Upkeep: you can pay for ${affordable} of these ${group.length} characters (${cost} Chakra each) — choose which; the others are Disabled.`,

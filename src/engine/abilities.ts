@@ -1,6 +1,6 @@
-import { appendLog } from './phases/phaseMachine';
-import { findOccupant, isCharacter, isSummoningSick, patchCharacter, patchOccupant } from './board';
-import { canActivateNormalSpeed, pushStackItem } from './stack';
+import { appendLog, appendWarning } from './phases/phaseMachine';
+import { findOccupant, isCharacter, hasFieldOrientation, patchCharacter, patchOccupant } from './board';
+import { canActivateNormalSpeed, pushStackItem, describeCost } from './stack';
 import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
 import { getCharacterDef, getTokenDef } from './characters/registry';
 
@@ -37,6 +37,8 @@ export interface AbilityDef {
   style: Style;
   type: AbilityType;
   isDamaging?: boolean;
+  /** The token(s) this ability creates — the UI offers their card text as details (e.g. Animal Path's Beasts). */
+  summons?: { defId: string; name: string }[];
   isUltimate?: boolean;
   isForbidden?: boolean;
   usesPerTurn?: number;
@@ -244,13 +246,13 @@ export function checkLegality(
   if (maxAbilitiesPerTurn !== undefined && source.status.usedAbilitiesThisTurn.length >= maxAbilitiesPerTurn) {
     return { ok: false, reason: `${source.name} has already used its max abilities (${maxAbilitiesPerTurn}) this turn.` };
   }
-  if (ability.isDamaging && isSummoningSick(state, source)) {
-    return { ok: false, reason: `${source.name} has summoning sickness.` };
+  if (ability.isDamaging && hasFieldOrientation(state, source)) {
+    return { ok: false, reason: `${source.name} has Field Orientation.` };
   }
   if (ability.speed === 'Normal' && !canActivateNormalSpeed(state, found.player)) {
     return { ok: false, reason: `${ability.name} is Normal speed — can only be activated on an empty stack during your own Main/Combat Phase.` };
   }
-  // §4.5: a Normal-speed damage-dealing ability is a Combat Phase action; non-damaging (support) Normal-speed abilities are Main Phase actions.
+  // §4.5: a Normal-speed damage-dealing ability is a Combat Phase action; non-damaging (healing/support) Normal-speed abilities may be used in Main or Combat.
   if (ability.speed === 'Normal' && ability.isDamaging && state.phase !== 'Combat') {
     return { ok: false, reason: `${ability.name} deals damage — it can only be activated during your Combat Phase.` };
   }
@@ -361,7 +363,7 @@ function payCost(
     const fromPool = Math.min(payFromPool, pooled);
     const fromGeneric = Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
     if (fromPool + fromGeneric < cost) {
-      next = appendLog(next, `${player} is short ${cost - fromPool - fromGeneric} Chakra paying for this action (trust mode — allowed).`);
+      next = appendWarning(next, `${player} is short ${cost - fromPool - fromGeneric} Chakra paying for this action (trust mode — allowed).`);
     }
     payFromPool = fromPool;
     cost = fromPool + fromGeneric;
@@ -450,6 +452,7 @@ export function activateAbility(
     abilityId,
     abilityName: ability.name,
     targets: targetInstanceIds,
+    costText: describeCost(cost, payFromPool),
     // Targets are read from the item at resolution time — a redirect may have rewritten them while it waited.
     resolve: (resolveState, item) => ability.resolve({ ...ctx, state: resolveState, targetInstanceIds: item?.targets ?? targetInstanceIds }),
   });

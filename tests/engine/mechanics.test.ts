@@ -35,7 +35,7 @@ function use(s: GameState, attacker: string, abilityId: string, targets: string[
 const hit = (s: GameState, attacker: string, abilityId: string, targets: string[]) => resolveTop(use(s, attacker, abilityId, targets));
 
 function withPaths(s: GameState, owner: PlayerId): { s: GameState; paths: TokenInstance[] } {
-  const paths = createSixPaths(owner).map((t) => ({ ...t, status: { ...t.status, enteredTurn: -1 } }));
+  const paths = createSixPaths(owner).map((t) => ({ ...t, status: { ...t.status, enteredTurn: 0 } }));
   let next = s;
   for (const t of paths) next = placeToken(next, owner, t);
   return { s: next, paths };
@@ -62,9 +62,9 @@ describe('Damage modifiers (who hits, with what)', () => {
 
   it("Kakuzu's Iron Skin: −2 physical and −1 elemental until the end of the next turn", () => {
     let s = hit(freshCombat(), 'p1-kakuzu', 'iron-skin', ['p2-deidara']);
-    expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-kakuzu']), 'p1-kakuzu')).toBe(6); // 2 − 2
+    expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-kakuzu']), 'p1-kakuzu')).toBe(5); // 2 − 2
     s = hit(s, 'p2-kakuzu', 'searing-migraine', ['p1-kakuzu']); // Fire Ninjutsu 4 − 1
-    expect(hp(s, 'p1-kakuzu')).toBe(3);
+    expect(hp(s, 'p1-kakuzu')).toBe(2);
   });
 
   it("Rallying Words: an ally's next attack this turn deals +1", () => {
@@ -149,7 +149,7 @@ describe('Redirects (the attack moves to the defender, with the reduction)', () 
     let s = use(base, 'p2-hidan', 'triple-scythe-sweep', [deva.instanceId]);
     s = activateAbility(giveChakra({ ...s, priorityPlayer: 'p1' }, 'p1', 5), asura.instanceId, 'mechanized-guard', [], 0);
     for (let i = 0; i < 4; i++) s = gameReducer(s, { type: 'PASS_PRIORITY' });
-    expect(hp(s, deva.instanceId)).toBe(8);
+    expect(hp(s, deva.instanceId)).toBe(7); // untouched at full HP (Deva Path HP 7)
     expect(hp(s, asura.instanceId)).toBe(5); // 2 − 1
   });
 

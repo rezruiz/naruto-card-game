@@ -34,10 +34,11 @@ describe('Konan', () => {
 
   it('Paper Bomb Tag deals 5 (not 3) and spends a Charge when the player chooses to', () => {
     let state = giveChakra(withKonan(), 'p1', 3);
-    const targetHpBefore = state.players.p2.backRow[0]!.currentHP;
-    state = activateAbility(state, 'p1-konan', 'paper-bomb-tag', ['p2-kakuzu'], 0, { choices: { spendCharge: true } });
+    // Hidan (HP 9), not Kakuzu (HP 5, who'd revive from a 5-damage hit).
+    const targetHpBefore = state.players.p2.backRow[1]!.currentHP;
+    state = activateAbility(state, 'p1-konan', 'paper-bomb-tag', ['p2-hidan'], 0, { choices: { spendCharge: true } });
     state = resolveTop(state);
-    expect(state.players.p2.backRow[0]!.currentHP).toBe(targetHpBefore - 5);
+    expect(state.players.p2.backRow[1]!.currentHP).toBe(targetHpBefore - 5);
     expect(state.players.p1.backRow[0]!.extra.shikigamiCharges).toBe(0); // spent
   });
 

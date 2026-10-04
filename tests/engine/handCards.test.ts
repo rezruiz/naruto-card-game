@@ -3,6 +3,7 @@ import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { dealDamage } from '../../src/engine/combat';
 import { makeHandCardInstance } from '../../src/engine/deck';
+import { previewUpkeep } from '../../src/engine/upkeep';
 import { redactStateFor } from '../../src/engine/redact';
 import { freshMain1, giveChakra, resolveTop } from './testUtils';
 import type { GameState } from '../../src/engine/types';
@@ -147,6 +148,14 @@ describe('Medical Chakra Infusion', () => {
     expect(state.players.p1.backRow[2]!.currentHP).toBe(state.players.p1.backRow[2]!.maxHP);
   });
 
+  it('logs the cost that was paid', () => {
+    let state = giveChakra(freshMain1(), 'p1', 1);
+    state = dealDamage(state, 'p1-deidara', 3).state;
+    const { state: withCard, instanceId } = withHandCard(state, 'p1', 'medical-chakra-infusion');
+    state = gameReducer(withCard, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p1-deidara'], payFromPool: 0 });
+    expect(state.log.some((l) => l.text.includes('Medical Chakra Infusion — paid 1 Chakra'))).toBe(true);
+  });
+
   it("can't target an enemy character", () => {
     let state = giveChakra(freshMain1(), 'p1', 1);
     state = dealDamage(state, 'p2-deidara', 3).state;
@@ -264,28 +273,25 @@ describe('Chidori Interception (Assist)', () => {
 });
 
 describe('Akatsuki Hideout (Terrain)', () => {
-  it('reduces Akatsuki-Synergy characters\' Upkeep by 1, on top of the Synergy character-count discount', () => {
-    // Isolate to just Kakuzu (starting, free anyway) + Hidan so Hidan's
-    // Upkeep isn't already fully discounted by the full 5-character roster.
-    let state = freshMain1();
-    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c, i) => (i === 0 || i === 1 ? c : null)) } } };
-    // Hidan: B rank (1 upkeep), 1 Synergy match with Kakuzu -> already 0 without Terrain.
-    // Use Deidara instead (A rank, 2 upkeep) so there's a nonzero cost left to reduce.
-    const deidara = freshMain1().players.p1.backRow[2]!;
-    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c, i) => (i === 1 ? deidara : c)) } } };
+  // Kakuzu (starting, free) plus one other Akatsuki character: the Synergy discount (−1) goes to the other one.
+  const withPartner = (index: number) => {
+    const state = freshMain1();
+    const partner = state.players.p1.backRow[index]!;
+    return { state: { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c, i) => (i === 0 ? c : i === 1 ? partner : null)) } } }, partner };
+  };
+  const owed = (s: ReturnType<typeof freshMain1>, id: string) => previewUpkeep(s, 'p1').find((e) => e.instanceId === id)!.amount;
+  const hideout = (s: ReturnType<typeof freshMain1>) => ({ ...s, players: { ...s.players, p1: { ...s.players.p1, terrainInPlay: { instanceId: 't1', defId: 'akatsuki-hideout' } } } });
 
-    const withoutTerrain = state;
-    const withTerrain = { ...state, players: { ...state.players, p1: { ...state.players.p1, terrainInPlay: { instanceId: 't1', defId: 'akatsuki-hideout' } } } };
+  it("reduces Akatsuki-Synergy characters' Upkeep by 1, on top of the Synergy discount", () => {
+    const { state, partner } = withPartner(3); // Kisame, S: 3 − 1 Synergy = 2
+    expect(owed(state, partner.instanceId)).toBe(2);
+    expect(owed(hideout(state), partner.instanceId)).toBe(1);
+  });
 
-    let a = withoutTerrain;
-    while (!(a.activePlayer === 'p1' && a.phase === 'Upkeep')) a = gameReducer(a, { type: 'ADVANCE_PHASE' });
-    let b = withTerrain;
-    while (!(b.activePlayer === 'p1' && b.phase === 'Upkeep')) b = gameReducer(b, { type: 'ADVANCE_PHASE' });
-
-    // With 0 Chakra sources, Deidara (2 upkeep, 1 Synergy discount -> 1 owed) goes Disabled without the Terrain...
-    expect(a.players.p1.backRow[1]!.status.disabled).toBe(true);
-    // ...but the Terrain's extra -1 fully covers it (1 - 1 = 0).
-    expect(b.players.p1.backRow[1]!.status.disabled).toBe(false);
+  it("never takes a character's Upkeep below 1", () => {
+    const { state, partner } = withPartner(2); // Deidara, A: 2 − 1 Synergy = 1 — already at the floor
+    expect(owed(state, partner.instanceId)).toBe(1);
+    expect(owed(hideout(state), partner.instanceId)).toBe(1);
   });
 });
 
@@ -307,6 +313,17 @@ describe('Missions (SPEC.md §13a)', () => {
     state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // triggers the drain, which runs the Mission tick
     expect(state.players.p1.missionsInPlay).toHaveLength(0); // resolved and discarded
     expect(state.players.p1.hand.filter((h) => h.kind === 'card').length).toBe(cardsInHandBefore + 1); // "Draw a card"
+  });
+
+  it('a Mission is discarded the moment its Condition fails, not at its next Untap', () => {
+    let state = freshMain1();
+    const health = state.players.p1.health;
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, missionsInPlay: [{ instanceId: 'm-ur', defId: 'unshakable-resolve', owner: 'p1', extra: { healthAtPlay: health, untaps: 2, faceDown: true } }] } } };
+    state = gameReducer(state, { type: 'PASS_PRIORITY' });
+    expect(state.players.p1.missionsInPlay).toHaveLength(1); // still on track
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, health: health - 10 } } };
+    state = gameReducer(state, { type: 'PASS_PRIORITY' }); // any action — no Untap needed
+    expect(state.players.p1.missionsInPlay).toHaveLength(0);
   });
 
   it('every Mission enters face down — the opponent sees only that a Mission is there', () => {

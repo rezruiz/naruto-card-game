@@ -1,6 +1,6 @@
 import { getCharacterDeckEntry } from './characters';
 import { patchOccupant } from './board';
-import { appendLog } from './phases/phaseMachine';
+import { appendLog, appendWarning } from './phases/phaseMachine';
 import type { GameState, PlayerId } from './types';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -24,7 +24,7 @@ export function currentTax(state: GameState, player: PlayerId): number {
  * (mustPlayCharacter — your last C+ character fell while you held a C+
  * character card) ignores timing entirely, and playing a C+ card satisfies it.
  */
-export function playCharacter(state: GameState, instanceId: string): GameState {
+export function playCharacter(state: GameState, instanceId: string, slot?: number): GameState {
   const relaxed = state.rules === 'trust';
   const player =
     (['p1', 'p2'] as const).find((id) => state.players[id].hand.some((h) => h.instanceId === instanceId && h.kind === 'character')) ?? state.activePlayer;
@@ -35,7 +35,7 @@ export function playCharacter(state: GameState, instanceId: string): GameState {
   const onTime = MAIN_PHASES.has(state.phase) && state.activePlayer === player;
   if (!forced && !onTime) {
     if (!relaxed) return appendLog(state, `${player} can only play a character during their own Main Phase.`);
-    working = appendLog(working, `${player} plays a character outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+    working = appendWarning(working, `${player} plays a character outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   const handEntry = p.hand.find((h) => h.instanceId === instanceId);
   if (!handEntry || handEntry.kind !== 'character') {
@@ -51,7 +51,7 @@ export function playCharacter(state: GameState, instanceId: string): GameState {
   const beforeBackRow = working.players[player].backRow;
   // Retaliation (§6.6) or Bingo Book: Threat Level A's Ambush reward — either grants Ambush to this entry.
   const hasAmbush = p.retaliationPending;
-  let next = entry.spawn(working, player, working.turn, hasAmbush);
+  let next = entry.spawn(working, player, working.turn, hasAmbush, slot);
   const np = next.players[player];
   next = {
     ...next,
@@ -67,8 +67,8 @@ export function playCharacter(state: GameState, instanceId: string): GameState {
     },
   };
 
-  // Bingo Book: Threat Level S's reward — stricter than normal summoning
-  // sickness (blocks every ability, not just damage-dealing ones), via the
+  // Bingo Book: Threat Level S's reward — stricter than normal Field
+  // Orientation (blocks every ability, not just damage-dealing ones), via the
   // generic full-stun field. Applies to everything this card put into play —
   // the new character, or all of Pain's Path tokens (and Sasori's Kazekage).
   if (p.nextCharacterFullyStunned) {

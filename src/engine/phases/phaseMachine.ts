@@ -172,3 +172,19 @@ export function appendLog(state: GameState, text: string): GameState {
     log: [...state.log, { id: `log-${state.log.length + 1}`, turn: state.turn, phase: state.phase, text }],
   };
 }
+
+/** A log line only `player` gets to see (their declarations before the round is finalized). */
+export function appendPrivateLog(state: GameState, player: PlayerId, text: string, warning = false): GameState {
+  return {
+    ...state,
+    log: [...state.log, { id: `log-${state.log.length + 1}`, turn: state.turn, phase: state.phase, text, visibleTo: player, ...(warning ? { warning: true } : {}) }],
+  };
+}
+
+/** Trust mode: logs an action the strict rules would refuse but trust mode let through — flagged so the UI shows it as a warning. */
+export function appendWarning(state: GameState, text: string): GameState {
+  return {
+    ...state,
+    log: [...state.log, { id: `log-${state.log.length + 1}`, turn: state.turn, phase: state.phase, text, warning: true }],
+  };
+}

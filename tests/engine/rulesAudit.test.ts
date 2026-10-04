@@ -396,12 +396,14 @@ describe('Normal-speed card timing by kind', () => {
     }
   });
 
-  it("Deploy Medic Corps (a delayed heal that doesn't implicate combat) is Main Phase only", () => {
+  it('Healing/support Jutsu (Deploy Medic Corps) can be played in Main or Combat', () => {
     const retreated = patchChar(base(), 'p1', 'p1-t-C', (c) => ({ status: { ...c.status, retreated: true } }));
     expect(play(retreated, 'deploy-medic-corps', ['p1-t-C']).stack).toHaveLength(1);
-    const inCombat = play(toPhase(retreated, 'Combat'), 'deploy-medic-corps', ['p1-t-C']);
-    expect(inCombat.stack).toHaveLength(0);
-    expect(inCombat.log.at(-1)!.text).toMatch(/Main Phase/);
+    expect(play(toPhase(retreated, 'Combat'), 'deploy-medic-corps', ['p1-t-C']).stack).toHaveLength(1);
+  });
+
+  it('Field Intelligence (an information card) stays Main Phase only', () => {
+    expect(play(toPhase(base(), 'Combat'), 'field-intelligence').log.at(-1)!.text).toMatch(/Main Phase/);
   });
 });
 
@@ -474,7 +476,7 @@ describe('§6.5b Retreat', () => {
     expect(dealDamage(s, s.players.p1.backRow[0]!.instanceId, 4).state.players.p1.backRow[0]!.currentHP).toBe(5);
   });
 
-  it("returning is free, and the character is then 'summoning sick' for damage abilities but can use non-damaging ones", () => {
+  it("returning is free, and the character is then 'in Field Orientation' for damage abilities but can use non-damaging ones", () => {
     let s = retreat(setup(), 'p1-t-hitter');
     s = giveChakra(s, 'p1', 9);
     const before = s.players.p1.genericChakraAvailable;
@@ -483,7 +485,7 @@ describe('§6.5b Retreat', () => {
     expect(s.players.p1.genericChakraAvailable).toBe(before);
     const hit = run(toPhase(s, 'Combat'), { type: 'ACTIVATE_ABILITY', instanceId: 'p1-t-hitter', abilityId: 'hit', targetInstanceIds: ['p2-hidan'], payFromPool: 0 });
     expect(hit.stack).toHaveLength(0);
-    expect(hit.log.at(-1)!.text).toMatch(/summoning sickness/);
+    expect(hit.log.at(-1)!.text).toMatch(/Field Orientation/);
     const buff = run(s, { type: 'ACTIVATE_ABILITY', instanceId: 'p1-t-hitter', abilityId: 'buff', targetInstanceIds: [], payFromPool: 0 });
     expect(buff.stack).toHaveLength(1);
   });
@@ -499,7 +501,7 @@ describe('§6.5b Retreat', () => {
   });
 });
 
-describe('§6.6 Summoning sickness, Ambush, Retaliation', () => {
+describe('§6.6 Field Orientation, Ambush, Retaliation', () => {
   const fresh = () => giveChakra(setBack(freshMain1(), 'p1', ['t-hitter', null, null, null, null]), 'p1', 9);
   const sick = (s: GameState) => patchChar(s, 'p1', 'p1-t-hitter', (c) => ({ status: { ...c.status, enteredTurn: s.turn } }));
   const hit = (s: GameState) => run(toPhase(s, 'Combat'), { type: 'ACTIVATE_ABILITY', instanceId: 'p1-t-hitter', abilityId: 'hit', targetInstanceIds: ['p2-hidan'], payFromPool: 0 });
@@ -511,7 +513,7 @@ describe('§6.6 Summoning sickness, Ambush, Retaliation', () => {
     expect(hit(fresh()).stack).toHaveLength(1);
   });
 
-  it('Ambush ignores summoning sickness', () => {
+  it('Ambush ignores Field Orientation', () => {
     const s = patchChar(sick(fresh()), 'p1', 'p1-t-hitter', (c) => ({ status: { ...c.status, hasAmbush: true } }));
     expect(hit(s).stack).toHaveLength(1);
   });
@@ -605,7 +607,7 @@ describe('§4.3/§8 Draw, deck-out, and the Reinforcement Tax', () => {
     expect(s.players.p1.reinforcementOffers.length + (s.players.p1.mustPlayCharacter ? 1 : 0)).toBe(1);
   });
 
-  it("the first player skips only their very first draw; everyone else draws each Draw Phase (by clicking Draw); an empty deck costs 3 Health", () => {
+  it("everyone draws each Draw Phase (by clicking Draw) — the first player too, on turn 1; an empty deck costs 3 Health", () => {
     let s = createSetupState('p1');
     for (const p of ['p1', 'p2'] as const) {
       s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: p, entryId: s.players[p].pendingCharacterReveal!.revealed[0] });
@@ -613,13 +615,13 @@ describe('§4.3/§8 Draw, deck-out, and the Reinforcement Tax', () => {
     const drawTurn = (st: GameState) => toPhase(gameReducer(toPhase(st, 'Draw'), { type: 'DRAW_PHASE_CARD' }), 'Main1');
     const handSize = (st: GameState, p: PlayerId) => st.players[p].hand.length;
     const p1Start = handSize(s, 'p1');
-    s = drawTurn(s); // p1 turn 1: no draw
-    expect(handSize(s, 'p1')).toBe(p1Start);
+    s = drawTurn(s); // p1 turn 1: draws 1 (going first no longer skips it)
+    expect(handSize(s, 'p1')).toBe(p1Start + 1);
     const p2Start = handSize(s, 'p2');
     s = drawTurn(toPhase(s, 'Untap')); // p2 turn 2: draws 1
     expect(handSize(s, 'p2')).toBe(p2Start + 1);
     s = drawTurn(toPhase(s, 'Untap')); // p1 turn 3: draws 1
-    expect(handSize(s, 'p1')).toBe(p1Start + 1);
+    expect(handSize(s, 'p1')).toBe(p1Start + 2);
 
     const empty = { ...s, players: { ...s.players, p2: { ...s.players.p2, handDeck: [] } } };
     const hpBefore = empty.players.p2.health;

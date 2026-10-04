@@ -141,14 +141,16 @@ const unshakableResolve: HandCardDef = {
 registerMission({
   id: 'unshakable-resolve',
   tick: (state, owner, missionInstanceId, trigger) => {
-    if (trigger.kind !== 'untap') return { state, discard: false };
+    if (trigger.kind !== 'untap' && trigger.kind !== 'check') return { state, discard: false };
     const mission = state.players[owner].missionsInPlay.find((m) => m.instanceId === missionInstanceId);
     if (!mission) return { state, discard: false };
 
+    // Fails the moment 10+ Health has been lost — not at the next Untap.
     const healthAtPlay = mission.extra.healthAtPlay as number;
     if (state.players[owner].health <= healthAtPlay - 10) {
       return { state: appendLog(state, 'Unshakable Resolve fails — too much Health lost.'), discard: true };
     }
+    if (trigger.kind === 'check') return { state, discard: false };
     const untaps = (mission.extra.untaps as number) + 1;
     if (untaps < 6) {
       return { state: patchMission(state, owner, missionInstanceId, { untaps }), discard: false };
@@ -240,9 +242,11 @@ const squadFormation = missionCard('squad-formation', 'Squad Formation', 0, { ac
 registerMission({
   id: 'squad-formation',
   tick: (state, owner, missionInstanceId, trigger) => {
-    if (trigger.kind !== 'untap') return { state, discard: false };
+    if (trigger.kind !== 'untap' && trigger.kind !== 'check') return { state, discard: false };
     const mission = state.players[owner].missionsInPlay.find((m) => m.instanceId === missionInstanceId);
     if (!mission) return { state, discard: false };
+    // Before it activates, only the Untap selects the group; afterwards, its end condition is checked after every action.
+    if (trigger.kind === 'check' && !mission.extra.active) return { state, discard: false };
 
     if (!mission.extra.active) {
       const controlled = state.players[owner].backRow.filter((c) => c !== null);

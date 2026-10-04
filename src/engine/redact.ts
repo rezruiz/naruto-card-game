@@ -40,9 +40,19 @@ export function redactStateFor(state: GameState, viewerId: PlayerId): GameState 
       : c,
   );
 
+  // Declared-but-unresolved actions stay with their owner until the round is finalized.
+  const staged = state.staged.map((a) =>
+    a.owner === opponentId
+      ? { ...a, label: 'Hidden declared action', sourceInstanceId: '', abilityId: undefined, cardInstanceId: undefined, cardDefId: undefined, targets: [], choices: undefined, warnings: [], payFromPool: 0, amount: undefined }
+      : a,
+  );
+  const log = state.log.filter((entry) => !entry.visibleTo || entry.visibleTo === viewerId);
+
   return {
     ...state,
     stack,
+    staged,
+    log,
     pendingChoices,
     players: {
       ...state.players,
@@ -52,6 +62,8 @@ export function redactStateFor(state: GameState, viewerId: PlayerId): GameState 
         missionsInPlay: redactedMissions,
         pendingCharacterReveal: redactedReveal,
         characterDeck: opponent.characterDeck.map(() => '__hidden__'),
+        // Setup: their starting character stays hidden until both players have confirmed (§3).
+        ...(state.firstPlayerPending ? { backRow: opponent.backRow.map(() => null), frontRow: opponent.frontRow.map(() => null) } : {}),
         handDeck: opponent.handDeck.map((c) => ({ instanceId: c.instanceId, defId: '__hidden__' })),
       },
     },

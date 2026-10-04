@@ -1,4 +1,4 @@
-import { appendLog } from './phases/phaseMachine';
+import { appendLog, appendWarning } from './phases/phaseMachine';
 import { findOccupant, isCharacter, patchOccupant } from './board';
 import { getCharacterDef } from './characters/registry';
 import type { BoardOccupant, GameState, PlayerId } from './types';
@@ -27,14 +27,15 @@ export function placeChakraSource(state: GameState, instanceId: string): GameSta
 
   if (!MAIN_PHASES.has(state.phase)) {
     if (!relaxed) return appendLog(state, `${player} cannot place a Chakra source outside a Main Phase.`);
-    working = appendLog(working, `${player} places a Chakra source outside a Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+    working = appendWarning(working, `${player} places a Chakra source outside a Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
-  // Bingo Book: Threat Level B's reward (§13a) lets this placement go ahead
-  // even if one was already placed this turn, consuming the bonus instead.
-  const usingBonus = p.chakraSourcePlacedThisTurn && p.bonusChakraSourcePlacements > 0;
-  if (p.chakraSourcePlacedThisTurn && !usingBonus) {
+  // A second placement this turn is allowed on the second player's first
+  // turn (§5.2), or with Bingo Book: Threat Level B's bonus (§13a).
+  const usingFirstTurnExtra = p.chakraSourcePlacedThisTurn && hasFirstTurnExtraPlacement(state, player);
+  const usingBonus = p.chakraSourcePlacedThisTurn && !usingFirstTurnExtra && p.bonusChakraSourcePlacements > 0;
+  if (p.chakraSourcePlacedThisTurn && !usingBonus && !usingFirstTurnExtra) {
     if (!relaxed) return appendLog(state, `${player} has already placed a Chakra source this turn.`);
-    working = appendLog(working, `${player} places more than one Chakra source this turn — not legal under the strict rules, allowed anyway (trust mode).`);
+    working = appendWarning(working, `${player} places more than one Chakra source this turn — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   const entry = p.hand.find((h) => h.instanceId === instanceId);
   if (!entry) {
@@ -54,8 +55,20 @@ export function placeChakraSource(state: GameState, instanceId: string): GameSta
     chakraSources: [...p.chakraSources, { tapped: false }],
     chakraSourcePlacedThisTurn: true,
     bonusChakraSourcePlacements: usingBonus ? p.bonusChakraSourcePlacements - 1 : p.bonusChakraSourcePlacements,
+    firstTurnExtraPlacementUsed: p.firstTurnExtraPlacementUsed || usingFirstTurnExtra,
   });
-  return appendLog(next, `${player} places a Chakra source${usingBonus ? ' (bonus placement)' : ''}.`);
+  return appendLog(next, `${player} places a Chakra source${usingBonus ? ' (bonus placement)' : usingFirstTurnExtra ? " (second placement — the second player's first turn)" : ''}.`);
+}
+
+/** §5.2: the player going second may place 2 Chakra sources on their first turn (turn 2) instead of 1. */
+function hasFirstTurnExtraPlacement(state: GameState, player: PlayerId): boolean {
+  return !!state.firstPlayer && player !== state.firstPlayer && state.turn === 2 && !state.players[player].firstTurnExtraPlacementUsed;
+}
+
+/** Whether this player may place a(nother) Chakra source this turn under the strict rules — the once-per-turn cap plus its exceptions. */
+export function canPlaceChakraSource(state: GameState, player: PlayerId): boolean {
+  const p = state.players[player];
+  return !p.chakraSourcePlacedThisTurn || hasFirstTurnExtraPlacement(state, player) || p.bonusChakraSourcePlacements > 0;
 }
 
 /** §5.2: tap an untapped Chakra source to add 1 Chakra to the generic pool. */
@@ -100,27 +113,25 @@ export function poolChakra(state: GameState, instanceId: string, amount: number)
   let working = state;
   if (!MAIN_PHASES.has(state.phase)) {
     if (!relaxed) return appendLog(state, `${player} cannot pool Chakra outside a Main Phase.`);
-    working = appendLog(working, `${player} pools Chakra outside a Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
+    working = appendWarning(working, `${player} pools Chakra outside a Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   if (!unit || !pool) {
     return appendLog(working, `${player} has no such unit with a Pool to pool Chakra into.`);
   }
+  // Each of these is refused under the strict rules; trust mode lets it through with a warning.
+  const problems: string[] = [];
   const stunUntil = unit.extra.stunnedUntilTurn as number | undefined;
-  if (!relaxed && stunUntil !== undefined && state.turn <= stunUntil) {
-    return appendLog(working, `${unit.name} is stunned and can't be pooled into.`);
-  }
+  if (stunUntil !== undefined && state.turn <= stunUntil) problems.push(`${unit.name} is stunned and can't be pooled into`);
   const poolLockUntil = unit.extra.poolLockedUntilTurn as number | undefined;
-  if (!relaxed && poolLockUntil !== undefined && state.turn <= poolLockUntil) {
-    return appendLog(working, `${unit.name} is under Chakra Suppression and can't be pooled into.`);
-  }
-  if (!relaxed && isCharacter(unit) && getCharacterDef(unit.defId)?.noSelfPooling) {
-    return appendLog(working, `${unit.name}'s Pool can't be filled by pooling — only by absorption.`);
-  }
+  if (poolLockUntil !== undefined && state.turn <= poolLockUntil) problems.push(`${unit.name} is under Chakra Suppression and can't be pooled into`);
+  if (isCharacter(unit) && getCharacterDef(unit.defId)?.noSelfPooling) problems.push(`${unit.name}'s Pool can't be filled by pooling — only by absorption`);
   // Pool-XOR-act (§5.3): a unit that's already used an active ability this
   // turn can't be pooled into, and pooling into it blocks it from acting for
   // the rest of the turn (checked in abilities.ts's checkLegality).
-  if (!relaxed && unit.status.usedAbilitiesThisTurn.length > 0) {
-    return appendLog(working, `${unit.name} has already acted this turn and can't be pooled into.`);
+  if (unit.status.usedAbilitiesThisTurn.length > 0) problems.push(`${unit.name} has already acted this turn and can't be pooled into`);
+  if (problems.length > 0) {
+    if (!relaxed) return appendLog(working, `${problems[0]}.`);
+    for (const problem of problems) working = appendWarning(working, `${problem} — not legal under the strict rules, allowed anyway (trust mode).`);
   }
   if (amount > p.genericChakraAvailable) {
     return appendLog(working, `${player} doesn't have ${amount} Chakra available to pool.`);

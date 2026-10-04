@@ -4,7 +4,7 @@ import { redactStateFor } from '../../src/engine/redact';
 import { makeHandCardInstance } from '../../src/engine/deck';
 import { registerCharacter } from '../../src/engine/characters/registry';
 import { hasMeaningfulResponse } from '../../src/engine/trust/staging';
-import { freshCombat, freshMain1, withCharacterAt } from './testUtils';
+import { freshCombat, freshMain1, giveChakra, withCharacterAt } from './testUtils';
 import type { GameAction, GameState, PlayerId } from '../../src/engine/types';
 
 // Same quick-start board as the strict-mode tests, just flipped into trust mode.
@@ -34,7 +34,8 @@ function withCard(state: GameState, player: PlayerId, defId: string) {
 }
 
 const hp = (s: GameState, player: PlayerId, id: string) => [...s.players[player].backRow, ...s.players[player].frontRow].find((o) => o?.instanceId === id)!.currentHP;
-const stage = (targets: string[]): GameAction => ({ type: 'STAGE_ABILITY', instanceId: 'p1-kakuzu', abilityId: 'earth-grudge-fear', targetInstanceIds: targets, payFromPool: 0 });
+// Declared in Main 1, so out of timing (damage is Combat-only) — forced through; these tests are about the declare/resolve flow.
+const stage = (targets: string[]): GameAction => ({ type: 'STAGE_ABILITY', instanceId: 'p1-kakuzu', abilityId: 'earth-grudge-fear', targetInstanceIds: targets, payFromPool: 0, force: true });
 
 describe('trust mode: staging', () => {
   it('declaring an action computes nothing until the round is finalized, and it can be retargeted first', () => {
@@ -65,18 +66,49 @@ describe('trust mode: staging', () => {
     expect(s.staged).toHaveLength(0);
   });
 
-  it('is not gated by the rules — an illegal play is allowed but flagged with an advisory warning', () => {
-    // In the Main Phase a damaging Normal-speed ability is out of timing (§4.5) — flagged, but still allowed.
-    const main = run(trustMain1(), stage(['p2-hidan']));
-    expect(main.staged[0].warnings.join(' ')).toMatch(/Combat Phase/);
+  it('an illegal declaration is refused (and only its author is told) unless it is forced through', () => {
+    // In the Main Phase a damaging Normal-speed ability is out of timing (§4.5).
+    const unforced: GameAction = { type: 'STAGE_ABILITY', instanceId: 'p1-kakuzu', abilityId: 'earth-grudge-fear', targetInstanceIds: ['p2-hidan'], payFromPool: 0 };
+    const refused = run(withChakra(trustMain1(), 'p1', 1), unforced);
+    expect(refused.staged).toHaveLength(0);
+    expect(refused.log.at(-1)!.visibleTo).toBe('p1');
+    expect(redactStateFor(refused, 'p2').log.some((l) => /Earth Grudge Fear/.test(l.text))).toBe(false);
 
+    const forced = run(withChakra(trustMain1(), 'p1', 1), stage(['p2-hidan']));
+    expect(forced.staged[0].warnings.join(' ')).toMatch(/Combat Phase/);
+  });
+
+  it('costs are paid at resolution: with too little Chakra tapped nothing resolves until the player taps more', () => {
     let s: GameState = { ...trustMain1(), phase: 'Combat' }; // p1 has 0 Chakra available
-    s = run(s, stage(['p2-hidan']));
-    expect(s.staged[0].warnings.join(' ')).toMatch(/Chakra/);
-    s = run(s, { type: 'RESOLVE_ACTIONS', player: 'p1' });
-    expect(hp(s, 'p2', 'p2-hidan')).toBe(hp(trustMain1(), 'p2', 'p2-hidan') - 1); // still resolved
-    expect(s.phase).toBe('Combat'); // Resolve Actions doesn't advance the phase
-    expect(s.log.some((l) => /short 1 Chakra/.test(l.text))).toBe(true);
+    s = run(s, stage(['p2-hidan']), { type: 'RESOLVE_ACTIONS', player: 'p1' });
+    expect(s.staged).toHaveLength(1); // not resolved
+    expect(s.log.at(-1)!.warning).toBe(true);
+    expect(s.log.at(-1)!.text).toMatch(/tap your Chakra/);
+
+    s = run(withChakra(s, 'p1', 1), { type: 'RESOLVE_ACTIONS', player: 'p1' });
+    expect(s.staged).toHaveLength(0);
+    expect(hp(s, 'p2', 'p2-hidan')).toBe(hp(trustMain1(), 'p2', 'p2-hidan') - 1);
+    expect(s.players.p1.genericChakraAvailable).toBe(0);
+  });
+
+  it('a shortfall the Pool could cover is asked about — the Pool is never used unless the player says yes', () => {
+    let s: GameState = withChakra({ ...trustMain1(), phase: 'Combat' }, 'p1', 0);
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c, i) => (i === 0 && c ? { ...c, chakraPool: { ...c.chakraPool, current: 2 } } : c)) } } };
+    s = run(s, stage(['p2-hidan']), { type: 'RESOLVE_ACTIONS', player: 'p1' });
+    const ask = s.pendingChoices.find((c) => c.resolverId === 'staged-pool-top-up')!;
+    expect(ask).toBeDefined();
+    s = run(s, { type: 'RESOLVE_CHOICE', choiceId: ask.id, optionIds: ['yes'] }, { type: 'RESOLVE_ACTIONS', player: 'p1' });
+    expect(s.staged).toHaveLength(0);
+    expect(s.players.p1.backRow[0]!.chakraPool.current).toBe(1);
+  });
+
+  it("the opponent sees only that an action was declared — what it is stays hidden until the round is finalized", () => {
+    const s = run(withChakra(trustMain1(), 'p1', 1), stage(['p2-hidan']));
+    const seen = redactStateFor(s, 'p2');
+    expect(seen.staged[0].label).toBe('Hidden declared action');
+    expect(seen.staged[0].targets).toEqual([]);
+    expect(seen.log.some((l) => /Earth Grudge Fear/.test(l.text))).toBe(false);
+    expect(seen.log.some((l) => l.text === 'p1 declares an action.')).toBe(true);
   });
 });
 
@@ -89,8 +121,8 @@ describe('trust mode: response prompts', () => {
   });
 
   it('asks an opponent who could legally respond, lets them respond, then resolves in stack order', () => {
-    // p1 has no Chakra at all, so (unlike p2) has nothing meaningful to respond with — their own attack still resolves (costs are paid softly in trust mode).
-    let s = withChakra(trustMain1(), 'p1', 0);
+    // p1 has just enough Chakra for the attack and nothing to respond with.
+    let s = withChakra(trustMain1(), 'p1', 1);
     const withSub = withCard(s, 'p2', 'substitution');
     s = withChakra(withSub.state, 'p2', 4);
     const before = hp(s, 'p2', 'p2-kakuzu');
@@ -174,7 +206,7 @@ describe('trust mode: could-they-respond check', () => {
 
 describe('trust mode: resolution order (first activated, first resolved)', () => {
   it('resolves declared actions in the order they were declared', () => {
-    let s = withChakra(trustMain1(), 'p1', 0);
+    let s = withChakra(trustMain1(), 'p1', 2);
     s = run(s, stage(['p2-hidan']), stage(['p2-kisame']), { type: 'RESOLVE_ACTIONS', player: 'p1' });
     const order = s.log.filter((l) => l.text.startsWith('Resolving')).map((l) => l.text);
     expect(order).toHaveLength(2);
@@ -186,7 +218,7 @@ describe('trust mode: resolution order (first activated, first resolved)', () =>
 
   it("lets a responder's Substitution land ahead of the attack it answers — and moving it behind makes it too late", () => {
     const setup = () => {
-      let s = withChakra(trustMain1(), 'p1', 0);
+      let s = withChakra(trustMain1(), 'p1', 2);
       const sub = withCard(s, 'p2', 'substitution');
       s = withChakra(sub.state, 'p2', 4);
       // p1 declares two attacks: one at Hidan, one at Kakuzu (p2's enabler). Finalizing prompts p2, who can respond.
@@ -217,8 +249,8 @@ describe('trust mode: resolution order (first activated, first resolved)', () =>
 });
 
 describe('trust mode: turn flow', () => {
-  it('Finalize Phase with nothing declared just advances; a new turn runs Untap/Upkeep and waits at Draw for the manual draw', () => {
-    let s = trustMain1();
+  it('Finalize Phase with nothing declared just advances; with Auto-draw off a new turn runs Untap/Upkeep and waits at Draw for the manual draw', () => {
+    let s = run(trustMain1(), { type: 'SET_OPTION', option: 'autoDraw', value: false });
     s = run(s, { type: 'FINALIZE_PHASE', player: 'p1' }); // Main1 -> Combat
     s = run(s, { type: 'FINALIZE_PHASE', player: 'p1' }); // -> Main2
     s = run(s, { type: 'FINALIZE_PHASE', player: 'p1' }); // -> End
@@ -302,5 +334,82 @@ describe('redaction with cards on the stack', () => {
     expect(view.stack).toHaveLength(1);
     expect(typeof (view.stack[0] as { resolve?: unknown }).resolve).toBe('undefined');
     expect(() => JSON.parse(JSON.stringify(view))).not.toThrow();
+  });
+});
+
+describe('Trust mode flags illegal pooling and acting after pooling', () => {
+  const warnings = (s: GameState) => s.log.filter((l) => l.warning).map((l) => l.text);
+
+  it('pooling into a unit that already acted goes through, with a warning', () => {
+    let s = giveChakra({ ...freshMain1(), rules: 'trust' }, 'p1', 5);
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c, i) => (i === 0 && c ? { ...c, status: { ...c.status, usedAbilitiesThisTurn: ['earth-grudge-fear'] } } : c)) } } };
+    const poolBefore = s.players.p1.backRow[0]!.chakraPool.current;
+    s = gameReducer(s, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 });
+    expect(s.players.p1.backRow[0]!.chakraPool.current).toBe(poolBefore + 1);
+    expect(warnings(s).some((w) => w.includes('already acted'))).toBe(true);
+  });
+
+  it('declaring an ability for a unit pooled into this turn raises a warning', () => {
+    let s = giveChakra({ ...freshMain1(), rules: 'trust' }, 'p1', 5);
+    s = gameReducer(s, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 });
+    s = gameReducer(s, { type: 'STAGE_ABILITY', instanceId: 'p1-kakuzu', abilityId: 'earth-grudge-fear', targetInstanceIds: ['p2-hidan'], payFromPool: 0 });
+    expect(warnings(s).some((w) => w.includes('pooled into this turn'))).toBe(true);
+  });
+});
+
+describe('Always confirm', () => {
+  const declareAndFinalize = (s: GameState) =>
+    run(
+      giveChakra(s, 'p1', 3),
+      { type: 'STAGE_ABILITY', instanceId: 'p1-deidara', abilityId: 'explosive-clay', targetInstanceIds: [], payFromPool: 0 },
+      { type: 'FINALIZE_PHASE', player: 'p1' },
+    );
+
+  it("off (default): a player with nothing to respond with is approved for automatically", () => {
+    const s = declareAndFinalize(trustMain1());
+    expect(s.pendingFinalize).toBeNull();
+  });
+
+  it('on: the round waits for the other player to confirm', () => {
+    let s = declareAndFinalize(run(trustMain1(), { type: 'SET_OPTION', option: 'alwaysConfirm', value: true }));
+    expect(s.pendingFinalize).not.toBeNull();
+    expect(s.pendingFinalize!.approvals).not.toContain('p2');
+    s = run(s, { type: 'APPROVE_RESOLVE', player: 'p2' });
+    expect(s.pendingFinalize).toBeNull();
+  });
+});
+
+describe('Clicking a phase', () => {
+  it('jumps forward through the phases in between', () => {
+    const s = run(freshMain1(), { type: 'GO_TO_PHASE', phase: 'Main2' });
+    expect(s.phase).toBe('Main2');
+  });
+
+  it('going back is refused under the strict rules', () => {
+    const s = run(freshMain1(), { type: 'GO_TO_PHASE', phase: 'Main2' }, { type: 'GO_TO_PHASE', phase: 'Main1' });
+    expect(s.phase).toBe('Main2');
+  });
+
+  it('going back is allowed in trust mode, with a warning', () => {
+    const s = run(trustMain1(), { type: 'GO_TO_PHASE', phase: 'Combat' }, { type: 'GO_TO_PHASE', phase: 'Main1' });
+    expect(s.phase).toBe('Main1');
+    expect(s.log.at(-1)!.warning).toBe(true);
+  });
+});
+
+describe('Setup picks stay secret until both players confirm', () => {
+  it("the opponent can't see your starting character, or read it in the log, until both have confirmed", async () => {
+    const { createSetupState } = await import('../../src/engine/state');
+    let s = createSetupState(undefined, 'strict');
+    const pick = s.players.p2.pendingCharacterReveal!.revealed[0];
+    s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p2', entryId: pick });
+    const seenByP1 = redactStateFor(s, 'p1');
+    expect(seenByP1.players.p2.backRow.every((c) => c === null)).toBe(true);
+    expect(seenByP1.players.p2.frontRow.every((t) => t === null)).toBe(true);
+    expect(s.log.some((l) => l.text === 'p2 has chosen their starting character.')).toBe(true);
+
+    s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: s.players.p1.pendingCharacterReveal!.revealed[0] });
+    expect(redactStateFor(s, 'p1').players.p2.backRow.some((c) => c !== null) || redactStateFor(s, 'p1').players.p2.frontRow.some((t) => t !== null)).toBe(true);
+    expect(s.log.some((l) => l.text.startsWith('Starting characters revealed'))).toBe(true);
   });
 });

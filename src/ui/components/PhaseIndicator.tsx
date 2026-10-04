@@ -1,17 +1,34 @@
-import { PHASE_ORDER, type GameState } from '../../engine/types';
+import { PHASE_ORDER, type GameState, type Phase } from '../../engine/types';
 
-export function PhaseIndicator({ state }: { state: GameState }) {
+/** The turn's phases — click one to jump ahead to it (or, in trust mode, back to it). */
+export function PhaseIndicator({ state, onGoToPhase }: { state: GameState; onGoToPhase?: (phase: Phase) => void }) {
+  const current = PHASE_ORDER.indexOf(state.phase);
   return (
     <div className="phase-indicator">
       <div className="phase-indicator__turn">
         Turn {state.turn} — {state.activePlayer.toUpperCase()}'s turn
       </div>
       <ol className="phase-indicator__list">
-        {PHASE_ORDER.map((phase) => (
-          <li key={phase} className={phase === state.phase ? 'phase phase--active' : 'phase'}>
-            {phase}
-          </li>
-        ))}
+        {PHASE_ORDER.map((phase, i) => {
+          const active = phase === state.phase;
+          const canClick = !!onGoToPhase && !active && (i > current || state.rules === 'trust');
+          return (
+            <li key={phase} className={active ? 'phase phase--active' : 'phase'}>
+              {canClick ? (
+                <button
+                  type="button"
+                  className="phase__button"
+                  title={i > current ? `Skip ahead to ${phase} (runs the phases in between)` : `Go back to ${phase} (trust mode — nothing in between is undone)`}
+                  onClick={() => onGoToPhase!(phase)}
+                >
+                  {phase}
+                </button>
+              ) : (
+                phase
+              )}
+            </li>
+          );
+        })}
       </ol>
     </div>
   );

@@ -98,6 +98,7 @@ const chakraTransfer: HandCardDef = {
   cardType: 'jutsu',
   cost: 0,
   speed: 'Normal',
+  timing: 'either', // healing/support — Main or Combat (§4.5)
   style: 'None',
   type: 'Ninjutsu',
   maxTargets: 2,
@@ -165,6 +166,7 @@ const deployMedicCorps: HandCardDef = {
   cardType: 'jutsu',
   cost: 2,
   speed: 'Normal',
+  timing: 'either', // healing/support — Main or Combat (§4.5)
   style: 'None',
   type: 'Ninjutsu',
   targetSide: 'ally',
@@ -188,6 +190,7 @@ const medicalChakraInfusion: HandCardDef = {
   cardType: 'jutsu',
   cost: 1,
   speed: 'Normal',
+  timing: 'either', // healing/support — Main or Combat (§4.5)
   style: 'None',
   type: 'Ninjutsu',
   targetSide: 'ally',
@@ -203,7 +206,7 @@ const medicalChakraInfusion: HandCardDef = {
 };
 
 // "Until its controller's next turn" is read as THROUGH that turn (the
-// Mind Prison convention) — enemies only pool on their own turn, so a lock
+// Kakuzu-revival-stun convention) — enemies only pool on their own turn, so a lock
 // that ended as their turn began would do nothing when cast on yours.
 const chakraSuppression: HandCardDef = {
   id: 'chakra-suppression',

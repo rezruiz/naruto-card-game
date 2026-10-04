@@ -125,6 +125,7 @@ const sinisterWhisper: AbilityDef = {
 
 const combineZetsuGolem: AbilityDef = {
   id: 'combine-zetsu-golem',
+  summons: [{ defId: GOLEM_ID, name: 'Zetsu Golem' }],
   name: 'Combine: Zetsu Golem',
   cost: 4,
   speed: 'Normal',
@@ -157,7 +158,7 @@ const combineZetsuGolem: AbilityDef = {
     let state = { ...ctx.state, players: { ...ctx.state.players, [found.player]: { ...ctx.state.players[found.player], frontRow } } };
     state = appendLog(state, `${chosen.length} White Zetsu Clones combine into a Zetsu Golem (${combinedHP} HP).`);
     const golem = makeGolem(found.player, ctx.sourceInstanceId, Math.max(1, combinedHP));
-    return placeToken(state, found.player, { ...golem, extra: { ...golem.extra, createdTurn: state.turn } });
+    return placeToken(state, found.player, { ...golem, extra: { ...golem.extra, createdTurn: state.turn } }, { askPosition: true });
   },
 };
 
@@ -232,6 +233,7 @@ const sporeTechnique: AbilityDef = {
 
 const whiteZetsuArmy: AbilityDef = {
   id: 'white-zetsu-army',
+  summons: [{ defId: CLONE_ID, name: 'White Zetsu Clone' }],
   name: 'White Zetsu Army',
   cost: 5,
   speed: 'Normal',
@@ -250,7 +252,7 @@ const whiteZetsuArmy: AbilityDef = {
     const room = MAX_CLONES - countTokensOfType(state, found.player, CLONE_ID);
     const toCreate = Math.min(3, Math.max(0, room));
     for (let i = 0; i < toCreate; i++) {
-      state = placeToken(state, found.player, makeClone(found.player, ctx.sourceInstanceId));
+      state = placeToken(state, found.player, makeClone(found.player, ctx.sourceInstanceId), { askPosition: true });
     }
     return appendLog(state, `Zetsu creates ${toCreate} White Zetsu Clone token(s).`);
   },

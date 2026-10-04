@@ -19,15 +19,17 @@ export function giveChakra(state: GameState, player: PlayerId, amount: number): 
 }
 
 /**
- * Test convenience: clears summoning sickness for every starting character
+ * Test convenience: clears Field Orientation for every starting character
  * on both sides, so damage-dealing-ability tests don't have to advance 17+
  * phases just to get past SPEC.md §6.6's turn-1 restriction on starting
- * characters (§3's Setup explicitly gives them summoning sickness too).
+ * characters (§3's Setup explicitly gives them Field Orientation too).
  */
-export function clearSummoningSickness(state: GameState): GameState {
+export function clearFieldOrientation(state: GameState): GameState {
   const patchPlayer = (p: GameState['players']['p1']) => ({
     ...p,
     backRow: p.backRow.map((c) => (c ? { ...c, status: { ...c.status, enteredTurn: -1 } } : c)),
+    // Tokens too (they get Field Orientation when created) — turn 0 means "already there before this turn".
+    frontRow: p.frontRow.map((t) => (t ? { ...t, status: { ...t.status, enteredTurn: 0 } } : t)),
   });
   return {
     ...state,
@@ -51,10 +53,10 @@ export function onlyStartingCharacter(state: GameState, player: PlayerId): GameS
  * Both sides' default 5-character roster at p1's Main 1, ready to act. The
  * fixture has no Chakra sources, so its first Upkeep can't pay the (capped)
  * Synergy-discounted upkeep — that Disabling is cleared here, the same way
- * summoning sickness is, so ability tests start from usable characters.
+ * Field Orientation is, so ability tests start from usable characters.
  */
 export function freshMain1(): GameState {
-  const state = clearSummoningSickness(toMain1(createInitialState('p1')));
+  const state = clearFieldOrientation(toMain1(createInitialState('p1')));
   const enable = (p: GameState['players']['p1']) => ({ ...p, backRow: p.backRow.map((c) => (c ? { ...c, status: { ...c.status, disabled: false } } : c)) });
   return { ...state, players: { p1: enable(state.players.p1), p2: enable(state.players.p2) } };
 }

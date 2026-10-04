@@ -120,6 +120,7 @@ const poisonSenbon: AbilityDef = {
 
 const puppetSummon: AbilityDef = {
   id: 'chakra-strings-puppet-summon',
+  summons: [{ defId: PUPPET_SOLDIER_ID, name: 'Puppet Soldier' }],
   name: 'Chakra Strings: Puppet Summon',
   cost: 2,
   speed: 'Normal',
@@ -135,7 +136,7 @@ const puppetSummon: AbilityDef = {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     if (!found) return ctx.state;
     const token = makePuppetSoldier(found.player, ctx.sourceInstanceId);
-    return placeToken(ctx.state, found.player, token);
+    return placeToken(ctx.state, found.player, token, { askPosition: true });
   },
 };
 
@@ -286,8 +287,8 @@ registerTokenDef({ id: PUPPET_SOLDIER_ID, name: 'Puppet Soldier', abilities: [pu
 // Puppet Shell: Hiruko — reaching 0 HP as Hiruko isn't a true defeat, it's a
 // transformation into Hollow Body (design/CHARACTER_LOG.md): same instanceId
 // (so Third Kazekage's ownerCharacterInstanceId link, and anything else
-// pointing at Sasori, stays valid), fresh full HP/Pool, fresh summoning
-// sickness (an explicit ruling, not pure narrative continuation).
+// pointing at Sasori, stays valid), fresh full HP/Pool, fresh Field
+// Orientation (an explicit ruling, not pure narrative continuation).
 registerDefeatHook(HIRUKO_ID, (state, targetInstanceId) => {
   const found = findOccupant(state, targetInstanceId);
   if (!found || !isCharacter(found.occupant)) return null;

@@ -358,7 +358,7 @@
   color: #c33;
 }
 
-.badge--sick {
+.badge--orientation {
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -1081,6 +1081,12 @@
 
 .sidebar-toggle label {
   cursor: pointer;
+  display: block;
+}
+
+.sidebar-toggle label + label {
+  margin-top: 4px;
+  font-weight: 500;
 }
 
 .sidebar-undo:not(:disabled) {
@@ -1362,4 +1368,231 @@
 .squad-redirect select {
   font: inherit;
   font-size: 12px;
+}
+
+.rules-ref {
+  margin-top: auto;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.rules-ref summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.rules-ref__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 6px;
+  text-align: center;
+}
+
+.rules-ref__table th,
+.rules-ref__table td {
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.rules-ref__table th {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.rules-ref__list {
+  margin: 4px 0 2px;
+  padding-left: 16px;
+  line-height: 1.35;
+}
+
+.rules-ref__list li + li {
+  margin-top: 4px;
+}
+
+.rule-warnings {
+  border: 1px solid #d97706;
+  background: rgba(217, 119, 6, 0.12);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.rule-warnings__title {
+  font-weight: 700;
+  color: #b45309;
+  margin-bottom: 4px;
+}
+
+.rule-warnings ul {
+  margin: 0 0 6px;
+  padding-left: 16px;
+  line-height: 1.35;
+}
+
+.rule-warnings__more {
+  opacity: 0.8;
+  margin-bottom: 6px;
+}
+
+.action-log__warning {
+  color: #b45309;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .rule-warnings__title,
+  .action-log__warning {
+    color: #f59e0b;
+  }
+}
+
+.deck-list__entry + .deck-list__entry {
+  border-top: 1px solid var(--card-border);
+}
+
+.deck-list__details {
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px 8px;
+  margin-bottom: 4px;
+  background: var(--card-bg);
+  border-radius: 6px;
+}
+
+.choice-panel__option {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.choice-panel__details {
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+.choice-panel__card-text {
+  flex-basis: 100%;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+}
+
+.ability-box-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summon-details__toggle {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.summon-details__text {
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  margin-top: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+}
+
+.compact-card__styles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.style-chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  line-height: 15px;
+  color: #6b7280;
+}
+
+.style-chip--fire { color: #dc2626; }
+.style-chip--water { color: #2563eb; }
+.style-chip--wind { color: #059669; }
+.style-chip--earth { color: #a16207; }
+.style-chip--lightning { color: #ca8a04; }
+.style-chip--explosion { color: #ea580c; }
+.style-chip--gravity { color: #7c3aed; }
+.style-chip--paper { color: #64748b; }
+.style-chip--poison { color: #9333ea; }
+.style-chip--ritual { color: #be123c; }
+.style-chip--yang { color: #d97706; }
+
+.phase__button {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.phase__button:hover,
+.phase__button:focus-visible {
+  text-decoration: underline;
+}
+
+.board-slot {
+  border-radius: 8px;
+  min-height: 62px;
+  box-sizing: border-box;
+}
+
+.board-slot--empty {
+  width: 24px;
+  border: 1px dashed var(--border);
+  opacity: 0.5;
+}
+
+.board-slot--legal {
+  width: 132px;
+  border: 2px dashed var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.board-slot--legal:hover {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.board-slot--token.board-slot--legal {
+  width: 90px;
+}
+
+.board-slot-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.board-slot-wrap--legal > .compact-card {
+  outline: 2px dashed var(--accent);
+}
+
+.board-slot__push {
+  font-size: 11px;
+  padding: 2px 6px;
 }

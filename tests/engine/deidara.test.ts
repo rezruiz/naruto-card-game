@@ -197,14 +197,15 @@ describe('Deidara', () => {
     };
     state = giveChakra(state, 'p1', 5);
 
-    const kakuzuHpBefore = state.players.p2.backRow[0]?.currentHP ?? 0; // primary target
-    const hidanHpBefore = state.players.p2.backRow[1]?.currentHP ?? 0; // right neighbor — cross pattern
+    // Hidan (HP 9) is the primary target — Kakuzu (HP 5) would just revive from a 5-damage hit.
+    const hidanHpBefore = state.players.p2.backRow[1]?.currentHP ?? 0; // primary target
+    const kakuzuHpBefore = state.players.p2.backRow[0]?.currentHP ?? 0; // left neighbor — cross pattern
 
-    state = activateAbility(state, 'p1-deidara', 'c3-shi-suri', ['p2-kakuzu'], 0);
+    state = activateAbility(state, 'p1-deidara', 'c3-shi-suri', ['p2-hidan'], 0);
     expect(state.stack).toHaveLength(1);
     state = resolveTop(state);
 
-    expect(state.players.p2.backRow[0]?.currentHP).toBe(kakuzuHpBefore - 5); // primary hit
-    expect(state.players.p2.backRow[1]?.currentHP).toBe(hidanHpBefore - 3); // cross-pattern splash
+    expect(state.players.p2.backRow[1]?.currentHP).toBe(hidanHpBefore - 5); // primary hit
+    expect(state.players.p2.backRow[0]?.currentHP).toBe(kakuzuHpBefore - 3); // cross-pattern splash
   });
 });

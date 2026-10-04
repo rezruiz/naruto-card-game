@@ -18,8 +18,8 @@ export interface CharacterDeckEntry {
   rank: CharacterInstance['rank'];
   /** Is there room to play this entry right now? (A normal character needs 1 open back-row slot; Pain needs 6 open front-row slots for his Path tokens.) */
   hasRoom: (state: GameState, player: PlayerId) => boolean;
-  /** Places this entry's unit(s) onto the board for `player`, having already confirmed room/legality. */
-  spawn: (state: GameState, player: PlayerId, turn: number, hasAmbush: boolean) => GameState;
+  /** Places this entry's unit(s) onto the board for `player`, having already confirmed room/legality — at `slot` in the back row if one was chosen (§9). */
+  spawn: (state: GameState, player: PlayerId, turn: number, hasAmbush: boolean, slot?: number) => GameState;
 }
 
 let reinforcementCounter = 0;
@@ -29,10 +29,10 @@ function hasOpenBackRowSlot(state: GameState, player: PlayerId): boolean {
 }
 
 function spawnCharacter(defId: string): CharacterDeckEntry['spawn'] {
-  return (state, player, turn, hasAmbush) => {
+  return (state, player, turn, hasAmbush, slot) => {
     reinforcementCounter += 1;
     const instance = createCharacterInstance(defId, player, `${player}-${defId}-r${reinforcementCounter}`, turn);
-    return placeCharacter(state, player, hasAmbush ? { ...instance, status: { ...instance.status, hasAmbush: true } } : instance);
+    return placeCharacter(state, player, hasAmbush ? { ...instance, status: { ...instance.status, hasAmbush: true } } : instance, slot);
   };
 }
 
@@ -67,12 +67,12 @@ for (const defId of [
 // same Ambush).
 registry['sasori-hiruko'] = {
   ...registry['sasori-hiruko'],
-  spawn: (state, player, turn, hasAmbush) => {
-    let next = spawnCharacter('sasori-hiruko')(state, player, turn, hasAmbush);
+  spawn: (state, player, turn, hasAmbush, slot) => {
+    let next = spawnCharacter('sasori-hiruko')(state, player, turn, hasAmbush, slot);
     const sasori = [...next.players[player].backRow].reverse().find((c) => c?.defId === 'sasori-hiruko');
     if (!sasori) return next;
     const kazekage = makeThirdKazekage(player, sasori.instanceId);
-    next = placeToken(next, player, { ...kazekage, status: { ...kazekage.status, enteredTurn: turn, hasAmbush } });
+    next = placeToken(next, player, { ...kazekage, status: { ...kazekage.status, enteredTurn: turn, hasAmbush } }, { askPosition: true });
     return next;
   },
 };

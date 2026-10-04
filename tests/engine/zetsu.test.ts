@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
-import { freshCombat, giveChakra, resolveTop, withCharacterAt } from './testUtils';
+import { clearFieldOrientation, freshCombat, giveChakra, resolveTop, withCharacterAt } from './testUtils';
 
 function withZetsu() {
   return withCharacterAt(freshCombat(), 'p1', 0, 'zetsu'); // replaces p1's Kakuzu slot
@@ -66,12 +66,22 @@ describe('Zetsu', () => {
     expect(state.players.p1.frontRow.filter((t) => t?.defId === 'white-zetsu-clone')).toHaveLength(3);
     expect(state.players.p1.backRow[0]!.chakraPool.current).toBe(1); // untouched — paid all-generic above
 
+    state = clearFieldOrientation(state); // Clones are in Field Orientation the turn they're created
     const clone = state.players.p1.frontRow.find((t) => t?.defId === 'white-zetsu-clone')!;
     // Clone Strike costs 1 Chakra, payable from Zetsu's shared Pool (1 banked).
     state = activateAbility(state, clone.instanceId, 'clone-strike', ['p2-kakuzu'], 1);
     expect(state.stack).toHaveLength(1);
     state = resolveTop(state);
     expect(state.players.p1.backRow[0]!.chakraPool.current).toBe(1); // spent 1, absorbed 1 back
+  });
+
+  it('summoned Clones have Field Orientation — no Clone Strike the turn they are created', () => {
+    let state = giveChakra(withZetsu(), 'p1', 10);
+    state = resolveTop(activateAbility(state, 'p1-zetsu', 'white-zetsu-army', [], 0));
+    const clone = state.players.p1.frontRow.find((t) => t?.defId === 'white-zetsu-clone')!;
+    const stackBefore = state.stack.length;
+    state = activateAbility(state, clone.instanceId, 'clone-strike', ['p2-kakuzu'], 0);
+    expect(state.stack.length).toBe(stackBefore);
   });
 
   it('Combine: Zetsu Golem consumes >=3 Clones into one Golem with their combined current HP', () => {
@@ -99,6 +109,7 @@ describe('Zetsu', () => {
     const cloneIds = state.players.p1.frontRow.filter((t) => t?.defId === 'white-zetsu-clone').map((t) => t!.instanceId);
     state = activateAbility(state, 'p1-zetsu', 'combine-zetsu-golem', cloneIds, 0);
     state = resolveTop(state);
+    state = clearFieldOrientation(state); // the new Golem is in Field Orientation the turn it's formed
     const golem = state.players.p1.frontRow.find((t) => t?.defId === 'zetsu-golem')!;
 
     // Pool some Chakra onto the target directly.

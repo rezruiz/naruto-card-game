@@ -31,5 +31,5 @@ registerCharacter({
   basePoolCapacity: 1,
   styles: [],
   abilities: [shinobiStrike],
-  synergy: ['Akatsuki'],
+  synergy: [],
 });

@@ -118,18 +118,18 @@ describe('Retreat (SPEC.md §6.5b)', () => {
     expect(state.players.p1.backRow[0]!.status.retreated).toBe(false);
   });
 
-  it('returning from Retreat is free and grants fresh summoning sickness', () => {
+  it('returning from Retreat is free and grants fresh Field Orientation', () => {
     let state = giveChakra(freshMain1(), 'p1', 10);
     state = gameReducer(state, { type: 'RETREAT', instanceId: 'p1-hidan' });
     const chakraBefore = state.players.p1.genericChakraAvailable;
     state = gameReducer(state, { type: 'RETURN_FROM_RETREAT', instanceId: 'p1-hidan' });
     expect(state.players.p1.backRow[1]!.status.retreated).toBe(false);
     expect(state.players.p1.genericChakraAvailable).toBe(chakraBefore); // free
-    expect(state.players.p1.backRow[1]!.status.enteredTurn).toBe(state.turn); // fresh summoning sickness
+    expect(state.players.p1.backRow[1]!.status.enteredTurn).toBe(state.turn); // fresh Field Orientation
 
     const stackBefore = state.stack.length;
     state = activateAbility(state, 'p1-hidan', 'triple-scythe-sweep', ['p2-kakuzu'], 0);
-    expect(state.stack.length).toBe(stackBefore); // summoning sick again, rejected
+    expect(state.stack.length).toBe(stackBefore); // in Field Orientation again, rejected
   });
 });
 

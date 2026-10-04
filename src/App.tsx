@@ -1,7 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { gameReducer, setupPending } from './engine/reducer';
 import { createSetupState } from './engine/state';
-import { findOccupant, isCharacter } from './engine/board';
+import { findOccupant, isCharacter, legalCharacterSlots } from './engine/board';
+import { canPlaceChakraSource } from './engine/chakra';
+import { abilityDeclarationWarnings, cardDeclarationWarnings } from './engine/trust/staging';
 import { findAbility, poolAvailableFor, resolveCost, type ChoiceSpec } from './engine/abilities';
 import { getCharacterDeckEntry } from './engine/characters';
 import { currentTax } from './engine/playCharacter';
@@ -26,6 +28,8 @@ import { CharacterCard, IN_PLAY_CARD_DRAG_TYPE } from './ui/components/Character
 import { CharacterRevealPanel } from './ui/components/CharacterRevealPanel';
 import { LobbyScreen } from './ui/components/LobbyScreen';
 import { TokenCard } from './ui/components/TokenCard';
+import { RulesReference } from './ui/components/RulesReference';
+import { RuleWarnings } from './ui/components/RuleWarnings';
 import { HandView } from './ui/components/HandView';
 import { PhaseIndicator } from './ui/components/PhaseIndicator';
 import { PlayerHealthBar } from './ui/components/PlayerHealthBar';
@@ -273,6 +277,8 @@ function ViewGame({
 }) {
   const [pending, setPending] = useState<Pending>(null);
   const [details, setDetails] = useState<Details>(null);
+  /** A character card from hand waiting for the player to pick its back-row slot (§9 positioning). */
+  const [placing, setPlacing] = useState<{ player: PlayerId; instanceId: string; name: string } | null>(null);
   // Seated across the table: you're always the bottom board, your opponent the top. (Local hotseat has no single 'you', so P1 sits at the bottom.)
   const bottomId: PlayerId = myPlayerId ?? 'p1';
   const topId: PlayerId = bottomId === 'p1' ? 'p2' : 'p1';
@@ -284,11 +290,20 @@ function ViewGame({
 
   /** Trust mode declares (stages) the action for later resolution; strict mode activates it right away. */
   function submitAbility(instanceId: string, abilityId: string, targets: string[], choices?: AbilityChoices, payFromPool = 0) {
-    dispatch(
-      trust
-        ? { type: 'STAGE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices }
-        : { type: 'ACTIVATE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices },
-    );
+    if (!trust) {
+      dispatch({ type: 'ACTIVATE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices });
+      return;
+    }
+    const force = askToForce(abilityDeclarationWarnings(state, instanceId, abilityId, targets, payFromPool, choices));
+    if (force === null) return;
+    dispatch({ type: 'STAGE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices, force });
+  }
+
+  /** Trust mode: an illegal declaration is only made if the player confirms forcing it through. False = it's legal; null = they backed out. */
+  function askToForce(warnings: string[]): boolean | null {
+    if (warnings.length === 0) return false;
+    const list = warnings.map((w) => `• ${w}`).join('\n');
+    return window.confirm(`Not legal under the strict rules:\n${list}\n\nForce it through anyway?`) ? true : null;
   }
 
   /**
@@ -313,6 +328,12 @@ function ViewGame({
   /** All choices answered — settle payment (asking if there's a real Pool/generic split to make), then submit. */
   function payAndSubmit(p: PendingAbility, targets: string[], choices: AbilityChoices) {
     const payment = poolPayment(p, targets, choices);
+    // Trust mode pays at resolution, where the Pool is offered only if the tapped Chakra falls short.
+    if (trust && !('fixed' in payment)) {
+      submitAbility(p.instanceId, p.abilityId, targets, Object.keys(choices).length ? choices : undefined, 0);
+      setPending(null);
+      return;
+    }
     if ('fixed' in payment) {
       submitAbility(p.instanceId, p.abilityId, targets, Object.keys(choices).length ? choices : undefined, payment.fixed);
       setPending(null);
@@ -322,7 +343,7 @@ function ViewGame({
       ...p,
       targets,
       choices,
-      choiceQueue: [{ id: POOL_PAYMENT_CHOICE, kind: 'number', prompt: 'Pay how much from the Pool (the rest from available Chakra)?', min: payment.min, max: payment.max, initial: payment.max }],
+      choiceQueue: [{ id: POOL_PAYMENT_CHOICE, kind: 'number', prompt: 'Pay how much from the Pool (the rest from available Chakra)?', min: payment.min, max: payment.max, initial: payment.min }],
     });
   }
 
@@ -391,14 +412,19 @@ function ViewGame({
   /** Dispatches once a card's pipeline is complete, otherwise just stores the (further-along) pending state — the single funnel every card-flow step passes through. */
   function advanceCard(next: PendingCard) {
     if (cardStage(next) === 'ready') {
-      dispatch({
-        type: trust ? 'STAGE_CARD' : 'PLAY_HAND_CARD',
+      const play = {
         instanceId: next.cardInstanceId,
         enablingInstanceId: next.enablingInstanceId,
         targetInstanceIds: next.targets,
         payFromPool: next.payFromPool ?? 0,
         amount: next.amount ?? undefined,
-      });
+      };
+      if (trust) {
+        const force = askToForce(cardDeclarationWarnings(state, play.instanceId, play.enablingInstanceId, play.targetInstanceIds, play.payFromPool, play.amount));
+        if (force !== null) dispatch({ type: 'STAGE_CARD', ...play, force });
+      } else {
+        dispatch({ type: 'PLAY_HAND_CARD', ...play });
+      }
       setPending(null);
     } else {
       setPending(next);
@@ -529,7 +555,7 @@ function ViewGame({
               title="Manual correction: draw 1 extra card (your normal once-per-turn draw is the Draw button in the sidebar during your Draw Phase)"
               onClick={() => dispatch({ type: 'DRAW_CARDS', player: playerId, count: 1 })}
             >
-              Draw extra
+              Draw
             </button>
             <button type="button" onClick={() => dispatch({ type: 'SHUFFLE_DECK', player: playerId })}>
               Shuffle
@@ -604,7 +630,7 @@ function ViewGame({
         hand={player.hand}
         canPlace={trust ? canPlayCards : canActNow}
         canAct={canPlayCards}
-        alreadyPlacedThisTurn={trust ? false : player.chakraSourcePlacedThisTurn}
+        alreadyPlacedThisTurn={trust ? false : !canPlaceChakraSource(state, playerId)}
         onMoveCard={trust && mine ? (instanceId, to) => dispatch({ type: 'MOVE_HAND_CARD', player: playerId, instanceId, to }) : undefined}
         pendingCardInstanceId={pendingCardInstanceId}
         onPlaceChakraSource={(instanceId) => dispatch({ type: 'PLACE_CHAKRA_SOURCE', instanceId })}
@@ -612,7 +638,16 @@ function ViewGame({
           const entry = player.hand.find((h): h is Extract<HandEntry, { kind: 'card' }> => h.kind === 'card' && h.instanceId === instanceId);
           if (entry) startPlayCard(playerId, entry);
         }}
-        onPlayCharacter={(instanceId) => dispatch({ type: 'PLAY_CHARACTER', instanceId })}
+        onPlayCharacter={(instanceId) => {
+          const entryId = player.hand.find((h) => h.instanceId === instanceId && h.kind === 'character');
+          const deckEntry = entryId && entryId.kind === 'character' ? getCharacterDeckEntry(entryId.entryId) : undefined;
+          const slots = legalCharacterSlots(state, playerId);
+          if (!deckEntry || deckEntry.id === 'pain' || slots.length <= 1) {
+            dispatch({ type: 'PLAY_CHARACTER', instanceId });
+            return;
+          }
+          setPlacing({ player: playerId, instanceId, name: deckEntry.name });
+        }}
         characterPlay={(entryId) => {
           const entry = getCharacterDeckEntry(entryId);
           const room = entry ? entry.hasRoom(state, playerId) : false;
@@ -638,13 +673,34 @@ function ViewGame({
         onOpenDetails={(name, subtitle, text) => setDetails({ kind: 'card', name, subtitle, text })}
       />
     );
+    const placingHere = placing && placing.player === playerId ? placing : null;
+    const placeSlots = placingHere ? legalCharacterSlots(state, playerId) : [];
+    const placeAt = (slot: number) => {
+      if (!placingHere) return;
+      dispatch({ type: 'PLAY_CHARACTER', instanceId: placingHere.instanceId, slot });
+      setPlacing(null);
+    };
     const back = (
       <div className="board-row" key="back">
-        {player.backRow.map(
-          (character) =>
-            character && (
+        {player.backRow.map((character, slot) => {
+          const legal = placeSlots.includes(slot);
+          if (!character) {
+            return legal ? (
+              <button type="button" key={`slot-${slot}`} className="board-slot board-slot--legal" onClick={() => placeAt(slot)} title={`Play ${placingHere!.name} here`}>
+                Place here
+              </button>
+            ) : (
+              <div key={`slot-${slot}`} className="board-slot board-slot--empty" aria-label={`Empty slot ${slot + 1}`} />
+            );
+          }
+          return (
+            <div key={character.instanceId} className={legal ? 'board-slot-wrap board-slot-wrap--legal' : 'board-slot-wrap'}>
+              {legal && (
+                <button type="button" className="board-slot__push" onClick={() => placeAt(slot)} title={`Play ${placingHere!.name} here — ${character.name} shifts aside`}>
+                  Place here ⇄
+                </button>
+              )}
               <CharacterCard
-                key={character.instanceId}
                 character={character}
                 state={state}
                 isTargetable={isTargetable}
@@ -654,15 +710,19 @@ function ViewGame({
                 onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
                 draggable={trust && mine && !pending}
               />
-            ),
-        )}
+            </div>
+          );
+        })}
       </div>
     );
+    const tokenChoice = mine ? state.pendingChoices.find((c) => c.player === playerId && c.resolverId === 'token-slot') : undefined;
+    const tokenSlots = tokenChoice ? tokenChoice.options.map((o) => Number(o.id)) : [];
+    const lastToken = player.frontRow.reduce((last, t, i) => (t ? i : last), -1);
     const front = (
       <div className="front-row" key="front">
-        {player.frontRow.map(
-          (token) =>
-            token && (
+        {player.frontRow.map((token, slot) => {
+          if (token) {
+            return (
               <TokenCard
                 key={token.instanceId}
                 token={token}
@@ -671,8 +731,23 @@ function ViewGame({
                 onClickAsTarget={clickTarget}
                 onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
               />
-            ),
-        )}
+            );
+          }
+          if (tokenSlots.includes(slot)) {
+            return (
+              <button
+                type="button"
+                key={`fslot-${slot}`}
+                className="board-slot board-slot--legal board-slot--token"
+                onClick={() => dispatch({ type: 'RESOLVE_CHOICE', choiceId: tokenChoice!.id, optionIds: [String(slot)] })}
+              >
+                Here
+              </button>
+            );
+          }
+          // Gaps between tokens are drawn so positions stay visible; trailing empty slots are left out.
+          return slot < lastToken ? <div key={`fslot-${slot}`} className="board-slot board-slot--empty board-slot--token" aria-label={`Empty front slot ${slot + 1}`} /> : null;
+        })}
       </div>
     );
     const inPlay = (player.terrainInPlay || player.missionsInPlay.length > 0) && (
@@ -784,12 +859,41 @@ function ViewGame({
               />{' '}
               Trust mode {trust ? 'ON' : 'OFF'}
             </label>
+            {trust && (
+              <>
+                <label title="Take the Draw Phase draw automatically. The manual Draw buttons still work.">
+                  <input
+                    type="checkbox"
+                    checked={state.options?.autoDraw !== false}
+                    onChange={(e) => dispatch({ type: 'SET_OPTION', option: 'autoDraw', value: e.target.checked })}
+                  />{' '}
+                  Auto-draw
+                </label>
+                <label title="Every declared round waits for both players to confirm, even when one of them has nothing they could respond with. Either player can turn this on.">
+                  <input
+                    type="checkbox"
+                    checked={!!state.options?.alwaysConfirm}
+                    onChange={(e) => dispatch({ type: 'SET_OPTION', option: 'alwaysConfirm', value: e.target.checked })}
+                  />{' '}
+                  Always confirm
+                </label>
+              </>
+            )}
           </div>
-          <PhaseIndicator state={state} />
+          <PhaseIndicator state={state} onGoToPhase={(phase) => dispatch({ type: 'GO_TO_PHASE', phase })} />
+          {trust && <RuleWarnings log={state.log} />}
           {onUndo && (
             <button type="button" className="sidebar-undo" disabled={!undoLabel} onClick={onUndo} title="Undo the last draw/reveal-type action (things you can't fix by hand)">
               ↶ Undo{undoLabel ? `: ${undoLabel}` : ''}
             </button>
+          )}
+          {placing && (
+            <div className="pending-banner">
+              <span>Choose a back-row slot for {placing.name} — beside one of your characters, or onto one to push it aside.</span>
+              <button type="button" onClick={() => setPlacing(null)}>
+                Cancel
+              </button>
+            </div>
           )}
           {state.firstPlayerPending && <div className="sidebar-note">Setup: pick your starting character and mulligan if you like. Who goes first is flipped once both players confirm.</div>}
           {state.pendingChoices.map((choice) => (
@@ -906,6 +1010,7 @@ function ViewGame({
               </button>
             </div>
           )}
+          <RulesReference />
         </aside>
       </div>
       <ActionLog log={state.log} />

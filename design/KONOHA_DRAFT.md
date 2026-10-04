@@ -20,7 +20,7 @@
 - **Kamui (Kakashi)** — a free Retreat on an ally, leaning on the Retreat immunity rule.
 
 **Proposed defaults awaiting a look (not yet confirmed)**
-- Evolving is not "entering play," so it does **not** reset summoning sickness.
+- Evolving is not "entering play," so it does **not** reset Field Orientation.
 - Evolving takes effect immediately; the new Rank's upkeep applies at your next Upkeep.
 
 ---
@@ -35,11 +35,11 @@
 | C | 5 — Sakura, Naruto, Hinata, Choji, Ino | no cap |
 | **Total** | **15** | 12–18 ✓ |
 
-Evolving characters (Sasuke B→A, Naruto C→A, Choji C→B) count at their **printed** Rank for the caps above.
+Evolving characters (Jiraiya S→SS, Sasuke B→A, Naruto C→A, Choji C→B) count at their **printed** Rank for the caps above.
 
 **Synergy tags:** everyone carries **Konoha** (drives the upkeep discount). Extra tags are for card-specific bonuses: **Sannin**, **Sarutobi**, **Team 7**, **Team Guy**, **Team 10**, **Hyuga**, plus family tags **Uchiha**, **Nara**, **Akimichi**, **Yamanaka**.
 
-**Signature mechanics:** Jiraiya — Natural Energy · Tsunade — Byakugō Seal · Hiruzen — Five-Element Mastery · Kakashi — Copy Counters · Guy/Lee — Gates · Asuma — Team 10 Leader · Neji/Hinata — Gentle Fist (drain Pool) · Shikamaru — Shadow bind · Sasuke/Naruto/Choji — Evolutions · Choji — Calories · Ino — Mind Transfer.
+**Signature mechanics:** Jiraiya — toad summons, Sage Mode · Tsunade — Byakugō Seal · Hiruzen — Five-Element Mastery · Kakashi — Copy Counters · Guy/Lee — Gates · Asuma — Team 10 Leader · Neji/Hinata — Gentle Fist (drain Pool) · Shikamaru — Shadow bind · Sasuke/Naruto/Choji — Evolutions · Choji — Calories · Ino — Mind Transfer.
 
 **Keyword: Evolution.** A printed, one-way Form change triggered by a listed condition (and any listed cost). The card keeps its identity, damage, Pool contents and status; it gains the Form's stat changes and abilities, and its Rank becomes the Form's Rank (see Decisions #1).
 
@@ -50,14 +50,31 @@ Evolving characters (Sasuke B→A, Naruto C→A, Choji C→B) count at their **p
 ### S Rank
 
 #### Pervy Sage Jiraiya — S
-**HP 11 · Pool 5 · Tactician / Assault · Styles: Fire, Earth · Synergy: Konoha, Sannin**
-- **Trait — Sage Mode:** whenever Chakra is pooled into Jiraiya, he gains 1 **Natural Energy** (max 3). Pooling already stops him acting that turn, which is the "sitting still to gather energy" flavor.
-- **Trait — Toad Style Taijutsu:** with 1 or more Natural Energy, his Taijutsu deals +1 damage.
-- **Needle Jizo Guard** — 2, Quick, Style: None, Ninjutsu: prevent the next 2 damage to Jiraiya this turn. An attacker that used Taijutsu takes 1. Doesn't work vs Genjutsu (§9 physical-blocking rule).
-- **Toad Oil Fire Bullet** — 3, Fire, Ninjutsu: deal 3 damage.
-- **Earth Style: Swamp of the Underworld** — 3, Earth, Ninjutsu (Main): target enemy can't Retreat, and its abilities cost +1, until end of turn.
-- **Summoning: Gamabunta** — 4, Ninjutsu (Main): create a Gamabunta token (HP 5, front row, max 1). *Token ability — Sword Swing:* 2, deal 3. Fizzles if Jiraiya is defeated.
-- **Ultimate — Sage Art: Toad Barrage** — 5: needs 3 Natural Energy, and spends all of it. Deal 5 damage to a target and 2 to each character adjacent (cross pattern).
+**HP 11 · Pool 5 · Tactician / Assault · Styles: Fire · Synergy: Konoha, Sannin**
+*Revised: a lean base kit — hair technique, fire, Rasengan and toad summons — with Sage Mode as his Evolution. No traits, no Oil, no anti-Retreat effects.*
+- **Wild Lion's Mane** — two versions; choose one each time you use it:
+  - **V1 (offensive)** — 2, Style: None, Ninjutsu: deal 2 damage to a target and 1 to one character adjacent to it.
+  - **V2 (defensive)** — 2, Reactive, Style: None, Ninjutsu: in response to a Ninjutsu or Physical attack on Jiraiya, prevent 2 of its damage; a Taijutsu attacker takes 1. Doesn't work vs Genjutsu (§9 physical-blocking rule).
+- **Fire Release: Flame Bullet** — 2, Quick, Fire, Ninjutsu: deal 2 damage.
+- **Rasengan** — 3, Style: None, Ninjutsu: deal 4 damage.
+- **Summoning: Toads** — Main, Ninjutsu: create one Toad token of your choice, cost by toad (below). Only 1 of each Toad in play, and only 1 of the three boss toads (Gamabunta, Gamaken, Gamahiro) at a time. All Toads fizzle if Jiraiya is defeated.
+  - **Gamabunta, Toad Boss** — 5 Chakra · HP 7. *Sword Slash* — 2, Taijutsu: deal 3 damage.
+  - **Gamaken** — 4 Chakra · HP 7. *Shield Guard* — 1, Reactive, Taijutsu: redirect a targeted Ninjutsu or Physical attack aimed at Jiraiya onto Gamaken, reduced by 1 (min 0). *Jitte Strike* — 1, Taijutsu: deal 1 damage.
+  - **Gamahiro** — 4 Chakra · HP 5. *Twin Blades* — 2, Taijutsu: deal 2 damage to up to 2 different enemy characters.
+- **Ultimate — Toad Oil Flame Bullet (Combination)** — 6, Fire: needs Gamabunta in play. Deal 5 damage to a target and 2 to each character adjacent to it (cross pattern).
+- **Evolution — Sage Mode (SS Rank)** — 0, Main: needs a full Pool, and spends all of it (he sits still to gather natural energy). **Once per game** — after he exits Sage Mode, he can't enter it again. See the Sage Mode form below.
+- *Note:* no Forbidden Technique proposed.
+
+#### Jiraiya, Sage Mode — Evolution form (SS)
+**+4 max HP (heals 4) · +3 Pool capacity (Pool 8) · Rank SS** — lasts until Fukasaku & Shima are defeated (an exception to Evolution being one way). Everything on the base card stays; this adds the following. As an SS character he costs SS upkeep and loses you 9 Health if defeated (Decisions #1); the deck cap still counts him as S.
+- **On evolving — the Two Great Sage Toads:** create the **Fukasaku & Shima** token (HP 6, front row, max 1). They ride on his shoulders and power his Sage techniques. They fizzle if Jiraiya is defeated.
+- **Trait — Sage Art: Amphibian Technique:** Fukasaku & Shima sustain Sage Mode. If they're defeated, Jiraiya **exits Sage Mode**: he returns to his base form (S Rank, max HP 11, Pool capacity 5, Toad Oil Flame Bullet as his Ultimate). His current HP and Pool are cut down to the base limits if they're over.
+- **Trait — Sage Shield:** whenever damage would be dealt to Fukasaku & Shima — including splash or other indirect damage where they aren't the primary target — you may redirect that damage to Jiraiya instead. Redirected damage is subject to Jiraiya's own damage reduction (e.g. Sage Body).
+- **Trait — Sage Body:** Jiraiya takes 1 less damage from all sources (min 1).
+- **Trait — Sage Power:** his Ninjutsu deal +1 damage, and his Toads get +2 max HP and +1 damage while he's in Sage Mode.
+- **Sage Art: Ultra-Big Ball Rasengan** — 5, Style: None, Ninjutsu: deal 5 damage to a target and 2 to each character adjacent to it (cross pattern). (Sage Power's +1 applies to each hit.)
+- **Demonic Illusion: Toad Confrontation Chant** — 6, Style: None, Genjutsu: needs Fukasaku & Shima in play. Stun up to 3 enemy characters through their controller's next turn (no pooling, no abilities or Jutsu cards). Physical blockers can't stop it. Afterwards the chant can't be used again for 3 turn cycles.
+- **Ultimate — Sage Art: Goemon (Frying Pan World)** — 6, Fire, Ninjutsu: needs Fukasaku & Shima in play (Jiraiya's oil, Fukasaku's wind, Shima's fire). Deal 4 damage to every enemy character (5 with Sage Power). Replaces Toad Oil Flame Bullet as his Ultimate.
 - *Note:* no Forbidden Technique proposed.
 
 #### Lady Tsunade, Fifth Hokage — S
@@ -89,7 +106,7 @@ Evolving characters (Sasuke B→A, Naruto C→A, Choji C→B) count at their **p
 - **Trait — Sharingan Copy:** whenever an enemy ability (not an Ultimate or Forbidden Technique) targets one of your characters, Kakashi gains 1 **Copy Counter** (max 3).
 - **Trait — Copy Ninja:** spend a Copy Counter to add 1 damage to his next damaging ability this turn.
 - **Lightning Blade (Chidori)** — 3, Lightning: deal 3 damage.
-- **Kamui** — 3, Reactive, Ninjutsu: in response to an attack on an ally, that ally becomes Retreated for free until your next Untap, so the attack fails to target. It returns without summoning sickness. It can't be used on your last non-Retreated character. *(On hold — see Decisions.)*
+- **Kamui** — 3, Reactive, Ninjutsu: in response to an attack on an ally, that ally becomes Retreated for free until your next Untap, so the attack fails to target. It returns without Field Orientation. It can't be used on your last non-Retreated character. *(On hold — see Decisions.)*
 - **Earth: Mud Wall** — 2, Reactive, Earth: prevent the next 2 damage to Kakashi.
 - **Ultimate — Kamui Raikiri** — 6: needs 2 Copy Counters. Deal 5 damage that can't be reduced.
 
@@ -246,7 +263,7 @@ Konoha's Missions lean on **teams** and **the Will of Fire** rather than defeati
 ## Part 4 — Open items to revisit
 
 - The three **on-hold** decisions above (Calorie Reserve, evolution numbers, Kamui).
-- Confirm the **proposed evolution defaults** (no summoning-sickness reset; new upkeep applies next Upkeep).
+- Confirm the **proposed evolution defaults** (no Field Orientation reset; new upkeep applies next Upkeep).
 - Whether a **Forbidden Technique** should exist for Tsunade, Jiraiya, or the others (currently only Hiruzen and Guy have one).
 - Whether the **neutral Jutsu are shared** between the two factions' decks.
 - Balance pass against the Akatsuki deck once both are playable side by side.
