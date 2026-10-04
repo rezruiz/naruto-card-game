@@ -29,6 +29,13 @@ only be played if your board has fewer than 2 characters,"* locally
 overriding the standard 5-character board limit (§6.5) for that card's
 controller.
 
+**Cards only see what happens while they're in play.** A card's
+Conditions, counters and triggers only count events from the moment it
+enters play onward, unless its text explicitly says it looks back at
+earlier events. For example, a Mission whose Condition is "you have lost
+2 of your own characters this game" counts only the losses after that
+Mission was played.
+
 When writing new cards, prefer a plainly worded, self-contained override
 ("ignore the normal X; instead Y") over inventing a new rules subsystem —
 consistent with the original design philosophy of every card being
@@ -58,10 +65,11 @@ and a Character Deck of 12-18 cards.
 
 | Deck | Size | Contains | Drawn from |
 |---|---|---|---|
-| Hand Deck | **Maximum 80 cards** (minimum 40) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
+| Hand Deck | **Maximum 80 cards** (minimum 50) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
 | Character Deck | 12-18 cards | Character cards | Only via specific triggers (§8) |
 
-The preset Akatsuki Hand Deck used in this prototype is still 40 cards.
+The preset Akatsuki Hand Deck used in this prototype is 50 cards —
+exactly the minimum.
 
 Character cards are **never** in the Hand Deck and are never drawn
 by a normal draw step — they only enter your hand through the Character
@@ -79,8 +87,8 @@ decks.
 every character card in it must be unique. **Exception: D Rank cards
 are generic (not unique named characters) and are exempt from this
 restriction** — a Character Deck may contain multiple copies of the
-same D-rank card. The Hand Deck has no copy restriction at all; it may
-contain **up to 3 copies** of the same card.
+same D-rank card. The Hand Deck may contain **up to 3 copies** of the
+same card.
 
 ---
 
@@ -310,7 +318,8 @@ themselves. These aren't a formal card field; they just live in an
 ability's name/flavor text. The one formal classification every ability
 does carry is its **Type** — Ninjutsu, Taijutsu, or Genjutsu (§6.8) —
 plus Bukijutsu, a narrower category coined specifically for Explosive
-Tag (§13b) and not yet retrofitted onto any other card.
+Tag (§13b), and Sealing, coined for Chakra Suppression (§13b); neither
+is retrofitted onto any other card.
 
 **Taijutsu is a base capability every character has**, not a listed
 Style — it's not tied to any specific character's identity, so it's
@@ -480,8 +489,9 @@ Retaliation, Ambush isn't tied to a defeat trigger — it's granted
 directly, either as a keyword printed on a character's own card (an
 innate trait) or temporarily by an outside card effect (e.g. a Mission
 card's reward). Whatever grants it should state its scope and duration
-if those aren't obvious from context (e.g. "your next reinforcement
-gains Ambush" grants it to one specific future character, once).
+if those aren't obvious from context (e.g. "the next character you
+play from hand gains Ambush" grants it to one specific future character,
+once).
 
 Like every gameplay rule in this document, all of §6.6 (summoning
 sickness, Retaliation, and Ambush) is a default subject to Rule
@@ -531,6 +541,12 @@ template to check new cards against:
       for Explosive Tag (§13b). Not a general 4th category retrofitted
       onto other cards — every other ability in the game keeps its
       existing Ninjutsu/Taijutsu/Genjutsu classification unchanged.
+    - **Exception — Sealing:** a narrower Type for techniques that seal
+      or suppress a target's chakra, coined for Chakra Suppression
+      (§13b). Like Bukijutsu it isn't retrofitted — sealing-flavored
+      abilities already on cards stay Ninjutsu. A Sealing ability is
+      neither Ninjutsu nor Physical, so rules and cards that only care
+      about those Types (e.g. Jutsu Disruption) don't affect it.
     - **Physical (umbrella category):** Taijutsu and Bukijutsu are both
       "Physical" Types. Any rule or card text that blocks, redirects, or
       otherwise cares about "a Taijutsu attack" generically (e.g. §9's
@@ -945,7 +961,7 @@ character can enable. Each Jutsu card states:
   using the same colon/comma notation as abilities (§6.8a).
 
 Playing/activating a Jutsu card that is a technique — one with an ability
-**Type** (Ninjutsu, Taijutsu, Bukijutsu, or Genjutsu) — still requires an
+**Type** (Ninjutsu, Taijutsu, Bukijutsu, Genjutsu, or Sealing) — still requires an
 eligible enabling character to be in play, un-Disabled, and un-Retreated
 (§6.5a, §6.5b) at the moment it's played — same restrictions as using
 that character's own abilities. A **Type: None** Jutsu card (a tactical
@@ -1113,7 +1129,10 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   Human, Animal, Preta, Naraka. Pain has no HP or Chakra Pool of his own
   — he's represented entirely by these six tokens. Each Path token is
   individually targetable and has its own HP. Pain is defeated when all
-  6 Path tokens are defeated.
+  6 Path tokens are defeated — that's a full S-Rank character defeat
+  (Health loss, Reinforcement, Missions). A single Path being defeated
+  is a token loss, not a character loss. While any Path stands, Pain is
+  a C-Rank-or-higher character in play (§8).
 - Rinnegan Reservoir — each Path token still pools Chakra individually
   into its own Pool (Capacity per the table below, exception to §10) —
   Chakra is not merged into one combined pool. However, any Path's
@@ -1516,8 +1535,8 @@ abilities the turn it enters, Draw a card.
 Bingo Book: Threat Level A — 0 Chakra
 *Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat an A Rank character.
-Reward: Reduce the cost of your next reinforcement by 2, Your next
-reinforcement gains Ambush.
+Reward: Your next Character Deck draw you pay for costs 2 less. The
+next character you play from hand gains Ambush.
 
 Bingo Book: Threat Level B — 0 Chakra
 *Can be played face down; reveal it once its Condition is met.*
@@ -1544,6 +1563,12 @@ separate instances lets each instance be redirected independently
 (potentially to different characters than the attacker chose, or all to
 the same one). This Mission stays in play until one of the three
 selected characters is defeated or Retreated (§6.5b), then discard it.
+
+Emergency Relief — 0 Chakra
+Condition: You have lost 2 of your own characters (any Rank, any cause)
+since this Mission was played.
+Reward: Immediately draw from your Character Deck for free (look at 2,
+keep 1, §8). This doesn't increase the Character Deck tax.
 
 ---
 
@@ -1606,6 +1631,15 @@ explicit exception). At the start of each of the next 4 of your own
 Upkeep Phases, heal it 1 HP. If it ever stops being Retreated before
 all 4 triggers occur, this effect is cancelled.
 
+**Medical Chakra Infusion** — Style: None, Type: Ninjutsu
+Cost: 1 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Heal 2 HP to one of your characters (cannot exceed max HP).
+
+**Chakra Suppression** — Style: None, Quick Technique, Type: Sealing
+Cost: 2 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Target enemy character cannot pool Chakra into itself until its
+controller's next turn.
+
 **Jutsu Disruption** — Style: None, Reactive Technique, Type: Ninjutsu
 Cost: 2 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
 Effect: In response to a targeted Ninjutsu-Type damage-dealing ability
@@ -1617,6 +1651,13 @@ Cost: 1 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
 Effect: Deal 1 damage to 1 target, plus 1 damage to a second character
 adjacent to it in one direction of your choice (front, behind, left, or
 right, §9).
+
+**Fire Style: Fireball Jutsu** — Style: Fire, Type: Ninjutsu
+Cost: 4 Chakra (3 if paid from the enabling character's own Chakra
+Pool). *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Deal 3 damage to a character and 1 damage to each character
+adjacent to it, up to 2 other characters (your choice which 2 adjacent
+to the target, §9).
 
 **Assist Cards** (see §10c):
 

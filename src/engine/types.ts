@@ -37,7 +37,7 @@ export type Style =
   | 'Poison'
   | 'Ritual';
 
-export type AbilityType = 'Ninjutsu' | 'Taijutsu' | 'Bukijutsu' | 'Genjutsu' | 'None';
+export type AbilityType = 'Ninjutsu' | 'Taijutsu' | 'Bukijutsu' | 'Genjutsu' | 'Sealing' | 'None';
 
 export type AbilitySpeed = 'Normal' | 'Quick' | 'Reactive';
 

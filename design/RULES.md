@@ -35,6 +35,8 @@ A two-player mirror match: both players use the same preset **Akatsuki** deck. C
 ### 0.2 Card text beats general rules
 Everything here is a **default**. If a card's printed text contradicts a general rule, **the card wins** for whatever it explicitly covers ("unless otherwise stated"). Cards may rewrite normally-fixed numbers (board limit, upkeep, hand size, targeting) for as long as they are relevant. Example: a card reading *"You may only have 2 characters on your board while this is in play"* overrides the 5-character board limit for its controller. New cards should use a plain, self-contained override ("ignore the normal X; instead Y") rather than inventing a new subsystem.
 
+**Cards only see what happens while they're in play.** **[Updated]** A card's Conditions, counters and triggers count only events from the moment it enters play, unless its text explicitly looks back at earlier ones. Example: a Mission needing "you have lost 2 of your own characters this game" counts only losses after it was played.
+
 ### 0.3 Design philosophy
 Every card is mechanically tight, flavor-accurate, easy to parse standalone, and unique in identity. Each Akatsuki member has a signature mechanic (Kakuzu → Hearts, Hidan → Ritual/curse, Pain → the Six Paths, Deidara → Clay Charges, Kisame → Fusion Counters, and so on). Abilities do not list "requires X clan" restrictions; bonuses are baked into numbers.
 
@@ -55,7 +57,7 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 ### 1.2 Zones
 | Zone | What it is |
 |---|---|
-| **Hand Deck** | Up to **80** shuffled cards (the preset is 40): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
+| **Hand Deck** | **50–80** shuffled cards (the preset is 50): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
 | **Character Deck** | 12–18 shuffled Character cards (13 in the preset). Drawn only by triggers (§11). |
 | **Hand** | Holds both Hand Deck cards and drawn Character cards. **No maximum hand size** *(placeholder)*. |
 | **Back row** | Up to **5 Characters**, ordered left→right by entry order (§13.1). |
@@ -73,7 +75,7 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 ### 2.1 Sizes
 | Deck | Size | Drawn from |
 |---|---|---|
-| Hand Deck | **maximum 80** (minimum 40) **[Updated]** | normal turn draws |
+| Hand Deck | **maximum 80** (minimum 50) **[Updated]** | normal turn draws |
 | Character Deck | **12–18** | only Character Deck triggers (§11) |
 
 ### 2.2 Character Deck caps
@@ -84,7 +86,7 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 - **Hand Deck: up to 3 copies** of any card. A Mission follows this limit unless marked **Unique** (then 1 copy).
 
 ### 2.4 The preset Akatsuki decks
-**Hand Deck (the preset is 40 cards):** 2× each of the 6 Missions (12); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **40**, no filler.
+**Hand Deck (the preset is 50 cards):** 2× each of Unshakable Resolve, Bingo Book S / A / B / C and Squad Formation (12); 3× Emergency Relief (3); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× each of Medical Chakra Infusion and Chakra Suppression (6); 1× Fire Style: Fireball Jutsu (1); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **50**, no filler — exactly the minimum.
 
 **Character Deck (13):** Kakuzu, Hidan, Deidara, Kisame, Itachi, Konan, Sasori, Zetsu, Juzo Biwa, Yahiko, Pain of the Six Paths, and **2× Amegakure Civilian Rebel**. Rank tally: S×3 (Kisame, Itachi, Pain), A×4 (Kakuzu, Deidara, Konan, Sasori), B×3 (Hidan, Zetsu, Juzo), C×1 (Yahiko), D×2 — all caps satisfied.
 
@@ -234,8 +236,8 @@ Fire, Water, Wind, Earth, Lightning, Explosion (kekkei genkai), Ice / Lava / Boi
 - **Taijutsu is a base capability** every character has, not a listed Style.
 - A Style limits what a character may **enable**: an ability of Style X requires the acting character to have Style X; a Jutsu card of Style X requires an enabling character with Style X (Style **None** accepts any enabling character).
 
-### 7.3 Types (Ninjutsu / Taijutsu / Genjutsu / Bukijutsu)
-Every ability carries a **Type**: **Ninjutsu** (chakra-based techniques generally — elemental jutsu, summoning, sealing, ritual/curse, clone/substitution), **Taijutsu** (physical/weapon), **Genjutsu** (illusion), or **Bukijutsu** (ranged/thrown weapons — coined for Explosive Tag, not retrofitted onto other cards). Passive, perception-based abilities that fit none may leave Type unset.
+### 7.3 Types (Ninjutsu / Taijutsu / Genjutsu / Bukijutsu / Sealing)
+Every ability carries a **Type**: **Ninjutsu** (chakra-based techniques generally — elemental jutsu, summoning, sealing, ritual/curse, clone/substitution), **Taijutsu** (physical/weapon), **Genjutsu** (illusion), **Bukijutsu** (ranged/thrown weapons — coined for Explosive Tag, not retrofitted onto other cards), or **Sealing** (sealing/suppressing a target's chakra — coined for Chakra Suppression, not retrofitted; sealing-flavored abilities already on cards stay Ninjutsu, and Sealing is neither Ninjutsu nor Physical). Passive, perception-based abilities that fit none may leave Type unset.
 - **Physical** is an umbrella grouping (Taijutsu + Bukijutsu) used only in other cards' text ("a Physical attack"); it is never a printed Type.
 - **Physical blocking vs. Genjutsu:** any ability that blocks, redirects or reduces damage by *physically intercepting* an attack (Hiruko's Puppet Shell Guard, Third Kazekage's Iron Sand Wall, Asura Path's Mechanized Guard…) works only against **Ninjutsu and Physical** attacks — never against **Genjutsu**. Applies retroactively to every card of this kind.
 
@@ -324,7 +326,7 @@ If a player has retreated characters but **no non-Retreated character left**, al
 - **Summoning sickness:** a character can't use **damage-dealing abilities** the turn it enters play (including Ultimates and Forbidden Techniques — there is no separate multi-turn lockout beyond this). It **can** use non-damaging abilities (buffs, heals, Quick defenses) at once, and it can be targeted. Playing a *hand card* isn't "using an ability," so an enabling character's sickness doesn't block a damaging Jutsu card.
 - **"The turn it enters":** a character is sick during the turn number it entered. The starting character's entry turn is its controller's first turn (turn 1 for the first player, turn 2 for the second). A character returning from (or forced out of) Retreat is treated as entering on the current turn.
 - **Retaliation:** when one of your characters is defeated, the **next character you play** is exempt from summoning sickness entirely (it may use any damage-dealing ability, Ultimates and Forbidden Techniques included). One-time only; consumed when that character enters.
-- **Ambush** (keyword): the general form — a character with Ambush ignores summoning sickness. It's either printed on a card or granted by an effect (e.g., Bingo Book: Threat Level A's "your next reinforcement gains Ambush," one specific future character, once).
+- **Ambush** (keyword): the general form — a character with Ambush ignores summoning sickness. It's either printed on a card or granted by an effect (e.g., Bingo Book: Threat Level A's "the next character you play from hand gains Ambush," one specific future character, once).
 - All of this is a default subject to §0.2.
 
 ---
@@ -447,11 +449,11 @@ Tokens (Clay Spider, Puppet Soldier, Path tokens, Zetsu Clones, …) have **HP**
 - **Limit:** at most **1 Mission in play per character you control.** Playing past the limit **replaces** one of your choice (discarded incomplete, no Reward); the limit gates *playing*, not staying — Missions aren't discarded retroactively if your character count drops. *(Build: replaces the oldest automatically.)*
 - Missions don't count toward the 5-character board limit; they can be **Consumed as Chakra** (§6.2) like any Hand Deck card.
 - Default **face up**. Bingo Book cards may be played **face down**, revealed when their Condition is met. **[Playtest]** An opponent sees a face-down Mission only as "Face-down Mission."
-- The six Missions: Unshakable Resolve; Bingo Book S / A / B / C; Squad Formation (full text: Appendix A).
+- The seven Missions: Unshakable Resolve; Bingo Book S / A / B / C; Squad Formation; Emergency Relief (full text: Appendix A).
 
 ### 15.3 Jutsu cards
 Jutsu cards are standalone effects any **eligible enabling character** can play. Each states **Style** (or None), **Speed**, **Cost**, **Type**, and effect text (colon/comma notation).
-- **Enabling:** playing a technique Jutsu — one with an ability **Type** (Ninjutsu, Taijutsu, Bukijutsu, Genjutsu) — requires an **in-play, un-Disabled, un-Retreated** character whose Styles include the card's Style (any character for Style: None), at the moment it's played. **[Updated]** **Type: None** tactical cards (Field Intelligence, Incoming Mission Assignment, Battlefield Selection), Assist, Terrain and Mission cards need **no** enabling character; they're paid from generic Chakra.
+- **Enabling:** playing a technique Jutsu — one with an ability **Type** (Ninjutsu, Taijutsu, Bukijutsu, Genjutsu, Sealing) — requires an **in-play, un-Disabled, un-Retreated** character whose Styles include the card's Style (any character for Style: None), at the moment it's played. **[Updated]** **Type: None** tactical cards (Field Intelligence, Incoming Mission Assignment, Battlefield Selection), Assist, Terrain and Mission cards need **no** enabling character; they're paid from generic Chakra.
 - **Cost:** paid from the generic pool and/or the **enabling character's own Pool**; some cards are **cheaper when paid from that Pool** (§6.4).
 - **Once per turn** by name unless stated (§12.5).
 - **Ongoing-effect Jutsu** (a stated duration or multiple future triggers — e.g., Deploy Medic Corps) stay **face up in play** until finished or cancelled, then go to the discard pile. *(Build: the effect is tracked on the target; the card isn't shown in a separate in-play area yet — Part 20.)*
@@ -470,10 +472,13 @@ Full text is in Appendix A. Timing and implementation:
 | **Incoming Mission Assignment** | Normal, **Main only**, 0 | Look at the top 6 of your Hand Deck; add 1 Mission to hand; shuffle the rest back. |
 | **Battlefield Selection** | Normal, **Main only**, 0 | As above for a Terrain. |
 | **Chakra Transfer** | Normal, **Main only**, 0 | Choose two of your characters; remove X (≥1, **your choice, ≤ the first's Pool**) from the first's Pool and add X−1 (min 1) to the second's, capped by its room. |
-| **Field Intelligence** | Normal, **Main only**, 1 | Opponent reveals 2 cards of their choice; you draw 1. *(Build: the reveal has no mechanical effect; the draw does.)* |
+| **Field Intelligence** | Normal, **Main only**, 1 | Opponent reveals 2 cards of their choice; you draw 1. |
 | **Deploy Medic Corps** | Normal, **Main only**, 2 | Target one of **your Retreated** characters (explicit exception to Retreat immunity). At the start of each of your next **4** Upkeeps, heal it 1 HP; **cancelled** if it stops being Retreated. |
+| **Medical Chakra Infusion** | Normal, **Main only**, 1 | Heal 2 HP to one of your characters (not above max HP; not a token, not a Retreated character). |
+| **Fire Style: Fireball Jutsu** (Fire) | **Normal, Attack-type — Combat only**, 4 / 3 from Pool | 3 damage to a target, 1 to each of up to 2 characters adjacent to it (your choice). **Once per turn.** |
+| **Chakra Suppression** (Sealing) | **Quick**, 2 | Target enemy character can't be pooled into **through** its controller's next turn. Characters only, not tokens. |
 | **Akatsuki Hideout** (Terrain) | Normal, **Main only**, **2** | Upkeep −1 for Akatsuki-Synergy characters (min 0). |
-| **Missions (6)** | Normal, **Main only** | See Appendix A. |
+| **Missions (7)** | Normal, **Main only** | See Appendix A. **Emergency Relief** counts your own characters defeated (any rank, tokens don't count) after it's played; at 2, you immediately take a free Character Deck draw (look at 2, keep 1) that doesn't raise the tax. |
 
 ### 15.5 Assist cards
 An **Assist** card is a Jutsu card in every respect (same deck, Speed/Cost/Type rules) written as a stripped-down "character lite": header **[Assist Type]: [Character], [Synergy]** (e.g., *Impact Assist: Sasuke, Akatsuki*). Types: **Impact Assist** (offense-flavored payoff) and **Guard Assist** (protective). The named character needn't be canon to the faction; the Synergy is set by what the card should plug into. **Assist cards ignore the normal Style-enabling requirement** — the character briefly steps in, performs one technique, and leaves; a listed Style is informational (still checked by Style-conditional text elsewhere). Playable with zero characters in play.
@@ -481,8 +486,8 @@ An **Assist** card is a Jutsu card in every respect (same deck, Speed/Cost/Type 
 ### 15.6 Normal-speed card timing **[Updated]**
 | Kind of Normal-speed card | When playable |
 |---|---|
-| **Attack-type Jutsu** (Explosive Tag) | **Combat Phase only**; each named card **once per turn** |
-| **Non-combat cards** — Terrain, Missions, deck searches, Field Intelligence, Chakra Transfer, Deploy Medic Corps, etc. | **Main Phase only** — *not* in Combat |
+| **Attack-type Jutsu** (Explosive Tag, Fireball Jutsu) | **Combat Phase only**; each named card **once per turn** |
+| **Non-combat cards** — Terrain, Missions, deck searches, Field Intelligence, Chakra Transfer, Deploy Medic Corps, Medical Chakra Infusion, etc. | **Main Phase only** — *not* in Combat |
 | A Normal-speed card whose effect **implicates combat and triggers immediately** (it must somehow alter the immediate combat step) | Main Phase **or** Combat *(no card in the current deck qualifies; a card opts in with a timing setting)* |
 | **Quick / Reactive** cards | per their own speed, any time their condition is met |
 
@@ -656,7 +661,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 27. ✔ **Last C+ character defeated** (D-ranks on the board and in hand are ignored): if you hold a C+ character card you **must play one immediately** (free, any timing); otherwise you may take a **free** draw. Neither raises the tax. Replaces the Empty-Board Waiver.
 28. ✔ **Field Intelligence:** the **opponent chooses** which 2 cards to reveal; the caster sees them.
 29. ✔ **Hidden information:** in a 2-player game **neither** player sees the other's hand (the host used to).
-30. ✔ **Only technique Jutsu need an enabling character** — Jutsu with an ability Type (Ninjutsu, Taijutsu, Bukijutsu, Genjutsu). **Type: None** tactical cards (Field Intelligence, Incoming Mission Assignment, Battlefield Selection), Assist, Terrain and Mission cards don't.
+30. ✔ **Only technique Jutsu need an enabling character** — Jutsu with an ability Type (Ninjutsu, Taijutsu, Bukijutsu, Genjutsu, Sealing). **Type: None** tactical cards (Field Intelligence, Incoming Mission Assignment, Battlefield Selection), Assist, Terrain and Mission cards don't.
 31. ✔ **Player choice:** a card is the player's choice whenever it has an **alternative cost**, or an **additional or alternative effect that depends on spending a resource or meeting a condition** (Deidara's / Konan's charge spends, Iron Sand Wall's +X, Absorbed Vitality's X, Rampaging Charge's Straight/Bent and side). The engine always asks; it never spends or picks for you. **Set effects** (e.g. "look at the top 6") resolve as written.
 32. ✔ **Look at the top X:** X is **fixed** when the card states a value with no indication of choice; **which** matching card you take **is** your choice.
 33. ✔ **Selections the rules give you are yours:** which Mission a new one replaces at the limit, which character gets a Mission reward, which of several **tied** characters you pay Upkeep for, Squad Formation's redirect (a standing choice, Off by default).
@@ -676,7 +681,15 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 44. **Bingo Book S**'s full stun also covers Pain's Path tokens and Sasori's Kazekage.
 
 **Deck-size ruling**
-20. ✔ **Hand Deck maximum is 80 cards** (previously fixed at 40); the minimum remains 40. The preset Akatsuki Hand Deck remains 40 cards. (The build doesn't enforce any deck-size limit today; it only uses the fixed preset decks.)
+20. ✔ **Hand Deck maximum is 80 cards** (previously fixed at 40). (The build doesn't enforce any deck-size limit today; it only uses the fixed preset decks.)
+46. ✔ **Hand Deck minimum is 50 cards** (was 40), so a legal Hand Deck is 50–80 cards. The preset Akatsuki Hand Deck is 43 cards (40 + 3× Medical Chakra Infusion), still below the new minimum. (SPEC §2.)
+47. ✔ **New card: Medical Chakra Infusion** (Style: None, Type: Ninjutsu, 1 Chakra): heal 2 HP to one of your characters, capped at max HP. **3 copies** added to the preset Hand Deck. (SPEC §13b.)
+48. ✔ **New card: Chakra Suppression** (Style: None, Quick Technique, **Type: Sealing**, 2 Chakra): target enemy character can't be pooled into through its controller's next turn. **3 copies** added; the preset Hand Deck is now **46** cards. **Sealing** is a new narrow Type coined for this card (like Bukijutsu), not retrofitted onto existing cards. (SPEC §6.2, §6.8, §13b.)
+49. ✔ **New card: Fire Style: Fireball Jutsu** (Style: Fire, Type: Ninjutsu, 4 Chakra / 3 from the enabler's Pool): 3 damage to a target and 1 to each of up to 2 characters adjacent to it, your choice. **1 copy** added; the preset Hand Deck is now **47** cards. (SPEC §13b.)
+50. ✔ **Cards only see events once they're in play:** Conditions, counters and triggers start counting when the card enters play, unless its text says it looks back. (SPEC §0.)
+51. ✔ **New Mission: Emergency Relief** (0 Chakra). Condition: lose 2 of your own characters (any rank, any cause) after it's played. Reward: an **immediate free Character Deck draw** (look at 2, keep 1) — its own trigger, not a Reinforcement — that doesn't raise the tax. **3 copies** added; the preset Hand Deck is now **50** cards, exactly the minimum. (SPEC §13a.)
+52. ✔ **Pain's full defeat is a character defeat:** when his last Path token falls, Pain of the Six Paths is defeated as an **S-Rank character** — his controller loses 7 Health, it triggers Reinforcement and Retaliation, counts for Missions (Emergency Relief, the opponent's Bingo Book S), and the last Path's attacker gets kill credit. Individual Path tokens are token losses only. While any Path stands, Pain counts as a C+ character in play for the "last C+" Reinforcement rule. *(Previously none of this happened — the build treated his Paths as unrelated tokens.)* (SPEC §13, §8, §11.)
+53. ✔ **Bingo Book: Threat Level A reworded** for the draw-time tax: "Your next Character Deck draw you pay for costs 2 less. The next character you play from hand gains Ambush." The −2 goes to the next **paid** draw (manual or an accepted paid Reinforcement; a free draw doesn't use it up); Ambush goes to the next character **played**, which may be a different character. Behaviour unchanged — this confirms how the build already worked. (SPEC §13a.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -699,10 +712,9 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 2. **Banshō Ten'in's "pull an enemy closer":** what does it mean on the 2-row board? (Its +1 damage / can't-be-protected parts work; the pull does nothing yet.)
 3. **Damage-modifier order** (§20.1) — designer sign-off on the stacking order as built.
 4. **Whether Jutsu cards should sit in an "in play" area** while an ongoing effect runs (SPEC §10c says yes; not built).
-5. **Bingo Book A's wording** ("reduce the cost of your next reinforcement by 2") — the build applies it to your next **paid Character Deck draw**, since the tax now applies to draws (ruling 23).
-6. **Per-card open questions** flagged in the character log are collected in Appendix B under each card.
+5. **Per-card open questions** flagged in the character log are collected in Appendix B under each card.
 
-*Resolved this session:* upkeep ties (you choose — ruling 33), the Hidan ⇄ Kakuzu revival and Hidan's Curse condition, damage attribution, the damage-modifier system, and true redirects (rulings 37–42).
+*Resolved this session:* Bingo Book A's wording (ruling 53), upkeep ties (you choose — ruling 33), the Hidan ⇄ Kakuzu revival and Hidan's Curse condition, damage attribution, the damage-modifier system, and true redirects (rulings 37–42).
 
 ---
 
@@ -779,7 +791,10 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   Human, Animal, Preta, Naraka. Pain has no HP or Chakra Pool of his own
   — he's represented entirely by these six tokens. Each Path token is
   individually targetable and has its own HP. Pain is defeated when all
-  6 Path tokens are defeated.
+  6 Path tokens are defeated — that's a full S-Rank character defeat
+  (Health loss, Reinforcement, Missions). A single Path being defeated
+  is a token loss, not a character loss. While any Path stands, Pain is
+  a C-Rank-or-higher character in play (§8).
 - Rinnegan Reservoir — each Path token still pools Chakra individually
   into its own Pool (Capacity per the table below, exception to §10) —
   Chakra is not merged into one combined pool. However, any Path's
@@ -1182,8 +1197,8 @@ abilities the turn it enters, Draw a card.
 Bingo Book: Threat Level A — 0 Chakra
 *Can be played face down; reveal it once its Condition is met.*
 Condition: Defeat an A Rank character.
-Reward: Reduce the cost of your next reinforcement by 2, Your next
-reinforcement gains Ambush.
+Reward: Your next Character Deck draw you pay for costs 2 less. The
+next character you play from hand gains Ambush.
 
 Bingo Book: Threat Level B — 0 Chakra
 *Can be played face down; reveal it once its Condition is met.*
@@ -1210,6 +1225,12 @@ separate instances lets each instance be redirected independently
 (potentially to different characters than the attacker chose, or all to
 the same one). This Mission stays in play until one of the three
 selected characters is defeated or Retreated (§6.5b), then discard it.
+
+Emergency Relief — 0 Chakra
+Condition: You have lost 2 of your own characters (any Rank, any cause)
+since this Mission was played.
+Reward: Immediately draw from your Character Deck for free (look at 2,
+keep 1, §8). This doesn't increase the Character Deck tax.
 
 ---
 
@@ -1272,6 +1293,15 @@ explicit exception). At the start of each of the next 4 of your own
 Upkeep Phases, heal it 1 HP. If it ever stops being Retreated before
 all 4 triggers occur, this effect is cancelled.
 
+**Medical Chakra Infusion** — Style: None, Type: Ninjutsu
+Cost: 1 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Heal 2 HP to one of your characters (cannot exceed max HP).
+
+**Chakra Suppression** — Style: None, Quick Technique, Type: Sealing
+Cost: 2 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Target enemy character cannot pool Chakra into itself until its
+controller's next turn.
+
 **Jutsu Disruption** — Style: None, Reactive Technique, Type: Ninjutsu
 Cost: 2 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
 Effect: In response to a targeted Ninjutsu-Type damage-dealing ability
@@ -1283,6 +1313,13 @@ Cost: 1 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
 Effect: Deal 1 damage to 1 target, plus 1 damage to a second character
 adjacent to it in one direction of your choice (front, behind, left, or
 right, §9).
+
+**Fire Style: Fireball Jutsu** — Style: Fire, Type: Ninjutsu
+Cost: 4 Chakra (3 if paid from the enabling character's own Chakra
+Pool). *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Deal 3 damage to a character and 1 damage to each character
+adjacent to it, up to 2 other characters (your choice which 2 adjacent
+to the target, §9).
 
 **Assist Cards** (see §10c):
 
@@ -2496,6 +2533,96 @@ interpretive calls, flagged for review:
   straight to discard as normal — none of them have a stated duration
   or multiple triggers.
 
+### Medical Chakra Infusion
+**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+calls, flagged for review:
+- **"One of your characters" means a character, not a token** — the same
+  reading as the Mission rewards that say "a character you control". So
+  Pain's Path tokens, Clay Spiders, Zetsu Clones, Path Beasts and the
+  Third Kazekage can't be healed by it.
+- **No Retreat exception** — unlike Deploy Medic Corps, the card text
+  doesn't override Retreat's targeting immunity (§6.5b), so a Retreated
+  character can't be targeted.
+- **Timing:** a non-combat Normal-speed card — Main Phase only (§15.6).
+- **Enabler:** it has a Type (Ninjutsu), so like every technique Jutsu
+  it needs an enabling character in play; Style: None means any of your
+  characters can enable it.
+- **Targeting a character already at full HP is legal** — the heal just
+  does nothing past max HP.
+
+### Chakra Suppression
+**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+calls, flagged for review:
+- **"Until its controller's next turn" is read as *through* that turn**
+  (the same duration as Mind Prison and Kakuzu's revival stun). Enemies
+  only pool on their own turn, so a lock that ended as their turn began
+  would do nothing when this is cast on your own turn. Cast on your
+  turn, it covers their next turn; cast on their turn (it's Quick), it
+  covers the rest of that turn and their following turn.
+- **Type: Sealing is a new Type** coined for this card (§6.8), the way
+  Bukijutsu was for Explosive Tag. It isn't Ninjutsu, so Jutsu
+  Disruption can't negate it, and it isn't damaging, so the
+  Substitution family can't either. Existing sealing-flavored abilities
+  keep their current Types.
+- **It stops the pooling action only** (§5.3). Chakra that reaches the
+  Pool another way — Chakra Transfer, absorption (Zetsu, Kisame), Preta
+  Path's Chakra Absorption — still lands. Chakra already in the Pool
+  stays and can still be spent.
+- **"Enemy character" means a character, not a token**, so Pain's Path
+  tokens (which pool individually) can't be targeted.
+- **Enabler:** it has a Type, so it needs an enabling character; Style:
+  None means any of your characters can enable it.
+- **Retreated characters** can't be targeted (Retreat immunity, §6.5b).
+- The lock shows on the target as **"Can't be pooled into — through
+  turn N"**.
+
+### Fire Style: Fireball Jutsu
+**[New]** Added with 1 copy in the preset Hand Deck. Interpretive
+calls, flagged for review:
+- **Attack-type Jutsu:** it deals damage, so it's **Combat Phase only**
+  and **once per turn by name** (§15.6), like Explosive Tag.
+- **Enabler:** needs a **Fire**-Style character in play (Kakuzu in the
+  preset deck).
+- **Pool discount:** follows the Substitution convention — paying any of
+  it from the enabling character's own Pool makes the cost 3; the rest
+  comes from generic Chakra.
+- **Adjacency** is the §9 sense Explosive Tag uses: front, behind, left
+  or right of the target. You pick 0, 1 or 2 of those to take 1 damage
+  each; with fewer than 2 adjacent units, fewer are hit.
+- **"Character" follows Explosive Tag, not Medical Chakra Infusion:**
+  tokens (Pain's Paths, clones, Beasts) can be the target or a splash
+  target, as with every other attack in the game.
+- Each hit is a separate damage instance, so damage reductions and
+  redirects apply to each one individually.
+- **Kakuzu's Elemental Versatility** (first elemental jutsu each turn
+  −1) currently applies only to his own abilities, not to a Jutsu card
+  he enables — the same as Lightning/Water Substitution today.
+
+### Emergency Relief
+**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+calls, flagged for review:
+- **Only losses after it's played count** (SPEC §0: cards only see what
+  happens while they're in play), even though the Condition says "this
+  game".
+- **"Characters" means characters, not tokens** — a Clay Spider, Zetsu
+  Clone, Path Beast, the Third Kazekage or a single Pain Path being
+  defeated doesn't count. A D-rank character does count ("any Rank").
+- **Pain of the Six Paths counts** once he's fully defeated (his last
+  Path falls) — one character loss. **[Designer ruling]**
+- **Not a loss:** a character returned to hand with trust mode's manual
+  "Return to hand" correction — it wasn't defeated.
+- **The reward is an immediate free draw** (look at 2, keep 1, with the
+  usual D-rank bonus) — its own trigger, separate from Reinforcement, and
+  like every Character Deck draw a state-based action (§8). It's revised
+  from an earlier version that made your *next* paid draw free instead.
+- **The tax counter doesn't go up**, and a pending Bingo Book: Threat
+  Level A discount is untouched.
+- **If you're already picking from a Character Deck reveal** when it
+  completes, the free draw waits as a free offer you take right after.
+  With an empty Character Deck there's nothing to draw.
+- The Mission chip shows "x/2 of your characters lost" while it's in
+  play.
+
 ### Assist Cards (new sub-category) and Chidori Interception
 Assist cards are a presentation/flavor layer over the existing Jutsu
 card rules (§10c), not a new zone or card type — the only genuinely new
@@ -2838,7 +2965,7 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: Akatsuki
 |---|---|---|---|---|---|---|---|---|
 | Shinobi Strike | 1 | Normal | None | Taijutsu | yes | 1 | enemy | — |
 
-### Hand Deck cards (40)
+### Hand Deck cards (50)
 
 | Card | Copies | Kind | Cost | Speed | Style | Type | Normal-speed timing | Targets | Notes |
 |---|---|---|---|---|---|---|---|---|---|
@@ -2848,6 +2975,7 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: Akatsuki
 | Bingo Book: Threat Level B | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
 | Bingo Book: Threat Level C | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
 | Squad Formation | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
+| Emergency Relief | 3 | mission | 0 | Normal | None | None | Main only | none/auto | — |
 | Substitution | 3 | jutsu | variable | Reactive | None | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
 | Lightning Substitution | 3 | jutsu | variable | Reactive | Lightning | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
 | Water Substitution | 3 | jutsu | variable | Reactive | Water | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
@@ -2855,6 +2983,9 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: Akatsuki
 | Chakra Transfer | 2 | jutsu | 0 | Normal | None | Ninjutsu | Main only | 2 (ally) | player chooses amount |
 | Field Intelligence | 2 | jutsu | 1 | Normal | None | None | Main only | none/auto | — |
 | Deploy Medic Corps | 2 | jutsu | 2 | Normal | None | Ninjutsu | Main only | 1 (ally) | may target a Retreated ally |
+| Medical Chakra Infusion | 3 | jutsu | 1 | Normal | None | Ninjutsu | Main only | 1 (ally) | characters only, not tokens |
+| Chakra Suppression | 3 | jutsu | 2 | Quick | None | Sealing | — | 1 (enemy) | characters only, not tokens |
+| Fire Style: Fireball Jutsu | 1 | jutsu | variable | Normal | Fire | Ninjutsu | Combat only | 3 (any) | Attack-type (once/turn by name); cheaper if paid from enabler's Pool |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
 | Explosive Tag | 2 | jutsu | 1 | Normal | None | Bukijutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
 | Battlefield Selection | 2 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |

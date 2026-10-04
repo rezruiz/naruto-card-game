@@ -1185,6 +1185,96 @@ interpretive calls, flagged for review:
   straight to discard as normal — none of them have a stated duration
   or multiple triggers.
 
+### Medical Chakra Infusion
+**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+calls, flagged for review:
+- **"One of your characters" means a character, not a token** — the same
+  reading as the Mission rewards that say "a character you control". So
+  Pain's Path tokens, Clay Spiders, Zetsu Clones, Path Beasts and the
+  Third Kazekage can't be healed by it.
+- **No Retreat exception** — unlike Deploy Medic Corps, the card text
+  doesn't override Retreat's targeting immunity (§6.5b), so a Retreated
+  character can't be targeted.
+- **Timing:** a non-combat Normal-speed card — Main Phase only (§15.6).
+- **Enabler:** it has a Type (Ninjutsu), so like every technique Jutsu
+  it needs an enabling character in play; Style: None means any of your
+  characters can enable it.
+- **Targeting a character already at full HP is legal** — the heal just
+  does nothing past max HP.
+
+### Chakra Suppression
+**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+calls, flagged for review:
+- **"Until its controller's next turn" is read as *through* that turn**
+  (the same duration as Mind Prison and Kakuzu's revival stun). Enemies
+  only pool on their own turn, so a lock that ended as their turn began
+  would do nothing when this is cast on your own turn. Cast on your
+  turn, it covers their next turn; cast on their turn (it's Quick), it
+  covers the rest of that turn and their following turn.
+- **Type: Sealing is a new Type** coined for this card (§6.8), the way
+  Bukijutsu was for Explosive Tag. It isn't Ninjutsu, so Jutsu
+  Disruption can't negate it, and it isn't damaging, so the
+  Substitution family can't either. Existing sealing-flavored abilities
+  keep their current Types.
+- **It stops the pooling action only** (§5.3). Chakra that reaches the
+  Pool another way — Chakra Transfer, absorption (Zetsu, Kisame), Preta
+  Path's Chakra Absorption — still lands. Chakra already in the Pool
+  stays and can still be spent.
+- **"Enemy character" means a character, not a token**, so Pain's Path
+  tokens (which pool individually) can't be targeted.
+- **Enabler:** it has a Type, so it needs an enabling character; Style:
+  None means any of your characters can enable it.
+- **Retreated characters** can't be targeted (Retreat immunity, §6.5b).
+- The lock shows on the target as **"Can't be pooled into — through
+  turn N"**.
+
+### Fire Style: Fireball Jutsu
+**[New]** Added with 1 copy in the preset Hand Deck. Interpretive
+calls, flagged for review:
+- **Attack-type Jutsu:** it deals damage, so it's **Combat Phase only**
+  and **once per turn by name** (§15.6), like Explosive Tag.
+- **Enabler:** needs a **Fire**-Style character in play (Kakuzu in the
+  preset deck).
+- **Pool discount:** follows the Substitution convention — paying any of
+  it from the enabling character's own Pool makes the cost 3; the rest
+  comes from generic Chakra.
+- **Adjacency** is the §9 sense Explosive Tag uses: front, behind, left
+  or right of the target. You pick 0, 1 or 2 of those to take 1 damage
+  each; with fewer than 2 adjacent units, fewer are hit.
+- **"Character" follows Explosive Tag, not Medical Chakra Infusion:**
+  tokens (Pain's Paths, clones, Beasts) can be the target or a splash
+  target, as with every other attack in the game.
+- Each hit is a separate damage instance, so damage reductions and
+  redirects apply to each one individually.
+- **Kakuzu's Elemental Versatility** (first elemental jutsu each turn
+  −1) currently applies only to his own abilities, not to a Jutsu card
+  he enables — the same as Lightning/Water Substitution today.
+
+### Emergency Relief
+**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+calls, flagged for review:
+- **Only losses after it's played count** (SPEC §0: cards only see what
+  happens while they're in play), even though the Condition says "this
+  game".
+- **"Characters" means characters, not tokens** — a Clay Spider, Zetsu
+  Clone, Path Beast, the Third Kazekage or a single Pain Path being
+  defeated doesn't count. A D-rank character does count ("any Rank").
+- **Pain of the Six Paths counts** once he's fully defeated (his last
+  Path falls) — one character loss. **[Designer ruling]**
+- **Not a loss:** a character returned to hand with trust mode's manual
+  "Return to hand" correction — it wasn't defeated.
+- **The reward is an immediate free draw** (look at 2, keep 1, with the
+  usual D-rank bonus) — its own trigger, separate from Reinforcement, and
+  like every Character Deck draw a state-based action (§8). It's revised
+  from an earlier version that made your *next* paid draw free instead.
+- **The tax counter doesn't go up**, and a pending Bingo Book: Threat
+  Level A discount is untouched.
+- **If you're already picking from a Character Deck reveal** when it
+  completes, the free draw waits as a free offer you take right after.
+  With an empty Character Deck there's nothing to draw.
+- The Mission chip shows "x/2 of your characters lost" while it's in
+  play.
+
 ### Assist Cards (new sub-category) and Chidori Interception
 Assist cards are a presentation/flavor layer over the existing Jutsu
 card rules (§10c), not a new zone or card type — the only genuinely new

@@ -48,7 +48,8 @@ function makePathToken(defId: string, name: string, owner: PlayerId, hp: number,
     // each Path is defeated (or not) entirely independently.
     ownerCharacterInstanceId: `pain-${owner}`,
     status: freshTokenStatus(),
-    extra: {},
+    // Marks the six Paths (not the Beasts): Pain is defeated when none remain (combat.ts).
+    extra: { painPath: true },
     chakraPool: { current: 0, capacity: poolCapacity },
   };
 }

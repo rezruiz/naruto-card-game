@@ -109,6 +109,10 @@ export function poolChakra(state: GameState, instanceId: string, amount: number)
   if (!relaxed && stunUntil !== undefined && state.turn <= stunUntil) {
     return appendLog(working, `${unit.name} is stunned and can't be pooled into.`);
   }
+  const poolLockUntil = unit.extra.poolLockedUntilTurn as number | undefined;
+  if (!relaxed && poolLockUntil !== undefined && state.turn <= poolLockUntil) {
+    return appendLog(working, `${unit.name} is under Chakra Suppression and can't be pooled into.`);
+  }
   if (!relaxed && isCharacter(unit) && getCharacterDef(unit.defId)?.noSelfPooling) {
     return appendLog(working, `${unit.name}'s Pool can't be filled by pooling — only by absorption.`);
   }

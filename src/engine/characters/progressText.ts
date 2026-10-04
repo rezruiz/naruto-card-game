@@ -81,6 +81,8 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
   damagePreventionRemaining: (v, s, occ) =>
     (v as number) > 0 && occ.extra.damagePreventionUntilTurn === s.turn ? { label: 'Damage prevention', value: `${v} this turn`, key: true } : undefined,
   damagePreventionUntilTurn: () => undefined, // shown via damagePreventionRemaining
+  painPath: () => undefined, // internal marker: one of Pain's six Paths
+  poolLockedUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: "Can't be pooled into", value: `Through turn ${v}`, key: true } : undefined),
   stunnedUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: 'Stunned', value: `Through turn ${v}`, key: true } : undefined),
   targetLockUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: "Can't use targeted abilities", value: `Through turn ${v}`, key: true } : undefined),
   evasiveActive: (v) => (v ? { label: 'Evasive', value: 'Active', key: true } : undefined),

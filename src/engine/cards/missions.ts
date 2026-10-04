@@ -161,6 +161,10 @@ export function missionProgressText(defId: string, extra: Record<string, unknown
     const untaps = extra.untaps as number | undefined;
     return untaps === undefined ? undefined : `${untaps}/6 Untaps`;
   }
+  if (defId === 'emergency-relief') {
+    const losses = extra.losses as number | undefined;
+    return losses === undefined ? undefined : `${losses}/2 of your characters lost`;
+  }
   if (defId === 'squad-formation') {
     if (!extra.active) return 'Waiting for 3 characters in play';
     return extra.redirectTo ? 'Active — redirecting hits' : 'Active — redirect off';
@@ -260,6 +264,35 @@ registerMission({
   },
 });
 
-for (const def of [unshakableResolve, bingoBookS, bingoBookA, bingoBookB, bingoBookC, squadFormation]) {
+// --- Emergency Relief --------------------------------------------------------
+
+// Condition: you've lost 2 of your own characters (any rank, any cause) —
+// counted only while this Mission is in play (SPEC §0). Reward: an
+// immediate free Character Deck draw (look at 2, keep 1) — its own trigger,
+// not a Reinforcement, and the tax doesn't move. If a reveal is already
+// waiting to be picked from, this one queues as a free draw to take after it.
+const emergencyRelief = missionCard('emergency-relief', 'Emergency Relief', 0, false, { losses: 0 });
+registerMission({
+  id: 'emergency-relief',
+  tick: (state, owner, missionInstanceId, trigger) => {
+    if (trigger.kind !== 'own-loss') return { state, discard: false };
+    const mission = state.players[owner].missionsInPlay.find((m) => m.instanceId === missionInstanceId);
+    if (!mission) return { state, discard: false };
+    const losses = ((mission.extra.losses as number) ?? 0) + 1;
+    if (losses < 2) return { state: patchMission(state, owner, missionInstanceId, { losses }), discard: false };
+    const p = state.players[owner];
+    let next = appendLog(state, 'Emergency Relief succeeds — a free Character Deck draw (the tax does not go up).');
+    if (p.characterDeck.length === 0) {
+      next = appendLog(next, `${owner}'s Character Deck is empty — nothing to draw.`);
+    } else if (p.pendingCharacterReveal) {
+      next = { ...next, players: { ...next.players, [owner]: { ...next.players[owner], reinforcementOffers: [...p.reinforcementOffers, 'free'] } } };
+    } else {
+      next = revealCharacters(next, owner, 2, 'reinforcement');
+    }
+    return { state: next, discard: true };
+  },
+});
+
+for (const def of [unshakableResolve, bingoBookS, bingoBookA, bingoBookB, bingoBookC, squadFormation, emergencyRelief]) {
   registerHandCard(def);
 }

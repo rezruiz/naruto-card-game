@@ -43,7 +43,7 @@ import {
   toggleStatus,
   untapChakraSource,
 } from './trust/manual';
-import type { GameAction, GameState, PlayerId } from './types';
+import type { GameAction, GameState, PlayerId, PlayerState } from './types';
 
 /**
  * SPEC.md §3: initial Setup isn't done until both players have chosen a
@@ -74,9 +74,12 @@ function drainPendingReinforcements(state: GameState): GameState {
   for (const player of ['p1', 'p2'] as PlayerId[]) {
     const events = next.players[player].pendingReinforcementEvents;
     if (events.length === 0) continue;
-    let p = { ...next.players[player], pendingReinforcementEvents: [] };
+    let p: PlayerState = { ...next.players[player], pendingReinforcementEvents: [] };
     const notes: string[] = [];
     for (const event of events) {
+      // Emergency Relief counts every own loss, D-ranks included.
+      next = runMissionTrigger({ ...next, players: { ...next.players, [player]: p } }, player, { kind: 'own-loss', rank: event.rank });
+      p = next.players[player];
       if (event.rank === 'D') {
         notes.push(`${player}'s D-rank character doesn't trigger a Reinforcement.`);
         continue;

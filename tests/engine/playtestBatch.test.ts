@@ -224,7 +224,7 @@ describe('Every tracked resource is visible (progressText guard)', () => {
       ...['combat.ts', 'poison.ts', 'chakraSpore.ts', 'scheduledHeals.ts', 'abilities.ts', 'playCharacter.ts'].map((f) => join(dir, f)),
       join(dir, 'cards', 'missions.ts'),
     ].filter((f) => f.endsWith('.ts') && !f.endsWith('progressText.ts'));
-    const missionOnly = new Set(['faceDown', 'healthAtPlay', 'untaps', 'active', 'group', 'redirectTo']);
+    const missionOnly = new Set(['faceDown', 'healthAtPlay', 'untaps', 'losses', 'active', 'group', 'redirectTo']);
     const keys = new Set<string>();
     for (const file of files) {
       const src = readFileSync(file, 'utf8');

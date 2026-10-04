@@ -129,6 +129,93 @@ describe('Deploy Medic Corps', () => {
   });
 });
 
+describe('Medical Chakra Infusion', () => {
+  it('heals one of your characters 2 HP, never above max HP', () => {
+    let state = giveChakra(freshMain1(), 'p1', 2);
+    state = dealDamage(state, 'p1-deidara', 3).state;
+    const hpBefore = state.players.p1.backRow[2]!.currentHP;
+    const first = withHandCard(state, 'p1', 'medical-chakra-infusion');
+    state = gameReducer(first.state, { type: 'PLAY_HAND_CARD', instanceId: first.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p1-deidara'], payFromPool: 0 });
+    state = resolveTop(state);
+    expect(state.players.p1.backRow[2]!.currentHP).toBe(hpBefore + 2);
+
+    // 1 damage left — the second copy heals only up to max.
+    const second = withHandCard(state, 'p1', 'medical-chakra-infusion');
+    state = gameReducer(second.state, { type: 'PLAY_HAND_CARD', instanceId: second.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p1-deidara'], payFromPool: 0 });
+    state = resolveTop(state);
+    expect(state.players.p1.backRow[2]!.currentHP).toBe(state.players.p1.backRow[2]!.maxHP);
+  });
+
+  it("can't target an enemy character", () => {
+    let state = giveChakra(freshMain1(), 'p1', 1);
+    state = dealDamage(state, 'p2-deidara', 3).state;
+    const { state: withCard, instanceId } = withHandCard(state, 'p1', 'medical-chakra-infusion');
+    state = gameReducer(withCard, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-deidara'], payFromPool: 0 });
+    expect(state.stack).toHaveLength(0);
+  });
+});
+
+describe('Chakra Suppression', () => {
+  const deidaraPool = (s: GameState) => s.players.p2.backRow[2]!.chakraPool.current;
+  const p2Turn = (s: GameState, turn: number): GameState => giveChakra({ ...s, activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Main1', turn }, 'p2', 1);
+
+  it("locks an enemy character's Pool through its controller's next turn", () => {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 2), 'p1', 'chakra-suppression');
+    const castTurn = state.turn;
+    state = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-deidara'], payFromPool: 0 });
+    state = resolveTop(state);
+
+    const locked = gameReducer(p2Turn(state, castTurn + 1), { type: 'POOL_CHAKRA', instanceId: 'p2-deidara', amount: 1 });
+    expect(deidaraPool(locked)).toBe(deidaraPool(state));
+
+    const later = gameReducer(p2Turn(state, castTurn + 3), { type: 'POOL_CHAKRA', instanceId: 'p2-deidara', amount: 1 });
+    expect(deidaraPool(later)).toBe(deidaraPool(state) + 1);
+  });
+
+  it("cast on the enemy's own turn (Quick), it covers the rest of that turn and their next one", () => {
+    let { state, instanceId } = withHandCard(freshMain1(), 'p1', 'chakra-suppression');
+    state = giveChakra(p2Turn(state, state.turn + 1), 'p1', 2);
+    const castTurn = state.turn;
+    state = gameReducer({ ...state, priorityPlayer: 'p1' }, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-deidara'], payFromPool: 0 });
+    expect(state.stack).toHaveLength(1);
+    state = resolveTop(state);
+    expect(state.players.p2.backRow[2]!.extra.poolLockedUntilTurn).toBe(castTurn + 2);
+  });
+
+  it("can't target your own character", () => {
+    const { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 2), 'p1', 'chakra-suppression');
+    const next = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p1-deidara'], payFromPool: 0 });
+    expect(next.stack).toHaveLength(0);
+  });
+});
+
+describe('Fire Style: Fireball Jutsu', () => {
+  const hp = (s: GameState, i: number) => s.players.p2.backRow[i]!.currentHP;
+
+  it('deals 3 to the target and 1 to each of up to 2 chosen adjacent characters, costing 3 from the Pool', () => {
+    let { state, instanceId } = withHandCard(freshMain1(), 'p1', 'fireball-jutsu');
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Attack-type Jutsu are Combat-only
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c, i) => (i === 0 && c ? { ...c, chakraPool: { ...c.chakraPool, current: 3 } } : c)) } } };
+    const before = [0, 1, 2, 3].map((i) => hp(state, i));
+
+    state = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-hidan', 'p2-kakuzu', 'p2-deidara'], payFromPool: 3 });
+    expect(state.stack).toHaveLength(1);
+    expect(state.players.p1.backRow[0]!.chakraPool.current).toBe(0);
+    state = resolveTop(state);
+    expect(hp(state, 1)).toBe(before[1] - 3);
+    expect(hp(state, 0)).toBe(before[0] - 1);
+    expect(hp(state, 2)).toBe(before[2] - 1);
+    expect(hp(state, 3)).toBe(before[3]); // not chosen
+  });
+
+  it('refuses a splash target that is not adjacent to the primary', () => {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 4), 'p1', 'fireball-jutsu');
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' });
+    state = gameReducer(giveChakra(state, 'p1', 4), { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-hidan', 'p2-kisame'], payFromPool: 0 });
+    expect(state.stack).toHaveLength(0);
+  });
+});
+
 describe('Explosive Tag', () => {
   it('deals 1 damage to the primary target and 1 to an adjacent character', () => {
     let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 3), 'p1', 'explosive-tag');

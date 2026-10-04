@@ -1,6 +1,6 @@
 import { appendLog, otherPlayer } from './phases/phaseMachine';
 import { findOccupant, isCharacter, patchOccupant } from './board';
-import type { AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
+import type { AbilitySpeed, AbilityType, BoardOccupant, CharacterInstance, GameState, PlayerId, Style } from './types';
 import { HEALTH_LOST_ON_DEFEAT } from './ranks';
 import { getCharacterDef, getTokenDef } from './characters/registry';
 import { getHandCardDef } from './cards/registry';
@@ -344,8 +344,6 @@ function applyDefeat(
     backRow[index] = null;
     next = { ...state, players: { ...state.players, [player]: { ...p, backRow } } };
     if (isCharacter(occupant)) {
-      const healthLost = HEALTH_LOST_ON_DEFEAT[occupant.rank] ?? 0;
-      next = loseHealth(next, player, healthLost);
       // Default rule: a token fizzles when the character that created it is
       // defeated (SPEC.md's recurring "fizzles if X dies" pattern — Deidara's
       // Clay Spiders, Sasori's Puppet Soldiers, etc.). Characters with a more
@@ -353,44 +351,7 @@ function applyDefeat(
       // Path rather than to Pain himself) override this via their own
       // token-defeat hooks once that structure is implemented.
       next = fizzleOwnedTokens(next, player, occupant.instanceId);
-      // SPEC.md §6.6 Retaliation: the next character this player plays is
-      // exempt from summoning sickness entirely (consumed once played, §8).
-      // §8's Reinforcement trigger is recorded here, at the moment of defeat
-      // (whether any other C-rank-or-higher character is still standing —
-      // D-ranks don't count), and turned into an offer/forced play by the
-      // reducer, which can look up hand cards' ranks without the import
-      // cycle deck.ts/characters would cause here.
-      const lastCPlus = !next.players[player].backRow.some((c) => c && c.rank !== 'D');
-      next = {
-        ...next,
-        players: {
-          ...next.players,
-          [player]: {
-            ...next.players[player],
-            retaliationPending: true,
-            pendingReinforcementEvents: [...next.players[player].pendingReinforcementEvents, { rank: occupant.rank, lastCPlus }],
-          },
-        },
-      };
-      // Mission cards (the Bingo Book family, §13a) key off "defeated an
-      // enemy of Rank X" — recorded on the opponent (the potential winner),
-      // drained/checked by the reducer for the same import-cycle reason as
-      // pendingReinforcementDraws above.
-      const winner = otherPlayer(player);
-      next = {
-        ...next,
-        players: {
-          ...next.players,
-          [winner]: {
-            ...next.players[winner],
-            pendingDefeatEvents: [...next.players[winner].pendingDefeatEvents, { rank: occupant.rank, byInstanceId: killerInstanceId }],
-          },
-        },
-      };
-      // Kill credit on the unit that made it: when, and the defeated character's Styles (Patchwork Threads can take one).
-      if (killerInstanceId && findOccupant(next, killerInstanceId)) {
-        next = setExtra(next, killerInstanceId, { lastKillTurn: next.turn, lastKillStyles: occupant.styles });
-      }
+      next = recordCharacterDefeat(next, player, occupant.rank, occupant.styles, killerInstanceId);
     }
   } else {
     const frontRow = p.frontRow.slice();
@@ -408,10 +369,68 @@ function applyDefeat(
     // Character) — each sets extra.fizzlesIfInstanceIdDefeated to that other
     // Token's instanceId at creation.
     next = fizzleOwnedTokens(next, player, occupant.instanceId, 'fizzlesIfInstanceIdDefeated');
+    // Pain of the Six Paths is a character made entirely of his 6 Path
+    // tokens: when the last one falls, Pain himself is defeated — a full
+    // S-rank character defeat (Health loss, Reinforcement, Missions...).
+    // Individual Path tokens, like every token, aren't character losses.
+    if (occupant.extra.painPath && !painPathsRemain(next, player)) {
+      next = appendLog(next, `${occupant.name} is defeated.`);
+      next = appendLog(next, 'Pain of the Six Paths is defeated — all six Paths have fallen.');
+      next = recordCharacterDefeat(next, player, 'S', ['None'], killerInstanceId);
+      return checkWinner(next);
+    }
   }
 
   next = appendLog(next, `${occupant.name} is defeated.`);
   return checkWinner(next);
+}
+
+/** Whether any of this player's Pain Path tokens is still in play — while one is, Pain of the Six Paths is a character in play. */
+export function painPathsRemain(state: GameState, player: PlayerId): boolean {
+  return state.players[player].frontRow.some((t) => !!t?.extra.painPath);
+}
+
+/**
+ * Everything that follows one of `player`'s CHARACTERS being defeated (never a
+ * token's): §11 Health loss by rank, §6.6 Retaliation, the §8 Reinforcement
+ * trigger, the opponent's "defeated an enemy of Rank X" Mission event, and
+ * kill credit on the unit that made the kill.
+ */
+function recordCharacterDefeat(state: GameState, player: PlayerId, rank: CharacterInstance['rank'], styles: Style[], killerInstanceId?: string): GameState {
+  let next = loseHealth(state, player, HEALTH_LOST_ON_DEFEAT[rank] ?? 0);
+  // §8's Reinforcement trigger is recorded here, at the moment of defeat
+  // (whether any other C-rank-or-higher character is still standing —
+  // D-ranks don't count; Pain counts while any of his Paths stands), and
+  // turned into an offer/forced play by the reducer, which can look up hand
+  // cards' ranks without the import cycle deck.ts/characters would cause here.
+  const lastCPlus = !next.players[player].backRow.some((c) => c && c.rank !== 'D') && !painPathsRemain(next, player);
+  next = {
+    ...next,
+    players: {
+      ...next.players,
+      [player]: {
+        ...next.players[player],
+        retaliationPending: true,
+        pendingReinforcementEvents: [...next.players[player].pendingReinforcementEvents, { rank, lastCPlus }],
+      },
+    },
+  };
+  // Mission cards (the Bingo Book family, §13a) key off "defeated an enemy of
+  // Rank X" — recorded on the opponent (the potential winner), drained/checked
+  // by the reducer for the same import-cycle reason.
+  const winner = otherPlayer(player);
+  next = {
+    ...next,
+    players: {
+      ...next.players,
+      [winner]: { ...next.players[winner], pendingDefeatEvents: [...next.players[winner].pendingDefeatEvents, { rank, byInstanceId: killerInstanceId }] },
+    },
+  };
+  // Kill credit on the unit that made it: when, and the defeated character's Styles (Patchwork Threads can take one).
+  if (killerInstanceId && findOccupant(next, killerInstanceId)) {
+    next = setExtra(next, killerInstanceId, { lastKillTurn: next.turn, lastKillStyles: styles });
+  }
+  return next;
 }
 
 export function fizzleOwnedTokens(

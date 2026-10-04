@@ -44,7 +44,7 @@ describe('Setup (SPEC.md §3)', () => {
     expect(state.players.p1.characterDeck).toHaveLength(10); // 13 - 3 revealed
     expect(state.players.p1.pendingCharacterReveal!.revealed).toHaveLength(3);
     expect(state.players.p1.hand.filter((h) => h.kind === 'card')).toHaveLength(6);
-    expect(state.players.p1.handDeck).toHaveLength(34); // 40 - 6 drawn
+    expect(state.players.p1.handDeck).toHaveLength(44); // 50 - 6 drawn
   });
 
   it('blocks every other action until both players choose a starting character', () => {
@@ -366,5 +366,55 @@ describe('Character Deck tax & draws (SPEC.md §8)', () => {
     expect(state.players.p1.mustPlayCharacter).toBe(false);
     expect(state.players.p1.backRow.some((c) => c?.defId === 'yahiko')).toBe(true);
     expect(state.players.p1.genericChakraAvailable).toBe(chakraBefore);
+  });
+});
+
+describe('Emergency Relief (Mission)', () => {
+  it('counts own losses only after it was played (D-ranks too); its reward is an immediate free draw that leaves the tax alone', () => {
+    let state = economyState(['juzo', 'konan', 'yahiko', 'amegakure-civilian-rebel']);
+    state = defeat(state, 'konan'); // before the Mission is in play — not counted
+    const p1 = state.players.p1;
+    state = { ...state, players: { ...state.players, p1: { ...p1, missionsInPlay: [{ instanceId: 'm-relief', defId: 'emergency-relief', owner: 'p1', extra: { losses: 0 } }] } } };
+
+    state = defeat(state, 'yahiko');
+    expect(state.players.p1.missionsInPlay[0].extra.losses).toBe(1);
+    expect(state.players.p1.pendingCharacterReveal).toBeNull();
+
+    const chakraBefore = state.players.p1.genericChakraAvailable;
+    const taxCounterBefore = state.players.p1.reinforcementsPlayed;
+    state = defeat(state, 'amegakure-civilian-rebel');
+    expect(state.players.p1.missionsInPlay).toHaveLength(0); // completed and discarded
+    expect(state.players.p1.pendingCharacterReveal?.revealed.length).toBeGreaterThanOrEqual(2); // drawn right away
+    expect(state.players.p1.genericChakraAvailable).toBe(chakraBefore);
+    expect(state.players.p1.reinforcementsPlayed).toBe(taxCounterBefore);
+  });
+});
+
+describe('Pain of the Six Paths as a character (his 6 Path tokens)', () => {
+  const pathIds = (s: GameState) => s.players.p1.frontRow.filter((t) => t?.extra.painPath).map((t) => t!.instanceId);
+
+  it('counts as a C+ character in play while any Path stands — losing another C+ is not the "last C+"', () => {
+    let state = economyState(['juzo', 'pain']);
+    expect(pathIds(state)).toHaveLength(6);
+    state = defeat(state, 'juzo');
+    expect(state.players.p1.reinforcementOffers).toEqual(['paid']);
+  });
+
+  it('is defeated (an S-rank character loss) only when the last Path falls; single Paths are token losses', () => {
+    let state = economyState(['juzo', 'pain']);
+    const p1 = state.players.p1;
+    state = { ...state, players: { ...state.players, p1: { ...p1, missionsInPlay: [{ instanceId: 'm-relief', defId: 'emergency-relief', owner: 'p1', extra: { losses: 0 } }] } } };
+    const healthBefore = state.players.p1.health;
+    const [first, ...rest] = pathIds(state);
+
+    state = gameReducer(dealDamage(state, first, 9999).state, { type: 'PASS_PRIORITY' });
+    expect(state.players.p1.health).toBe(healthBefore); // a token, not a character
+    expect(state.players.p1.missionsInPlay[0].extra.losses).toBe(0);
+
+    for (const id of rest) state = gameReducer(dealDamage(state, id, 9999).state, { type: 'PASS_PRIORITY' });
+    expect(pathIds(state)).toHaveLength(0);
+    expect(state.players.p1.health).toBe(healthBefore - 7); // S-rank Health loss
+    expect(state.players.p1.missionsInPlay[0].extra.losses).toBe(1); // Emergency Relief counts Pain
+    expect(state.players.p1.reinforcementOffers).toEqual(['paid']); // Juzo is still a C+ in play
   });
 });
