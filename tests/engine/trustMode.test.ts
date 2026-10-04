@@ -413,3 +413,30 @@ describe('Setup picks stay secret until both players confirm', () => {
     expect(s.log.some((l) => l.text.startsWith('Starting characters revealed'))).toBe(true);
   });
 });
+
+describe('Pass turn', () => {
+  it("strict: plays out the rest of the turn and starts the other player's", () => {
+    const s = run(freshMain1(), { type: 'PASS_TURN' });
+    expect(s.activePlayer).toBe('p2');
+    expect(s.turn).toBe(2);
+  });
+
+  it("trust: lands on the other player's Main 1 (Untap, Upkeep and auto-draw run)", () => {
+    const before = trustMain1();
+    const s = run(before, { type: 'PASS_TURN' });
+    expect(s.activePlayer).toBe('p2');
+    expect(s.phase).toBe('Main1');
+    expect(s.players.p2.drawnThisDrawPhase).toBe(true);
+  });
+
+  it('passes through a granted second Combat instead of stopping there', () => {
+    const s = run({ ...freshMain1(), phase: 'Combat', extraCombatPending: true }, { type: 'PASS_TURN' });
+    expect(s.activePlayer).toBe('p2');
+  });
+
+  it('waits while actions are declared', () => {
+    const s = run(withChakra(trustMain1(), 'p1', 1), stage(['p2-hidan']), { type: 'PASS_TURN' });
+    expect(s.activePlayer).toBe('p1');
+    expect(s.staged).toHaveLength(1);
+  });
+});

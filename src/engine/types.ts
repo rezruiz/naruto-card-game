@@ -341,6 +341,7 @@ export type GameAction =
   | { type: 'SET_RULES'; rules: RulesMode }
   | { type: 'SET_OPTION'; option: keyof GameOptions; value: boolean }
   | { type: 'GO_TO_PHASE'; phase: Phase }
+  | { type: 'PASS_TURN' }
   | { type: 'DRAW_PHASE_CARD' }
   | { type: 'DRAW_CHARACTER_DECK'; player: PlayerId }
   | { type: 'ACCEPT_REINFORCEMENT'; player: PlayerId }

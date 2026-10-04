@@ -1,7 +1,7 @@
 import { PHASE_ORDER, type GameState, type Phase } from '../../engine/types';
 
 /** The turn's phases — click one to jump ahead to it (or, in trust mode, back to it). */
-export function PhaseIndicator({ state, onGoToPhase }: { state: GameState; onGoToPhase?: (phase: Phase) => void }) {
+export function PhaseIndicator({ state, onGoToPhase, onPassTurn }: { state: GameState; onGoToPhase?: (phase: Phase) => void; onPassTurn?: () => void }) {
   const current = PHASE_ORDER.indexOf(state.phase);
   return (
     <div className="phase-indicator">
@@ -30,6 +30,11 @@ export function PhaseIndicator({ state, onGoToPhase }: { state: GameState; onGoT
           );
         })}
       </ol>
+      {onPassTurn && (
+        <button type="button" className="phase-indicator__pass" onClick={onPassTurn} title="End your turn now — the rest of it plays out (End-of-turn effects included) and the other player's turn begins">
+          Pass turn →
+        </button>
+      )}
     </div>
   );
 }

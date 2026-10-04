@@ -230,6 +230,29 @@ function guardedAdvance(state: GameState, advance: (s: GameState) => GameState):
 
 const AUTO_PHASES = new Set(['Untap', 'Upkeep']);
 
+/** True when an advance didn't move the game on at all (an open decision blocked it under the strict rules). A granted second Combat keeps the phase but does move on. */
+function advanceWasBlocked(before: GameState, after: GameState): boolean {
+  return after.phase === before.phase && after.turn === before.turn && after.extraCombatPending === before.extraCombatPending;
+}
+
+/**
+ * Ends the active player's turn: steps through the rest of it (End-of-turn
+ * effects included) into the other player's — in trust mode on to their
+ * Main 1 (Untap, Upkeep and auto-draw run as usual). Stops early if an open
+ * decision blocks a step under the strict rules.
+ */
+function passTurn(state: GameState): GameState {
+  if (state.staged.length > 0 || state.pendingFinalize) return appendLog(state, 'Resolve or withdraw the declared actions before passing the turn.');
+  const passing = state.activePlayer;
+  let next = appendLog(state, `${passing} passes the turn.`);
+  for (let guard = 0; guard < PHASE_ORDER.length + 1 && next.activePlayer === passing && !next.winner; guard++) {
+    const before = next;
+    next = guardedAdvance(next, advanceOnePhase);
+    if (advanceWasBlocked(before, next)) return next;
+  }
+  return next;
+}
+
 /**
  * Clicking a phase (this turn): forward steps through each phase with its
  * normal automation (Upkeep payment, auto-draw) and checks; back just moves
@@ -252,7 +275,7 @@ function goToPhase(state: GameState, target: Phase): GameState {
       next = drawForDrawPhase(next);
     }
     next = guardedAdvance(next, advanceOnePhase);
-    if (next.phase === before.phase && next.turn === before.turn) break; // blocked (an open decision under the strict rules)
+    if (advanceWasBlocked(before, next)) break;
   }
   return next;
 }
@@ -304,6 +327,8 @@ function reduce(state: GameState, action: GameAction): GameState {
       return guardedAdvance(drained, advanceOnePhase);
     case 'SET_RULES':
       return setRules(drained, action.rules);
+    case 'PASS_TURN':
+      return passTurn(drained);
     case 'GO_TO_PHASE':
       return goToPhase(drained, action.phase);
     case 'SET_OPTION':

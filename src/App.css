@@ -1596,3 +1596,9 @@
   font-size: 11px;
   padding: 2px 6px;
 }
+
+.phase-indicator__pass {
+  margin-top: 8px;
+  width: 100%;
+  font-weight: 600;
+}

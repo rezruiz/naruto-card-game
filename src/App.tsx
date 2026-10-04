@@ -880,7 +880,11 @@ function ViewGame({
               </>
             )}
           </div>
-          <PhaseIndicator state={state} onGoToPhase={(phase) => dispatch({ type: 'GO_TO_PHASE', phase })} />
+          <PhaseIndicator
+            state={state}
+            onGoToPhase={(phase) => dispatch({ type: 'GO_TO_PHASE', phase })}
+            onPassTurn={!setupBlocked && isMyBoard(state.activePlayer) ? () => dispatch({ type: 'PASS_TURN' }) : undefined}
+          />
           {trust && <RuleWarnings log={state.log} />}
           {onUndo && (
             <button type="button" className="sidebar-undo" disabled={!undoLabel} onClick={onUndo} title="Undo the last draw/reveal-type action (things you can't fix by hand)">
