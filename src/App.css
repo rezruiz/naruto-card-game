@@ -769,6 +769,135 @@
   min-height: 80px;
 }
 
+/* Full rulebook popup (lobby "Read the rules") */
+.details-modal.rules-modal {
+  width: min(860px, 100%);
+  max-height: 90vh;
+}
+
+.rules-modal__body {
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.rules-modal__body h1 {
+  font-size: 22px;
+}
+
+.rules-modal__body h2 {
+  font-size: 18px;
+  margin-top: 1.4em;
+}
+
+.rules-modal__body h3 {
+  font-size: 15px;
+}
+
+.rules-modal__body table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  display: block;
+  overflow-x: auto;
+}
+
+.rules-modal__body th,
+.rules-modal__body td {
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.rules-toc {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.rules-toc h2 {
+  margin-top: 0;
+}
+
+.rules-toc__group {
+  margin-bottom: 10px;
+}
+
+.rules-toc__part {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.rules-toc ul {
+  list-style: none;
+  margin: 4px 0 0;
+  padding-left: 14px;
+}
+
+.rules-toc details ul {
+  padding-left: 2.4em;
+  margin-bottom: 4px;
+}
+
+.rules-toc li {
+  margin: 2px 0;
+}
+
+.rules-toc summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.rules-toc summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Same-width marker column for every section, so expandable and plain entries line up. */
+.rules-toc summary::before,
+.rules-toc__leaf::before {
+  display: inline-block;
+  width: 1.2em;
+  content: '▸';
+}
+
+.rules-toc details[open] > summary::before {
+  content: '▾';
+}
+
+.rules-toc__leaf::before {
+  content: '';
+}
+
+.rules-toc a,
+.rules-modal__top {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.rules-toc a:hover {
+  text-decoration: underline;
+}
+
+.rules-modal__top {
+  position: sticky;
+  bottom: 0;
+  float: right;
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-bg);
+}
+
+.rules-modal__body blockquote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  opacity: 0.85;
+}
+
 /* Hand cards: same hover hint + click-for-details as in-play cards */
 .hand-card {
   position: relative;

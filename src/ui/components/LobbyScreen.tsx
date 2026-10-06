@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { NetMode } from '../../net/useNetGame';
 import type { ConnStatus } from '../../net/connection';
+import { RulesModal } from './RulesModal';
 
 export function LobbyScreen({
   mode,
@@ -22,6 +23,7 @@ export function LobbyScreen({
   onCancel: () => void;
 }) {
   const [joinCode, setJoinCode] = useState('');
+  const [showRules, setShowRules] = useState(false);
 
   if (mode === 'hosting') {
     return (
@@ -76,8 +78,12 @@ export function LobbyScreen({
             Join a game
           </button>
         </div>
+        <button type="button" onClick={() => setShowRules(true)}>
+          📖 Read the rules
+        </button>
       </div>
       {error && <div className="lobby-screen__error">{error}</div>}
+      {showRules && <RulesModal onClose={() => setShowRules(false)} />}
     </div>
   );
 }
