@@ -26,23 +26,18 @@ export function makeHandCardInstance(defId: string): HandCardInstance {
 }
 
 /**
- * The 50-card Akatsuki Hand Deck manifest (design/IMPLEMENTATION_PLAN.md):
- * 2 copies each of 6 Missions (12) + 3 copies of Emergency Relief (3) +
- * 3 copies each of the Substitution
- * family (9) + 2 copies each of 7 other Jutsu cards (14) + 3 copies each of
- * Medical Chakra Infusion and Chakra Suppression (6) + 1 copy of
- * Fireball Jutsu (1) + 3 copies of the 1 Terrain card (3) + 2
- * copies of the 1 Assist card (2) = 50 real cards — exactly SPEC §2's
- * 50-card minimum.
+ * The 47-card Akatsuki Hand Deck manifest — 3 short of SPEC §2's 50-card
+ * minimum (the build doesn't enforce deck size). 9 Missions, 30 + 3 Jutsu,
+ * 3 Terrain, 2 Assist.
  */
 export const HAND_DECK_MANIFEST: { defId: string; copies: number }[] = [
   { defId: 'unshakable-resolve', copies: 2 },
-  { defId: 'bingo-book-s', copies: 2 },
-  { defId: 'bingo-book-a', copies: 2 },
-  { defId: 'bingo-book-b', copies: 2 },
-  { defId: 'bingo-book-c', copies: 2 },
-  { defId: 'squad-formation', copies: 2 },
-  { defId: 'emergency-relief', copies: 3 },
+  { defId: 'bingo-book-s', copies: 1 },
+  { defId: 'bingo-book-a', copies: 1 },
+  { defId: 'bingo-book-b', copies: 1 },
+  { defId: 'bingo-book-c', copies: 1 },
+  { defId: 'squad-formation', copies: 1 },
+  { defId: 'emergency-relief', copies: 2 },
   { defId: 'substitution', copies: 3 },
   { defId: 'lightning-substitution', copies: 3 },
   { defId: 'water-substitution', copies: 3 },
@@ -53,6 +48,9 @@ export const HAND_DECK_MANIFEST: { defId: string; copies: number }[] = [
   { defId: 'medical-chakra-infusion', copies: 3 },
   { defId: 'chakra-suppression', copies: 3 },
   { defId: 'fireball-jutsu', copies: 1 },
+  { defId: 'jutsu-pressure-damage', copies: 1 },
+  { defId: 'jutsu-searing-migraine', copies: 1 },
+  { defId: 'jutsu-false-darkness', copies: 1 },
   { defId: 'jutsu-disruption', copies: 2 },
   { defId: 'explosive-tag', copies: 2 },
   { defId: 'battlefield-selection', copies: 2 },

@@ -57,7 +57,7 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 ### 1.2 Zones
 | Zone | What it is |
 |---|---|
-| **Hand Deck** | **50–80** shuffled cards (the preset is 50): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
+| **Hand Deck** | **50–80** shuffled cards (the preset is 47): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
 | **Character Deck** | 12–18 shuffled Character cards (13 in the preset). Drawn only by triggers (§11). |
 | **Hand** | Holds both Hand Deck cards and drawn Character cards. **No maximum hand size** *(placeholder)*. |
 | **Back row** | Up to **5 Characters**, ordered left→right by entry order (§13.1). |
@@ -86,7 +86,7 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 - **Hand Deck: up to 3 copies** of any card. A Mission follows this limit unless marked **Unique** (then 1 copy).
 
 ### 2.4 The preset Akatsuki decks
-**Hand Deck (the preset is 50 cards):** 2× each of Unshakable Resolve, Bingo Book S / A / B / C and Squad Formation (12); 3× Emergency Relief (3); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× each of Medical Chakra Infusion and Chakra Suppression (6); 1× Fireball Jutsu (1); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **50**, no filler — exactly the minimum.
+**Hand Deck (the preset is 47 cards):** 2× Unshakable Resolve, 1× each of Bingo Book S / A / B / C, 1× Squad Formation, 2× Emergency Relief (9); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× each of Medical Chakra Infusion and Chakra Suppression (6); 1× each of Fireball Jutsu, Pressure Damage, Searing Migraine, False Darkness (4); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **47**, no filler — 3 short of the 50-card minimum.
 
 **Character Deck (13):** Kakuzu, Hidan, Deidara, Kisame, Itachi, Konan, Sasori, Zetsu, Juzo Biwa, Yahiko, Pain of the Six Paths, and **2× Amegakure Civilian Rebel**. Rank tally: S×3 (Kisame, Itachi, Pain), A×4 (Kakuzu, Deidara, Konan, Sasori), B×3 (Hidan, Zetsu, Juzo), C×1 (Yahiko), D×2 — all caps satisfied.
 
@@ -477,6 +477,9 @@ Full text is in Appendix A. Timing and implementation:
 | **Deploy Medic Corps** | Normal, **Main or Combat**, 2 | Target one of **your Retreated** characters (explicit exception to Retreat immunity). At the start of each of your next **4** Upkeeps, heal it 1 HP; **cancelled** if it stops being Retreated. |
 | **Medical Chakra Infusion** | Normal, **Main or Combat**, 1 | Heal 2 HP to one of your characters (not above max HP; not a token, not a Retreated character). |
 | **Fireball Jutsu** (Fire) | **Normal, Attack-type — Combat only**, 4 / 3 from Pool | 3 damage to a target, 1 to each of up to 2 characters adjacent to it (your choice). **Once per turn.** |
+| **Pressure Damage** (Wind) | **Normal, Attack-type — Combat only**, 3 | 2 damage to up to 2 enemy characters. **Once per turn.** |
+| **Searing Migraine** (Fire) | **Normal, Attack-type — Combat only**, 3 | 4 damage. **Once per turn.** |
+| **False Darkness** (Lightning) | **Quick**, 2 | 2 damage. |
 | **Chakra Suppression** (Sealing) | **Quick**, 2 | Target enemy character can't be pooled into **through** its controller's next turn. Characters only, not tokens. |
 | **Akatsuki Hideout** (Terrain) | Normal, **Main only**, **2** | Upkeep −1 for Akatsuki-Synergy characters (min 1). |
 | **Missions (7)** | Normal, **Main only** | See Appendix A. **Emergency Relief** counts your own characters defeated (any rank, tokens don't count) after it's played; at 2, you immediately take a free Character Deck draw (look at 2, keep 1) that doesn't raise the tax. |
@@ -712,6 +715,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 72. ✔ **[Trust mode] Options:** **Auto-draw** (on by default) takes the Draw Phase draw automatically — the manual Draw buttons still work. **Always confirm** (off by default; either player can turn it on) makes every round wait for both players' OK, even when one has nothing to respond with.
 73. ✔ **[Playtest] Phases are clickable:** click a later phase to skip ahead (the phases in between run normally); in trust mode you can click an earlier one to go back (nothing is undone or re-run).
 74. ✔ **Lingering damage isn't affected by negation by default:** damage from an effect already attached to a character (burns, Poison, scheduled ticks) isn't stopped by damage-negating or damage-preventing effects, and negating targeting doesn't affect it (it's already attached and doesn't retarget). A card must say so explicitly to stop it — the default holds even when a card doesn't say "new" damage. (SPEC §9.)
+75. ✔ **Hand Deck changes:** Missions cut to 2× Unshakable Resolve, 1× each Bingo Book, 1× Squad Formation, 2× Emergency Relief (9, was 15). Three new Jutsu cards, 1 copy each: **Pressure Damage** (Wind, 3 Chakra: 2 damage to up to 2 enemy characters), **Searing Migraine** (Fire, 3: 4 damage), **False Darkness** (Lightning, Quick, 2: 2 damage). The preset Hand Deck is now **47** cards, 3 short of the minimum. (SPEC §2, §13b.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -1340,6 +1344,18 @@ Pool). *(full nuance: design/CHARACTER_LOG.md)*
 Effect: Deal 3 damage to a character and 1 damage to each character
 adjacent to it, up to 2 other characters (your choice which 2 adjacent
 to the target, §9).
+
+**Pressure Damage** — Style: Wind, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 2 damage to up to 2 enemy characters.
+
+**Searing Migraine** — Style: Fire, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 4 damage.
+
+**False Darkness** — Style: Lightning, Quick Technique, Type: Ninjutsu
+Cost: 2 Chakra.
+Effect: Deal 2 damage.
 
 **Assist Cards** (see §10c):
 
@@ -2993,17 +3009,17 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 |---|---|---|---|---|---|---|---|---|
 | Shinobi Strike | 1 | Normal | None | Taijutsu | yes | 1 | enemy | — |
 
-### Hand Deck cards (50)
+### Hand Deck cards (47)
 
 | Card | Copies | Kind | Cost | Speed | Style | Type | Normal-speed timing | Targets | Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | Unshakable Resolve | 2 | mission | 1 | Normal | None | None | Main only | none/auto | — |
-| Bingo Book: Threat Level S | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
-| Bingo Book: Threat Level A | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
-| Bingo Book: Threat Level B | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
-| Bingo Book: Threat Level C | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
-| Squad Formation | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
-| Emergency Relief | 3 | mission | 0 | Normal | None | None | Main only | none/auto | — |
+| Bingo Book: Threat Level S | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
+| Bingo Book: Threat Level A | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
+| Bingo Book: Threat Level B | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
+| Bingo Book: Threat Level C | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
+| Squad Formation | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
+| Emergency Relief | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
 | Substitution | 3 | jutsu | variable | Reactive | None | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
 | Lightning Substitution | 3 | jutsu | variable | Reactive | Lightning | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
 | Water Substitution | 3 | jutsu | variable | Reactive | Water | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
@@ -3014,6 +3030,9 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | Medical Chakra Infusion | 3 | jutsu | 1 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | characters only, not tokens |
 | Chakra Suppression | 3 | jutsu | 2 | Quick | None | Sealing | — | 1 (enemy) | characters only, not tokens |
 | Fireball Jutsu | 1 | jutsu | variable | Normal | Fire | Ninjutsu | Combat only | 3 (any) | Attack-type (once/turn by name); cheaper if paid from enabler's Pool |
+| Pressure Damage | 1 | jutsu | 3 | Normal | Wind | Ninjutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
+| Searing Migraine | 1 | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name) |
+| False Darkness | 1 | jutsu | 2 | Quick | Lightning | Ninjutsu | — | 1 (enemy) | — |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
 | Explosive Tag | 2 | jutsu | 1 | Normal | None | Bukijutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
 | Battlefield Selection | 2 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |

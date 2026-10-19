@@ -226,6 +226,24 @@ describe('Fireball Jutsu', () => {
   });
 });
 
+describe("Kakuzu's mask cards", () => {
+  it('Searing Migraine (enabled by Kakuzu) deals 4 for 3 Chakra; Pressure Damage hits up to 2 enemies for 2', () => {
+    let state = gameReducer(giveChakra(freshMain1(), 'p1', 6), { type: 'ADVANCE_PHASE' }); // Combat
+    const hp = (s: GameState, i: number) => s.players.p2.backRow[i]!.currentHP;
+    const before = [hp(state, 1), hp(state, 2), hp(state, 3)];
+
+    const migraine = withHandCard(state, 'p1', 'jutsu-searing-migraine');
+    state = gameReducer(migraine.state, { type: 'PLAY_HAND_CARD', instanceId: migraine.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-hidan'], payFromPool: 0 });
+    expect(state.players.p1.genericChakraAvailable).toBe(3);
+    state = resolveTop(state);
+    expect(hp(state, 1)).toBe(before[0] - 4);
+
+    const pressure = withHandCard(state, 'p1', 'jutsu-pressure-damage');
+    state = resolveTop(gameReducer(pressure.state, { type: 'PLAY_HAND_CARD', instanceId: pressure.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-deidara', 'p2-kisame'], payFromPool: 0 }));
+    expect([hp(state, 2), hp(state, 3)]).toEqual([before[1] - 2, before[2] - 2]);
+  });
+});
+
 describe('Explosive Tag', () => {
   it('deals 1 damage to the primary target and 1 to an adjacent character', () => {
     let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 3), 'p1', 'explosive-tag');

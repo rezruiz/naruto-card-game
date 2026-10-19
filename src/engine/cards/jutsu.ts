@@ -324,6 +324,60 @@ const fireballJutsu: HandCardDef = {
   },
 };
 
+// Kakuzu's mask techniques as Jutsu cards. Their ids are prefixed so they
+// never collide with his own abilities of the same names (the stack looks up
+// an enabler's ability by id before it looks for a card).
+const pressureDamageCard: HandCardDef = {
+  id: 'jutsu-pressure-damage',
+  name: 'Pressure Damage',
+  cardType: 'jutsu',
+  cost: 3,
+  speed: 'Normal',
+  style: 'Wind',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  maxTargets: 2,
+  targetSide: 'enemy',
+  legalityCheck: (ctx) => ctx.targetInstanceIds.length >= 1 && new Set(ctx.targetInstanceIds).size === ctx.targetInstanceIds.length,
+  resolve: (ctx) => {
+    let state = ctx.state;
+    for (const target of ctx.targetInstanceIds.slice(0, 2)) state = dealDamage(state, target, 2).state;
+    return state;
+  },
+};
+
+const searingMigraineCard: HandCardDef = {
+  id: 'jutsu-searing-migraine',
+  name: 'Searing Migraine',
+  cardType: 'jutsu',
+  cost: 3,
+  speed: 'Normal',
+  style: 'Fire',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    return target ? dealDamage(ctx.state, target, 4).state : ctx.state;
+  },
+};
+
+const falseDarknessCard: HandCardDef = {
+  id: 'jutsu-false-darkness',
+  name: 'False Darkness',
+  cardType: 'jutsu',
+  cost: 2,
+  speed: 'Quick',
+  style: 'Lightning',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    return target ? dealDamage(ctx.state, target, 2).state : ctx.state;
+  },
+};
+
 for (const def of [
   substitution,
   lightningSubstitution,
@@ -338,6 +392,9 @@ for (const def of [
   jutsuDisruption,
   explosiveTag,
   fireballJutsu,
+  pressureDamageCard,
+  searingMigraineCard,
+  falseDarknessCard,
 ]) {
   registerHandCard(def);
 }

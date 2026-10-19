@@ -68,8 +68,8 @@ and a Character Deck of 12-18 cards.
 | Hand Deck | **Maximum 80 cards** (minimum 50) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
 | Character Deck | 12-18 cards | Character cards | Only via specific triggers (§8) |
 
-The preset Akatsuki Hand Deck used in this prototype is 50 cards —
-exactly the minimum.
+The preset Akatsuki Hand Deck used in this prototype is 47 cards — 3
+short of the 50-card minimum.
 
 Character cards are **never** in the Hand Deck and are never drawn
 by a normal draw step — they only enter your hand through the Character
@@ -1697,6 +1697,18 @@ Pool). *(full nuance: design/CHARACTER_LOG.md)*
 Effect: Deal 3 damage to a character and 1 damage to each character
 adjacent to it, up to 2 other characters (your choice which 2 adjacent
 to the target, §9).
+
+**Pressure Damage** — Style: Wind, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 2 damage to up to 2 enemy characters.
+
+**Searing Migraine** — Style: Fire, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 4 damage.
+
+**False Darkness** — Style: Lightning, Quick Technique, Type: Ninjutsu
+Cost: 2 Chakra.
+Effect: Deal 2 damage.
 
 **Assist Cards** (see §10c):
 
