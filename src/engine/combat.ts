@@ -223,7 +223,8 @@ export function dealDamage(
 
   // Attacker/defender modifiers (see applyDamageModifiers).
   const src = opts.unattributed || opts.ongoing ? undefined : damageSourceFor(state, targetInstanceId);
-  const modified = applyDamageModifiers(state, occupant, player, amount, src, !!opts.cannotBeReduced);
+  // Lingering damage (§9) is already attached to its target: damage-negating and -preventing effects skip it unless a card says otherwise.
+  const modified = applyDamageModifiers(state, occupant, player, amount, src, !!opts.cannotBeReduced || !!opts.ongoing);
   let next = modified.state;
   if (modified.notes.length > 0) next = appendLog(next, `${occupant.name}: ${modified.notes.join(', ')}.`);
   if (modified.amount <= 0) return { state: next, dealt: 0, defeated: false };
@@ -235,7 +236,7 @@ export function dealDamage(
   // (Amaterasu, Poison — an explicit, stronger override per SPEC.md), or
   // Banshō Ten'in made it unprotectable this turn.
   let effectiveAmount = modified.amount;
-  if (!opts.cannotBeReduced && !modified.unprotectable) {
+  if (!opts.cannotBeReduced && !opts.ongoing && !modified.unprotectable) {
     const remaining = (occupant.extra.damagePreventionRemaining as number) ?? 0;
     const activeTurn = occupant.extra.damagePreventionUntilTurn as number | undefined;
     if (remaining > 0 && activeTurn === state.turn) {

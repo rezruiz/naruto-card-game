@@ -1235,7 +1235,7 @@ calls, flagged for review:
 - The lock shows on the target as **"Can't be pooled into — through
   turn N"**.
 
-### Fire Style: Fireball Jutsu
+### Fireball Jutsu
 **[New]** Added with 1 copy in the preset Hand Deck. Interpretive
 calls, flagged for review:
 - **Attack-type Jutsu:** it deals damage, so it's **Combat Phase only**

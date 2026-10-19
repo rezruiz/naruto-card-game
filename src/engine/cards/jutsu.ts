@@ -297,7 +297,7 @@ const explosiveTag: HandCardDef = {
 // reading as Explosive Tag.
 const fireballJutsu: HandCardDef = {
   id: 'fireball-jutsu',
-  name: 'Fire Style: Fireball Jutsu',
+  name: 'Fireball Jutsu',
   cardType: 'jutsu',
   cost: (_ctx, payFromPool) => (payFromPool > 0 ? 3 : 4),
   offersPoolDiscount: true,

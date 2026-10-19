@@ -876,6 +876,14 @@ an effect is doing:
   of the ability's effect depended on that target to fizzle, as if that
   part of the ability was never triggered.
 
+**Lingering damage is never "new" damage [Updated]:** damage from an
+effect already attached to a character — burns, Poison, scheduled ticks
+(e.g. Amaterasu's later hits) — isn't affected by damage-negating or
+damage-preventing effects, and negating targeting doesn't touch it either
+(it doesn't retarget; it's already on the character). A card has to say
+so explicitly to stop lingering damage. This is the default even when a
+card doesn't use the word "new".
+
 Negating a target is **not** a replacement effect that stops the
 ability from being activated in the first place. The normal activation
 sequence always still happens in full: the cost is paid, the ability is
@@ -1683,7 +1691,7 @@ Effect: Deal 1 damage to 1 target, plus 1 damage to a second character
 adjacent to it in one direction of your choice (front, behind, left, or
 right, §9).
 
-**Fire Style: Fireball Jutsu** — Style: Fire, Type: Ninjutsu
+**Fireball Jutsu** — Style: Fire, Type: Ninjutsu
 Cost: 4 Chakra (3 if paid from the enabling character's own Chakra
 Pool). *(full nuance: design/CHARACTER_LOG.md)*
 Effect: Deal 3 damage to a character and 1 damage to each character

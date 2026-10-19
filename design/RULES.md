@@ -86,7 +86,7 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 - **Hand Deck: up to 3 copies** of any card. A Mission follows this limit unless marked **Unique** (then 1 copy).
 
 ### 2.4 The preset Akatsuki decks
-**Hand Deck (the preset is 50 cards):** 2× each of Unshakable Resolve, Bingo Book S / A / B / C and Squad Formation (12); 3× Emergency Relief (3); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× each of Medical Chakra Infusion and Chakra Suppression (6); 1× Fire Style: Fireball Jutsu (1); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **50**, no filler — exactly the minimum.
+**Hand Deck (the preset is 50 cards):** 2× each of Unshakable Resolve, Bingo Book S / A / B / C and Squad Formation (12); 3× Emergency Relief (3); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× each of Medical Chakra Infusion and Chakra Suppression (6); 1× Fireball Jutsu (1); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **50**, no filler — exactly the minimum.
 
 **Character Deck (13):** Kakuzu, Hidan, Deidara, Kisame, Itachi, Konan, Sasori, Zetsu, Juzo Biwa, Yahiko, Pain of the Six Paths, and **2× Amegakure Civilian Rebel**. Rank tally: S×3 (Kisame, Itachi, Pain), A×4 (Kakuzu, Deidara, Konan, Sasori), B×3 (Hidan, Zetsu, Juzo), C×1 (Yahiko), D×2 — all caps satisfied.
 
@@ -476,7 +476,7 @@ Full text is in Appendix A. Timing and implementation:
 | **Field Intelligence** | Normal, **Main only**, 1 | Opponent reveals 2 cards of their choice; you draw 1. |
 | **Deploy Medic Corps** | Normal, **Main or Combat**, 2 | Target one of **your Retreated** characters (explicit exception to Retreat immunity). At the start of each of your next **4** Upkeeps, heal it 1 HP; **cancelled** if it stops being Retreated. |
 | **Medical Chakra Infusion** | Normal, **Main or Combat**, 1 | Heal 2 HP to one of your characters (not above max HP; not a token, not a Retreated character). |
-| **Fire Style: Fireball Jutsu** (Fire) | **Normal, Attack-type — Combat only**, 4 / 3 from Pool | 3 damage to a target, 1 to each of up to 2 characters adjacent to it (your choice). **Once per turn.** |
+| **Fireball Jutsu** (Fire) | **Normal, Attack-type — Combat only**, 4 / 3 from Pool | 3 damage to a target, 1 to each of up to 2 characters adjacent to it (your choice). **Once per turn.** |
 | **Chakra Suppression** (Sealing) | **Quick**, 2 | Target enemy character can't be pooled into **through** its controller's next turn. Characters only, not tokens. |
 | **Akatsuki Hideout** (Terrain) | Normal, **Main only**, **2** | Upkeep −1 for Akatsuki-Synergy characters (min 1). |
 | **Missions (7)** | Normal, **Main only** | See Appendix A. **Emergency Relief** counts your own characters defeated (any rank, tokens don't count) after it's played; at 2, you immediately take a free Character Deck draw (look at 2, keep 1) that doesn't raise the tax. |
@@ -686,7 +686,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 46. ✔ **Hand Deck minimum is 50 cards** (was 40), so a legal Hand Deck is 50–80 cards. The preset Akatsuki Hand Deck is 43 cards (40 + 3× Medical Chakra Infusion), still below the new minimum. (SPEC §2.)
 47. ✔ **New card: Medical Chakra Infusion** (Style: None, Type: Ninjutsu, 1 Chakra): heal 2 HP to one of your characters, capped at max HP. **3 copies** added to the preset Hand Deck. (SPEC §13b.)
 48. ✔ **New card: Chakra Suppression** (Style: None, Quick Technique, **Type: Sealing**, 2 Chakra): target enemy character can't be pooled into through its controller's next turn. **3 copies** added; the preset Hand Deck is now **46** cards. **Sealing** is a new narrow Type coined for this card (like Bukijutsu), not retrofitted onto existing cards. (SPEC §6.2, §6.8, §13b.)
-49. ✔ **New card: Fire Style: Fireball Jutsu** (Style: Fire, Type: Ninjutsu, 4 Chakra / 3 from the enabler's Pool): 3 damage to a target and 1 to each of up to 2 characters adjacent to it, your choice. **1 copy** added; the preset Hand Deck is now **47** cards. (SPEC §13b.)
+49. ✔ **New card: Fireball Jutsu** (Style: Fire, Type: Ninjutsu, 4 Chakra / 3 from the enabler's Pool): 3 damage to a target and 1 to each of up to 2 characters adjacent to it, your choice. **1 copy** added; the preset Hand Deck is now **47** cards. (SPEC §13b.)
 50. ✔ **Cards only see events once they're in play:** Conditions, counters and triggers start counting when the card enters play, unless its text says it looks back. (SPEC §0.)
 51. ✔ **New Mission: Emergency Relief** (0 Chakra). Condition: lose 2 of your own characters (any rank, any cause) after it's played. Reward: an **immediate free Character Deck draw** (look at 2, keep 1) — its own trigger, not a Reinforcement — that doesn't raise the tax. **3 copies** added; the preset Hand Deck is now **50** cards, exactly the minimum. (SPEC §13a.)
 52. ✔ **Pain's full defeat is a character defeat:** when his last Path token falls, Pain of the Six Paths is defeated as an **S-Rank character** — his controller loses 7 Health, it triggers Reinforcement and Retaliation, counts for Missions (Emergency Relief, the opponent's Bingo Book S), and the last Path's attacker gets kill credit. Individual Path tokens are token losses only. While any Path stands, Pain counts as a C+ character in play for the "last C+" Reinforcement rule. *(Previously none of this happened — the build treated his Paths as unrelated tokens.)* (SPEC §13, §8, §11.)
@@ -711,6 +711,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 71. ✔ **[Trust mode] Declarations are private until finalized:** your opponent sees only that you declared an action (and how many) — what it is, its targets and any edits stay hidden until the round is finalized, then everything is revealed. An **illegal** declaration isn't made at all (only you are told why) unless you **force it through**; a forced one is flagged when it's revealed. A face-down card (a Mission) is never named, even when revealed.
 72. ✔ **[Trust mode] Options:** **Auto-draw** (on by default) takes the Draw Phase draw automatically — the manual Draw buttons still work. **Always confirm** (off by default; either player can turn it on) makes every round wait for both players' OK, even when one has nothing to respond with.
 73. ✔ **[Playtest] Phases are clickable:** click a later phase to skip ahead (the phases in between run normally); in trust mode you can click an earlier one to go back (nothing is undone or re-run).
+74. ✔ **Lingering damage isn't affected by negation by default:** damage from an effect already attached to a character (burns, Poison, scheduled ticks) isn't stopped by damage-negating or damage-preventing effects, and negating targeting doesn't affect it (it's already attached and doesn't retarget). A card must say so explicitly to stop it — the default holds even when a card doesn't say "new" damage. (SPEC §9.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -1333,7 +1334,7 @@ Effect: Deal 1 damage to 1 target, plus 1 damage to a second character
 adjacent to it in one direction of your choice (front, behind, left, or
 right, §9).
 
-**Fire Style: Fireball Jutsu** — Style: Fire, Type: Ninjutsu
+**Fireball Jutsu** — Style: Fire, Type: Ninjutsu
 Cost: 4 Chakra (3 if paid from the enabling character's own Chakra
 Pool). *(full nuance: design/CHARACTER_LOG.md)*
 Effect: Deal 3 damage to a character and 1 damage to each character
@@ -2602,7 +2603,7 @@ calls, flagged for review:
 - The lock shows on the target as **"Can't be pooled into — through
   turn N"**.
 
-### Fire Style: Fireball Jutsu
+### Fireball Jutsu
 **[New]** Added with 1 copy in the preset Hand Deck. Interpretive
 calls, flagged for review:
 - **Attack-type Jutsu:** it deals damage, so it's **Combat Phase only**
@@ -3012,7 +3013,7 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | Deploy Medic Corps | 2 | jutsu | 2 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | may target a Retreated ally |
 | Medical Chakra Infusion | 3 | jutsu | 1 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | characters only, not tokens |
 | Chakra Suppression | 3 | jutsu | 2 | Quick | None | Sealing | — | 1 (enemy) | characters only, not tokens |
-| Fire Style: Fireball Jutsu | 1 | jutsu | variable | Normal | Fire | Ninjutsu | Combat only | 3 (any) | Attack-type (once/turn by name); cheaper if paid from enabler's Pool |
+| Fireball Jutsu | 1 | jutsu | variable | Normal | Fire | Ninjutsu | Combat only | 3 (any) | Attack-type (once/turn by name); cheaper if paid from enabler's Pool |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
 | Explosive Tag | 2 | jutsu | 1 | Normal | None | Bukijutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
 | Battlefield Selection | 2 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |

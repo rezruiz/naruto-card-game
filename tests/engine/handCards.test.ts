@@ -199,7 +199,7 @@ describe('Chakra Suppression', () => {
   });
 });
 
-describe('Fire Style: Fireball Jutsu', () => {
+describe('Fireball Jutsu', () => {
   const hp = (s: GameState, i: number) => s.players.p2.backRow[i]!.currentHP;
 
   it('deals 3 to the target and 1 to each of up to 2 chosen adjacent characters, costing 3 from the Pool', () => {

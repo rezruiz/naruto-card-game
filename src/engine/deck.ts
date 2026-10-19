@@ -30,8 +30,8 @@ export function makeHandCardInstance(defId: string): HandCardInstance {
  * 2 copies each of 6 Missions (12) + 3 copies of Emergency Relief (3) +
  * 3 copies each of the Substitution
  * family (9) + 2 copies each of 7 other Jutsu cards (14) + 3 copies each of
- * Medical Chakra Infusion and Chakra Suppression (6) + 1 copy of Fire
- * Style: Fireball Jutsu (1) + 3 copies of the 1 Terrain card (3) + 2
+ * Medical Chakra Infusion and Chakra Suppression (6) + 1 copy of
+ * Fireball Jutsu (1) + 3 copies of the 1 Terrain card (3) + 2
  * copies of the 1 Assist card (2) = 50 real cards — exactly SPEC §2's
  * 50-card minimum.
  */
