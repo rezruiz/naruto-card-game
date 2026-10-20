@@ -1,0 +1,536 @@
+/* ---- Deck library (lobby → "Deck Library"), modeled on Hearthstone's collection ---- */
+.library {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.library__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.library__header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.library button,
+.lobby-screen__decks button,
+.lobby-deck select {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: inherit;
+  cursor: pointer;
+}
+
+.library button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.deck-box {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+.deck-box--selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg), var(--card-shadow);
+}
+
+.library .deck-box__main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 14px;
+  text-align: left;
+}
+
+.deck-box__name {
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.deck-box__tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.deck-box__tag--selected {
+  background: var(--accent);
+  color: var(--panel-bg);
+}
+
+.deck-box__counts {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.deck-box__status {
+  font-size: 12px;
+  color: #2e9e5b;
+}
+
+.deck-box__status--warn {
+  color: #c9822b;
+}
+
+.deck-box__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--card-border);
+}
+
+.deck-box__actions--confirm {
+  align-items: center;
+  font-size: 12px;
+}
+
+.deck-box__actions--confirm span {
+  flex-basis: 100%;
+  color: #c9822b;
+}
+
+.library .deck-box__danger {
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+.library .deck-box--new {
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  border-style: dashed;
+  font-size: 15px;
+  font-weight: 600;
+  gap: 4px;
+}
+
+.deck-box__plus {
+  font-size: 32px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+/* Editor: collection (left) + deck panel (right) */
+.deck-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.collection__tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.library .collection__tabs button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel-bg);
+}
+
+.collection__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.collection__filters input,
+.collection__filters select {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: inherit;
+}
+
+.collection__filters input {
+  flex: 1 1 180px;
+}
+
+.collection__hint {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 8px 0 14px;
+}
+
+.collection__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px 12px;
+  padding: 8px 0 12px 8px;
+}
+
+.collection__empty {
+  opacity: 0.7;
+}
+
+.lib-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 150px;
+  padding: 24px 10px 14px;
+  border: 1px solid var(--card-border);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.08s ease, background 0.08s ease;
+}
+
+.lib-card:hover {
+  background: var(--card-hover-bg);
+  transform: translateY(-2px);
+}
+
+.lib-card--readonly {
+  cursor: default;
+}
+
+.lib-card--readonly:hover {
+  transform: none;
+}
+
+.lib-card--maxed {
+  opacity: 0.55;
+}
+
+.lib-card--character {
+  border-left-color: #c0392b;
+}
+.lib-card--jutsu {
+  border-left-color: #2f80ed;
+}
+.lib-card--assist {
+  border-left-color: #8e44ad;
+}
+.lib-card--mission {
+  border-left-color: #d4a017;
+}
+.lib-card--terrain {
+  border-left-color: #2e9e5b;
+}
+
+/* The cost gem (rank badge for characters), like Hearthstone's mana crystal. */
+.lib-card__gem {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 15px;
+  color: #fff;
+  background: radial-gradient(circle at 35% 30%, #6fb1ff, #1f5fbf);
+  border: 2px solid var(--panel-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.lib-card__gem--rank {
+  background: radial-gradient(circle at 35% 30%, #ff8a7a, #a3271b);
+  font-size: 12px;
+}
+
+.library .lib-card__info {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 0 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  border-radius: 999px;
+}
+
+.lib-card__name {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.lib-card__sub {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.lib-card__text {
+  font-size: 12px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lib-card__count {
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--panel-bg);
+}
+
+/* Deck panel */
+.deck-panel {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 24px);
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-bg);
+}
+
+.deck-panel__name {
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: inherit;
+}
+
+.deck-count__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.deck-count__ok {
+  color: #2e9e5b;
+}
+
+.deck-count__bad {
+  color: #c9822b;
+}
+
+.deck-count__track {
+  position: relative;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: var(--card-bg);
+}
+
+.deck-count__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #c9822b;
+}
+
+.deck-count__fill--ok {
+  background: #2e9e5b;
+}
+
+.deck-count__min {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 10px;
+  background: var(--text);
+  opacity: 0.4;
+}
+
+.deck-panel__ranks {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.deck-panel__list {
+  overflow-y: auto;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.deck-panel__list h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 8px 0 2px;
+  opacity: 0.7;
+}
+
+.deck-panel__empty {
+  font-size: 12px;
+  opacity: 0.6;
+  margin: 0;
+}
+
+.library .deck-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 3px 6px 3px 3px;
+  text-align: left;
+  background: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+.library .deck-row:disabled {
+  opacity: 1;
+}
+
+.library .deck-row:not(:disabled):hover {
+  background: var(--card-hover-bg);
+  text-decoration: line-through;
+}
+
+.deck-row__cost {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: #2f6fd1;
+}
+
+.deck-row__cost--rank {
+  background: #a3271b;
+  font-size: 10px;
+}
+
+.deck-row__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.deck-row__count {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.deck-panel__errors {
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  font-size: 12px;
+  border-radius: 6px;
+  color: #c9822b;
+  background: rgba(201, 130, 43, 0.1);
+}
+
+.deck-panel__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.library .deck-panel__done {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel-bg);
+  font-weight: 700;
+  padding: 6px 18px;
+}
+
+@media (max-width: 760px) {
+  .deck-editor {
+    grid-template-columns: 1fr;
+  }
+  .deck-panel {
+    position: static;
+    max-height: none;
+  }
+  .collection__grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}
+
+/* Lobby deck pickers */
+.lobby-screen__decks,
+.lobby-screen__local {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.lobby-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lobby-deck__label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lobby-deck__note {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.lobby-deck__note--warn {
+  color: #c9822b;
+  opacity: 1;
+}

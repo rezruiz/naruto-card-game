@@ -20,4 +20,4 @@ import './deckEntries';
 export * from './registry';
 export { makeThirdKazekage } from './sasori';
 export { createSixPaths } from './pain';
-export { getCharacterDeckEntry, CHARACTER_DECK_MANIFEST } from './deckEntries';
+export { getCharacterDeckEntry, listCharacterDeckEntries, CHARACTER_DECK_MANIFEST, type CharacterDeckEntry } from './deckEntries';

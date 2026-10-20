@@ -27,6 +27,9 @@ import { ChakraSourceRow } from './ui/components/ChakraSourceRow';
 import { CharacterCard, IN_PLAY_CARD_DRAG_TYPE } from './ui/components/CharacterCard';
 import { CharacterRevealPanel } from './ui/components/CharacterRevealPanel';
 import { LobbyScreen } from './ui/components/LobbyScreen';
+import { DeckLibrary } from './ui/components/DeckLibrary';
+import { loadDecks, loadSelectedDeckId, saveDecks, saveSelectedDeckId } from './ui/deckStorage';
+import type { DeckList } from './engine/decklist';
 import { TokenCard } from './ui/components/TokenCard';
 import { RulesReference } from './ui/components/RulesReference';
 import { RuleWarnings } from './ui/components/RuleWarnings';
@@ -1069,6 +1072,8 @@ function ViewGame({
  */
 function useLocalGame() {
   const [state, setState] = useState<GameState>(() => createSetupState(undefined, 'trust'));
+  /** Both seats' decks from the lobby — kept so Restart deals the same decks again. */
+  const decksRef = useRef<Partial<Record<PlayerId, DeckList>>>({});
   const [history, setHistory] = useState<UndoEntry[]>([]);
   // The latest state, readable synchronously by dispatch (every update below keeps it in step with `state`).
   const stateRef = useRef(state);
@@ -1093,19 +1098,52 @@ function useLocalGame() {
   }, []);
 
   const restart = useCallback(() => {
-    const fresh = createSetupState(undefined, 'trust');
+    const fresh = createSetupState(undefined, 'trust', decksRef.current);
     stateRef.current = fresh;
     setState(fresh);
     setHistory([]);
   }, []);
 
-  return { state, dispatch, undo, undoLabel: history.at(-1)?.label ?? null, restart };
+  /** A fresh game with these decks (from the lobby's deck pickers). */
+  const start = useCallback(
+    (decks: Partial<Record<PlayerId, DeckList>>) => {
+      decksRef.current = decks;
+      restart();
+    },
+    [restart],
+  );
+
+  return { state, dispatch, undo, undoLabel: history.at(-1)?.label ?? null, restart, start };
 }
 
 function App() {
-  const [viewMode, setViewMode] = useState<'lobby' | 'local'>('lobby');
+  const [viewMode, setViewMode] = useState<'lobby' | 'local' | 'library'>('lobby');
   const local = useLocalGame();
   const net = useNetGame();
+  const [decks, setDecks] = useState<DeckList[]>(loadDecks);
+  const [deckId, setDeckId] = useState(() => loadSelectedDeckId('p1'));
+  const [p2DeckId, setP2DeckId] = useState(() => loadSelectedDeckId('local-p2'));
+  const deckFor = (id: string) => decks.find((d) => d.id === id) ?? decks[0];
+
+  const updateDecks = (update: (decks: DeckList[]) => DeckList[]) => {
+    setDecks((prev) => {
+      const next = update(prev);
+      saveDecks(next);
+      return next;
+    });
+  };
+  const selectDeck = (id: string) => {
+    setDeckId(id);
+    saveSelectedDeckId(id, 'p1');
+  };
+  const selectP2Deck = (id: string) => {
+    setP2DeckId(id);
+    saveSelectedDeckId(id, 'local-p2');
+  };
+
+  if (viewMode === 'library') {
+    return <DeckLibrary decks={decks} selectedId={deckFor(deckId).id} onDecksChange={updateDecks} onSelect={selectDeck} onBack={() => setViewMode('lobby')} />;
+  }
 
   if (viewMode === 'local') {
     return (
@@ -1145,10 +1183,19 @@ function App() {
       status={net.status}
       roomCode={net.roomCode}
       error={net.error}
-      onHost={net.host}
-      onJoin={net.join}
-      onPlayLocal={() => setViewMode('local')}
+      onHost={() => net.host(deckFor(deckId))}
+      onJoin={(code) => net.join(code, deckFor(deckId))}
+      onPlayLocal={() => {
+        local.start({ p1: deckFor(deckId), p2: deckFor(p2DeckId) });
+        setViewMode('local');
+      }}
       onCancel={net.leave}
+      decks={decks}
+      deckId={deckFor(deckId).id}
+      onSelectDeck={selectDeck}
+      p2DeckId={deckFor(p2DeckId).id}
+      onSelectP2Deck={selectP2Deck}
+      onOpenLibrary={() => setViewMode('library')}
     />
   );
 }

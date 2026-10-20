@@ -5,6 +5,10 @@ import { redactStateFor } from '../engine/redact';
 import { hostGame, joinGame, type Connection, type ConnStatus } from './connection';
 import { pushUndo, undoLabelFor, type UndoEntry } from '../ui/undo';
 import type { GameAction, GameState, PlayerId } from '../engine/types';
+import type { DeckList } from '../engine/decklist';
+
+/** How long the host waits for the guest's deck before starting with the preset for them (e.g. a guest on an older build that never sends one). */
+const GUEST_DECK_WAIT_MS = 5000;
 
 export type NetMode = 'menu' | 'hosting' | 'joining' | 'playing';
 
@@ -31,6 +35,8 @@ export function useNetGame() {
   const connRef = useRef<Connection | null>(null);
   const stateRef = useRef<GameState | null>(null);
   const historyRef = useRef<UndoEntry[]>([]);
+  /** Host: each seat's chosen deck — kept so Restart deals the same decks again. */
+  const decksRef = useRef<Partial<Record<PlayerId, DeckList>>>({});
   const role = connRef.current?.role;
   const myPlayerId: PlayerId = role === 'guest' ? 'p2' : 'p1';
 
@@ -68,11 +74,14 @@ export function useNetGame() {
 
   const restartOnHost = useCallback(() => {
     historyRef.current = [];
-    commit(createSetupState(undefined, 'trust'));
+    commit(createSetupState(undefined, 'trust', decksRef.current));
   }, [commit]);
 
-  const host = useCallback(() => {
+  const host = useCallback((deck: DeckList) => {
     teardown();
+    decksRef.current = { p1: deck };
+    stateRef.current = null;
+    setState(null);
     setMode('hosting');
     setError(null);
     const conn = hostGame();
@@ -84,19 +93,25 @@ export function useNetGame() {
       if (s === 'error') setError(detail ?? 'Connection error.');
       if (s === 'connected') {
         // Host is always seat p1 and guest always p2 (for routing/redaction purposes only) — who actually goes first is still a coin flip (createSetupState).
+        // The game starts once the guest's deck arrives (they send it on connecting) — or after a short wait, with the preset for them.
         setMode('playing');
-        restartOnHost();
+        window.setTimeout(() => {
+          if (!stateRef.current && connRef.current === conn) restartOnHost();
+        }, GUEST_DECK_WAIT_MS);
       }
     });
     conn.onMessage((msg) => {
-      if (msg.kind === 'action') applyAction(msg.action);
+      if (msg.kind === 'deck') {
+        decksRef.current = { ...decksRef.current, p2: msg.deck };
+        if (!stateRef.current) restartOnHost();
+      } else if (msg.kind === 'action') applyAction(msg.action);
       else if (msg.kind === 'undo') undoOnHost();
       else if (msg.kind === 'restart') restartOnHost();
     });
   }, [teardown, applyAction, undoOnHost, restartOnHost]);
 
   const join = useCallback(
-    (code: string) => {
+    (code: string, deck: DeckList) => {
       teardown();
       setMode('joining');
       setError(null);
@@ -107,7 +122,10 @@ export function useNetGame() {
       conn.onStatus((s, detail) => {
         setStatus(s);
         if (s === 'error') setError(detail ?? 'Connection error.');
-        if (s === 'connected') setMode('playing');
+        if (s === 'connected') {
+          setMode('playing');
+          conn.send({ kind: 'deck', deck });
+        }
         if (s === 'disconnected') setMode('menu');
       });
       conn.onMessage((msg) => {
@@ -150,6 +168,7 @@ export function useNetGame() {
     setState(null);
     stateRef.current = null;
     historyRef.current = [];
+    decksRef.current = {};
     setUndoLabel(null);
     setRoomCode('');
     setError(null);

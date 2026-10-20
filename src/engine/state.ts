@@ -2,6 +2,7 @@ import type { GameState, PlayerId, PlayerState, RulesMode } from './types';
 import { BACK_ROW_SIZE, FRONT_ROW_SIZE } from './board';
 import { createCharacterInstance, CHARACTER_DECK_MANIFEST } from './characters';
 import { buildHandDeck, drawCard, revealCharacters, shuffle } from './deck';
+import { toManifests, type DeckList } from './decklist';
 // Side-effect import — registers every Hand Deck card (Jutsu/Assist/
 // Terrain/Mission) before any deck is built.
 import './cards';
@@ -113,7 +114,7 @@ function createEmptyPlayer(id: PlayerId): PlayerState {
  * flipped by the reducer once both starting characters are confirmed.
  * Passing one (tests) fixes it up front.
  */
-export function createSetupState(firstPlayer?: PlayerId, rules: RulesMode = 'strict'): GameState {
+export function createSetupState(firstPlayer?: PlayerId, rules: RulesMode = 'strict', decks: Partial<Record<PlayerId, DeckList>> = {}): GameState {
   const placeholder: PlayerId = firstPlayer ?? 'p1';
   let state: GameState = {
     firstPlayerPending: firstPlayer === undefined,
@@ -136,11 +137,16 @@ export function createSetupState(firstPlayer?: PlayerId, rules: RulesMode = 'str
   };
 
   for (const player of ['p1', 'p2'] as PlayerId[]) {
+    // A player's chosen deck from the library — the preset otherwise. A deck with an
+    // empty half (nothing usable in it) falls back to the preset's half, so Setup always has cards to deal.
+    const chosen = decks[player] ? toManifests(decks[player]) : null;
+    const characters = chosen && chosen.characters.length > 0 ? chosen.characters : CHARACTER_DECK_MANIFEST;
+    const hand = chosen && chosen.hand.length > 0 ? chosen.hand : undefined;
     state = {
       ...state,
       players: {
         ...state.players,
-        [player]: { ...state.players[player], characterDeck: shuffle(CHARACTER_DECK_MANIFEST), handDeck: buildHandDeck() },
+        [player]: { ...state.players[player], characterDeck: shuffle(characters), handDeck: buildHandDeck(hand) },
       },
     };
     state = revealCharacters(state, player, 3, 'setup');

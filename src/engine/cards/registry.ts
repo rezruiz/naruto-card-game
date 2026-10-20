@@ -111,6 +111,11 @@ export function getHandCardDef(id: string): HandCardDef | undefined {
   return registry[id];
 }
 
+/** Every registered Hand Deck card — the deck builder's card pool. */
+export function listHandCardDefs(): HandCardDef[] {
+  return Object.values(registry);
+}
+
 export function registerMission(def: MissionDef): void {
   missionRegistry[def.id] = def;
 }

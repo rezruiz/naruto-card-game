@@ -98,6 +98,11 @@ export function getCharacterDeckEntry(id: string): CharacterDeckEntry | undefine
   return registry[id];
 }
 
+/** Every Character Deck card — the deck builder's character pool. */
+export function listCharacterDeckEntries(): CharacterDeckEntry[] {
+  return Object.values(registry);
+}
+
 /**
  * The 13-card Akatsuki Character Deck (SPEC.md §2): 1 copy each of the 11
  * uniquely-named characters, plus 2 copies of Amegakure Civilian Rebel
