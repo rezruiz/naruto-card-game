@@ -1,7 +1,7 @@
 import { findOccupant, isCharacter } from '../board';
 import { activateAbility, checkLegality, findAbility, poolAvailableFor, resolveCost as abilityCost, type AbilityDef } from '../abilities';
 import { checkHandCardLegality, playHandCard, resolveCost as cardCost } from '../cards/playHandCard';
-import { getHandCardDef, needsEnablingCharacter } from '../cards/registry';
+import { getHandCardDef, needsEnablingCharacter, targetedIds } from '../cards/registry';
 import { getCharacterDef, getTokenDef } from '../characters/registry';
 import { appendLog, appendPrivateLog, appendWarning } from '../phases/phaseMachine';
 import { enqueueChoice, registerChoiceResolver } from '../choices';
@@ -41,6 +41,11 @@ function occupantsOf(state: GameState, player: PlayerId): BoardOccupant[] {
   return [...p.backRow, ...p.frontRow].filter((o): o is BoardOccupant => !!o);
 }
 
+/** What a staged action actually targets — a card that chooses its units (HandCardDef.chooses) targets nothing. */
+function actionTargets(a: StagedAction): string[] {
+  return a.kind === 'card' ? targetedIds(getHandCardDef(a.cardDefId ?? ''), a.targets) : a.targets;
+}
+
 function toPlaceholder(a: StagedAction): StackItem {
   return {
     id: a.id,
@@ -49,7 +54,7 @@ function toPlaceholder(a: StagedAction): StackItem {
     sourceName: a.label,
     abilityId: a.abilityId ?? getHandCardIdFor(a),
     abilityName: a.label,
-    targets: a.targets,
+    targets: actionTargets(a),
     resolve: (s) => s,
   };
 }
@@ -129,8 +134,8 @@ export function cardDeclarationWarnings(state: GameState, cardInstanceId: string
  * the end. Either player can then nudge their own items with moveStaged.
  */
 function insertStaged(list: StagedAction[], action: StagedAction): StagedAction[] {
-  const relevant = new Set([action.sourceInstanceId, ...action.targets].filter(Boolean));
-  const index = list.findIndex((a) => a.owner !== action.owner && a.targets.some((t) => relevant.has(t)));
+  const relevant = new Set([action.sourceInstanceId, ...actionTargets(action)].filter(Boolean));
+  const index = list.findIndex((a) => a.owner !== action.owner && actionTargets(a).some((t) => relevant.has(t)));
   if (index === -1) return [...list, action];
   return [...list.slice(0, index), action, ...list.slice(index)];
 }

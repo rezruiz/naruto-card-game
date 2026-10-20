@@ -1,11 +1,13 @@
 import { findOccupant, getAdjacent, isCharacter, patchCharacter } from '../board';
-import { dealDamage, healOccupant } from '../combat';
+import { absorbChakra, dealDamage, healOccupant } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
-import { drawCard, lookAndTakeCardType } from '../deck';
+import { drawCard, lookAndTakeCardType, lookAndTakeMatching } from '../deck';
+import { applyPoison } from '../poison';
 import { scheduleHeal } from '../scheduledHeals';
 import { negateFirstMatchingAttack, stackItemInfo } from './negation';
-import { registerHandCard } from './registry';
+import { getHandCardDef, registerHandCard } from './registry';
 import type { HandCardDef } from './registry';
+import type { GameState, PlayerId } from '../types';
 
 function isAttack(info: ReturnType<typeof stackItemInfo>): boolean {
   return !!info && info.isDamaging;
@@ -378,6 +380,225 @@ const falseDarknessCard: HandCardDef = {
   },
 };
 
+// --- Jutsu batch 2 (2026-10-19) ---------------------------------------------
+
+/** Ninjutsu and Physical (Taijutsu/Bukijutsu) attacks — what a physical block can stop; never Genjutsu (§9). */
+function isNinjutsuOrPhysicalAttack(info: ReturnType<typeof stackItemInfo>): boolean {
+  return !!info && info.isDamaging && (info.type === 'Ninjutsu' || info.type === 'Taijutsu' || info.type === 'Bukijutsu');
+}
+
+/** The first enemy attack waiting on the stack, aimed at `protectedId`, that a physical block can stop. */
+function blockableAttackOn(state: GameState, player: PlayerId, protectedId: string) {
+  return state.stack.find((item) => item.controllerId !== player && item.targets.includes(protectedId) && isNinjutsuOrPhysicalAttack(stackItemInfo(state, item)));
+}
+
+/**
+ * "Prevent N of its damage": the waiting attack still targets and resolves,
+ * it just deals N less to that character (combat.ts reads damageAdjust).
+ * Two preventions on the same attack add up.
+ */
+function preventAttackDamage(state: GameState, player: PlayerId, protectedId: string, amount: number, cardName: string): GameState {
+  const item = blockableAttackOn(state, player, protectedId);
+  if (!item) return appendLog(state, `${cardName} finds no attack left to block.`);
+  const current = item.damageAdjust?.[protectedId] ?? {};
+  const damageAdjust = { ...(item.damageAdjust ?? {}), [protectedId]: { ...current, reduceBy: (current.reduceBy ?? 0) + amount } };
+  const stack = state.stack.map((it) => (it.id === item.id ? { ...it, damageAdjust } : it));
+  const name = findOccupant(state, protectedId)?.occupant.name ?? 'its target';
+  return appendLog({ ...state, stack }, `${cardName} will prevent ${amount} of ${item.abilityName}'s damage to ${name}.`);
+}
+
+const mudWall: HandCardDef = {
+  id: 'mud-wall',
+  name: 'Earth Style: Mud Wall',
+  cardType: 'jutsu',
+  cost: (_ctx, payFromPool) => (payFromPool > 0 ? 1 : 2),
+  offersPoolDiscount: true,
+  speed: 'Reactive',
+  style: 'Earth',
+  type: 'Ninjutsu',
+  targetSide: 'ally',
+  // "A character you control" — a token isn't a character.
+  legalityCheck: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    const found = target ? findOccupant(ctx.state, target) : undefined;
+    return !!found && found.player === ctx.player && isCharacter(found.occupant) && !!blockableAttackOn(ctx.state, ctx.player, target);
+  },
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    return target ? preventAttackDamage(ctx.state, ctx.player, target, 2, 'Earth Style: Mud Wall') : ctx.state;
+  },
+};
+
+// Prevention, not negation — so Spore Technique (which only blocks negating
+// your own targeting) doesn't stop it.
+const kunaiDeflection: HandCardDef = {
+  id: 'kunai-deflection',
+  name: 'Kunai Deflection',
+  cardType: 'jutsu',
+  cost: (_ctx, payFromPool) => (payFromPool > 0 ? 1 : 2),
+  offersPoolDiscount: true,
+  speed: 'Reactive',
+  style: 'None',
+  type: 'Taijutsu',
+  maxTargets: 0,
+  legalityCheck: (ctx) => !!blockableAttackOn(ctx.state, ctx.player, ctx.enablingInstanceId),
+  resolve: (ctx) => preventAttackDamage(ctx.state, ctx.player, ctx.enablingInstanceId, 1, 'Kunai Deflection'),
+};
+
+const waterSharkBullet: HandCardDef = {
+  id: 'water-shark-bullet',
+  name: 'Water Style: Water Shark Bullet',
+  cardType: 'jutsu',
+  cost: 3,
+  speed: 'Normal',
+  style: 'Water',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  // "Deal 2 damage, Absorb 1" — independent clauses (§6.8a): the enabler gains 1 even if the target has nothing pooled.
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    if (!target) return ctx.state;
+    const state = dealDamage(ctx.state, target, 2).state;
+    return absorbChakra(state, ctx.enablingInstanceId, target, 1);
+  },
+};
+
+// Chooses (doesn't target) its up-to-3 enemy units — Characters or Tokens —
+// so nothing can negate or redirect any of the hits (§9).
+const greatBreakthrough: HandCardDef = {
+  id: 'great-breakthrough',
+  name: 'Wind Style: Great Breakthrough',
+  cardType: 'jutsu',
+  cost: 3,
+  speed: 'Normal',
+  style: 'Wind',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  chooses: true,
+  maxTargets: 3,
+  targetSide: 'enemy',
+  legalityCheck: (ctx) => ctx.targetInstanceIds.length >= 1 && new Set(ctx.targetInstanceIds).size === ctx.targetInstanceIds.length,
+  resolve: (ctx) => {
+    let state = ctx.state;
+    for (const unit of ctx.targetInstanceIds.slice(0, 3)) state = dealDamage(state, unit, 1).state;
+    return state;
+  },
+};
+
+/** Finishing Blow's condition: an enemy character at half its max HP or less (rounded down). */
+function finishable(state: GameState, player: PlayerId, instanceId: string | undefined) {
+  const found = instanceId ? findOccupant(state, instanceId) : undefined;
+  if (!found || found.player === player || !isCharacter(found.occupant)) return undefined;
+  return found.occupant.currentHP <= Math.floor(found.occupant.maxHP / 2) ? found.occupant : undefined;
+}
+
+const finishingBlow: HandCardDef = {
+  id: 'finishing-blow',
+  name: 'Finishing Blow',
+  cardType: 'jutsu',
+  cost: 2,
+  speed: 'Normal',
+  style: 'None',
+  type: 'Taijutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  legalityCheck: (ctx) => !!finishable(ctx.state, ctx.player, ctx.targetInstanceIds[0]),
+  // Re-checked on resolution: a target healed above half its max HP in the meantime is no longer a legal target.
+  resolve: (ctx) => {
+    const target = finishable(ctx.state, ctx.player, ctx.targetInstanceIds[0]);
+    if (!target) return appendLog(ctx.state, 'Finishing Blow fizzles — its target is no longer at half its max HP or less.');
+    return dealDamage(ctx.state, target.instanceId, target.currentHP <= 3 ? 3 : 2).state;
+  },
+};
+
+const senbonVolley: HandCardDef = {
+  id: 'senbon-volley',
+  name: 'Senbon Volley',
+  cardType: 'jutsu',
+  cost: 2,
+  speed: 'Normal',
+  style: 'None',
+  type: 'Bukijutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    if (!target) return ctx.state;
+    const state = dealDamage(ctx.state, target, 2).state;
+    const enabler = findOccupant(state, ctx.enablingInstanceId);
+    const poisonUser = !!enabler && isCharacter(enabler.occupant) && enabler.occupant.styles.includes('Poison');
+    return poisonUser && findOccupant(state, target) ? applyPoison(state, target, 1) : state;
+  },
+};
+
+// "Jutsu card" includes Assist cards (a Jutsu sub-category, §10c); a Style:
+// None card never counts as a match.
+const scrollOfTechniques: HandCardDef = {
+  id: 'scroll-of-techniques',
+  name: 'Scroll of Techniques',
+  cardType: 'jutsu',
+  cost: 1,
+  speed: 'Normal',
+  style: 'None',
+  type: 'None',
+  maxTargets: 0,
+  resolve: (ctx) => {
+    const styles = new Set(ctx.state.players[ctx.player].backRow.flatMap((c) => c?.styles ?? []));
+    return lookAndTakeMatching(ctx.state, ctx.player, 3, 'Style-matching Jutsu', (card) => {
+      const def = getHandCardDef(card.defId);
+      return !!def && (def.cardType === 'jutsu' || def.cardType === 'assist') && def.style !== 'None' && styles.has(def.style);
+    });
+  },
+};
+
+// Chooses (doesn't target) a Retreated enemy — the explicit exception to
+// Retreat immunity (§6.5b), like Deploy Medic Corps. Nothing can stop the choice.
+const smokeOut: HandCardDef = {
+  id: 'smoke-out',
+  name: 'Smoke Out',
+  cardType: 'jutsu',
+  cost: 4,
+  speed: 'Normal',
+  style: 'None',
+  type: 'None',
+  chooses: true,
+  targetSide: 'enemy',
+  allowRetreatedTarget: true,
+  legalityCheck: (ctx) => {
+    const found = ctx.targetInstanceIds[0] ? findOccupant(ctx.state, ctx.targetInstanceIds[0]) : undefined;
+    return !!found && found.player !== ctx.player && isCharacter(found.occupant) && found.occupant.status.retreated;
+  },
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    const found = target ? findOccupant(ctx.state, target) : undefined;
+    if (!found || !isCharacter(found.occupant) || !found.occupant.status.retreated) return appendLog(ctx.state, 'Smoke Out finds no Retreated character to force out.');
+    // Returning from Retreat counts as entering play for Field Orientation (§6.6).
+    const state = patchCharacter(ctx.state, found.occupant.instanceId, (c) => ({ ...c, status: { ...c.status, retreated: false, enteredTurn: ctx.state.turn } }));
+    return appendLog(state, `Smoke Out forces ${found.occupant.name} out of Retreat.`);
+  },
+};
+
+// The extra draw is an additional cost the player opts into when playing it
+// (amount 1 = pay 2 more Chakra and draw a second card).
+const reconnaissance: HandCardDef = {
+  id: 'reconnaissance',
+  name: 'Reconnaissance',
+  cardType: 'jutsu',
+  cost: (ctx) => (ctx.amount ? 3 : 1),
+  speed: 'Normal',
+  style: 'None',
+  type: 'None',
+  maxTargets: 0,
+  needsAmountChoice: true,
+  amountLabel: 'Pay 2 more Chakra to draw a 2nd card (1 = yes)',
+  maxAmount: () => 1,
+  resolve: (ctx) => {
+    const state = drawCard(ctx.state, ctx.player);
+    return ctx.amount ? drawCard(state, ctx.player) : state;
+  },
+};
+
 for (const def of [
   substitution,
   lightningSubstitution,
@@ -395,6 +616,15 @@ for (const def of [
   pressureDamageCard,
   searingMigraineCard,
   falseDarknessCard,
+  mudWall,
+  kunaiDeflection,
+  waterSharkBullet,
+  greatBreakthrough,
+  finishingBlow,
+  senbonVolley,
+  scrollOfTechniques,
+  smokeOut,
+  reconnaissance,
 ]) {
   registerHandCard(def);
 }

@@ -864,6 +864,17 @@ that character just as much as "deal 2 damage to target enemy
 character" does; only phrasing like "deal 2 damage to all enemies"
 doesn't.
 
+**Choosing vs. targeting:** when a card's text says **"choose"**
+instead of "target," the choice is a **game action that can't be
+interacted with** — it is never targeting. Nothing can negate, redirect,
+or respond to the choice itself, and anything keyed to "targeting"
+(target negation, "whenever targeted" triggers, extra costs to target a
+character, "can't be targeted" restrictions) ignores it. A chosen unit is
+still **affected** normally: damage it takes is still reduced or
+prevented by the usual effects, and Retreat immunity (§6.5b) still
+applies unless the card makes an explicit exception. Examples: Wind
+Style: Great Breakthrough, Smoke Out (§13b).
+
 **Negating a target vs. negating damage:** these are two different
 interactions, and card text needs to be read carefully to tell which one
 an effect is doing:
@@ -1709,6 +1720,47 @@ Effect: Deal 4 damage.
 **False Darkness** — Style: Lightning, Quick Technique, Type: Ninjutsu
 Cost: 2 Chakra.
 Effect: Deal 2 damage.
+
+**Earth Style: Mud Wall** — Style: Earth, Reactive Technique, Type: Ninjutsu
+Cost: 2 Chakra (1 if paid from the enabling character's own Chakra Pool).
+Effect: In response to a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at a character you control, prevent 2 of its damage. Has no effect against Genjutsu (§9).
+
+**Kunai Deflection** — Style: None, Reactive Technique, Type: Taijutsu
+Cost: 2 Chakra (1 if paid from the enabling character's own Chakra Pool).
+Effect: In response to a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at the character enabling this card's play, prevent 1 of its damage. Has no effect against Genjutsu (§9).
+
+**Water Style: Water Shark Bullet** — Style: Water, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 2 damage, Absorb 1 (§6.8b).
+
+**Wind Style: Great Breakthrough** — Style: Wind, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 1 damage to each of up to 3 enemy units.
+
+**Finishing Blow** — Style: None, Type: Taijutsu
+Cost: 2 Chakra.
+Effect: Deal 2 damage to an enemy character at half its max HP or less (rounded down). If it has 3 HP or less, deal 3 instead.
+
+**Senbon Volley** — Style: None, Type: Bukijutsu
+Cost: 2 Chakra.
+Effect: Deal 2 damage. If the character enabling this card's play has the Poison Style, also apply 1 Poison counter to the target.
+
+**Scroll of Techniques** — Style: None, no Type
+Cost: 1 Chakra.
+Effect: Look at the top 3 cards of your Hand Deck. You may add 1 Jutsu card among them whose Style matches a Style of a character you control (Style: None doesn't count) to your hand. Shuffle the rest back into your Hand Deck.
+
+**Smoke Out** — Style: None, no Type
+Cost: 4 Chakra.
+Effect: Choose 1 Retreated enemy character (this card may choose a Retreated character despite §6.5b's normal targeting immunity — an explicit exception). It returns from Retreat (§6.5b) and is treated as having just entered play for Field Orientation (§6.6).
+
+**Reconnaissance** — Style: None, no Type
+Cost: 1 Chakra.
+Effect: Draw 1 card. You may pay 2 additional Chakra to then draw another card.
+
+*The nine cards above (Earth Style: Mud Wall through Reconnaissance)
+are implemented but not yet in the preset Hand Deck. Wind Style: Great
+Breakthrough and Smoke Out **choose** their units rather than targeting
+them (§9).*
 
 **Assist Cards** (see §10c):
 

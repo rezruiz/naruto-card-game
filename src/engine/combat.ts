@@ -67,7 +67,7 @@ function applyDamageModifiers(
   if (adjust?.toZero) return { state, amount: 0, notes: [`${target.name} takes none of it (redirected and reduced to 0).`], unprotectable: false };
   if (adjust?.reduceBy) {
     dmg = Math.max(0, dmg - adjust.reduceBy);
-    notes.push(`redirected hit reduced by ${adjust.reduceBy}`);
+    notes.push(`hit reduced by ${adjust.reduceBy} (redirect/block)`);
   }
 
   if (src) {

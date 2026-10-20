@@ -415,6 +415,8 @@ A single-target effect is presumed to **target** that character even without the
 ### 13.5 Targeting vs. being affected
 "Targeting" means being *selected*. Blanket ("all enemies") and splash ("plus Y to adjacent") effects affect characters they never target. A "**cannot be targeted**" restriction (Hidan's Curse) blocks targeting only — it does **not** protect from blanket/splash effects. **Exception:** **Retreated** grants full immunity to both.
 
+**Choosing vs. targeting [Updated]:** a card that says **"choose"** instead of "target" makes a **game action that can't be interacted with** — the choice is never targeting. Nothing can negate, redirect or respond to it, and targeting-keyed effects (target negation, "whenever targeted" triggers, extra costs to target a unit, "can't be targeted") ignore it. The chosen units are still **affected** normally: their damage can still be reduced or prevented, and Retreat immunity still applies unless the card makes an explicit exception. Examples: Wind Style: Great Breakthrough, Smoke Out.
+
 ### 13.6 Negating a target vs. negating damage
 - **Negating damage:** the ability still targets and resolves; only the damage number is prevented/reduced.
 - **Negating the target:** strips the target's legality **before it locks in**; **target-dependent parts fizzle** as if never triggered. The ability is still **activated** — cost paid, triggered, target identified — the negation intervenes only at the later moment the target would be *confirmed*. **Only the parts that needed that target fizzle**; comma-independent parts (e.g., "Prevent the next 2 damage dealt to you") still resolve.
@@ -480,6 +482,15 @@ Full text is in Appendix A. Timing and implementation:
 | **Pressure Damage** (Wind) | **Normal, Attack-type — Combat only**, 3 | 2 damage to up to 2 enemy characters. **Once per turn.** |
 | **Searing Migraine** (Fire) | **Normal, Attack-type — Combat only**, 3 | 4 damage. **Once per turn.** |
 | **False Darkness** (Lightning) | **Quick**, 2 | 2 damage. |
+| **Earth Style: Mud Wall** (Earth) | **Reactive**, 2 / 1 from Pool | Prevent 2 of a targeted Ninjutsu or Physical attack on one of your characters (not Genjutsu). Not in the preset deck. |
+| **Kunai Deflection** (Taijutsu) | **Reactive**, 2 / 1 from Pool | Prevent 1 of a targeted Ninjutsu or Physical attack on the **enabling** character (not Genjutsu). Prevention, not negation — Spore Technique doesn't stop it. Not in the preset deck. |
+| **Water Style: Water Shark Bullet** (Water) | **Normal, Attack-type — Combat only**, 3 | 2 damage, Absorb 1 from the target into the enabler. **Once per turn.** Not in the preset deck. |
+| **Wind Style: Great Breakthrough** (Wind) | **Normal, Attack-type — Combat only**, 3 | **Chooses** (doesn't target) up to 3 enemy units, Characters or Tokens: 1 damage each. **Once per turn.** Not in the preset deck. |
+| **Finishing Blow** (Taijutsu) | **Normal, Attack-type — Combat only**, 2 | Target enemy character at ≤ half its max HP (rounded down): 2 damage, 3 if it has ≤ 3 HP. Fizzles if it's healed above half before resolving. **Once per turn.** Not in the preset deck. |
+| **Senbon Volley** (Bukijutsu) | **Normal, Attack-type — Combat only**, 2 | 2 damage; +1 Poison counter if the enabler has the Poison Style. **Once per turn.** Not in the preset deck. |
+| **Scroll of Techniques** | Normal, **Main only**, 1 | Look at the top 3; take 1 Jutsu (Assist counts) whose Style matches one of your characters' Styles (Style: None never matches); shuffle the rest back. Not in the preset deck. |
+| **Smoke Out** | Normal, **Main only**, 4 | **Chooses** (doesn't target) a Retreated enemy character — an explicit exception to Retreat immunity — and forces it out of Retreat with Field Orientation. Not in the preset deck. |
+| **Reconnaissance** | Normal, **Main only**, 1 (+2) | Draw 1; if you paid 2 more when playing it (your choice), draw 1 more. Not in the preset deck. |
 | **Chakra Suppression** (Sealing) | **Quick**, 2 | Target enemy character can't be pooled into **through** its controller's next turn. Characters only, not tokens. |
 | **Akatsuki Hideout** (Terrain) | Normal, **Main only**, **2** | Upkeep −1 for Akatsuki-Synergy characters (min 1). |
 | **Missions (7)** | Normal, **Main only** | See Appendix A. **Emergency Relief** counts your own characters defeated (any rank, tokens don't count) after it's played; at 2, you immediately take a free Character Deck draw (look at 2, keep 1) that doesn't raise the tax. |
@@ -716,6 +727,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 73. ✔ **[Playtest] Phases are clickable:** click a later phase to skip ahead (the phases in between run normally); in trust mode you can click an earlier one to go back (nothing is undone or re-run).
 74. ✔ **Lingering damage isn't affected by negation by default:** damage from an effect already attached to a character (burns, Poison, scheduled ticks) isn't stopped by damage-negating or damage-preventing effects, and negating targeting doesn't affect it (it's already attached and doesn't retarget). A card must say so explicitly to stop it — the default holds even when a card doesn't say "new" damage. (SPEC §9.)
 75. ✔ **Hand Deck changes:** Missions cut to 2× Unshakable Resolve, 1× each Bingo Book, 1× Squad Formation, 2× Emergency Relief (9, was 15). Three new Jutsu cards, 1 copy each: **Pressure Damage** (Wind, 3 Chakra: 2 damage to up to 2 enemy characters), **Searing Migraine** (Fire, 3: 4 damage), **False Darkness** (Lightning, Quick, 2: 2 damage). The preset Hand Deck is now **47** cards, 3 short of the minimum. (SPEC §2, §13b.)
+76. ✔ **Choosing isn't targeting:** "choose" in card text is a game action nothing can interact with — never targeting (§13.5). **Nine new Jutsu cards**, implemented but **not in the preset deck yet**: Earth Style: Mud Wall, Kunai Deflection, Water Style: Water Shark Bullet, Wind Style: Great Breakthrough, Finishing Blow, Senbon Volley, Scroll of Techniques, Smoke Out, Reconnaissance (full text: Appendix A.3). (SPEC §9, §13b.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -1356,6 +1368,47 @@ Effect: Deal 4 damage.
 **False Darkness** — Style: Lightning, Quick Technique, Type: Ninjutsu
 Cost: 2 Chakra.
 Effect: Deal 2 damage.
+
+**Earth Style: Mud Wall** — Style: Earth, Reactive Technique, Type: Ninjutsu
+Cost: 2 Chakra (1 if paid from the enabling character's own Chakra Pool).
+Effect: In response to a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at a character you control, prevent 2 of its damage. Has no effect against Genjutsu (§9).
+
+**Kunai Deflection** — Style: None, Reactive Technique, Type: Taijutsu
+Cost: 2 Chakra (1 if paid from the enabling character's own Chakra Pool).
+Effect: In response to a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at the character enabling this card's play, prevent 1 of its damage. Has no effect against Genjutsu (§9).
+
+**Water Style: Water Shark Bullet** — Style: Water, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 2 damage, Absorb 1 (§6.8b).
+
+**Wind Style: Great Breakthrough** — Style: Wind, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 1 damage to each of up to 3 enemy units.
+
+**Finishing Blow** — Style: None, Type: Taijutsu
+Cost: 2 Chakra.
+Effect: Deal 2 damage to an enemy character at half its max HP or less (rounded down). If it has 3 HP or less, deal 3 instead.
+
+**Senbon Volley** — Style: None, Type: Bukijutsu
+Cost: 2 Chakra.
+Effect: Deal 2 damage. If the character enabling this card's play has the Poison Style, also apply 1 Poison counter to the target.
+
+**Scroll of Techniques** — Style: None, no Type
+Cost: 1 Chakra.
+Effect: Look at the top 3 cards of your Hand Deck. You may add 1 Jutsu card among them whose Style matches a Style of a character you control (Style: None doesn't count) to your hand. Shuffle the rest back into your Hand Deck.
+
+**Smoke Out** — Style: None, no Type
+Cost: 4 Chakra.
+Effect: Choose 1 Retreated enemy character (this card may choose a Retreated character despite §6.5b's normal targeting immunity — an explicit exception). It returns from Retreat (§6.5b) and is treated as having just entered play for Field Orientation (§6.6).
+
+**Reconnaissance** — Style: None, no Type
+Cost: 1 Chakra.
+Effect: Draw 1 card. You may pay 2 additional Chakra to then draw another card.
+
+*The nine cards above (Earth Style: Mud Wall through Reconnaissance)
+are implemented but not yet in the preset Hand Deck. Wind Style: Great
+Breakthrough and Smoke Out **choose** their units rather than targeting
+them (§9).*
 
 **Assist Cards** (see §10c):
 
@@ -3034,6 +3087,15 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | Searing Migraine | 1 | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name) |
 | False Darkness | 1 | jutsu | 2 | Quick | Lightning | Ninjutsu | — | 1 (enemy) | — |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
+| Earth Style: Mud Wall | 0 | jutsu | variable | Reactive | Earth | Ninjutsu | — | 1 (ally) | cheaper if paid from enabler's Pool; not in the preset deck |
+| Kunai Deflection | 0 | jutsu | variable | Reactive | None | Taijutsu | — | none/auto | protects its enabler; cheaper if paid from enabler's Pool; not in the preset deck |
+| Water Style: Water Shark Bullet | 0 | jutsu | 3 | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
+| Wind Style: Great Breakthrough | 0 | jutsu | 3 | Normal | Wind | Ninjutsu | Combat only | up to 3 chosen (enemy) | chooses, doesn't target; Attack-type (once/turn by name); not in the preset deck |
+| Finishing Blow | 0 | jutsu | 2 | Normal | None | Taijutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
+| Senbon Volley | 0 | jutsu | 2 | Normal | None | Bukijutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
+| Scroll of Techniques | 0 | jutsu | 1 | Normal | None | None | Main only | none/auto | not in the preset deck |
+| Smoke Out | 0 | jutsu | 4 | Normal | None | None | Main only | 1 chosen (enemy, Retreated) | chooses, doesn't target; not in the preset deck |
+| Reconnaissance | 0 | jutsu | variable | Normal | None | None | Main only | none/auto | player chooses whether to pay 2 more; not in the preset deck |
 | Explosive Tag | 2 | jutsu | 1 | Normal | None | Bukijutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
 | Battlefield Selection | 2 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |
 | Akatsuki Hideout | 3 | terrain | 2 | Normal | None | None | Main only | none/auto | Synergy: Akatsuki |

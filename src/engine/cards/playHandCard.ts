@@ -2,7 +2,7 @@ import { findOccupant, isCharacter, patchCharacter } from '../board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan, targetingSurcharge } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
-import { getHandCardDef, needsEnablingCharacter } from './registry';
+import { getHandCardDef, needsEnablingCharacter, targetedIds } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
 import type { GameState, PlayerId } from '../types';
 
@@ -36,7 +36,7 @@ function uchihaProdigyApplies(state: GameState, player: PlayerId, def: HandCardD
 export function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool: number): number {
   let cost = typeof def.cost === 'function' ? def.cost(ctx, payFromPool) : def.cost;
   if (uchihaProdigyApplies(ctx.state, ctx.player, def) && cost > 1) cost -= 1;
-  return cost + targetingSurcharge(ctx.state, ctx.player, ctx.targetInstanceIds);
+  return cost + targetingSurcharge(ctx.state, ctx.player, targetedIds(def, ctx.targetInstanceIds));
 }
 
 /**
@@ -222,9 +222,11 @@ export function playHandCard(
       sourceName: def.name,
       abilityId: def.id,
       abilityName: def.name,
-      targets: targetInstanceIds,
+      targets: targetedIds(def, targetInstanceIds),
       costText: describeCost(cost, payFromPool),
-      resolve: (resolveState, item) => def.resolve({ ...stackCtx, state: resolveState, targetInstanceIds: item?.targets ?? targetInstanceIds }),
+      // A choosing card's units ride along here, not on the stack item (nothing can retarget or negate a choice).
+      resolve: (resolveState, item) =>
+        def.resolve({ ...stackCtx, state: resolveState, targetInstanceIds: def.chooses ? targetInstanceIds : (item?.targets ?? targetInstanceIds) }),
     });
   }
 

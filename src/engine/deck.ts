@@ -89,20 +89,31 @@ registerChoiceResolver('look-and-take', (state, choice, optionIds) => {
  * opponent); with only one match there's nothing to choose.
  */
 export function lookAndTakeCardType(state: GameState, player: PlayerId, count: number, cardType: string): GameState {
+  return lookAndTakeMatching(state, player, count, cardType, (c) => getHandCardDef(c.defId)?.cardType === cardType);
+}
+
+/** The same look-at-the-top-N-and-take-1 flow for any condition (e.g. Scroll of Techniques' Style match); `what` names the wanted card in the log and prompt. */
+export function lookAndTakeMatching(
+  state: GameState,
+  player: PlayerId,
+  count: number,
+  what: string,
+  isMatch: (card: HandCardInstance) => boolean,
+): GameState {
   const p = state.players[player];
   const seen = p.handDeck.slice(0, count);
   const rest = p.handDeck.slice(count);
-  const matches = seen.filter((c) => getHandCardDef(c.defId)?.cardType === cardType);
+  const matches = seen.filter(isMatch);
 
   if (matches.length === 0) {
     const next = { ...state, players: { ...state.players, [player]: { ...p, handDeck: shuffle([...rest, ...seen]) } } };
-    return appendLog(next, `${player} finds no ${cardType} card among the top ${count} and shuffles them back.`);
+    return appendLog(next, `${player} finds no ${what} card among the top ${count} and shuffles them back.`);
   }
   const setAside: GameState = { ...state, players: { ...state.players, [player]: { ...p, handDeck: rest } } };
   if (matches.length === 1) return takeLookedAtCard(setAside, player, seen, matches[0]);
   return enqueueChoice(appendLog(setAside, `${player} looks at the top ${seen.length} card(s) of their Hand Deck.`), {
     player,
-    prompt: `Take which ${cardType} card? (Looking at: ${seen.map((c) => getHandCardDef(c.defId)?.name ?? c.defId).join(', ')}.) The rest are shuffled back.`,
+    prompt: `Take which ${what} card? (Looking at: ${seen.map((c) => getHandCardDef(c.defId)?.name ?? c.defId).join(', ')}.) The rest are shuffled back.`,
     options: matches.map((c, i) => ({ id: c.instanceId, label: `${getHandCardDef(c.defId)?.name ?? c.defId}${matches.filter((m) => m.defId === c.defId).length > 1 ? ` (${i + 1})` : ''}` })),
     min: 1,
     max: 1,

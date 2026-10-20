@@ -28,6 +28,13 @@ export interface HandCardDef {
   /** UI hint: how many targets to collect before playing. Default 1; 0 for untargeted cards. */
   maxTargets?: number;
   targetSide?: 'enemy' | 'ally' | 'any';
+  /**
+   * The card *chooses* its units instead of targeting them (§9, "Choosing vs. targeting"): a choice is a
+   * game action nothing can interact with — it never counts as targeting, so negation, redirects, "whenever
+   * targeted" triggers and targeting surcharges ignore it. The chosen units still go through targetInstanceIds
+   * (and the normal side/Retreat checks), but the stack item carries no targets.
+   */
+  chooses?: boolean;
   /** Bypasses the normal Retreat-targeting-immunity check (§6.5b) — for the rare card that specifically targets a Retreated character, like Deploy Medic Corps. */
   allowRetreatedTarget?: boolean;
   /**
@@ -63,6 +70,11 @@ export interface HandCardDef {
  */
 export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type'>): boolean {
   return def.cardType === 'jutsu' && def.type !== 'None';
+}
+
+/** The units a played card actually *targets* — none for a card that chooses them instead (HandCardDef.chooses). */
+export function targetedIds(def: Pick<HandCardDef, 'chooses'> | undefined, ids: string[]): string[] {
+  return def?.chooses ? [] : ids;
 }
 
 /** What just happened, offered to every in-play Mission so it can decide whether it cares (§10b's Condition is checked at a variety of different trigger points across the 6 example cards, not one shared moment). */
