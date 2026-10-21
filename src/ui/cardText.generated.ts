@@ -38,6 +38,8 @@ export const CARD_TEXT: Record<string, string> = {
   "Pressure Damage": "**Pressure Damage** — Style: Wind, Type: Ninjutsu\nCost: 3 Chakra.\nEffect: Deal 2 damage to up to 2 enemy characters.",
   "Searing Migraine": "**Searing Migraine** — Style: Fire, Type: Ninjutsu\nCost: 3 Chakra.\nEffect: Deal 4 damage.",
   "False Darkness": "**False Darkness** — Style: Lightning, Quick Technique, Type: Ninjutsu\nCost: 2 Chakra.\nEffect: Deal 2 damage.",
+  "Water Dragon Jutsu": "**Water Dragon Jutsu** — Style: Water, Type: Ninjutsu\nCost: 1 + X Chakra (just X if paid from the enabling character's own\nChakra Pool).\nEffect: Deal X damage to an enemy character (X is at most 5).",
+  "Earth Style: Mud Wall": "**Earth Style: Mud Wall** — Style: Earth, Reactive Technique, Type: Ninjutsu\nCost: 2 Chakra (1 if paid from the enabling character's own Chakra Pool).\nEffect: In response to a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at a character you control, prevent 2 of its damage. Has no effect against Genjutsu (§9).",
   "Kunai Deflection": "**Kunai Deflection** — Style: None, Reactive Technique, Type: Taijutsu\nCost: 2 Chakra (1 if paid from the enabling character's own Chakra Pool).\nEffect: In response to a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at the character enabling this card's play, prevent 1 of its damage. Has no effect against Genjutsu (§9).",
   "Water Style: Water Shark Bullet": "**Water Style: Water Shark Bullet** — Style: Water, Type: Ninjutsu\nCost: 3 Chakra.\nEffect: Deal 2 damage, Absorb 1 (§6.8b).",
   "Wind Style: Great Breakthrough": "**Wind Style: Great Breakthrough** — Style: Wind, Type: Ninjutsu\nCost: 3 Chakra.\nEffect: Deal 1 damage to each of up to 3 enemy units.",

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createSetupState } from '../../src/engine/state';
 import { characterPool, copyLimit, handCardPool, presetDeck, toManifests, validateDeck, type DeckList } from '../../src/engine/decklist';
+import { HAND_DECK_MANIFEST } from '../../src/engine/deck';
+
+const PRESET_HAND_SIZE = HAND_DECK_MANIFEST.reduce((sum, c) => sum + c.copies, 0);
 
 /** A legal custom deck: 50 Hand Deck cards, 12 characters within the rank caps. */
 function legalDeck(): DeckList {
@@ -61,14 +64,23 @@ describe('Deck library — deck lists (SPEC.md §2)', () => {
     expect(copyLimit('character', 'amegakure-civilian-rebel')).toBe(Infinity);
   });
 
+  it('every card the game has is in the deck library — new cards show up for drafting automatically', () => {
+    const pool = new Set(handCardPool().map((d) => d.id));
+    for (const id of ['water-dragon-jutsu', 'jutsu-pressure-damage', 'jutsu-searing-migraine', 'jutsu-false-darkness', 'medical-chakra-infusion', 'chakra-suppression', 'fireball-jutsu', 'emergency-relief']) {
+      expect(pool.has(id), id).toBe(true);
+    }
+    // Everything dealt in the preset deck is draftable too.
+    for (const { defId } of HAND_DECK_MANIFEST) expect(pool.has(defId), defId).toBe(true);
+  });
+
   it('the card pool lists every registered card, including ones not in the preset deck', () => {
     expect(handCardPool().map((d) => d.id)).toEqual(expect.arrayContaining(['substitution', 'great-breakthrough', 'reconnaissance', 'akatsuki-hideout', 'unshakable-resolve']));
     expect(characterPool().map((c) => c.id)).toEqual(expect.arrayContaining(['kakuzu', 'pain', 'amegakure-civilian-rebel']));
   });
 
-  it('the preset matches the starter decks (47 hand cards, 13 characters)', () => {
+  it('the preset matches the starter decks (the preset Hand Deck manifest, 13 characters)', () => {
     const { hand, characters } = toManifests(presetDeck());
-    expect(hand.reduce((a, c) => a + c.copies, 0)).toBe(47);
+    expect(hand.reduce((a, c) => a + c.copies, 0)).toBe(PRESET_HAND_SIZE);
     expect(characters).toHaveLength(13);
   });
 
@@ -78,9 +90,9 @@ describe('Deck library — deck lists (SPEC.md §2)', () => {
     const p1Cards = [...state.players.p1.handDeck, ...state.players.p1.hand.filter((h) => h.kind === 'card')].map((c) => c.defId);
     expect(p1Cards).toHaveLength(50);
     expect(new Set(p1Cards)).toEqual(new Set(Object.keys(deck.handDeck)));
-    // p2 had no deck chosen — the preset (47 cards).
+    // p2 had no deck chosen — the preset.
     const p2Cards = [...state.players.p2.handDeck, ...state.players.p2.hand.filter((h) => h.kind === 'card')];
-    expect(p2Cards).toHaveLength(47);
+    expect(p2Cards).toHaveLength(PRESET_HAND_SIZE);
     // p1's Character Deck (minus the 3 revealed at Setup) only holds cards from their deck.
     const revealed = state.players.p1.pendingCharacterReveal?.revealed ?? [];
     expect([...state.players.p1.characterDeck, ...revealed].every((id) => id in deck.characterDeck)).toBe(true);
