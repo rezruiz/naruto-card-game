@@ -483,11 +483,13 @@ function checkWinner(state: GameState): GameState {
 }
 
 /**
- * Absorb X (SPEC.md §6.8b): the acting unit gains X Chakra unconditionally
- * (capped by its own Pool capacity, same as normal pooling); separately, if
- * the target has any Chakra pooled, it loses X (capped by however much it
- * actually has). The two clauses are independent — the gain always happens
- * even if the drain does nothing.
+ * Absorb X (SPEC.md §6.8b): the acting unit's controller gains X generic
+ * Chakra that fades at the next phase change (spent before their other
+ * generic Chakra) — unless the unit's card stores absorbed Chakra in its
+ * Pool (Kisame's Samehada, Zetsu's Shared Reservoir), in which case it goes
+ * there and only what doesn't fit becomes fading generic Chakra. Separately,
+ * if the target has any Chakra pooled, it loses X (capped by however much it
+ * has). The two clauses are independent.
  */
 export function absorbChakra(
   state: GameState,
@@ -498,24 +500,28 @@ export function absorbChakra(
   if (amount <= 0) return state;
   let next = state;
 
-  // A Token source with no Pool of its own (e.g. Zetsu's White Zetsu Clone/
-  // Golem) redirects the gain to its named shared-pool owner (Zetsu's Shared
-  // Reservoir) if any — mirrors abilities.ts's payment resolution for the
-  // same family of Tokens. A Token that carries its own Pool directly (Pain's
-  // Path tokens) just gains into that, like a Character would.
+  // A Token with no Pool of its own (Zetsu's Clones/Golem) absorbs on behalf
+  // of its shared-pool owner (Zetsu).
   const rawSrc = findOccupant(next, sourceInstanceId);
-  const gainOwnerId =
-    rawSrc && (isCharacter(rawSrc.occupant) || rawSrc.occupant.chakraPool)
-      ? sourceInstanceId
-      : (rawSrc?.occupant.extra.sharedPoolOwner as string | undefined);
-  const src = gainOwnerId ? findOccupant(next, gainOwnerId) : null;
-  if (src && src.occupant.chakraPool) {
-    const pool = src.occupant.chakraPool;
+  if (!rawSrc) return next;
+  const ownerId = isCharacter(rawSrc.occupant) || rawSrc.occupant.chakraPool ? sourceInstanceId : (rawSrc.occupant.extra.sharedPoolOwner as string | undefined);
+  const owner = ownerId ? findOccupant(next, ownerId) : undefined;
+  const storesInPool = !!owner && isCharacter(owner.occupant) && !!getCharacterDef(owner.occupant.defId)?.absorbsIntoPool;
+  let toGeneric = amount;
+  if (storesInPool && owner!.occupant.chakraPool) {
+    const pool = owner!.occupant.chakraPool;
     const gained = Math.max(0, Math.min(amount, pool.capacity - pool.current));
     if (gained > 0) {
-      next = patchPool(next, gainOwnerId!, gained);
-      next = appendLog(next, `${src.occupant.name} absorbs ${gained} Chakra.`);
+      next = patchPool(next, ownerId!, gained);
+      next = appendLog(next, `${owner!.occupant.name} absorbs ${gained} Chakra into its Pool.`);
     }
+    toGeneric = amount - gained;
+  }
+  if (toGeneric > 0) {
+    const player = rawSrc.player;
+    const p = next.players[player];
+    next = { ...next, players: { ...next.players, [player]: { ...p, genericChakraAvailable: p.genericChakraAvailable + toGeneric, fadingGenericChakra: p.fadingGenericChakra + toGeneric } } };
+    next = appendLog(next, `${rawSrc.occupant.name} absorbs ${toGeneric} Chakra (generic — fades when the phase changes).`);
   }
 
   const tgt = findOccupant(next, targetInstanceId);
@@ -565,4 +571,17 @@ function getDefeatHook(defId: string): OnWouldBeDefeatedHook | undefined {
 
 function getTokenDefeatHook(defId: string): OnWouldBeDefeatedHook | undefined {
   return tokenDefeatHooks[defId];
+}
+
+/** Spends `amount` generic Chakra for `player`, using absorbed (fading) Chakra first. */
+export function spendGeneric(state: GameState, player: PlayerId, amount: number): GameState {
+  if (amount <= 0) return state;
+  const p = state.players[player];
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [player]: { ...p, genericChakraAvailable: p.genericChakraAvailable - amount, fadingGenericChakra: Math.max(0, p.fadingGenericChakra - amount) },
+    },
+  };
 }

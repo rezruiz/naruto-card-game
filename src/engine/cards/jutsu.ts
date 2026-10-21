@@ -599,6 +599,36 @@ const reconnaissance: HandCardDef = {
   },
 };
 
+// "1+X: deal X (max 5); paying from the Pool, the cost is just X" — the
+// Substitution-family Pool discount, scaled by the X the player picks.
+const waterDragonJutsu: HandCardDef = {
+  id: 'water-dragon-jutsu',
+  name: 'Water Dragon Jutsu',
+  cardType: 'jutsu',
+  cost: (ctx, payFromPool) => {
+    const x = Math.max(1, Math.min(5, ctx.amount ?? 1));
+    return payFromPool > 0 ? x : 1 + x;
+  },
+  offersPoolDiscount: true,
+  speed: 'Normal',
+  style: 'Water',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  needsAmountChoice: true,
+  amountLabel: 'Damage (X, max 5)',
+  maxAmount: () => 5,
+  legalityCheck: (ctx) => {
+    const found = ctx.targetInstanceIds[0] ? findOccupant(ctx.state, ctx.targetInstanceIds[0]) : undefined;
+    return !!found && found.player !== ctx.player && isCharacter(found.occupant);
+  },
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    const x = Math.max(1, Math.min(5, ctx.amount ?? 1));
+    return target ? dealDamage(ctx.state, target, x).state : ctx.state;
+  },
+};
+
 for (const def of [
   substitution,
   lightningSubstitution,
@@ -625,6 +655,7 @@ for (const def of [
   scrollOfTechniques,
   smokeOut,
   reconnaissance,
+  waterDragonJutsu,
 ]) {
   registerHandCard(def);
 }

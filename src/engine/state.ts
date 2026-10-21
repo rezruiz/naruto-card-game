@@ -63,6 +63,7 @@ function createPlayer(id: PlayerId): PlayerState {
     pendingDefeatEvents: [],
     nextCharacterFullyStunned: false,
     nextReinforcementDiscount: 0,
+    fadingGenericChakra: 0,
     bonusChakraSourcePlacements: 0,
     attackJutsuUsedThisTurn: [],
   };
@@ -94,6 +95,7 @@ function createEmptyPlayer(id: PlayerId): PlayerState {
     pendingDefeatEvents: [],
     nextCharacterFullyStunned: false,
     nextReinforcementDiscount: 0,
+    fadingGenericChakra: 0,
     bonusChakraSourcePlacements: 0,
     attackJutsuUsedThisTurn: [],
   };

@@ -30,6 +30,15 @@ export function advancePhase(state: GameState): GameState {
     priorityPlayer: activePlayer,
     passesInARow: 0,
   };
+  // §6.8b: Chakra gained by Absorb into the generic pool fades when the phase changes.
+  for (const id of ['p1', 'p2'] as PlayerId[]) {
+    const p = next.players[id];
+    if (p.fadingGenericChakra > 0) {
+      const lost = Math.min(p.fadingGenericChakra, p.genericChakraAvailable);
+      next = { ...next, players: { ...next.players, [id]: { ...p, genericChakraAvailable: p.genericChakraAvailable - lost, fadingGenericChakra: 0 } } };
+      if (lost > 0) next = appendLog(next, `${id}'s ${lost} absorbed Chakra fades.`);
+    }
+  }
 
   if (phase === 'End') {
     // §4.7's own effects run on the *next* advance (see the `wrapping` branch

@@ -383,7 +383,7 @@ function payCost(
     }
   }
   const p = next.players[player];
-  return { ...next, players: { ...next.players, [player]: { ...p, genericChakraAvailable: p.genericChakraAvailable - (cost - payFromPool) } } };
+  return { ...next, players: { ...next.players, [player]: { ...p, genericChakraAvailable: p.genericChakraAvailable - (cost - payFromPool), fadingGenericChakra: Math.max(0, p.fadingGenericChakra - (cost - payFromPool)) } } };
 }
 
 /** Works for either row — a Token activating its own ability (e.g. Sasori's Third Kazekage) marks its own usage the same way a character does. */

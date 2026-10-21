@@ -1731,3 +1731,8 @@
   width: 100%;
   font-weight: 600;
 }
+
+.chakra-sources__fading {
+  font-size: 12px;
+  color: var(--accent);
+}

@@ -3,6 +3,7 @@ import type { ChakraSource } from '../../engine/types';
 export function ChakraSourceRow({
   sources,
   genericChakraAvailable,
+  fadingChakra = 0,
   canTap,
   onTap,
   onUntap,
@@ -10,6 +11,8 @@ export function ChakraSourceRow({
 }: {
   sources: ChakraSource[];
   genericChakraAvailable: number;
+  /** How much of it was absorbed — spent first, fades at the next phase change. */
+  fadingChakra?: number;
   canTap: boolean;
   onTap: (index: number) => void;
   /** Trust mode: clicking a tapped source undoes the tap. */
@@ -24,6 +27,12 @@ export function ChakraSourceRow({
           🌀
         </span>
         Chakra available: <strong>{genericChakraAvailable}</strong>
+        {fadingChakra > 0 && (
+          <span className="chakra-sources__fading" title="Absorbed Chakra is spent first and fades when the phase changes">
+            {' '}
+            ({Math.min(fadingChakra, genericChakraAvailable)} absorbed — fades at phase end)
+          </span>
+        )}
         {onAdjustGeneric && (
           <span className="stepper">
             <button type="button" aria-label="Remove 1 available Chakra" onClick={() => onAdjustGeneric(-1)}>

@@ -244,6 +244,31 @@ describe("Kakuzu's mask cards", () => {
   });
 });
 
+describe('Water Dragon Jutsu', () => {
+  const combat = (chakra: number) => gameReducer(giveChakra(freshMain1(), 'p1', chakra), { type: 'ADVANCE_PHASE' });
+  const hidanHp = (s: GameState) => s.players.p2.backRow[1]!.currentHP;
+
+  it('costs 1 + X from generic Chakra and deals X', () => {
+    const before = combat(4);
+    const { state, instanceId } = withHandCard(before, 'p1', 'water-dragon-jutsu');
+    let s = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kisame', targetInstanceIds: ['p2-hidan'], payFromPool: 0, amount: 3 });
+    expect(s.players.p1.genericChakraAvailable).toBe(0);
+    s = resolveTop(s);
+    expect(hidanHp(s)).toBe(hidanHp(before) - 3);
+  });
+
+  it('costs just X when paid from the Pool, and X is capped at 5', () => {
+    let s = combat(0);
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.instanceId === 'p1-kisame' ? { ...c, chakraPool: { ...c.chakraPool, current: 5 } } : c)) } } };
+    const before = hidanHp(s);
+    const { state, instanceId } = withHandCard(s, 'p1', 'water-dragon-jutsu');
+    s = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kisame', targetInstanceIds: ['p2-hidan'], payFromPool: 5, amount: 9 });
+    expect(s.players.p1.backRow.find((c) => c?.instanceId === 'p1-kisame')!.chakraPool.current).toBe(0);
+    s = resolveTop(s);
+    expect(hidanHp(s)).toBe(before - 5);
+  });
+});
+
 describe('Explosive Tag', () => {
   it('deals 1 damage to the primary target and 1 to an adjacent character', () => {
     let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 3), 'p1', 'explosive-tag');

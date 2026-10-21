@@ -185,6 +185,8 @@ export interface PlayerState {
   nextCharacterFullyStunned: boolean;
   /** Bingo Book: Threat Level A's reward — Chakra discount applied to this player's next-paid Reinforcement Tax (§8). */
   nextReinforcementDiscount: number;
+  /** Generic Chakra gained by Absorb (SPEC §6.8b): spent before other generic Chakra, and whatever's left fades at the next phase change. */
+  fadingGenericChakra: number;
   /** Names of Attack-type Jutsu cards this player has played this turn — each may be played only once per turn (§4.5, §9). Reset every Untap. */
   attackJutsuUsedThisTurn: string[];
   /** Bingo Book: Threat Level B's reward — lets this player place 1 extra Chakra source on top of the normal once-per-turn cap, the next time they place one. */

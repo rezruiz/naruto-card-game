@@ -621,6 +621,7 @@ function ViewGame({
         key="chakra"
         sources={player.chakraSources}
         genericChakraAvailable={player.genericChakraAvailable}
+        fadingChakra={player.fadingGenericChakra}
         canTap={canActNow}
         onTap={(sourceIndex) => dispatch({ type: 'TAP_CHAKRA_SOURCE', sourceIndex, player: playerId })}
         onUntap={trust ? (sourceIndex) => dispatch({ type: 'UNTAP_CHAKRA_SOURCE', player: playerId, sourceIndex }) : undefined}

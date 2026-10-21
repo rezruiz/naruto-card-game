@@ -200,6 +200,7 @@ const samehadaSharkTransformation: AbilityDef = {
 registerCharacter({
   id: DEF_ID,
   name: 'Kisame',
+  absorbsIntoPool: true,
   rank: 'S',
   baseMaxHP: 10,
   basePoolCapacity: 12,

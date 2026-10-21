@@ -68,7 +68,7 @@ and a Character Deck of 12-18 cards.
 | Hand Deck | **Maximum 80 cards** (minimum 50) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
 | Character Deck | 12-18 cards | Character cards | Only via specific triggers (§8) |
 
-The preset Akatsuki Hand Deck used in this prototype is 47 cards — 3
+The preset Akatsuki Hand Deck used in this prototype is 48 cards — 2
 short of the 50-card minimum.
 
 Character cards are **never** in the Hand Deck and are never drawn
@@ -622,9 +622,12 @@ Reusable shorthand terms that stand in for a fixed, standard chunk of
 effect text, so cards don't have to spell the whole thing out every
 time. Currently just one:
 
-- **Absorb X** — gain X Chakra (to the acting unit's own Chakra Pool,
-  or a shared Pool it draws from, if applicable), and separately reduce
-  X Chakra from whatever unit the ability is absorbing from, but only if
+- **Absorb X** — gain X Chakra **to your generic pool** (available
+  Chakra); absorbed Chakra is spent before your other generic Chakra, and
+  whatever is left of it **fades when the phase changes**. A card can say
+  it stores absorbed Chakra in a Pool instead (Kisame's Samehada, Zetsu's
+  Shared Reservoir). Separately, reduce X Chakra from whatever unit the
+  ability is absorbing from, but only if
   that unit actually has Chakra pooled — if it has none stored, that
   half simply does nothing further; the acting unit still gains its X
   regardless (per the comma-independence rule, §6.8a, these are two
@@ -1290,6 +1293,8 @@ Ninjutsu) — two versions: *(full nuance: design/CHARACTER_LOG.md)*
 Specialization: Assault / Tactician · Styles: Water · Synergy: Akatsuki, Itachi
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
+- Samehada — Absorbed Chakra is stored in Kisame's Chakra Pool; Chakra
+  absorbed past his Pool's capacity becomes generic Chakra instead.
 - Samehada Fusion — Once Samehada absorbs 6 Chakra, Kisame may enter
   Samehada Shark Transformation: +6 Pool, +6 max HP (16 total), Water
   Style attacks +1 damage/−1 cost (Samehada Strike disabled), attackers
@@ -1720,6 +1725,11 @@ Effect: Deal 4 damage.
 **False Darkness** — Style: Lightning, Quick Technique, Type: Ninjutsu
 Cost: 2 Chakra.
 Effect: Deal 2 damage.
+
+**Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
+Cost: 1 + X Chakra (just X if paid from the enabling character's own
+Chakra Pool).
+Effect: Deal X damage to an enemy character (X is at most 5).
 
 **Earth Style: Mud Wall** — Style: Earth, Reactive Technique, Type: Ninjutsu
 Cost: 2 Chakra (1 if paid from the enabling character's own Chakra Pool).

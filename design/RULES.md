@@ -57,7 +57,7 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 ### 1.2 Zones
 | Zone | What it is |
 |---|---|
-| **Hand Deck** | **50–80** shuffled cards (the preset is 47): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
+| **Hand Deck** | **50–80** shuffled cards (the preset is 48): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
 | **Character Deck** | 12–18 shuffled Character cards (13 in the preset). Drawn only by triggers (§11). |
 | **Hand** | Holds both Hand Deck cards and drawn Character cards. **No maximum hand size** *(placeholder)*. |
 | **Back row** | Up to **5 Characters**, ordered left→right by entry order (§13.1). |
@@ -86,7 +86,7 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 - **Hand Deck: up to 3 copies** of any card. A Mission follows this limit unless marked **Unique** (then 1 copy).
 
 ### 2.4 The preset Akatsuki decks
-**Hand Deck (the preset is 47 cards):** 2× Unshakable Resolve, 1× each of Bingo Book S / A / B / C, 1× Squad Formation, 2× Emergency Relief (9); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× each of Medical Chakra Infusion and Chakra Suppression (6); 1× each of Fireball Jutsu, Pressure Damage, Searing Migraine, False Darkness (4); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **47**, no filler — 3 short of the 50-card minimum.
+**Hand Deck (the preset is 48 cards):** 2× Unshakable Resolve, 1× each of Bingo Book S / A / B / C, 1× Squad Formation, 2× Emergency Relief (9); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× each of Medical Chakra Infusion and Chakra Suppression (6); 1× each of Fireball Jutsu, Pressure Damage, Searing Migraine, False Darkness, Water Dragon Jutsu (5); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **48**, no filler — 2 short of the 50-card minimum.
 
 **Character Deck (13):** Kakuzu, Hidan, Deidara, Kisame, Itachi, Konan, Sasori, Zetsu, Juzo Biwa, Yahiko, Pain of the Six Paths, and **2× Amegakure Civilian Rebel**. Rank tally: S×3 (Kisame, Itachi, Pain), A×4 (Kakuzu, Deidara, Konan, Sasori), B×3 (Hidan, Zetsu, Juzo), C×1 (Yahiko), D×2 — all caps satisfied.
 
@@ -377,7 +377,7 @@ Pain of the Six Paths has **no HP or Pool of his own**; playing him spawns his *
 - **Comma (`,`)** separates distinct effects in one ability; they **resolve simultaneously** and are **independent** — none is conditional on another unless the text says so ("Deal 1 Damage, Absorb 1": the Chakra gain isn't gated on the drain).
 
 ### 12.3 Keyword: Absorb X
-Gain X Chakra (to the acting unit's Pool, or a shared Pool it draws from), and **separately** reduce X Chakra from the unit absorbed from **only if it has Chakra pooled**. The gain always happens.
+**[Updated]** Gain X Chakra **to your generic pool** — it's spent before your other generic Chakra, and whatever is left **fades when the phase changes**. A card can store absorbed Chakra in a Pool instead (Kisame's **Samehada**: into his Pool, overflow past its capacity becomes generic; Zetsu's **Shared Reservoir**: into his Pool). **Separately**, reduce X Chakra from the unit absorbed from **only if it has Chakra pooled**. The gain always happens.
 
 ### 12.4 Effect duration
 Unless stated otherwise, a lingering effect lasts **only until the end of the turn it was activated on** (gone by the next Untap). Longer durations say so explicitly ("for the next turn cycle"). **"Turn cycle"** *(default)*: ends at the start of the affected character's controller's own next turn.
@@ -482,6 +482,7 @@ Full text is in Appendix A. Timing and implementation:
 | **Pressure Damage** (Wind) | **Normal, Attack-type — Combat only**, 3 | 2 damage to up to 2 enemy characters. **Once per turn.** |
 | **Searing Migraine** (Fire) | **Normal, Attack-type — Combat only**, 3 | 4 damage. **Once per turn.** |
 | **False Darkness** (Lightning) | **Quick**, 2 | 2 damage. |
+| **Water Dragon Jutsu** (Water) | **Normal, Attack-type — Combat only**, 1+X (X from Pool) | X damage to an enemy character, X up to 5. **Once per turn.** |
 | **Earth Style: Mud Wall** (Earth) | **Reactive**, 2 / 1 from Pool | Prevent 2 of a targeted Ninjutsu or Physical attack on one of your characters (not Genjutsu). Not in the preset deck. |
 | **Kunai Deflection** (Taijutsu) | **Reactive**, 2 / 1 from Pool | Prevent 1 of a targeted Ninjutsu or Physical attack on the **enabling** character (not Genjutsu). Prevention, not negation — Spore Technique doesn't stop it. Not in the preset deck. |
 | **Water Style: Water Shark Bullet** (Water) | **Normal, Attack-type — Combat only**, 3 | 2 damage, Absorb 1 from the target into the enabler. **Once per turn.** Not in the preset deck. |
@@ -728,6 +729,8 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 74. ✔ **Lingering damage isn't affected by negation by default:** damage from an effect already attached to a character (burns, Poison, scheduled ticks) isn't stopped by damage-negating or damage-preventing effects, and negating targeting doesn't affect it (it's already attached and doesn't retarget). A card must say so explicitly to stop it — the default holds even when a card doesn't say "new" damage. (SPEC §9.)
 75. ✔ **Hand Deck changes:** Missions cut to 2× Unshakable Resolve, 1× each Bingo Book, 1× Squad Formation, 2× Emergency Relief (9, was 15). Three new Jutsu cards, 1 copy each: **Pressure Damage** (Wind, 3 Chakra: 2 damage to up to 2 enemy characters), **Searing Migraine** (Fire, 3: 4 damage), **False Darkness** (Lightning, Quick, 2: 2 damage). The preset Hand Deck is now **47** cards, 3 short of the minimum. (SPEC §2, §13b.)
 76. ✔ **Choosing isn't targeting:** "choose" in card text is a game action nothing can interact with — never targeting (§13.5). **Nine new Jutsu cards**, implemented but **not in the preset deck yet**: Earth Style: Mud Wall, Kunai Deflection, Water Style: Water Shark Bullet, Wind Style: Great Breakthrough, Finishing Blow, Senbon Volley, Scroll of Techniques, Smoke Out, Reconnaissance (full text: Appendix A.3). (SPEC §9, §13b.)
+77. ✔ **New card: Water Dragon Jutsu** (Water, Ninjutsu): cost 1 + X (just X if paid from the enabling character's Pool); deal X damage to an enemy character, X up to 5. **1 copy** in the preset deck, now **48** cards. (SPEC §13b.)
+78. ✔ **Absorb goes to the generic pool by default:** absorbed Chakra is added to your available (generic) Chakra, is spent before your other generic Chakra, and whatever is left fades when the phase changes. Kisame's new **Samehada** trait stores it in his Pool instead (overflow past capacity becomes generic); Zetsu's Shared Reservoir already stores it in his Pool. The amount shows next to "Chakra available". (SPEC §6.8b, §13 Kisame.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -938,6 +941,8 @@ Ninjutsu) — two versions: *(full nuance: design/CHARACTER_LOG.md)*
 Specialization: Assault / Tactician · Styles: Water · Synergy: Akatsuki, Itachi
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
+- Samehada — Absorbed Chakra is stored in Kisame's Chakra Pool; Chakra
+  absorbed past his Pool's capacity becomes generic Chakra instead.
 - Samehada Fusion — Once Samehada absorbs 6 Chakra, Kisame may enter
   Samehada Shark Transformation: +6 Pool, +6 max HP (16 total), Water
   Style attacks +1 damage/−1 cost (Samehada Strike disabled), attackers
@@ -1368,6 +1373,11 @@ Effect: Deal 4 damage.
 **False Darkness** — Style: Lightning, Quick Technique, Type: Ninjutsu
 Cost: 2 Chakra.
 Effect: Deal 2 damage.
+
+**Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
+Cost: 1 + X Chakra (just X if paid from the enabling character's own
+Chakra Pool).
+Effect: Deal X damage to an enemy character (X is at most 5).
 
 **Earth Style: Mud Wall** — Style: Earth, Reactive Technique, Type: Ninjutsu
 Cost: 2 Chakra (1 if paid from the enabling character's own Chakra Pool).
@@ -3062,7 +3072,7 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 |---|---|---|---|---|---|---|---|---|
 | Shinobi Strike | 1 | Normal | None | Taijutsu | yes | 1 | enemy | — |
 
-### Hand Deck cards (47)
+### Hand Deck cards (48)
 
 | Card | Copies | Kind | Cost | Speed | Style | Type | Normal-speed timing | Targets | Notes |
 |---|---|---|---|---|---|---|---|---|---|
@@ -3086,6 +3096,7 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | Pressure Damage | 1 | jutsu | 3 | Normal | Wind | Ninjutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
 | Searing Migraine | 1 | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name) |
 | False Darkness | 1 | jutsu | 2 | Quick | Lightning | Ninjutsu | — | 1 (enemy) | — |
+| Water Dragon Jutsu | 1 | jutsu | variable | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | X up to 5; cheaper if paid from enabler's Pool |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
 | Earth Style: Mud Wall | 0 | jutsu | variable | Reactive | Earth | Ninjutsu | — | 1 (ally) | cheaper if paid from enabler's Pool; not in the preset deck |
 | Kunai Deflection | 0 | jutsu | variable | Reactive | None | Taijutsu | — | none/auto | protects its enabler; cheaper if paid from enabler's Pool; not in the preset deck |

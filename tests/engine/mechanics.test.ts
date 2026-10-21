@@ -7,7 +7,7 @@ import { registerHandCard } from '../../src/engine/cards/registry';
 import { makeHandCardInstance } from '../../src/engine/deck';
 import { gameReducer } from '../../src/engine/reducer';
 import type { AbilityChoices, GameState, PlayerId, TokenInstance } from '../../src/engine/types';
-import { freshCombat, giveChakra, resolveTop, withCharacterAt } from './testUtils';
+import { freshCombat, freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
 
 // Engine mechanics that used to be "simplified": source-aware damage modifiers, cost modifiers,
 // kill/damage tracking, redirects, and Pain's Rinnegan/Almighty Push/Beast bookkeeping.
@@ -245,5 +245,31 @@ describe('Other passives', () => {
     s = use(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-itachi']);
     s = activateAbility(giveChakra({ ...s, priorityPlayer: 'p1' }, 'p1', 5), 'p1-itachi', 'crow-clone', [], 0);
     expect(s.stack).toHaveLength(1); // Crow Clone refused
+  });
+});
+
+describe('Absorb (§6.8b)', () => {
+  it('by default adds fading generic Chakra: spent first, and whatever is left fades at the next phase change', async () => {
+    const { absorbChakra } = await import('../../src/engine/combat');
+    let s = giveChakra(freshMain1(), 'p1', 3);
+    s = absorbChakra(s, 'p1-itachi', 'p2-hidan', 2); // Itachi doesn't store absorbed Chakra in his Pool
+    expect(s.players.p1.genericChakraAvailable).toBe(5);
+    expect(s.players.p1.fadingGenericChakra).toBe(2);
+    s = gameReducer(s, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 }); // spends 1 — the absorbed Chakra first
+    expect(s.players.p1.fadingGenericChakra).toBe(1);
+    s = gameReducer(s, { type: 'ADVANCE_PHASE' });
+    expect(s.players.p1.genericChakraAvailable).toBe(3); // the 1 absorbed Chakra left faded; the 3 tapped stayed
+    expect(s.players.p1.fadingGenericChakra).toBe(0);
+  });
+
+  it("Kisame's Samehada stores absorbed Chakra in his Pool; what doesn't fit becomes fading generic Chakra", async () => {
+    const { absorbChakra } = await import('../../src/engine/combat');
+    let s = freshMain1();
+    const kisame = s.players.p1.backRow.find((c) => c?.defId === 'kisame')!;
+    const cap = kisame.chakraPool.capacity;
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'kisame' ? { ...c, chakraPool: { ...c.chakraPool, current: cap - 1 } } : c)) } } };
+    s = absorbChakra(s, kisame.instanceId, 'p2-hidan', 3);
+    expect(s.players.p1.backRow.find((c) => c?.defId === 'kisame')!.chakraPool.current).toBe(cap);
+    expect(s.players.p1.fadingGenericChakra).toBe(2);
   });
 });

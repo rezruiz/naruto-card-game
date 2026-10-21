@@ -26,8 +26,8 @@ export function makeHandCardInstance(defId: string): HandCardInstance {
 }
 
 /**
- * The 47-card Akatsuki Hand Deck manifest — 3 short of SPEC §2's 50-card
- * minimum (the build doesn't enforce deck size). 9 Missions, 30 + 3 Jutsu,
+ * The 48-card Akatsuki Hand Deck manifest — 2 short of SPEC §2's 50-card
+ * minimum (the build doesn't enforce deck size). 9 Missions, 34 Jutsu,
  * 3 Terrain, 2 Assist.
  */
 export const HAND_DECK_MANIFEST: { defId: string; copies: number }[] = [
@@ -51,6 +51,7 @@ export const HAND_DECK_MANIFEST: { defId: string; copies: number }[] = [
   { defId: 'jutsu-pressure-damage', copies: 1 },
   { defId: 'jutsu-searing-migraine', copies: 1 },
   { defId: 'jutsu-false-darkness', copies: 1 },
+  { defId: 'water-dragon-jutsu', copies: 1 },
   { defId: 'jutsu-disruption', copies: 2 },
   { defId: 'explosive-tag', copies: 2 },
   { defId: 'battlefield-selection', copies: 2 },
@@ -184,6 +185,7 @@ export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 
       [player]: {
         ...wp,
         genericChakraAvailable: wp.genericChakraAvailable - paid,
+        fadingGenericChakra: Math.max(0, wp.fadingGenericChakra - (paid)),
         reinforcementsPlayed: mode === 'manual' ? wp.reinforcementsPlayed + 1 : wp.reinforcementsPlayed,
         nextReinforcementDiscount: wp.nextReinforcementDiscount - discountUsed,
       },

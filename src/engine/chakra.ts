@@ -146,6 +146,6 @@ export function poolChakra(state: GameState, instanceId: string, amount: number)
     chakraPool: { current: o.chakraPool!.current + amount, capacity: pool.capacity },
     status: { ...o.status, pooledThisTurn: true },
   }));
-  next = updatePlayer(next, player, { genericChakraAvailable: p.genericChakraAvailable - amount });
+  next = updatePlayer(next, player, { genericChakraAvailable: p.genericChakraAvailable - amount, fadingGenericChakra: Math.max(0, p.fadingGenericChakra - (amount)) });
   return appendLog(next, `${player} pools ${amount} Chakra into ${unit.name}'s Chakra Pool.`);
 }

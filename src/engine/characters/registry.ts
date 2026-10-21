@@ -5,6 +5,8 @@ import type { OnWouldBeDefeatedHook } from '../combat';
 export interface CharacterDef {
   id: string;
   name: string;
+  /** Absorbed Chakra goes into this character's own Pool instead of the generic pool (Kisame's Samehada, Zetsu's Shared Reservoir); anything past the Pool's capacity still becomes generic. */
+  absorbsIntoPool?: boolean;
   rank: CharacterInstance['rank'];
   baseMaxHP: number;
   basePoolCapacity: number;

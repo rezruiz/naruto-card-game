@@ -270,7 +270,7 @@ registerChoiceResolver(V2_ID, (state, choice, optionIds) => {
     return deidaraDies(appendLog(state, `Not enough Chakra for Death is an Explosion (needs 6 available, has ${generic}) — Deidara falls.`), instanceId);
   }
   let next = generic < 6 ? appendWarning(state, `${player} is short ${6 - generic} Chakra for Death is an Explosion (trust mode — allowed).`) : state;
-  next = { ...next, players: { ...next.players, [player]: { ...next.players[player], genericChakraAvailable: Math.max(0, generic - 6) } } };
+  next = { ...next, players: { ...next.players, [player]: { ...next.players[player], genericChakraAvailable: Math.max(0, generic - 6), fadingGenericChakra: Math.max(0, next.players[player].fadingGenericChakra - (6)) } } };
   next = patchCharacter(next, instanceId, (d) => ({ ...d, chakraPool: { ...d.chakraPool, current: 0 } }));
   next = addClayCharges(next, instanceId, -5);
   next = deathIsAnExplosionBlast(next, instanceId, 8, 5);

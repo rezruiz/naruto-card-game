@@ -202,6 +202,53 @@ Kakuzu**
   himself can't drop him below 3 HP.
   One Cursed enemy at a time.
 
+### Yahiko — C *(draft 1)*
+
+**HP 8 · Pool 2 · Tactician / Support · Styles: Water, Fire, Wind ·
+Synergy: Akatsuki, Pain, Konan**
+
+- **Trait — Inspiring Leader:** the first ability your other Akatsuki
+  characters use each turn costs 1 less Chakra (minimum 1).
+- **Trait — Elemental Versatility:** the first elemental jutsu each turn
+  costs 1 less.
+- **Blade of Resolve** — 4, Style: None, Taijutsu: deal 2 damage.
+- **Water Release: Water Pillar Wall** — 3, Water, Ninjutsu: prevent the
+  next 2 damage dealt to Yahiko this turn.
+- **Rallying Words** — 2, Style: None, Ninjutsu: each ally's next attack
+  this turn deals 1 additional damage.
+- **Ultimate — Yahiko Sacrifices Himself** — Reactive, 2 Chakra + Yahiko's
+  entire Pool, no Style, no Type. Your opponent must control at least 2
+  more characters than you (tokens count on both sides). In response to a
+  targeted attack on one of your other characters that would defeat it
+  (after damage reductions), all of that damage goes to Yahiko instead;
+  the original target takes none. Blanket or untargeted effects can't
+  trigger this.
+
+### Kisame, Tailless Tailed Beast — S *(draft 1)*
+
+**HP 10 · Pool 12 · Assault / Tactician · Styles: Water · Synergy:
+Akatsuki, Itachi**
+
+- **Trait — Samehada:** absorbed Chakra is stored in Kisame's Chakra Pool;
+  Chakra absorbed past his Pool's capacity becomes generic Chakra instead.
+- **Trait — Samehada Fusion:** once Samehada absorbs 6 Chakra, Kisame may
+  enter Samehada Shark Transformation: +6 Pool, +6 max HP (16 total),
+  Water Style attacks +1 damage and −1 cost (Samehada Strike disabled),
+  attackers targeting him pay +1 Chakra. Exits after taking 7+ damage
+  while transformed, or at Upkeep with 3 or less in his Pool.
+- **Samehada Strike** — 2 Chakra from Pool, Taijutsu: deal 1, Absorb 3.
+- **Samehada Strike Evolved** — 2 Chakra from Pool, Taijutsu. Requires 9+
+  Chakra absorbed and 6+ pooled. Deal 2, Absorb 4.
+- **Water Style: Water Prison Jutsu** — 4, Ninjutsu. The target must be a
+  lower Rank. Through the next 3 turns (or until Kisame takes damage), it
+  can't use abilities that target a character.
+- **Water Style: Super Shark Bomb Jutsu** — 4, Ninjutsu. Requires 4+
+  Chakra absorbed and 3+ pooled. Deal 1 damage, +1 per Chakra pooled on
+  the target. The target loses pooled Chakra equal to half the damage
+  dealt (rounded down).
+- **Water Style: Thousand Hungry Sharks** — 5, Ninjutsu. Can be used
+  twice per turn while in Samehada Shark Transformation. Deal 4 damage.
+
 ---
 
 ## Open questions for when this starts

@@ -167,7 +167,7 @@ function payCost(state: GameState, player: PlayerId, enablingInstanceId: string,
     next = patchCharacter(next, enablingInstanceId, (c) => ({ ...c, chakraPool: { ...c.chakraPool, current: c.chakraPool.current - payFromPool } }));
   }
   const p = next.players[player];
-  return { ...next, players: { ...next.players, [player]: { ...p, genericChakraAvailable: p.genericChakraAvailable - (cost - payFromPool) } } };
+  return { ...next, players: { ...next.players, [player]: { ...p, genericChakraAvailable: p.genericChakraAvailable - (cost - payFromPool), fadingGenericChakra: Math.max(0, p.fadingGenericChakra - (cost - payFromPool)) } } };
 }
 
 /**

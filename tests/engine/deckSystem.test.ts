@@ -45,7 +45,7 @@ describe('Setup (SPEC.md §3)', () => {
     expect(state.players.p1.characterDeck).toHaveLength(10); // 13 - 3 revealed
     expect(state.players.p1.pendingCharacterReveal!.revealed).toHaveLength(3);
     expect(state.players.p1.hand.filter((h) => h.kind === 'card')).toHaveLength(6);
-    expect(state.players.p1.handDeck).toHaveLength(41); // 47 - 6 drawn
+    expect(state.players.p1.handDeck).toHaveLength(42); // 48 - 6 drawn
   });
 
   it('blocks every other action until both players choose a starting character', () => {

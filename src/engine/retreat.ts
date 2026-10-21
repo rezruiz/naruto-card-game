@@ -57,7 +57,7 @@ export function retreat(state: GameState, instanceId: string): GameState {
     ...working,
     players: {
       ...working.players,
-      [player]: { ...working.players[player], genericChakraAvailable: working.players[player].genericChakraAvailable - cost },
+      [player]: { ...working.players[player], genericChakraAvailable: working.players[player].genericChakraAvailable - cost, fadingGenericChakra: Math.max(0, working.players[player].fadingGenericChakra - (cost)) },
     },
   };
   next = patchCharacter(next, instanceId, (c) => ({ ...c, status: { ...c.status, retreated: true } }));

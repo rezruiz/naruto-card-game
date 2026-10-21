@@ -294,6 +294,7 @@ const golemStrike: AbilityDef = {
 registerCharacter({
   id: DEF_ID,
   name: 'Zetsu',
+  absorbsIntoPool: true,
   rank: 'B',
   baseMaxHP: 7,
   basePoolCapacity: Infinity,

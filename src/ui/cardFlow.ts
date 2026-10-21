@@ -19,8 +19,9 @@ export type PendingCard = {
 export type CardStage = 'enabler' | 'payFromPool' | 'target' | 'amount' | 'ready';
 
 /**
- * Where a card-in-progress is in its enabler -> pool-discount choice ->
- * target(s) -> amount pipeline — purely derived from what's been picked so
+ * Where a card-in-progress is in its enabler -> target(s) -> amount ->
+ * pool-discount choice pipeline (payment last, since a cost can depend on
+ * the targets or the amount — e.g. Water Dragon Jutsu's 1+X) — purely derived from what's been picked so
  * far and what this particular card actually needs, so each step is only
  * shown when it's actually relevant to that card (most cards skip most of
  * these stages entirely).
@@ -28,10 +29,10 @@ export type CardStage = 'enabler' | 'payFromPool' | 'target' | 'amount' | 'ready
 export function cardStage(p: PendingCard): CardStage {
   // Only a Jutsu with an ability Type is played "through" a character (§5.3/§10c) — everything else skips this stage.
   if (needsEnablingCharacter(p.def) && !p.enablingInstanceId) return 'enabler';
-  if (p.def.offersPoolDiscount && p.payFromPool === null) return 'payFromPool';
   const maxTargets = p.def.maxTargets ?? 1;
   if (!p.targetsConfirmed && maxTargets > 0 && p.targets.length < maxTargets) return 'target';
   if (p.def.needsAmountChoice && p.amount === null) return 'amount';
+  if (p.def.offersPoolDiscount && p.payFromPool === null) return 'payFromPool';
   return 'ready';
 }
 
