@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { gameReducer } from '../../src/engine/reducer';
 import { activateAbility } from '../../src/engine/abilities';
-import { freshCombat, giveChakra } from './testUtils';
+import { freshCombat, giveChakra, playCard } from './testUtils';
 
 describe('stack & priority (SPEC.md §7)', () => {
   it('activating an ability pushes it onto the stack and passes priority to the opponent', () => {
@@ -31,7 +31,7 @@ describe('stack & priority (SPEC.md §7)', () => {
     // p2 responds with a Quick-speed ability — Normal-speed abilities can't
     // be activated with a non-empty stack (SPEC.md §7).
     state = giveChakra(state, 'p2', 5);
-    state = activateAbility(state, 'p2-kakuzu', 'false-darkness', ['p1-kakuzu'], 0);
+    state = playCard(state, 'p2', 'jutsu-false-darkness', 'p2-kakuzu', ['p1-kakuzu']);
     expect(state.stack).toHaveLength(2);
 
     const p1HpBefore = state.players.p1.backRow[0]?.currentHP ?? 0;

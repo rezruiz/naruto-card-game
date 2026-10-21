@@ -10,7 +10,7 @@ import { payUpkeep } from './upkeep';
 import { retreat, returnFromRetreat } from './retreat';
 import { chooseCharacter, drawForDrawPhase, drawFromCharacterDeck, mulligan } from './deck';
 import { currentTax, playCharacter } from './playCharacter';
-import { getCharacterDeckEntry } from './characters';
+import { getCharacterDeckEntry, getCharacterDef } from './characters';
 import { revealHandCards } from './handReveal';
 import { resolveChoice } from './choices';
 import { returnCharacterToHand, returnInPlayCardToHand } from './trust/returnToHand';
@@ -130,10 +130,16 @@ function flipForFirstPlayer(state: GameState): GameState {
     if (p.frontRow.some((t) => t?.extra.painPath)) return 'Pain of the Six Paths';
     return p.backRow.find((c) => c?.instanceId === p.startingCharacterInstanceId)?.name ?? 'a character';
   };
-  const revealed = appendLog(
+  let revealed = appendLog(
     { ...state, players, firstPlayerPending: false, firstPlayer: first, activePlayer: first, priorityPlayer: first },
     `Starting characters revealed — p1: ${startingName('p1')}, p2: ${startingName('p2')}.`,
   );
+  // Enter-play triggers held back while the picks were secret (Kakuzu's Heart Masks).
+  for (const id of ['p1', 'p2'] as PlayerId[]) {
+    const starter = revealed.players[id].backRow.find((c) => c?.instanceId === revealed.players[id].startingCharacterInstanceId);
+    const onEnter = starter ? getCharacterDef(starter.defId)?.onEnterPlay : undefined;
+    if (starter && onEnter) revealed = onEnter(revealed, starter.instanceId, id);
+  }
   return appendLog(revealed, `Setup complete — coin flip: ${first} goes first.`);
 }
 

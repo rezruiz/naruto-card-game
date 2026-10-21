@@ -1,8 +1,9 @@
 # Planned Design Direction — Characters vs. Hand Cards
 
-**Status:** logged for future design work — **not implemented, and not yet
-part of SPEC.md or RULES.md.** Nothing here changes the current game until
-the designer says to start. Recorded 2026-10-05.
+**Status:** recorded 2026-10-05. **Implemented 2026-10-21:** the
+Itachi, Deidara, Kakuzu, Hidan, Yahiko and Kisame drafts below (plus the
+Genjutsu: Mind Prison and Genjutsu: Crow Clone cards) are now in SPEC.md,
+RULES.md and the build. The rest of the direction is still future work.
 
 ---
 
@@ -92,7 +93,7 @@ Working drafts of redesigned cards — **not in the game yet.**
   to Itachi this game. It takes 5 damage and is stunned for the next turn
   cycle.
 
-**Moved to the Hand Deck as Jutsu cards:**
+**Moved to the Jutsu Deck as Jutsu cards:**
 
 - **Genjutsu: Mind Prison** — Quick, Style: None, Type: Genjutsu,
   5 Chakra (**3** if a Genjutsu user — a character with a Genjutsu
@@ -148,7 +149,7 @@ Earth, Wind, Lightning, Fire · Synergy: Akatsuki**
   (current Hearts − 1) × 2.
 - **Trait — Elemental Versatility:** the first elemental jutsu each turn
   costs 1 less.
-- **Trait — Heart Masks:** when Kakuzu enters play, search your Hand Deck
+- **Trait — Heart Masks:** when Kakuzu enters play, search your Jutsu Deck
   for Pressure Damage, Searing Migraine and False Darkness and add them to
   your hand.
 - **Earth Grudge Fear** — 2, Style: None, Taijutsu: deal 1 damage to any
@@ -162,7 +163,7 @@ Earth, Wind, Lightning, Fire · Synergy: Akatsuki**
   gain 1 elemental Style from the defeated character (your choice if
   several), even one he already has.
 
-**Hand Deck cards:**
+**Jutsu Deck cards:**
 
 - **Pressure Damage** — Normal, Wind, Ninjutsu, 3 Chakra. Deal 2 damage
   to up to 2 enemy characters.
@@ -172,8 +173,8 @@ Earth, Wind, Lightning, Fire · Synergy: Akatsuki**
   2 Chakra. Deal 2 damage.
 
 *Nuance log (reference only — not card text):*
-- **Heart Masks search:** finds 1 copy of each card still in the Hand Deck
-  (any already drawn are skipped), then the Hand Deck is shuffled. It
+- **Heart Masks search:** finds 1 copy of each card still in the Jutsu Deck
+  (any already drawn are skipped), then the Jutsu Deck is shuffled. It
   triggers whenever Kakuzu enters play, including as the starting
   character.
 - **Elemental Versatility** applies to elemental Jutsu cards Kakuzu
@@ -261,8 +262,8 @@ Akatsuki, Itachi**
 3. How the current "enabling character" rule (Style-matching character
    needed to play a technique Jutsu) changes now that any Jutsu can be
    used without one.
-4. Which current character abilities move into the Hand Deck as Jutsu
+4. Which current character abilities move into the Jutsu Deck as Jutsu
    cards, and which are cut.
 5. The 7-card starting hand and the mulligan counts (7 / 6 / 5 …).
-6. How the preset decks (50-card Hand Deck, 13-card Character Deck) are
+6. How the preset decks (50-card Jutsu Deck, 13-card Character Deck) are
    rebuilt around the new card pool.

@@ -39,12 +39,11 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
   deathResolved: () => undefined, // internal: his Death is an Explosion decision was made
   hearts: (v) => ({ label: 'Hearts', value: `${(v as number) ?? 5}/5`, key: true }),
   lostStyles: (v) => ((v as string[] | undefined)?.length ? { label: 'Styles lost', value: (v as string[]).join(', ') } : undefined),
-  curseActive: (v) => ({ label: 'Curse active', value: yes(v), key: !!v }),
+  curseActive: () => undefined, // shown through 'Cursed target' — the Curse ends when that enemy leaves play
   curseActivatedTurn: (v) => (v !== undefined ? { label: 'Curse activated on turn', value: `${v}` } : undefined),
   cursedTarget: (v, s) => (v ? { label: 'Cursed target', value: nameOf(s, v), key: true } : undefined),
   usedSafetyNet: (v) => ({ label: "Jashin's Blessing safety net used", value: yes(v) }),
-  mindPrisonUsedOn: (v, s) => ({ label: 'Mind Prison already used on', value: names(s, v) }),
-  crowCloneUsedOn: (v, s) => ({ label: 'Crow Clone already used against', value: names(s, v) }),
+  phasedOutTurn: (v, s) => (v === s.turn ? { label: 'Crow Clone', value: 'Phased out this turn', key: true } : undefined),
   amaterasuSchedule: (v, s) => {
     const t = scheduleText(s, v);
     return t ? { label: 'Amaterasu burning', value: t, key: true } : undefined;
@@ -101,7 +100,7 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
   },
   lastKillTurn: (v, s) => (v === s.turn ? { label: 'Defeated a character', value: 'This turn', key: true } : undefined),
   lastKillStyles: () => undefined, // shown via Patchwork Threads' choice
-  ironSkinUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: 'Iron Skin', value: `−2 physical / −1 elemental through turn ${v}`, key: true } : undefined),
+  ironSkinUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: 'Iron Skin', value: `−2 physical / −2 elemental, Earth Grudge Fear +2, through turn ${v}`, key: true } : undefined),
   beastCooldowns: (v) => {
     const entries = Object.entries((v as Record<string, number> | undefined) ?? {}).filter(([, n]) => n > 0);
     return entries.length ? { label: 'Beast cooldowns', value: entries.map(([id, n]) => `${id.replace(/-/g, ' ')}: ${n} Upkeep(s)`).join(', '), key: true } : undefined;

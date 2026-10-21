@@ -60,18 +60,18 @@ mechanically tight, flavor-accurate, and easy to parse standalone.
 
 ## 2. Decks & Deck Composition
 
-Each player has **two separate decks**: a Hand Deck of **up to 80 cards**
+Each player has **two separate decks**: a Jutsu Deck of **up to 80 cards**
 and a Character Deck of 12-18 cards.
 
 | Deck | Size | Contains | Drawn from |
 |---|---|---|---|
-| Hand Deck | **Maximum 80 cards** (minimum 50) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
+| Jutsu Deck | **Maximum 80 cards** (minimum 50) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
 | Character Deck | 12-18 cards | Character cards | Only via specific triggers (§8) |
 
-The preset Akatsuki Hand Deck used in this prototype is 48 cards — 2
+The preset Akatsuki Jutsu Deck used in this prototype is 48 cards — 2
 short of the 50-card minimum.
 
-Character cards are **never** in the Hand Deck and are never drawn
+Character cards are **never** in the Jutsu Deck and are never drawn
 by a normal draw step — they only enter your hand through the Character
 Deck triggers described in §8.
 
@@ -87,14 +87,14 @@ decks.
 every character card in it must be unique. **Exception: D Rank cards
 are generic (not unique named characters) and are exempt from this
 restriction** — a Character Deck may contain multiple copies of the
-same D-rank card. The Hand Deck may contain **up to 3 copies** of the
+same D-rank card. The Jutsu Deck may contain **up to 3 copies** of the
 same card.
 
 ---
 
 ## 3. Setup
 
-1. Each player shuffles their Hand Deck and Character Deck separately.
+1. Each player shuffles their Jutsu Deck and Character Deck separately.
 2. Each player does the following two steps — they happen together, not
    one strictly before the other (neither player needs to finish one
    before starting the other):
@@ -104,8 +104,8 @@ same card.
      other 2 back into your Character Deck. **Your pick stays secret**
      until both players have confirmed; then both are revealed together.
    - **Starting hand & mulligan:** draw a starting hand of 6 cards from
-     your Hand Deck. You may then mulligan: shuffle your hand back into
-     your Hand Deck and draw again. Your **first mulligan is free** — you
+     your Jutsu Deck. You may then mulligan: shuffle your hand back into
+     your Jutsu Deck and draw again. Your **first mulligan is free** — you
      draw a full new 6-card hand, no penalty. Every mulligan after that
      follows a traditional −1 mulligan: each one draws exactly 1 fewer
      card than the previous draw (so your 2nd mulligan draws 5, your 3rd
@@ -152,9 +152,9 @@ Untap all of your tapped Chakra sources. Nothing else untaps.
      of being defeated — see §6.5a.
 
 ### 4.3 Draw Phase
-Draw 1 card from your Hand Deck — every turn, including the first
+Draw 1 card from your Jutsu Deck — every turn, including the first
 player's first turn. The draw is taken by the player (a deliberate action, not
-automatic). If your Hand Deck is empty and you're required to draw, you instead
+automatic). If your Jutsu Deck is empty and you're required to draw, you instead
 take **3 player-Health damage (placeholder)** and draw nothing.
 
 ### 4.4 Main Phase 1
@@ -284,7 +284,7 @@ example cards in §13 for placeholders marked TBD).
   Technique uses can spend from a Pool even on the opponent's turn). Once
   spent, it's gone from the Pool until re-pooled.
 - **Restriction:** A character's pooled Chakra may only pay for that same
-  character's own abilities, or Hand Deck cards specifically enabled/used
+  character's own abilities, or Jutsu Deck cards specifically enabled/used
   by that character (a Style match, per the example below) — **never for
   another character's abilities, and never for a card being enabled by a
   different character.** There is no "any character can pay for a
@@ -957,9 +957,9 @@ rest is deferred (§12):
 ### 10b. Mission Cards
 Mission rules are still early — only what's needed for the current
 example cards (§13a) is defined here, the rest is deferred (§12):
-- Mission cards live in the Hand Deck (§2) and are drawn
+- Mission cards live in the Jutsu Deck (§2) and are drawn
   normally, same as Jutsu cards.
-- **Copy limits:** a Mission follows the Hand Deck's normal copy limit
+- **Copy limits:** a Mission follows the Jutsu Deck's normal copy limit
   (up to 3 copies, §2) unless it's marked **Unique**, in which case it's
   capped at 1 copy per deck instead.
 - Play a Mission card from hand by paying its Chakra cost (a
@@ -992,7 +992,7 @@ example cards (§13a) is defined here, the rest is deferred (§12):
   override this by saying it's played face up (§0).
 
 ### 10c. Jutsu Cards
-Jutsu cards live in the Hand Deck (§2) and are drawn normally.
+Jutsu cards live in the Jutsu Deck (§2) and are drawn normally.
 Unlike a character's own printed Abilities, a Jutsu card isn't tied to
 one specific character — it's a standalone effect any eligible
 character can enable. Each Jutsu card states:
@@ -1043,7 +1043,7 @@ disruptable that way while it's still pending.
 
 **Assist cards** are a sub-category of Jutsu cards, not a separate card
 type or zone — mechanically, an Assist card is a Jutsu card in every
-respect (same Hand Deck, same Speed/Cost/Type rules above), just
+respect (same Jutsu Deck, same Speed/Cost/Type rules above), just
 written like a stripped-down "character card lite": built around a
 specific (often guest/cameo) character briefly lending a single
 signature technique, rather than presented as an impersonal spell.
@@ -1123,7 +1123,7 @@ Pool Capacity is intentionally left **TBD** per card — assign it during
 card balancing.
 
 ### Kakuzu (A Rank)
-**HP: 5** · Pool Capacity: (Hearts − 1) × 2 — starts at 8 with all 5 Hearts
+**HP: 4** · Pool Capacity: (Hearts − 1) × 2 — starts at 8 with all 5 Hearts
 Specialization: Assault / Vanguard · Styles: Earth, Wind, Lightning, Fire · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
@@ -1132,20 +1132,19 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   last Heart defeats him for good. Chakra Pool Capacity = (current
   Hearts − 1) × 2.
 - Elemental Versatility — First elemental jutsu each turn costs −1
+- Heart Masks — When Kakuzu enters play, search your Jutsu Deck for
+  Pressure Damage, Searing Migraine and False Darkness and add them to
+  your hand.
 
 Abilities:
-- Earth Grudge Fear — 1 Chakra, Style: None, Type: Taijutsu: Deal 1 damage to any target.
-- Iron Skin — 5 Chakra, Style: Earth, Type: Ninjutsu: Kakuzu takes −2 damage from physical attacks and −1 from elemental attacks for the next turn cycle, and strikes for 2 physical damage.
-- Pressure Damage — 3 Chakra, Style: Wind, Type: Ninjutsu: Deal 2 damage to up to 2 enemy characters.
-- Searing Migraine — 4 Chakra, Style: Fire, Type: Ninjutsu: Deal 4 damage.
-- False Darkness — 3 Chakra, Quick Technique, Style: Lightning, Type: Ninjutsu: Deal 2 damage.
+- Earth Grudge Fear — 2 Chakra, Style: None, Type: Taijutsu: Deal 1 damage to any target.
+- Iron Skin — 5 Chakra, Style: Earth, Type: Ninjutsu: For the next turn cycle, Kakuzu takes −2 damage from physical attacks and −2 from elemental attacks, and Earth Grudge Fear deals +2 damage.
 
-Ultimate — Earth Grudge Fear: Patchwork Threads (Style: None, Type:
-Ninjutsu): Trigger: whenever Kakuzu defeats any shinobi. Cost: his
-entire Chakra Pool (≥2 pooled required). Effect: regenerate 1 Heart,
-heal +5 HP, end with exactly 2 Chakra pooled, and gain 1 elemental Style
-from the defeated character that he doesn't already have (your choice if
-multiple).
+Ultimate — Earth Grudge Fear: Patchwork Threads (2 Chakra from his
+Pool, Style: None, Type: Ninjutsu): Trigger: whenever Kakuzu defeats any
+shinobi. Effect: regenerate 1 Heart, heal 3 HP, gain 2 Chakra to his
+Pool, and gain 1 elemental Style from the defeated character (your
+choice if several) — even one he already has.
 
 ### Hidan (B Rank)
 **HP: 9** · Pool Capacity: 1
@@ -1160,16 +1159,16 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   revive Hidan at 3 HP instead.
 
 Abilities:
-- Triple Scythe Sweep — 2 Chakra, Style: None, Type: Taijutsu: Deal 2 damage.
+- Triple Scythe Sweep — 3 Chakra, Style: None, Type: Taijutsu: Deal 1 damage.
 
 Ultimate — Curse Technique: Death Controlling Possessed Blood (6 Chakra,
 Style: Ritual, Type: Ninjutsu): Condition: target an enemy Hidan has
-already damaged; binds his blood to them (Cursed). While active: Triple
-Scythe Sweep may target himself for 0 Chakra, dealing the Cursed enemy 1
-extra damage; all damage Hidan takes is mirrored onto the Cursed enemy;
-Hidan can't be targeted by friendly attacks; can't self-target the turn
-he activates this; self-damage can't drop him below 3 HP. One Cursed
-enemy at a time; ends when they're defeated.
+already damaged; it becomes Cursed until Hidan or the Cursed enemy is
+defeated. While active: Triple Scythe Sweep costs 1 Chakra and may
+target Hidan himself, dealing the Cursed enemy 1 extra damage; all
+damage Hidan takes is mirrored onto the Cursed enemy; Hidan can't be
+targeted by friendly attacks; damage he deals himself can't drop him
+below 3 HP. One Cursed enemy at a time.
 
 ### Pain of the Six Paths (S Rank)
 Specialization: Tactician / Support · Styles: None · Synergy: Akatsuki
@@ -1257,23 +1256,19 @@ is defeated (no cooldown from fizzling).
 **HP: 10 (placeholder)** · Pool Capacity: 3
 Specialization: Assault · Styles: Explosion, Earth · Synergy: Akatsuki
 
-Traits:
-- Art is an Explosion — Starts with 1 Clay Charge.
-
 Abilities:
-- Explosive Clay — 1 Chakra, Style: Explosion, Type: Ninjutsu: Generate 1 Clay Charge. Usable up to 3 times/turn (overrides the once-per-turn cap).
-- C1, Shi-Wan: Clay Spider — 1 Chakra, Style: Explosion, Type: Ninjutsu: Create a Clay Spider token (below). Usable twice/turn (overrides the once-per-turn cap).
-- Detonation Art — 3 Chakra, Style: Explosion, Type: Ninjutsu: Deal 2 damage. Spend 1 Clay Charge → deal 4 instead.
+- C1, Shi-Wan: Clay Spider — 1 Chakra, Style: Explosion, Type: Ninjutsu: Create a Clay Spider token (below) and gain 1 Clay Charge. Usable twice/turn (overrides the once-per-turn cap).
+- Detonation Art — 4 Chakra, Style: Explosion, Type: Ninjutsu: Deal 1 damage. Spend 1 Clay Charge → deal 3 instead.
 
 **Clay Spider Token** (HP: 1)
 - Fizzles if Deidara dies. Max 5 in play at once.
 - Ambush — no Field Orientation; it can act the turn it's created.
-- Self Detonate — 1 Chakra, Quick Technique, Style: Explosion, Type: Ninjutsu: Choose any number of your Clay Spider tokens and 1 target; they all detonate against it for 1 damage each. 1 Chakra total per activation, regardless of spider count. Usable any number of times per turn.
+- Self Detonate — 3 Chakra, Quick Technique, Style: Explosion, Type: Ninjutsu: Choose any number of your Clay Spider tokens and 1 target; they all detonate against it for 1 damage each. 3 Chakra total per activation, regardless of spider count. Usable any number of times per turn.
 - Combine — Style: Explosion, Type: Ninjutsu: 4 Clay Spider tokens revert to clay and are destroyed, generating 2 Clay Charges.
 
-Ultimate — C3, Shi-Suri (5 Chakra, Style: Explosion, Type: Ninjutsu):
+Ultimate — C3, Shi-Suri (7 Chakra, Style: Explosion, Type: Ninjutsu):
 Condition: Chakra Pool must be full to activate (may still be spent as
-part of the cost). Spend 5 Clay Charges. Deal 5 damage to 1 target, plus
+part of the cost). Spend 5 Clay Charges. Deal 4 damage to 1 target, plus
 3 damage in a cross pattern from it (§9) — whatever's immediately left,
 right, in front of, and behind the target, up to 4 additional hits.
 
@@ -1281,11 +1276,11 @@ Forbidden Technique — Death is an Explosion (Style: Explosion, Type:
 Ninjutsu) — two versions: *(full nuance: design/CHARACTER_LOG.md)*
 
 - **Version 1** — Cost: 5 Chakra + entire Pool (must be full) + 4 Clay
-  Charges. Condition: Deidara at 3 HP or less. Deal 8 to all enemies, 3
+  Charges. Condition: Deidara at 3 HP or less. Deal 7 to all enemies, 3
   to all allies. Deidara dies.
 - **Version 2** (Reactive Technique) — Cost: 6 Chakra + entire Pool
-  (must be full) + 5 Clay Charges. Trigger: Deidara's HP would hit 0 or
-  below — activate this instead. Deal 8 to all enemies, 5 to all allies.
+  (must be full) + 4 Clay Charges. Trigger: Deidara's HP would hit 0 or
+  below — activate this instead. Deal 7 to all enemies, 5 to all allies.
   Deidara dies.
 
 ### Kisame, Tailless Tailed Beast (S Rank)
@@ -1302,8 +1297,8 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   or at Upkeep with Pool ≤3.
 
 Abilities:
-- Samehada Strike — 0 Chakra, Type: Taijutsu: Deal 1, Absorb 1.
-- Samehada Strike Evolved — Requires ≥3 Chakra absorbed and ≥4 pooled, 0 Chakra, Type: Taijutsu: Deal 2, Absorb 2.
+- Samehada Strike — 2 Chakra from his Pool, Type: Taijutsu: Deal 1, Absorb 3.
+- Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Taijutsu: Deal 2, Absorb 4.
 - Water Style: Water Prison Jutsu — 4 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
 - Water Style: Super Shark Bomb Jutsu — Requires ≥4 Chakra absorbed and ≥3 pooled. 4 Chakra, Type: Ninjutsu: Deal 1 damage, +1 per Chakra pooled on the target. Target loses pooled Chakra equal to half the damage dealt (rounded down).
 - Water Style: Thousand Hungry Sharks — Can be used twice per turn while in Samehada Shark Transformation, 5 Chakra, Type: Ninjutsu: Deal 4 damage.
@@ -1312,30 +1307,26 @@ Abilities:
 **HP: 11** · Pool Capacity: 4 (placeholder)
 Specialization: Tactician / Assault · Styles: Fire · Synergy: Akatsuki
 
-Traits:
-- Uchiha Prodigy — Quick Technique Jutsu cards Itachi could use
-  (styleless, or matching his Styles) cost 1 less Chakra while he's in
-  play (minimum 1).
-- Deterioration — Itachi can only use up to 2 abilities each turn.
+Traits: *(full nuance: design/CHARACTER_LOG.md)*
+- Sharingan Foresight — Whenever an enemy targets Itachi with a Quick
+  Technique ability or Quick Jutsu card, prevent 1 damage from it.
+- Genjutsu Master — Genjutsu cards Itachi enables cost 1 less Chakra
+  (minimum 1).
+- Failing Health — Itachi can use at most 2 abilities each turn, and
+  can't use his Ultimate and his Forbidden Technique in the same turn.
 
-Abilities: *(full nuance: design/CHARACTER_LOG.md)*
-- Crow Shuriken Barrage — 2 Chakra, Style: None, Type: Taijutsu: Deal 2 damage.
-- Great Fireball Technique — 3 Chakra, Style: Fire, Type: Ninjutsu: Deal 3 damage.
-- Genjutsu: Mind Prison — 3 Chakra, Quick Technique, Style: None, Type: Genjutsu: Stun the target for its controller's turn only — through their next turn, or the rest of the current one if cast during their turn — can't pool Chakra or use abilities/Jutsu cards. Once per individual character, ever. Costs 1 Chakra if Itachi outranks the target.
-- Crow Clone — 2 Chakra, Reactive Technique, Style: None, Type: Ninjutsu: Itachi phases out, negating any targeting of him. Once per character targeting him.
+Abilities:
+- Crow Shuriken Barrage — 2 Chakra, Style: None, Type: Taijutsu: Deal 1 damage.
+- Fire Release: Great Fireball — 4 Chakra, Style: Fire, Type: Ninjutsu: Deal 2 damage.
 
-Passive — Sharingan Foresight (Style: None): Whenever an enemy targets
-Itachi with a Quick Technique ability, prevent 1 damage from it.
+Ultimate — Amaterasu (8 Chakra, Style: Fire, Type: Ninjutsu): Deal 3
+damage to target enemy, plus 1 more at the start of each of your next 3
+Upkeeps. Damage can't be reduced.
 
-Ultimate — Amaterasu (7 Chakra, Style: Fire, Type: Ninjutsu): Deal 3
-damage to target enemy, plus 2 more at the start of your Upkeep for the
-next 2 turns. Damage cannot be reduced.
-
-Forbidden Technique — Mangekyō Sharingan: Tsukuyomi - Infinite Agony (7
-Chakra, Style: None, Type: Genjutsu): Condition: target must already be
-affected by Mind Prison, and must not have dealt more than 6 damage to
-Itachi this game. Target takes 6 damage and is stunned for the next
-turn cycle.
+Forbidden Technique — Mangekyō Sharingan: Tsukuyomi - Infinite Agony (8
+Chakra, Style: None, Type: Genjutsu): Condition: the target must not
+have dealt more than 6 damage to Itachi this game. It takes 5 damage and
+is stunned for the next turn cycle.
 
 ### Konan (A Rank)
 **HP: 11** · Pool Capacity: 4 (placeholder)
@@ -1534,11 +1525,9 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Elemental Versatility — First elemental jutsu each turn costs −1.
 
 Abilities:
-- Blade of Resolve — 2 Chakra, Style: None, Type: Taijutsu: Deal 2
+- Blade of Resolve — 4 Chakra, Style: None, Type: Taijutsu: Deal 2
   damage.
-- Water Release: Water Jet Stream — 3 Chakra, Style: Water, Type:
-  Ninjutsu: Deal 3 damage.
-- Water Release: Water Pillar Wall — 2 Chakra, Style: Water, Type:
+- Water Release: Water Pillar Wall — 3 Chakra, Style: Water, Type:
   Ninjutsu: Prevent the next 2 damage dealt to Yahiko this turn.
 - Rallying Words — 2 Chakra, Style: None, Type: Ninjutsu: Each ally's
   next attack this turn deals 1 additional damage.
@@ -1656,15 +1645,15 @@ card's play, negate its targeting (§9).
 
 **Incoming Mission Assignment** — Style: None, no Type
 Cost: 0 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
-Effect: Look at the top 6 cards of your Hand Deck. You may add 1
+Effect: Look at the top 6 cards of your Jutsu Deck. You may add 1
 Mission card among them to your hand. Shuffle the rest back into your
-Hand Deck.
+Jutsu Deck.
 
 **Battlefield Selection** — Style: None, no Type
 Cost: 0 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
-Effect: Look at the top 6 cards of your Hand Deck. You may add 1
+Effect: Look at the top 6 cards of your Jutsu Deck. You may add 1
 Terrain card among them to your hand. Shuffle the rest back into your
-Hand Deck.
+Jutsu Deck.
 
 **Chakra Transfer** — Style: None, Type: Ninjutsu
 Cost: 0 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
@@ -1726,6 +1715,14 @@ Effect: Deal 4 damage.
 Cost: 2 Chakra.
 Effect: Deal 2 damage.
 
+**Genjutsu: Mind Prison** — Style: None, Quick Technique, Type: Genjutsu
+Cost: 5 Chakra (3 if a Genjutsu user — a character with a Genjutsu ability — enables it).
+Effect: Stun target enemy character for its controller's turn — through their next turn, or the rest of the current one if cast during their turn: it can't use abilities, have Chakra pooled into it, or enable Jutsu cards.
+
+**Genjutsu: Crow Clone** — Style: None, Quick Technique, Type: Genjutsu
+Cost: 2 Chakra. Itachi only — can only be played with Itachi enabling it.
+Effect: Negate all targeting of Itachi and all new damage to him for the rest of this turn.
+
 **Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
 Cost: 1 + X Chakra (just X if paid from the enabling character's own
 Chakra Pool).
@@ -1757,7 +1754,7 @@ Effect: Deal 2 damage. If the character enabling this card's play has the Poison
 
 **Scroll of Techniques** — Style: None, no Type
 Cost: 1 Chakra.
-Effect: Look at the top 3 cards of your Hand Deck. You may add 1 Jutsu card among them whose Style matches a Style of a character you control (Style: None doesn't count) to your hand. Shuffle the rest back into your Hand Deck.
+Effect: Look at the top 3 cards of your Jutsu Deck. You may add 1 Jutsu card among them whose Style matches a Style of a character you control (Style: None doesn't count) to your hand. Shuffle the rest back into your Jutsu Deck.
 
 **Smoke Out** — Style: None, no Type
 Cost: 4 Chakra.
@@ -1768,7 +1765,7 @@ Cost: 1 Chakra.
 Effect: Draw 1 card. You may pay 2 additional Chakra to then draw another card.
 
 *The nine cards above (Earth Style: Mud Wall through Reconnaissance)
-are implemented but not yet in the preset Hand Deck. Wind Style: Great
+are implemented but not yet in the preset Jutsu Deck. Wind Style: Great
 Breakthrough and Smoke Out **choose** their units rather than targeting
 them (§9).*
 
@@ -1812,8 +1809,8 @@ finalized by design decision — adjust after playtesting:
   Zetsu finalized; Pain of the Six Paths still an unconfirmed assistant
   draft) — at least 3 more unique designs needed to fill out a full
   deck at the new minimum size.
-- Hand Deck contents: no standalone Jutsu cards exist yet to fill the
-  Hand Deck — every ability so far lives on a Character card.
+- Jutsu Deck contents: no standalone Jutsu cards exist yet to fill the
+  Jutsu Deck — every ability so far lives on a Character card.
 
 Resolved since first draft (no longer open):
 - **Play/Summon Cost** — your starting character is free; every character

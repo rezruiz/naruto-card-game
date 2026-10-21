@@ -215,9 +215,9 @@ Evolving characters (Jiraiya S→SS, Sasuke B→A, Naruto C→A, Choji C→B) co
 
 ---
 
-## Part 3 — Konoha Hand Deck (Terrain, Missions, Assist)
+## Part 3 — Konoha Jutsu Deck (Terrain, Missions, Assist)
 
-The Akatsuki Hand Deck is 12 Missions + 9 Substitution-family + 14 other Jutsu + 3 Terrain + 2 Assist = 40. Konoha mirrors that shape with its own Terrain, Missions and Assist, and reuses the neutral (non-faction) Jutsu.
+The Akatsuki Jutsu Deck is 12 Missions + 9 Substitution-family + 14 other Jutsu + 3 Terrain + 2 Assist = 40. Konoha mirrors that shape with its own Terrain, Missions and Assist, and reuses the neutral (non-faction) Jutsu.
 
 ### Terrain
 
@@ -245,7 +245,7 @@ Konoha's Missions lean on **teams** and **the Will of Fire** rather than defeati
 *Effect:* in response to a targeted attack on a **C or D Rank** character you control, prevent 3 of that attack's damage to it. The attack otherwise resolves normally.
 *(Mirror of Chidori Interception's Terrain discount; protective payoff makes it a Guard Assist.)*
 
-### Suggested Hand Deck manifest (40)
+### Suggested Jutsu Deck manifest (40)
 
 | Group | Cards | Copies | Total |
 |---|---|---|---|

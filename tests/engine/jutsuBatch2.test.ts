@@ -30,10 +30,10 @@ function patchBackRow(s: GameState, player: PlayerId, i: number, patch: (c: NonN
   };
 }
 
-/** p2 (active, Combat) aims Kakuzu's Searing Migraine (4 damage, Fire Ninjutsu) at p1's Hidan; p1 then has priority to respond. */
+/** p2 (active, Combat) aims Kisame's Thousand Hungry Sharks (4 damage, Water Ninjutsu) at p1's Hidan; p1 then has priority to respond. */
 function p2AttacksHidan(state: GameState): GameState {
   const s: GameState = { ...giveChakra(state, 'p2', 6), activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Combat' };
-  return activateAbility(s, 'p2-kakuzu', 'searing-migraine', ['p1-hidan'], 0);
+  return activateAbility(s, 'p2-kisame', 'thousand-hungry-sharks', ['p1-hidan'], 0);
 }
 
 describe('Earth Style: Mud Wall', () => {

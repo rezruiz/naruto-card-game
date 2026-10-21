@@ -32,7 +32,10 @@ function spawnCharacter(defId: string): CharacterDeckEntry['spawn'] {
   return (state, player, turn, hasAmbush, slot) => {
     reinforcementCounter += 1;
     const instance = createCharacterInstance(defId, player, `${player}-${defId}-r${reinforcementCounter}`, turn);
-    return placeCharacter(state, player, hasAmbush ? { ...instance, status: { ...instance.status, hasAmbush: true } } : instance, slot);
+    const placed = placeCharacter(state, player, hasAmbush ? { ...instance, status: { ...instance.status, hasAmbush: true } } : instance, slot);
+    // During Setup the picks are secret until both are revealed — reducer.ts fires the starting characters' enter-play triggers then.
+    const onEnter = getCharacterDef(defId)?.onEnterPlay;
+    return onEnter && placed !== state && !state.firstPlayerPending ? onEnter(placed, instance.instanceId, player) : placed;
   };
 }
 

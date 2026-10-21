@@ -38,9 +38,9 @@ user.email `262661000+rezruiz@users.noreply.github.com`
       core) next.**
 
 Confirmed decisions from the original planning pass, still standing:
-- **Hand Deck filler:** synthetic, textless "Chakra Fodder" Jutsu cards
-  pad out the 40-card Hand Deck where real cards don't yet fill it.
-  **Akatsuki starter Hand Deck manifest (as of 2026-09-19):** 2 copies
+- **Jutsu Deck filler:** synthetic, textless "Chakra Fodder" Jutsu cards
+  pad out the 40-card Jutsu Deck where real cards don't yet fill it.
+  **Akatsuki starter Jutsu Deck manifest (as of 2026-09-19):** 2 copies
   each of the 6 Mission cards (SPEC.md §13a) = 12; 3 copies each of the
   Substitution family — Substitution, Lightning Substitution, Water
   Substitution (§13b) = 9; 2 copies each of the other 7 Jutsu cards —
@@ -181,7 +181,7 @@ PlayerHealthBar/GameOverScreen.
    Retaliation, 5-unit limit, win condition)
 4. Stack & priority (all speeds go on the stack, 2-pass resolution,
    auto-pass with zero legal responses)
-5. Deck/hand/setup flow (40-card Hand Deck incl. Chakra Fodder + a
+5. Deck/hand/setup flow (40-card Jutsu Deck incl. Chakra Fodder + a
    10-15-card Character Deck per SPEC.md §2, draw-3-choose-1, 6-card
    starting hand + free-then-escalating mulligan per §3, first-player
    draw-skip, empty-deck damage, reinforcement triggers — note: the
@@ -205,7 +205,7 @@ PlayerHealthBar/GameOverScreen.
 
 ## 7. Flagged assumptions/ambiguities (review if something feels off)
 
-1. **Hand Deck filler** — confirmed: synthetic Chakra Fodder cards (see
+1. **Jutsu Deck filler** — confirmed: synthetic Chakra Fodder cards (see
    top of doc).
 2. Placing a Chakra source (§5.2 — as of 2026-09-14, this Consumes the
    hand card into the Consumed pile and puts a separate Chakra Card

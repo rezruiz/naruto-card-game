@@ -60,7 +60,7 @@ export function RulesReference() {
           <strong>Timing:</strong> damaging Normal-speed abilities are Combat only; healing/support abilities and Jutsu work in Main or Combat; Terrain, Missions and deck searches are Main only. Quick and Reactive follow their own speed.
         </li>
         <li>
-          <strong>Health:</strong> start at 20; 0 loses. Drawing from an empty Hand Deck costs 3 Health.
+          <strong>Health:</strong> start at 20; 0 loses. Drawing from an empty Jutsu Deck costs 3 Health.
         </li>
       </ul>
     </details>

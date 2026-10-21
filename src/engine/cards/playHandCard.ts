@@ -1,4 +1,5 @@
-import { findOccupant, isCharacter, patchCharacter } from '../board';
+import { getCharacterDef } from '../characters/registry';
+import { findOccupant, isCharacter, patchCharacter, isPhasedOut } from '../board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan, targetingSurcharge } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
@@ -21,21 +22,24 @@ export function normalTiming(def: HandCardDef): 'main' | 'combat' | 'either' {
   return isAttackJutsu(def) ? 'combat' : 'main';
 }
 
-/**
- * Itachi's Uchiha Prodigy: while he's in play (and not Disabled/Retreated),
- * Quick Technique Jutsu cards he could use — styleless, or matching his
- * Styles — cost his controller 1 less (minimum 1).
- */
-function uchihaProdigyApplies(state: GameState, player: PlayerId, def: HandCardDef): boolean {
-  if (def.cardType !== 'jutsu' || def.speed !== 'Quick') return false;
-  return state.players[player].backRow.some(
-    (c) => c && c.defId === 'itachi' && !c.status.disabled && !c.status.retreated && (def.style === 'None' || c.styles.includes(def.style)),
-  );
+/** Itachi's Genjutsu Master: Genjutsu cards he enables cost 1 less (minimum 1). */
+function genjutsuMasterApplies(state: GameState, def: HandCardDef, enablingInstanceId: string): boolean {
+  if (def.type !== 'Genjutsu' || !enablingInstanceId) return false;
+  const enabler = findOccupant(state, enablingInstanceId)?.occupant;
+  return !!enabler && enabler.defId === 'itachi';
+}
+
+/** Elemental Versatility (Kakuzu, Yahiko): the first elemental jutsu each turn costs 1 less — elemental Jutsu cards they enable included. */
+function elementalVersatilityApplies(state: GameState, def: HandCardDef, enablingInstanceId: string): boolean {
+  if (def.cardType !== 'jutsu' || def.type !== 'Ninjutsu' || def.style === 'None' || !enablingInstanceId) return false;
+  const enabler = findOccupant(state, enablingInstanceId)?.occupant;
+  return !!enabler && isCharacter(enabler) && !!getCharacterDef(enabler.defId)?.elementalVersatility && enabler.extra.elementalVersatilityUsedTurn !== state.turn;
 }
 
 export function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool: number): number {
   let cost = typeof def.cost === 'function' ? def.cost(ctx, payFromPool) : def.cost;
-  if (uchihaProdigyApplies(ctx.state, ctx.player, def) && cost > 1) cost -= 1;
+  if (genjutsuMasterApplies(ctx.state, def, ctx.enablingInstanceId) && cost > 1) cost -= 1;
+  if (elementalVersatilityApplies(ctx.state, def, ctx.enablingInstanceId) && cost > 1) cost -= 1;
   return cost + targetingSurcharge(ctx.state, ctx.player, targetedIds(def, ctx.targetInstanceIds));
 }
 
@@ -55,6 +59,8 @@ function checkEnabler(state: GameState, player: PlayerId, def: HandCardDef, enab
   const enabler = found.occupant;
   if (enabler.status.disabled) return { ok: false, reason: `${enabler.name} is Disabled and can't enable a card.` };
   if (enabler.status.retreated) return { ok: false, reason: `${enabler.name} is Retreated and can't enable a card.` };
+  const stunUntil = enabler.extra.stunnedUntilTurn as number | undefined;
+  if (stunUntil !== undefined && state.turn <= stunUntil) return { ok: false, reason: `${enabler.name} is stunned and can't enable a card.` };
   if (def.style !== 'None' && !enabler.styles.includes(def.style)) {
     return { ok: false, reason: `${enabler.name} doesn't have Style: ${def.style}, needed to enable ${def.name}.` };
   }
@@ -79,6 +85,7 @@ function checkTargets(state: GameState, player: PlayerId, def: HandCardDef, targ
       const nonRetreatedExists = state.players[targetFound.player].backRow.some((c) => c && !c.status.retreated);
       if (nonRetreatedExists) return { ok: false, reason: `${targetFound.occupant.name} is Retreated and can't be targeted.` };
     }
+    if (isPhasedOut(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} has phased out (Crow Clone) and can't be targeted this turn.` };
   }
   return { ok: true };
 }
@@ -97,7 +104,7 @@ export function checkHandCardLegality(
   const handEntry = state.players[player].hand.find((h) => h.instanceId === cardInstanceId);
   if (!handEntry || handEntry.kind !== 'card') return { ok: false, reason: `${player} has no such card in hand.` };
   const def = getHandCardDef(handEntry.defId);
-  if (!def) return { ok: false, reason: `Unknown Hand Deck card: ${handEntry.defId}.` };
+  if (!def) return { ok: false, reason: `Unknown Jutsu Deck card: ${handEntry.defId}.` };
 
   const enablerCheck = checkEnabler(state, player, def, enablingInstanceId);
   if (!enablerCheck.ok) return enablerCheck;
@@ -203,6 +210,9 @@ export function playHandCard(
   const cost = resolveCost(def, ctx, payFromPool);
 
   let next = payCost(state, player, enablingInstanceId, cost, payFromPool, !!opts.trust);
+  if (elementalVersatilityApplies(state, def, enablingInstanceId)) {
+    next = patchCharacter(next, enablingInstanceId, (c) => ({ ...c, extra: { ...c.extra, elementalVersatilityUsedTurn: state.turn } }));
+  }
   next = {
     ...next,
     players: { ...next.players, [player]: { ...next.players[player], hand: next.players[player].hand.filter((h) => h.instanceId !== cardInstanceId) } },

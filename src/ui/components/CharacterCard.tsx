@@ -72,8 +72,8 @@ export function CharacterCard({
       </div>
       {character.styles.length > 0 && (
         <div className="compact-card__styles" title="Styles — which Style abilities and Jutsu cards this character can use or enable">
-          {character.styles.map((style) => (
-            <span key={style} className={`style-chip style-chip--${style.toLowerCase()}`}>
+          {character.styles.map((style, i) => (
+            <span key={`${style}-${i}`} className={`style-chip style-chip--${style.toLowerCase()}`}>
               {style}
             </span>
           ))}

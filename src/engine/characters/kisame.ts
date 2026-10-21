@@ -40,7 +40,8 @@ function revertTransformation(state: GameState, instanceId: string): GameState {
 const samehadaStrike: AbilityDef = {
   id: 'samehada-strike',
   name: 'Samehada Strike',
-  cost: 0,
+  cost: 2,
+  requiresFullPoolPayment: true,
   speed: 'Normal',
   style: 'Water',
   type: 'Taijutsu',
@@ -50,10 +51,10 @@ const samehadaStrike: AbilityDef = {
     const target = ctx.targetInstanceIds[0];
     if (!target) return ctx.state;
     let state = dealDamage(ctx.state, target, 1).state;
-    state = absorbChakra(state, ctx.sourceInstanceId, target, 1);
+    state = absorbChakra(state, ctx.sourceInstanceId, target, 3);
     state = patchCharacter(state, ctx.sourceInstanceId, (k) => ({
       ...k,
-      extra: { ...k.extra, absorbedChakra: ((k.extra.absorbedChakra as number) ?? 0) + 1 },
+      extra: { ...k.extra, absorbedChakra: ((k.extra.absorbedChakra as number) ?? 0) + 3 },
     }));
     return state;
   },
@@ -62,7 +63,8 @@ const samehadaStrike: AbilityDef = {
 const samehadaStrikeEvolved: AbilityDef = {
   id: 'samehada-strike-evolved',
   name: 'Samehada Strike Evolved',
-  cost: 0,
+  cost: 2,
+  requiresFullPoolPayment: true,
   speed: 'Normal',
   style: 'Water',
   type: 'Taijutsu',
@@ -71,16 +73,16 @@ const samehadaStrikeEvolved: AbilityDef = {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     if (!found || !isCharacter(found.occupant)) return false;
     const k = found.occupant;
-    return !k.extra.transformed && ((k.extra.absorbedChakra as number) ?? 0) >= 3 && k.chakraPool.current >= 4;
+    return !k.extra.transformed && ((k.extra.absorbedChakra as number) ?? 0) >= 9 && k.chakraPool.current >= 6;
   },
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
     if (!target) return ctx.state;
     let state = dealDamage(ctx.state, target, 2).state;
-    state = absorbChakra(state, ctx.sourceInstanceId, target, 2);
+    state = absorbChakra(state, ctx.sourceInstanceId, target, 4);
     state = patchCharacter(state, ctx.sourceInstanceId, (k) => ({
       ...k,
-      extra: { ...k.extra, absorbedChakra: ((k.extra.absorbedChakra as number) ?? 0) + 2 },
+      extra: { ...k.extra, absorbedChakra: ((k.extra.absorbedChakra as number) ?? 0) + 4 },
     }));
     return state;
   },

@@ -1,3 +1,4 @@
+import { getCharacterDef } from '../characters/registry';
 import { findOccupant, getAdjacent, isCharacter, patchCharacter } from '../board';
 import { absorbChakra, dealDamage, healOccupant } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
@@ -629,6 +630,66 @@ const waterDragonJutsu: HandCardDef = {
   },
 };
 
+// --- Itachi's Genjutsu (moved off his card) -----------------------------------
+
+/** A Genjutsu user: a character with at least one Genjutsu-Type ability. */
+function isGenjutsuUser(state: GameState, instanceId: string): boolean {
+  const found = instanceId ? findOccupant(state, instanceId) : undefined;
+  if (!found || !isCharacter(found.occupant)) return false;
+  const def = getCharacterDef(found.occupant.defId);
+  return !!def && [...def.abilities, ...(def.ultimate ? [def.ultimate] : [])].some((a) => a.type === 'Genjutsu');
+}
+
+// Stuns for the target's controller's turn only: cast on your turn, through
+// their next turn; cast on theirs (it's Quick), the rest of that turn.
+const mindPrisonCard: HandCardDef = {
+  id: 'jutsu-mind-prison',
+  name: 'Genjutsu: Mind Prison',
+  cardType: 'jutsu',
+  cost: (ctx) => (isGenjutsuUser(ctx.state, ctx.enablingInstanceId) ? 3 : 5),
+  speed: 'Quick',
+  style: 'None',
+  type: 'Genjutsu',
+  targetSide: 'enemy',
+  legalityCheck: (ctx) => {
+    const found = ctx.targetInstanceIds[0] ? findOccupant(ctx.state, ctx.targetInstanceIds[0]) : undefined;
+    return !!found && found.player !== ctx.player && isCharacter(found.occupant);
+  },
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    const found = target ? findOccupant(ctx.state, target) : undefined;
+    if (!found || !isCharacter(found.occupant)) return ctx.state;
+    const until = found.player === ctx.state.activePlayer ? ctx.state.turn : ctx.state.turn + 1;
+    const state = patchCharacter(ctx.state, found.occupant.instanceId, (c) => ({ ...c, extra: { ...c.extra, stunnedUntilTurn: until } }));
+    return appendLog(state, `Mind Prison stuns ${found.occupant.name} for its controller's turn — no abilities, pooling or Jutsu cards.`);
+  },
+};
+
+// Itachi only. Every attack waiting to target him loses him as a target, and
+// for the rest of the turn he can't be targeted or take new damage.
+const crowCloneCard: HandCardDef = {
+  id: 'jutsu-crow-clone',
+  name: 'Genjutsu: Crow Clone',
+  cardType: 'jutsu',
+  cost: 2,
+  speed: 'Quick',
+  style: 'None',
+  type: 'Genjutsu',
+  maxTargets: 0,
+  negatesTargetingOfSelf: true,
+  legalityCheck: (ctx) => findOccupant(ctx.state, ctx.enablingInstanceId)?.occupant.defId === 'itachi',
+  resolve: (ctx) => {
+    const itachiId = ctx.enablingInstanceId;
+    const itachi = findOccupant(ctx.state, itachiId);
+    if (!itachi) return ctx.state;
+    const stack = ctx.state.stack
+      .map((item) => (item.targets.includes(itachiId) ? { ...item, targets: item.targets.filter((t) => t !== itachiId) } : item))
+      .filter((item) => !(item.targets.length === 0 && ctx.state.stack.find((o) => o.id === item.id)!.targets.includes(itachiId)));
+    const state = patchCharacter({ ...ctx.state, stack }, itachiId, (c) => ({ ...c, extra: { ...c.extra, phasedOutTurn: ctx.state.turn } }));
+    return appendLog(state, 'Itachi phases out — Crow Clone: no targeting of him and no new damage to him for the rest of this turn.');
+  },
+};
+
 for (const def of [
   substitution,
   lightningSubstitution,
@@ -656,6 +717,8 @@ for (const def of [
   smokeOut,
   reconnaissance,
   waterDragonJutsu,
+  mindPrisonCard,
+  crowCloneCard,
 ]) {
   registerHandCard(def);
 }

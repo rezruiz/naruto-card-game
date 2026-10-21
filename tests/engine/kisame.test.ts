@@ -5,8 +5,10 @@ import { gameReducer } from '../../src/engine/reducer';
 import { freshCombat, giveChakra, resolveTop } from './testUtils';
 
 describe('Kisame', () => {
-  it('Samehada Strike deals 1 damage, absorbs 1 Chakra, and tracks the absorbed-Chakra counter', () => {
+  it('Samehada Strike (2 from his Pool) deals 1 damage, Absorbs 3 into his Pool, and tracks the absorbed-Chakra counter', () => {
     let state = freshCombat();
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c) => (c?.defId === 'kisame' ? { ...c, chakraPool: { ...c.chakraPool, current: 2 } } : c)) } } };
+    expect(activateAbility(giveChakra(state, 'p1', 2), 'p1-kisame', 'samehada-strike', ['p2-kakuzu'], 0).stack).toHaveLength(0); // must be paid from the Pool
     // Pool some Chakra onto the target directly so the drain half of Absorb has something to take.
     state = {
       ...state,
@@ -20,14 +22,26 @@ describe('Kisame', () => {
     };
 
     const targetHpBefore = state.players.p2.backRow[0]!.currentHP;
-    state = activateAbility(state, 'p1-kisame', 'samehada-strike', ['p2-kakuzu'], 0);
+    state = activateAbility(state, 'p1-kisame', 'samehada-strike', ['p2-kakuzu'], 2);
     expect(state.stack).toHaveLength(1);
     state = resolveTop(state);
 
     expect(state.players.p2.backRow[0]!.currentHP).toBe(targetHpBefore - 1);
-    expect(state.players.p2.backRow[0]!.chakraPool.current).toBe(1); // drained 1
-    expect(state.players.p1.backRow[3]!.chakraPool.current).toBe(1); // Kisame gained 1
-    expect(state.players.p1.backRow[3]!.extra.absorbedChakra).toBe(1);
+    expect(state.players.p2.backRow[0]!.chakraPool.current).toBe(0); // drained all it had
+    expect(state.players.p1.backRow[3]!.chakraPool.current).toBe(3); // 2 − 2 + 3
+    expect(state.players.p1.backRow[3]!.extra.absorbedChakra).toBe(3);
+  });
+
+  it('Samehada Strike Evolved needs 9+ absorbed and 6+ pooled: deal 2, Absorb 4', () => {
+    const setK = (s: ReturnType<typeof freshCombat>, absorbed: number, pooled: number) => ({ ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'kisame' ? { ...c, chakraPool: { ...c.chakraPool, current: pooled }, extra: { ...c.extra, absorbedChakra: absorbed } } : c)) } } });
+    expect(activateAbility(setK(freshCombat(), 8, 6), 'p1-kisame', 'samehada-strike-evolved', ['p2-hidan'], 2).stack).toHaveLength(0);
+    expect(activateAbility(setK(freshCombat(), 9, 5), 'p1-kisame', 'samehada-strike-evolved', ['p2-hidan'], 2).stack).toHaveLength(0);
+    let state = setK(freshCombat(), 9, 6);
+    const hp = state.players.p2.backRow[1]!.currentHP;
+    state = resolveTop(activateAbility(state, 'p1-kisame', 'samehada-strike-evolved', ['p2-hidan'], 2));
+    expect(state.players.p2.backRow[1]!.currentHP).toBe(hp - 2);
+    expect(state.players.p1.backRow[3]!.chakraPool.current).toBe(8); // 6 − 2 + 4
+    expect(state.players.p1.backRow[3]!.extra.absorbedChakra).toBe(13);
   });
 
   it("Water Prison Jutsu locks a lower-rank target out of targeted abilities for 3 turns", () => {

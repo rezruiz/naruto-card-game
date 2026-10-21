@@ -1,5 +1,5 @@
 import { appendLog, appendWarning } from './phases/phaseMachine';
-import { findOccupant, isCharacter, hasFieldOrientation, patchCharacter, patchOccupant } from './board';
+import { findOccupant, isCharacter, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant } from './board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from './stack';
 import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
 import { getCharacterDef, getTokenDef } from './characters/registry';
@@ -77,7 +77,7 @@ export interface AbilityDef {
 
 /** Hidan with his Curse Technique active — his own side can't target him (SPEC.md, Hidan's Ultimate). */
 export function cursingHidan(unit: BoardOccupant): boolean {
-  return unit.defId === 'hidan' && unit.extra.curseActive === true;
+  return unit.defId === 'hidan' && unit.extra.curseActive === true && !!unit.extra.cursedTarget;
 }
 
 function isElementalJutsu(ability: AbilityDef): boolean {
@@ -307,6 +307,7 @@ export function checkLegality(
         const nonRetreatedExists = state.players[targetFound.player].backRow.some((c) => c && !c.status.retreated);
         if (nonRetreatedExists) return { ok: false, reason: `${targetFound.occupant.name} is Retreated and can't be targeted.` };
       }
+      if (isPhasedOut(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} has phased out (Crow Clone) and can't be targeted this turn.` };
     }
   }
 

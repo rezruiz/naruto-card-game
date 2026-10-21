@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { activateAbility } from '../../src/engine/abilities';
 import { dealDamage } from '../../src/engine/combat';
 import { gameReducer } from '../../src/engine/reducer';
+import { makeHandCardInstance } from '../../src/engine/deck';
 import { freshCombat, giveChakra, resolveTop, withCharacterAt } from './testUtils';
 
 function withYahiko() {
@@ -9,8 +10,8 @@ function withYahiko() {
 }
 
 describe('Yahiko', () => {
-  it('Blade of Resolve deals 2 damage', () => {
-    let state = giveChakra(withYahiko(), 'p1', 2);
+  it('Blade of Resolve (4 Chakra) deals 2 damage', () => {
+    let state = giveChakra(withYahiko(), 'p1', 4);
     const hpBefore = state.players.p2.backRow[0]!.currentHP;
     state = activateAbility(state, 'p1-yahiko', 'blade-of-resolve', ['p2-kakuzu'], 0);
     state = resolveTop(state);
@@ -19,16 +20,18 @@ describe('Yahiko', () => {
 
   it('Elemental Versatility discounts the first elemental jutsu each turn by 1, not a second', () => {
     let state = giveChakra(withYahiko(), 'p1', 5);
-    state = activateAbility(state, 'p1-yahiko', 'water-jet-stream', ['p2-kakuzu'], 0); // Water Ninjutsu, printed 3
+    state = activateAbility(state, 'p1-yahiko', 'water-pillar-wall', [], 0); // Water Ninjutsu, printed 3
     expect(state.players.p1.genericChakraAvailable).toBe(3); // paid 2, not 3
     state = resolveTop(state);
 
-    state = activateAbility(state, 'p1-yahiko', 'water-pillar-wall', [], 0); // Water Ninjutsu, printed 2
-    expect(state.players.p1.genericChakraAvailable).toBe(1); // paid full 2 — discount already used
+    const card = makeHandCardInstance('jutsu-searing-migraine'); // Fire Ninjutsu card, printed 3
+    state = { ...state, phase: 'Combat', players: { ...state.players, p1: { ...state.players.p1, hand: [...state.players.p1.hand, { kind: 'card', instanceId: card.instanceId, defId: card.defId }] } } };
+    state = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p1-yahiko', targetInstanceIds: ['p2-hidan'], payFromPool: 0 });
+    expect(state.players.p1.genericChakraAvailable).toBe(0); // paid full 3 — discount already used
   });
 
   it('Water Pillar Wall prevents the next 2 damage taken this turn', () => {
-    let state = giveChakra(withYahiko(), 'p1', 2);
+    let state = giveChakra(withYahiko(), 'p1', 3);
     state = activateAbility(state, 'p1-yahiko', 'water-pillar-wall', [], 0);
     state = resolveTop(state);
 
@@ -45,8 +48,8 @@ describe('Yahiko', () => {
     let state = giveChakra(withYahiko(), 'p2', 5);
     // p1's Hidan (an ally of Yahiko) gets the discount on his own first activation.
     state = giveChakra(withYahiko(), 'p1', 5);
-    state = activateAbility(state, 'p1-hidan', 'triple-scythe-sweep', ['p2-kakuzu'], 0); // printed cost 2
-    expect(state.players.p1.genericChakraAvailable).toBe(4); // paid 1, not 2
+    state = activateAbility(state, 'p1-hidan', 'triple-scythe-sweep', ['p2-kakuzu'], 0); // printed cost 3
+    expect(state.players.p1.genericChakraAvailable).toBe(3); // paid 2, not 3
   });
 
   /** p2 outnumbers p1 by 2 (p1 down to 3 characters), Hidan at 1 HP with his one-time survival already spent, and p2's Earth Grudge Fear (1 damage) aimed at him. */

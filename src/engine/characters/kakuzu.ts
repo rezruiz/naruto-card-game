@@ -3,7 +3,8 @@ import { dealDamage, healOccupant, registerDefeatHook } from '../combat';
 import { appendLog } from '../phases/phaseMachine';
 import type { AbilityDef } from '../abilities';
 import { registerCharacter } from './registry';
-import type { GameState, Style } from '../types';
+import { shuffle } from '../deck';
+import type { GameState, PlayerId, Style } from '../types';
 
 const DEF_ID = 'kakuzu';
 
@@ -17,7 +18,7 @@ function poolCapacityForHearts(hearts: number): number {
 const earthGrudgeFear: AbilityDef = {
   id: 'earth-grudge-fear',
   name: 'Earth Grudge Fear',
-  cost: 1,
+  cost: 2,
   speed: 'Normal',
   style: 'None',
   type: 'Taijutsu',
@@ -26,61 +27,14 @@ const earthGrudgeFear: AbilityDef = {
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
     if (!target) return ctx.state;
-    return dealDamage(ctx.state, target, 1).state;
+    const kakuzu = findOccupant(ctx.state, ctx.sourceInstanceId)?.occupant;
+    const hardened = !!kakuzu && ((kakuzu.extra.ironSkinUntilTurn as number | undefined) ?? -1) >= ctx.state.turn;
+    return dealDamage(ctx.state, target, hardened ? 3 : 1).state;
   },
 };
 
-const pressureDamage: AbilityDef = {
-  id: 'pressure-damage',
-  name: 'Pressure Damage',
-  cost: 3,
-  speed: 'Normal',
-  style: 'Wind',
-  type: 'Ninjutsu',
-  isDamaging: true,
-  maxTargets: 2,
-  resolve: (ctx) => {
-    let state = ctx.state;
-    for (const target of ctx.targetInstanceIds.slice(0, 2)) {
-      state = dealDamage(state, target, 2).state;
-    }
-    return state;
-  },
-};
-
-const searingMigraine: AbilityDef = {
-  id: 'searing-migraine',
-  name: 'Searing Migraine',
-  cost: 4,
-  speed: 'Normal',
-  style: 'Fire',
-  type: 'Ninjutsu',
-  isDamaging: true,
-  resolve: (ctx) => {
-    const target = ctx.targetInstanceIds[0];
-    if (!target) return ctx.state;
-    return dealDamage(ctx.state, target, 4).state;
-  },
-};
-
-const falseDarkness: AbilityDef = {
-  id: 'false-darkness',
-  name: 'False Darkness',
-  cost: 3,
-  speed: 'Quick',
-  style: 'Lightning',
-  type: 'Ninjutsu',
-  isDamaging: true,
-  resolve: (ctx) => {
-    const target = ctx.targetInstanceIds[0];
-    if (!target) return ctx.state;
-    return dealDamage(ctx.state, target, 2).state;
-  },
-};
-
-// "Kakuzu takes −2 damage from physical attacks and −1 from elemental attacks
-// for the next turn cycle, and strikes for 2 physical damage." The reduction
-// lasts through the opponent's next turn (combat.ts reads ironSkinUntilTurn).
+// For the next turn cycle Kakuzu takes −2 from physical and −2 from elemental
+// attacks (combat.ts reads ironSkinUntilTurn), and Earth Grudge Fear deals +2.
 const ironSkin: AbilityDef = {
   id: 'iron-skin',
   name: 'Iron Skin',
@@ -88,35 +42,32 @@ const ironSkin: AbilityDef = {
   speed: 'Normal',
   style: 'Earth',
   type: 'Ninjutsu',
-  isDamaging: true,
+  maxTargets: 0,
   resolve: (ctx) => {
-    const target = ctx.targetInstanceIds[0];
-    let state = patchCharacter(ctx.state, ctx.sourceInstanceId, (k) => ({ ...k, extra: { ...k.extra, ironSkinUntilTurn: ctx.state.turn + 1 } }));
-    state = appendLog(state, 'Kakuzu hardens his skin: −2 from physical and −1 from elemental attacks until the end of the next turn.');
-    if (target) state = dealDamage(state, target, 2).state;
-    return state;
+    const state = patchCharacter(ctx.state, ctx.sourceInstanceId, (k) => ({ ...k, extra: { ...k.extra, ironSkinUntilTurn: ctx.state.turn + 1 } }));
+    return appendLog(state, 'Kakuzu hardens his skin: −2 from physical and −2 from elemental attacks, and Earth Grudge Fear deals +2, through the next turn.');
   },
 };
 
 const ELEMENTAL_STYLES: Style[] = ['Fire', 'Water', 'Wind', 'Earth', 'Lightning'];
 
-/** Elemental Styles the character Kakuzu just defeated had that he doesn't (Patchwork Threads can take one). */
+/** Elemental Styles the character Kakuzu just defeated had (Patchwork Threads takes one — even one he already has). */
 function stealableStyles(state: GameState, kakuzuId: string): Style[] {
   const found = findOccupant(state, kakuzuId);
   if (!found || !isCharacter(found.occupant)) return [];
-  const k = found.occupant;
-  const defeated = (k.extra.lastKillStyles as Style[] | undefined) ?? [];
-  return defeated.filter((s) => ELEMENTAL_STYLES.includes(s) && !k.styles.includes(s));
+  const defeated = (found.occupant.extra.lastKillStyles as Style[] | undefined) ?? [];
+  return [...new Set(defeated.filter((s) => ELEMENTAL_STYLES.includes(s)))];
 }
 
 // Trigger: "whenever Kakuzu defeats any shinobi" — usable the same turn one
-// of his attacks defeats a character (combat.ts credits the kill), with 2+
-// pooled. Takes one elemental Style the defeated character had that he
-// doesn't — the player's choice when there's more than one.
+// of his attacks defeats a character (combat.ts credits the kill). 2 Chakra,
+// paid from his Pool. Takes one elemental Style the defeated character had —
+// the player's choice when there's more than one; duplicates are allowed.
 const patchworkThreads: AbilityDef = {
   id: 'patchwork-threads',
   name: 'Earth Grudge Fear: Patchwork Threads',
-  cost: 0,
+  cost: 2,
+  requiresFullPoolPayment: true,
   speed: 'Normal',
   style: 'None',
   type: 'Ninjutsu',
@@ -124,7 +75,7 @@ const patchworkThreads: AbilityDef = {
   maxTargets: 0,
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    return !!found && isCharacter(found.occupant) && found.occupant.chakraPool.current >= 2 && found.occupant.extra.lastKillTurn === ctx.state.turn;
+    return !!found && isCharacter(found.occupant) && found.occupant.extra.lastKillTurn === ctx.state.turn;
   },
   choices: (ctx) => {
     const options = stealableStyles(ctx.state, ctx.sourceInstanceId);
@@ -143,12 +94,12 @@ const patchworkThreads: AbilityDef = {
     backRow[index] = {
       ...kakuzu,
       extra: { ...kakuzu.extra, hearts: newHearts },
-      chakraPool: { current: 2, capacity },
+      chakraPool: { current: Math.min(capacity, kakuzu.chakraPool.current + 2), capacity },
       maxHP: kakuzu.maxHP,
     };
     let state: GameState = { ...ctx.state, players: { ...ctx.state.players, [player]: { ...p, backRow } } };
-    state = healOccupant(state, ctx.sourceInstanceId, 5);
-    state = appendLog(state, `Kakuzu regenerates a Heart (now ${newHearts}) and ends with 2 Chakra pooled.`);
+    state = healOccupant(state, ctx.sourceInstanceId, 3);
+    state = appendLog(state, `Kakuzu regenerates a Heart (now ${newHearts}), heals 3 and gains 2 Chakra to his Pool.`);
     const stealable = stealableStyles(state, ctx.sourceInstanceId);
     const chosen = typeof ctx.choices?.style === 'string' && stealable.includes(ctx.choices.style as Style) ? (ctx.choices.style as Style) : stealable.length === 1 ? stealable[0] : undefined;
     if (chosen) {
@@ -163,15 +114,34 @@ registerCharacter({
   id: DEF_ID,
   name: 'Kakuzu',
   rank: 'A',
-  baseMaxHP: 5,
+  baseMaxHP: 4,
   basePoolCapacity: poolCapacityForHearts(5),
   styles: ['Earth', 'Wind', 'Lightning', 'Fire'],
-  abilities: [earthGrudgeFear, ironSkin, pressureDamage, searingMigraine, falseDarkness],
+  abilities: [earthGrudgeFear, ironSkin],
   ultimate: patchworkThreads,
   elementalVersatility: true,
   initialExtra: { hearts: 5 },
   synergy: ['Akatsuki'],
+  onEnterPlay: (state, _instanceId, player) => heartMasks(state, player),
 });
+
+// Heart Masks: when Kakuzu enters play (any way, the starting pick included),
+// search the Jutsu Deck for 1 copy each of his three mask techniques, add them
+// to hand, then shuffle.
+const HEART_MASK_CARDS = ['jutsu-pressure-damage', 'jutsu-searing-migraine', 'jutsu-false-darkness'];
+
+function heartMasks(state: GameState, player: PlayerId): GameState {
+  const p = state.players[player];
+  const deck = p.handDeck.slice();
+  const found: typeof deck = [];
+  for (const defId of HEART_MASK_CARDS) {
+    const i = deck.findIndex((c) => c.defId === defId);
+    if (i >= 0) found.push(...deck.splice(i, 1));
+  }
+  const hand = [...p.hand, ...found.map((c) => ({ kind: 'card' as const, instanceId: c.instanceId, defId: c.defId }))];
+  const next = { ...state, players: { ...state.players, [player]: { ...p, handDeck: shuffle(deck), hand } } };
+  return appendLog(next, `Heart Masks: ${player} searches the Jutsu Deck and adds ${found.length} mask card${found.length === 1 ? '' : 's'} to hand, then shuffles.`);
+}
 
 // Five Hearts (SPEC.md): whenever Kakuzu would be defeated with >1 Heart
 // remaining, he loses 1 Heart + a Style and revives instead. This is the
@@ -186,8 +156,10 @@ registerDefeatHook(DEF_ID, (state, targetInstanceId) => {
   const newHearts = hearts - 1;
   const lostStyles = (kakuzu.extra.lostStyles as Style[]) ?? [];
   const remainingStyles = HEART_STYLE_ORDER.filter((s) => !lostStyles.includes(s) && kakuzu.styles.includes(s));
-  const styleToLose = remainingStyles[0];
-  const newStyles = styleToLose ? kakuzu.styles.filter((s) => s !== styleToLose) : kakuzu.styles;
+  const styleToLose = remainingStyles[0] ?? [...HEART_STYLE_ORDER, 'Water' as Style].find((s) => kakuzu.styles.includes(s));
+  // Duplicate Styles (Patchwork Threads) — losing a Heart removes one copy.
+  const dropAt = styleToLose ? kakuzu.styles.indexOf(styleToLose) : -1;
+  const newStyles = dropAt >= 0 ? kakuzu.styles.filter((_, i) => i !== dropAt) : kakuzu.styles;
   const newLostStyles = styleToLose ? [...lostStyles, styleToLose] : lostStyles;
 
   const p = state.players[player];

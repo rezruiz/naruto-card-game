@@ -115,6 +115,11 @@ registerChoiceResolver(TOKEN_SLOT_CHOICE, (state, choice, optionIds) => {
 });
 
 /** Pain of the Six Paths has no CharacterInstance — his 6 Path tokens all point at this nominal id. */
+/** Crow Clone (Itachi): this turn he can't be targeted and takes no new damage. */
+export function isPhasedOut(state: GameState, occ: BoardOccupant): boolean {
+  return occ.extra.phasedOutTurn === state.turn;
+}
+
 export function painUnitId(player: PlayerId): string {
   return `pain-${player}`;
 }
@@ -333,7 +338,12 @@ export function purgeReferencesTo(state: GameState, goneIds: Iterable<string>): 
   let next = state;
   for (const goneId of goneIds) {
     for (const id of occupantIds(next)) {
-      next = patchOccupant(next, id, (o) => ({ ...o, extra: scrub(o.extra, goneId) as Record<string, unknown> }));
+      next = patchOccupant(next, id, (o) => {
+        const extra = scrub(o.extra, goneId) as Record<string, unknown>;
+        // Hidan's Curse ends when the Cursed enemy leaves play.
+        if (o.defId === 'hidan' && extra.curseActive && !extra.cursedTarget) extra.curseActive = false;
+        return { ...o, extra };
+      });
     }
   }
   return next;

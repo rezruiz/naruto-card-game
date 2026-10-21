@@ -53,7 +53,7 @@ describe('trust mode: staging', () => {
 
     expect(hp(s, 'p2', 'p2-hidan')).toBe(hidanHp);
     expect(hp(s, 'p2', 'p2-kisame')).toBe(kisameHp - 1);
-    expect(s.players.p1.genericChakraAvailable).toBe(4); // cost paid at resolution
+    expect(s.players.p1.genericChakraAvailable).toBe(3); // cost paid at resolution
     expect(s.staged).toHaveLength(0);
     expect(s.pendingFinalize).toBeNull();
     expect(s.phase).toBe('Combat'); // Finalize Phase moved on from Main1
@@ -85,7 +85,7 @@ describe('trust mode: staging', () => {
     expect(s.log.at(-1)!.warning).toBe(true);
     expect(s.log.at(-1)!.text).toMatch(/tap your Chakra/);
 
-    s = run(withChakra(s, 'p1', 1), { type: 'RESOLVE_ACTIONS', player: 'p1' });
+    s = run(withChakra(s, 'p1', 2), { type: 'RESOLVE_ACTIONS', player: 'p1' });
     expect(s.staged).toHaveLength(0);
     expect(hp(s, 'p2', 'p2-hidan')).toBe(hp(trustMain1(), 'p2', 'p2-hidan') - 1);
     expect(s.players.p1.genericChakraAvailable).toBe(0);
@@ -99,7 +99,7 @@ describe('trust mode: staging', () => {
     expect(ask).toBeDefined();
     s = run(s, { type: 'RESOLVE_CHOICE', choiceId: ask.id, optionIds: ['yes'] }, { type: 'RESOLVE_ACTIONS', player: 'p1' });
     expect(s.staged).toHaveLength(0);
-    expect(s.players.p1.backRow[0]!.chakraPool.current).toBe(1);
+    expect(s.players.p1.backRow[0]!.chakraPool.current).toBe(0);
   });
 
   it("the opponent sees only that an action was declared — what it is stays hidden until the round is finalized", () => {
@@ -122,7 +122,7 @@ describe('trust mode: response prompts', () => {
 
   it('asks an opponent who could legally respond, lets them respond, then resolves in stack order', () => {
     // p1 has just enough Chakra for the attack and nothing to respond with.
-    let s = withChakra(trustMain1(), 'p1', 1);
+    let s = withChakra(trustMain1(), 'p1', 2);
     const withSub = withCard(s, 'p2', 'substitution');
     s = withChakra(withSub.state, 'p2', 4);
     const before = hp(s, 'p2', 'p2-kakuzu');
@@ -206,7 +206,7 @@ describe('trust mode: could-they-respond check', () => {
 
 describe('trust mode: resolution order (first activated, first resolved)', () => {
   it('resolves declared actions in the order they were declared', () => {
-    let s = withChakra(trustMain1(), 'p1', 2);
+    let s = withChakra(trustMain1(), 'p1', 4);
     s = run(s, stage(['p2-hidan']), stage(['p2-kisame']), { type: 'RESOLVE_ACTIONS', player: 'p1' });
     const order = s.log.filter((l) => l.text.startsWith('Resolving')).map((l) => l.text);
     expect(order).toHaveLength(2);
@@ -218,7 +218,7 @@ describe('trust mode: resolution order (first activated, first resolved)', () =>
 
   it("lets a responder's Substitution land ahead of the attack it answers — and moving it behind makes it too late", () => {
     const setup = () => {
-      let s = withChakra(trustMain1(), 'p1', 2);
+      let s = withChakra(trustMain1(), 'p1', 4);
       const sub = withCard(s, 'p2', 'substitution');
       s = withChakra(sub.state, 'p2', 4);
       // p1 declares two attacks: one at Hidan, one at Kakuzu (p2's enabler). Finalizing prompts p2, who can respond.
@@ -361,7 +361,7 @@ describe('Always confirm', () => {
   const declareAndFinalize = (s: GameState) =>
     run(
       giveChakra(s, 'p1', 3),
-      { type: 'STAGE_ABILITY', instanceId: 'p1-deidara', abilityId: 'explosive-clay', targetInstanceIds: [], payFromPool: 0 },
+      { type: 'STAGE_ABILITY', instanceId: 'p1-deidara', abilityId: 'c1-shi-wan', targetInstanceIds: [], payFromPool: 0 },
       { type: 'FINALIZE_PHASE', player: 'p1' },
     );
 

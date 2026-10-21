@@ -846,7 +846,7 @@ describe('§10a/§10b: Terrain and Mission cards are not enabled by a character'
 describe("§10b Unshakable Resolve: the 6-Untap timing (an off-by-one bug meant it used to take 7)", () => {
   const setup = () => {
     let s = giveChakra(setBack(freshMain1(), 'p1', ['t-C', null, null, null, null]), 'p1', 1);
-    // A real (non-empty) Hand Deck for both players — freshMain1()'s default is empty, which would otherwise
+    // A real (non-empty) Jutsu Deck for both players — freshMain1()'s default is empty, which would otherwise
     // deal 3 Health deck-out damage on every one of these many Draw Phases and confound the Health-loss check below.
     const filler = Array.from({ length: 20 }, () => makeHandCardInstance('field-intelligence'));
     s = { ...s, players: { ...s.players, p1: { ...s.players.p1, handDeck: filler }, p2: { ...s.players.p2, handDeck: filler } } };

@@ -1,6 +1,7 @@
 import { gameReducer } from '../../src/engine/reducer';
 import { createInitialState } from '../../src/engine/state';
 import { createCharacterInstance } from '../../src/engine/characters';
+import { makeHandCardInstance } from '../../src/engine/deck';
 import type { GameState, PlayerId } from '../../src/engine/types';
 
 export function toMain1(state: GameState): GameState {
@@ -12,6 +13,14 @@ export function toMain1(state: GameState): GameState {
 export function resolveTop(state: GameState): GameState {
   let next = gameReducer(state, { type: 'PASS_PRIORITY' });
   return gameReducer(next, { type: 'PASS_PRIORITY' });
+}
+
+/** Puts a `defId` card into `player`'s hand and plays it (PLAY_HAND_CARD). */
+export function playCard(state: GameState, player: PlayerId, defId: string, enablingInstanceId: string, targetInstanceIds: string[] = [], payFromPool = 0): GameState {
+  const card = makeHandCardInstance(defId);
+  const p = state.players[player];
+  const withCard = { ...state, players: { ...state.players, [player]: { ...p, hand: [...p.hand, { kind: 'card' as const, instanceId: card.instanceId, defId }] } } };
+  return gameReducer(withCard, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId, targetInstanceIds, payFromPool });
 }
 
 export function giveChakra(state: GameState, player: PlayerId, amount: number): GameState {

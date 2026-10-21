@@ -95,7 +95,7 @@ export type MissionTrigger =
  */
 export interface MissionDef {
   id: string;
-  /** True if this Mission is capped at 1 copy per Character Deck instead of the Hand Deck's normal 3 (§10b). */
+  /** True if this Mission is capped at 1 copy per Character Deck instead of the Jutsu Deck's normal 3 (§10b). */
   unique?: boolean;
   tick: (state: GameState, owner: PlayerId, missionInstanceId: string, trigger: MissionTrigger) => { state: GameState; discard: boolean };
 }
@@ -111,7 +111,7 @@ export function getHandCardDef(id: string): HandCardDef | undefined {
   return registry[id];
 }
 
-/** Every registered Hand Deck card — the deck builder's card pool. */
+/** Every registered Jutsu Deck card — the deck builder's card pool. */
 export function listHandCardDefs(): HandCardDef[] {
   return Object.values(registry);
 }

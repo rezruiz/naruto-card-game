@@ -5,7 +5,7 @@ import { HAND_DECK_MANIFEST } from '../../src/engine/deck';
 
 const PRESET_HAND_SIZE = HAND_DECK_MANIFEST.reduce((sum, c) => sum + c.copies, 0);
 
-/** A legal custom deck: 50 Hand Deck cards, 12 characters within the rank caps. */
+/** A legal custom deck: 50 Jutsu Deck cards, 12 characters within the rank caps. */
 function legalDeck(): DeckList {
   return {
     id: 'test-deck',
@@ -52,13 +52,13 @@ describe('Deck library — deck lists (SPEC.md §2)', () => {
 
   it('flags deck sizes, copy limits and rank caps', () => {
     const deck = legalDeck();
-    expect(validateDeck({ ...deck, handDeck: { ...deck.handDeck, 'akatsuki-hideout': 1 } }).some((e) => e.includes('Hand Deck has 49'))).toBe(true);
+    expect(validateDeck({ ...deck, handDeck: { ...deck.handDeck, 'akatsuki-hideout': 1 } }).some((e) => e.includes('Jutsu Deck has 49'))).toBe(true);
     expect(validateDeck({ ...deck, handDeck: { ...deck.handDeck, substitution: 4 } }).some((e) => e.startsWith('Substitution: at most 3'))).toBe(true);
     expect(validateDeck({ ...deck, characterDeck: { ...deck.characterDeck, kakuzu: 2 } }).some((e) => e.includes('only D Rank'))).toBe(true);
     expect(validateDeck({ ...deck, characterDeck: { ...deck.characterDeck, 'amegakure-civilian-rebel': 5 } })).toEqual([]); // D Rank: any number (12 → 15 cards)
   });
 
-  it('copy limits: 3 per Hand Deck card, 1 per character, unlimited D Rank', () => {
+  it('copy limits: 3 per Jutsu Deck card, 1 per character, unlimited D Rank', () => {
     expect(copyLimit('hand', 'substitution')).toBe(3);
     expect(copyLimit('character', 'kakuzu')).toBe(1);
     expect(copyLimit('character', 'amegakure-civilian-rebel')).toBe(Infinity);
@@ -78,7 +78,7 @@ describe('Deck library — deck lists (SPEC.md §2)', () => {
     expect(characterPool().map((c) => c.id)).toEqual(expect.arrayContaining(['kakuzu', 'pain', 'amegakure-civilian-rebel']));
   });
 
-  it('the preset matches the starter decks (the preset Hand Deck manifest, 13 characters)', () => {
+  it('the preset matches the starter decks (the preset Jutsu Deck manifest, 13 characters)', () => {
     const { hand, characters } = toManifests(presetDeck());
     expect(hand.reduce((a, c) => a + c.copies, 0)).toBe(PRESET_HAND_SIZE);
     expect(characters).toHaveLength(13);

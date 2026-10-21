@@ -153,7 +153,7 @@ describe('Draw Phase (SPEC.md §4.3) — a manual draw, never automatic', () => 
     expect(state.players.p2.handDeck).toHaveLength(before);
   });
 
-  it('deals 3 Health damage instead of drawing when the Hand Deck is empty', () => {
+  it('deals 3 Health damage instead of drawing when the Jutsu Deck is empty', () => {
     let state = createSetupState('p2');
     state = chooseBoth(state);
     state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: [] } } };

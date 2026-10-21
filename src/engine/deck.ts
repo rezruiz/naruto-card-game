@@ -26,7 +26,7 @@ export function makeHandCardInstance(defId: string): HandCardInstance {
 }
 
 /**
- * The 48-card Akatsuki Hand Deck manifest — 2 short of SPEC §2's 50-card
+ * The 48-card Akatsuki Jutsu Deck manifest — 2 short of SPEC §2's 50-card
  * minimum (the build doesn't enforce deck size). 9 Missions, 34 Jutsu,
  * 3 Terrain, 2 Assist.
  */
@@ -82,7 +82,7 @@ registerChoiceResolver('look-and-take', (state, choice, optionIds) => {
 });
 
 /**
- * "Look at the top N cards of your Hand Deck; add 1 [cardType] card among
+ * "Look at the top N cards of your Jutsu Deck; add 1 [cardType] card among
  * them to your hand; shuffle the rest back" (Incoming Mission Assignment,
  * Battlefield Selection, §13b). N is fixed by the card (it states a value,
  * with no choice). WHICH matching card is taken is the player's pick — the
@@ -112,7 +112,7 @@ export function lookAndTakeMatching(
   }
   const setAside: GameState = { ...state, players: { ...state.players, [player]: { ...p, handDeck: rest } } };
   if (matches.length === 1) return takeLookedAtCard(setAside, player, seen, matches[0]);
-  return enqueueChoice(appendLog(setAside, `${player} looks at the top ${seen.length} card(s) of their Hand Deck.`), {
+  return enqueueChoice(appendLog(setAside, `${player} looks at the top ${seen.length} card(s) of their Jutsu Deck.`), {
     player,
     prompt: `Take which ${what} card? (Looking at: ${seen.map((c) => getHandCardDef(c.defId)?.name ?? c.defId).join(', ')}.) The rest are shuffled back.`,
     options: matches.map((c, i) => ({ id: c.instanceId, label: `${getHandCardDef(c.defId)?.name ?? c.defId}${matches.filter((m) => m.defId === c.defId).length > 1 ? ` (${i + 1})` : ''}` })),
@@ -204,13 +204,13 @@ export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 
 
 /**
  * SPEC.md §4.3/§10b's "whenever you're required to draw" deck-out rule: draw
- * 1 card from the Hand Deck, or take 3 Health damage instead if it's empty.
+ * 1 card from the Jutsu Deck, or take 3 Health damage instead if it's empty.
  * Used by the automatic Draw Phase draw and by any card effect that draws.
  */
 export function drawCard(state: GameState, player: PlayerId): GameState {
   const p = state.players[player];
   if (p.handDeck.length === 0) {
-    let next = appendLog(state, `${player}'s Hand Deck is empty — takes 3 Health damage instead of drawing.`);
+    let next = appendLog(state, `${player}'s Jutsu Deck is empty — takes 3 Health damage instead of drawing.`);
     return applyHealthLoss(next, player, 3);
   }
   const [card, ...rest] = p.handDeck;
@@ -329,10 +329,10 @@ function findLatestSpawnedId(state: GameState, player: PlayerId): string {
 }
 
 /**
- * SPEC.md §3: mulligan — shuffle your hand's Hand Deck cards back in and
+ * SPEC.md §3: mulligan — shuffle your hand's Jutsu Deck cards back in and
  * redraw. The first mulligan is free (a full new 6-card hand); every
  * mulligan after that draws exactly 1 fewer card than the previous draw.
- * Only affects Hand Deck ('card') entries — any Character cards already in
+ * Only affects Jutsu Deck ('card') entries — any Character cards already in
  * hand from the Setup draw are left untouched.
  */
 export function mulligan(state: GameState, player: PlayerId): GameState {

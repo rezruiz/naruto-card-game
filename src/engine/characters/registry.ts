@@ -31,6 +31,8 @@ export interface CharacterDef {
   grantsInspiringLeader?: boolean;
   /** Blocks the normal §5.3 Chakra-pooling action into this character (Zetsu's No Self-Pooling — only absorption effects fill his Pool). */
   noSelfPooling?: boolean;
+  /** Fires right after this character enters play, however it got there (Kakuzu's Heart Masks). */
+  onEnterPlay?: (state: GameState, instanceId: string, player: PlayerId) => GameState;
   /** Extra per-card state a fresh instance starts with (Kakuzu's hearts, Deidara's Clay Charges, ...). */
   initialExtra?: Record<string, unknown>;
   /**

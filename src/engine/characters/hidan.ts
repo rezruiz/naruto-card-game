@@ -18,17 +18,19 @@ function setExtra(state: GameState, instanceId: string, patch: Record<string, un
   return { ...state, players: { ...state.players, [player]: { ...p, backRow } } };
 }
 
-// Triple Scythe Sweep can target Hidan himself for 0 Chakra while his Curse
-// is active — a self-targeting exception, and the first ability with a
-// context-dependent cost validated by this pass.
+/** Curse Technique is running — it ends when the Cursed enemy leaves play (its reference is purged). */
+function cursing(hidan: { extra: Record<string, unknown> }): boolean {
+  return hidan.extra.curseActive === true && !!hidan.extra.cursedTarget;
+}
+
+// While Hidan's Curse is active, Triple Scythe Sweep costs 1 and may target
+// Hidan himself (dealing the Cursed enemy 1 extra).
 const tripleScytheSweep: AbilityDef = {
   id: 'triple-scythe-sweep',
   name: 'Triple Scythe Sweep',
   cost: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    const selfTarget = ctx.targetInstanceIds[0] === ctx.sourceInstanceId;
-    const curseActive = found && isCharacter(found.occupant) && found.occupant.extra.curseActive === true;
-    return selfTarget && curseActive ? 0 : 2;
+    return found && isCharacter(found.occupant) && cursing(found.occupant) ? 1 : 3;
   },
   speed: 'Normal',
   style: 'None',
@@ -36,36 +38,29 @@ const tripleScytheSweep: AbilityDef = {
   isDamaging: true,
   targetSide: 'any', // normally an enemy attack, but can self-target while Curse Technique is active
   legalityCheck: (ctx) => {
-    const target = ctx.targetInstanceIds[0];
-    const selfTarget = target === ctx.sourceInstanceId;
-    if (!selfTarget) return true;
+    if (ctx.targetInstanceIds[0] !== ctx.sourceInstanceId) return true;
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    if (!found || !(isCharacter(found.occupant))) return false;
-    const hidan = found.occupant;
-    // §6.5b-style same-turn restriction: can't self-target the turn the
-    // Curse was activated.
-    return hidan.extra.curseActive === true && hidan.extra.curseActivatedTurn !== ctx.state.turn;
+    return !!found && isCharacter(found.occupant) && cursing(found.occupant);
   },
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
     if (!target) return ctx.state;
-    const selfTarget = target === ctx.sourceInstanceId;
     let state = ctx.state;
 
-    if (selfTarget) {
-      // §6.5b-style floor: this self-damage can't drop Hidan below 3 HP.
+    if (target === ctx.sourceInstanceId) {
+      // Damage Hidan deals himself can't drop him below 3 HP.
       const found = findOccupant(state, ctx.sourceInstanceId);
       if (!found || !(isCharacter(found.occupant))) return state;
       const hidan = found.occupant;
       const cursedTarget = hidan.extra.cursedTarget as string | undefined;
-      const dmg = Math.min(2, Math.max(0, hidan.currentHP - 3));
+      const dmg = Math.min(1, Math.max(0, hidan.currentHP - 3));
       state = dealDamage(state, ctx.sourceInstanceId, dmg, { skipDamageTakenHook: true }).state;
-      // +1 extra damage to the Cursed enemy on self-inflicted hits.
+      // Mirrored onto the Cursed enemy, +1 extra.
       if (cursedTarget) state = dealDamage(state, cursedTarget, dmg + 1).state;
       return state;
     }
 
-    return dealDamage(state, target, 2).state;
+    return dealDamage(state, target, 1).state;
   },
 };
 
@@ -84,7 +79,8 @@ const curseTechnique: AbilityDef = {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     const target = ctx.targetInstanceIds[0];
     if (!found || !isCharacter(found.occupant) || !target) return false;
-    return ((found.occupant.extra.damagedEnemies as string[] | undefined) ?? []).includes(target);
+    // One Cursed enemy at a time.
+    return !cursing(found.occupant) && ((found.occupant.extra.damagedEnemies as string[] | undefined) ?? []).includes(target);
   },
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
@@ -113,7 +109,7 @@ registerCharacter({
   onEndPhase: (state, instanceId) => {
     const found = findOccupant(state, instanceId);
     if (!found || !(isCharacter(found.occupant))) return state;
-    const amount = found.occupant.extra.curseActive ? 2 : 1;
+    const amount = cursing(found.occupant) ? 2 : 1;
     return healOccupant(state, instanceId, amount);
   },
 });
@@ -186,7 +182,7 @@ registerDamageTakenHook(DEF_ID, (state, targetInstanceId, amount) => {
   const found = findOccupant(state, targetInstanceId);
   if (!found || !(isCharacter(found.occupant))) return null;
   const hidan = found.occupant;
-  if (!hidan.extra.curseActive) return null;
+  if (!cursing(hidan)) return null;
   const cursedTarget = hidan.extra.cursedTarget as string | undefined;
   if (!cursedTarget) return null;
   return dealDamage(state, cursedTarget, amount, { unattributed: true }).state;

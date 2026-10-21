@@ -11,7 +11,7 @@ const DEF_ID = 'yahiko';
 const bladeOfResolve: AbilityDef = {
   id: 'blade-of-resolve',
   name: 'Blade of Resolve',
-  cost: 2,
+  cost: 4,
   speed: 'Normal',
   style: 'None',
   type: 'Taijutsu',
@@ -22,27 +22,13 @@ const bladeOfResolve: AbilityDef = {
   },
 };
 
-const waterJetStream: AbilityDef = {
-  id: 'water-jet-stream',
-  name: 'Water Release: Water Jet Stream',
-  cost: 3,
-  speed: 'Normal',
-  style: 'Water',
-  type: 'Ninjutsu',
-  isDamaging: true,
-  resolve: (ctx) => {
-    const target = ctx.targetInstanceIds[0];
-    return target ? dealDamage(ctx.state, target, 3).state : ctx.state;
-  },
-};
-
 // Sets the engine's generic damage-prevention pool (combat.ts's dealDamage)
 // on Yahiko himself — consumed automatically against the next damage he
 // takes this turn.
 const waterPillarWall: AbilityDef = {
   id: 'water-pillar-wall',
   name: 'Water Release: Water Pillar Wall',
-  cost: 2,
+  cost: 3,
   speed: 'Normal',
   style: 'Water',
   type: 'Ninjutsu',
@@ -138,7 +124,7 @@ registerCharacter({
   baseMaxHP: 8,
   basePoolCapacity: 2,
   styles: ['Water', 'Fire', 'Wind'],
-  abilities: [bladeOfResolve, waterJetStream, waterPillarWall, rallyingWords],
+  abilities: [bladeOfResolve, waterPillarWall, rallyingWords],
   ultimate: yahikoSacrificesHimself,
   elementalVersatility: true,
   grantsInspiringLeader: true,

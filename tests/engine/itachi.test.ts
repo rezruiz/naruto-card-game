@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { activateAbility, checkLegality, findAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { dealDamage } from '../../src/engine/combat';
+import { makeHandCardInstance } from '../../src/engine/deck';
 import { freshCombat, giveChakra, resolveTop } from './testUtils';
+import type { GameState } from '../../src/engine/types';
 
 describe('Itachi', () => {
-  it('Deterioration caps Itachi at 2 ability activations per turn', () => {
+  it('Failing Health caps Itachi at 2 ability activations per turn', () => {
     let state = giveChakra(freshCombat(), 'p1', 10);
     state = activateAbility(state, 'p1-itachi', 'crow-shuriken-barrage', ['p2-kakuzu'], 0);
     state = resolveTop(state);
@@ -17,65 +19,24 @@ describe('Itachi', () => {
     expect(state.stack.length).toBe(stackBefore); // 3rd activation this turn rejected
   });
 
-  it('Mind Prison stuns the target (blocks abilities and pooling) and costs 1 instead of 3 against a lower rank', () => {
-    let state = giveChakra(freshCombat(), 'p1', 3);
-    // Itachi is S rank; every other starting character is A rank (lower) — full discount applies.
-    state = activateAbility(state, 'p1-itachi', 'genjutsu-mind-prison', ['p2-kakuzu'], 0);
-    expect(state.players.p1.genericChakraAvailable).toBe(2); // paid 1, not 3
-    state = resolveTop(state);
-
-    expect(state.players.p2.backRow[0]!.extra.stunnedUntilTurn).toBe(state.turn + 1); // through p2's next turn only, not a whole cycle
-
-    const ability = findAbility('kakuzu', 'earth-grudge-fear')!;
-    const legality = checkLegality(state, 'p2-kakuzu', ability, ['p1-kakuzu'], 0);
-    expect(legality.ok).toBe(false);
-
-    // Pooling into the stunned character is also blocked.
-    const poolBefore = state.players.p2.backRow[0]!.chakraPool.current;
-    state = { ...state, activePlayer: 'p2' };
-    const pooled = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p2-kakuzu', amount: 1 });
-    expect(pooled.players.p2.backRow[0]!.chakraPool.current).toBe(poolBefore);
-  });
-
-  it("Mind Prison cast on the opponent's own turn stuns them for the rest of that turn only", () => {
-    let state = giveChakra(freshCombat(), 'p1', 3);
-    state = { ...state, activePlayer: 'p2' };
-    state = activateAbility(state, 'p1-itachi', 'genjutsu-mind-prison', ['p2-kakuzu'], 0);
-    state = resolveTop(state);
-    expect(state.players.p2.backRow[0]!.extra.stunnedUntilTurn).toBe(state.turn);
-  });
-
-  it("Mind Prison can't be used on the same character twice, ever", () => {
-    let state = giveChakra(freshCombat(), 'p1', 3);
-    state = activateAbility(state, 'p1-itachi', 'genjutsu-mind-prison', ['p2-kakuzu'], 0);
-    state = resolveTop(state);
-
-    state = giveChakra(state, 'p1', 3);
+  it('Failing Health: never his Ultimate and his Forbidden Technique in the same turn', () => {
+    let state = giveChakra(freshCombat(), 'p1', 16);
+    state = resolveTop(activateAbility(state, 'p1-itachi', 'amaterasu', ['p2-itachi'], 0));
     const stackBefore = state.stack.length;
-    state = activateAbility(state, 'p1-itachi', 'genjutsu-mind-prison', ['p2-kakuzu'], 0);
+    state = activateAbility(state, 'p1-itachi', 'tsukuyomi-infinite-agony', ['p2-hidan'], 0);
     expect(state.stack.length).toBe(stackBefore);
   });
 
-  it('Crow Clone negates an enemy ability targeting Itachi before it resolves', () => {
-    let state = giveChakra(freshCombat(), 'p2', 3);
-    state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
-    state = activateAbility(state, 'p2-kakuzu', 'earth-grudge-fear', ['p1-itachi'], 0);
-    expect(state.stack).toHaveLength(1);
-
-    // p1 responds with Crow Clone instead of passing.
-    state = giveChakra(state, 'p1', 2);
-    state = activateAbility(state, 'p1-itachi', 'crow-clone', [], 0);
-    expect(state.stack).toHaveLength(2);
-
-    const itachiHpBefore = state.players.p1.backRow[4]!.currentHP;
-    state = gameReducer(state, { type: 'PASS_PRIORITY' });
-    state = gameReducer(state, { type: 'PASS_PRIORITY' }); // resolves Crow Clone, which removes Earth Grudge Fear
-    expect(state.stack).toHaveLength(0); // the negated ability never got its own resolution
-    expect(state.players.p1.backRow[4]!.currentHP).toBe(itachiHpBefore); // never took the damage
+  it('Tsukuyomi deals 5 and stuns for the next turn cycle — no Mind Prison needed', () => {
+    let state = giveChakra(freshCombat(), 'p1', 8);
+    const hp = state.players.p2.backRow[1]!.currentHP;
+    state = resolveTop(activateAbility(state, 'p1-itachi', 'tsukuyomi-infinite-agony', ['p2-hidan'], 0));
+    expect(state.players.p2.backRow[1]!.currentHP).toBe(hp - 5);
+    expect(state.players.p2.backRow[1]!.extra.stunnedUntilTurn).toBe(state.turn + 2);
   });
 
-  it('Amaterasu deals 3 immediately, then 2 more at the start of each of the next 2 of Itachi\'s controller\'s Upkeeps', () => {
-    let state = giveChakra(freshCombat(), 'p1', 7);
+  it('Amaterasu deals 3 immediately, then 1 more at the start of each of the next 3 of Itachi\'s controller\'s Upkeeps', () => {
+    let state = giveChakra(freshCombat(), 'p1', 8);
     // Target p2's own Itachi (11 HP) rather than Kakuzu, whose Five Hearts
     // would intercept a lethal-looking tick and muddy the HP math here.
     const hpBefore = state.players.p2.backRow[4]!.currentHP;
@@ -87,12 +48,80 @@ describe('Itachi', () => {
     for (let i = 0; i < 11; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
     expect(state.activePlayer).toBe('p1');
     expect(state.phase).toBe('Upkeep');
-    expect(state.players.p2.backRow[4]!.currentHP).toBe(hpBefore - 5); // 3 + 2
+    expect(state.players.p2.backRow[4]!.currentHP).toBe(hpBefore - 4);
 
-    // One full round later, the second tick fires.
-    for (let i = 0; i < 14; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
-    expect(state.players.p2.backRow[4]!.currentHP).toBe(hpBefore - 7); // 3 + 2 + 2
+    for (let round = 2; round <= 3; round++) {
+      for (let i = 0; i < 14; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
+      expect(state.players.p2.backRow[4]!.currentHP).toBe(hpBefore - 3 - round);
+    }
     expect(state.players.p1.backRow[4]!.extra.amaterasuSchedule).toEqual([]);
+  });
+});
+
+function withHandCard(state: GameState, player: 'p1' | 'p2', defId: string) {
+  const card = makeHandCardInstance(defId);
+  const p = state.players[player];
+  return { state: { ...state, players: { ...state.players, [player]: { ...p, hand: [...p.hand, { kind: 'card' as const, instanceId: card.instanceId, defId }] } } }, instanceId: card.instanceId };
+}
+const play = (s: GameState, instanceId: string, enabler: string, targets: string[] = []) =>
+  gameReducer(s, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: enabler, targetInstanceIds: targets, payFromPool: 0 });
+
+describe('Genjutsu: Mind Prison (Jutsu card)', () => {
+  it('costs 5 with a non-Genjutsu enabler, 2 with Itachi (3 for a Genjutsu user, −1 Genjutsu Master)', () => {
+    for (const [enabler, cost] of [['p1-kakuzu', 5], ['p1-itachi', 2]] as const) {
+      let { state, instanceId } = withHandCard(giveChakra(freshCombat(), 'p1', 5), 'p1', 'jutsu-mind-prison');
+      state = play(state, instanceId, enabler, ['p2-kakuzu']);
+      expect(state.stack).toHaveLength(1);
+      expect(state.players.p1.genericChakraAvailable).toBe(5 - cost);
+    }
+  });
+
+  it("stuns for the target's controller's turn: no abilities, no pooling, no enabling Jutsu cards", () => {
+    let { state, instanceId } = withHandCard(giveChakra(freshCombat(), 'p1', 5), 'p1', 'jutsu-mind-prison');
+    state = resolveTop(play(state, instanceId, 'p1-itachi', ['p2-kakuzu']));
+    expect(state.players.p2.backRow[0]!.extra.stunnedUntilTurn).toBe(state.turn + 1);
+
+    expect(checkLegality(state, 'p2-kakuzu', findAbility('kakuzu', 'earth-grudge-fear')!, ['p1-kakuzu'], 0).ok).toBe(false);
+    state = { ...state, activePlayer: 'p2' };
+    const poolBefore = state.players.p2.backRow[0]!.chakraPool.current;
+    expect(gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p2-kakuzu', amount: 1 }).players.p2.backRow[0]!.chakraPool.current).toBe(poolBefore);
+    const sub = withHandCard(giveChakra(state, 'p2', 4), 'p2', 'substitution');
+    expect(play(sub.state, sub.instanceId, 'p2-kakuzu').stack).toHaveLength(state.stack.length);
+  });
+
+  it("cast during the opponent's own turn, it lasts the rest of that turn only", () => {
+    let { state, instanceId } = withHandCard(giveChakra(freshCombat(), 'p1', 5), 'p1', 'jutsu-mind-prison');
+    state = resolveTop(play({ ...state, activePlayer: 'p2', priorityPlayer: 'p1' }, instanceId, 'p1-itachi', ['p2-kakuzu']));
+    expect(state.players.p2.backRow[0]!.extra.stunnedUntilTurn).toBe(state.turn);
+  });
+});
+
+describe('Genjutsu: Crow Clone (Jutsu card)', () => {
+  it('Itachi only', () => {
+    const { state, instanceId } = withHandCard(giveChakra(freshCombat(), 'p1', 2), 'p1', 'jutsu-crow-clone');
+    expect(play(state, instanceId, 'p1-kakuzu').stack).toHaveLength(0);
+  });
+
+  it('negates targeting of Itachi and all new damage to him for the rest of the turn — lingering damage still lands', () => {
+    let state = giveChakra(freshCombat(), 'p2', 4);
+    state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
+    state = activateAbility(state, 'p2-kakuzu', 'earth-grudge-fear', ['p1-itachi'], 0);
+    expect(state.stack).toHaveLength(1);
+
+    const card = withHandCard(giveChakra(state, 'p1', 2), 'p1', 'jutsu-crow-clone');
+    state = play({ ...card.state, priorityPlayer: 'p1' }, card.instanceId, 'p1-itachi');
+    expect(state.stack).toHaveLength(2);
+    expect(state.players.p1.genericChakraAvailable).toBe(1); // 2, −1 for Genjutsu Master
+
+    const hp = state.players.p1.backRow[4]!.currentHP;
+    state = gameReducer(state, { type: 'PASS_PRIORITY' });
+    state = gameReducer(state, { type: 'PASS_PRIORITY' });
+    expect(state.stack).toHaveLength(0); // the attack lost its only target
+    expect(state.players.p1.backRow[4]!.currentHP).toBe(hp);
+
+    expect(checkLegality(state, 'p2-hidan', findAbility('hidan', 'triple-scythe-sweep')!, ['p1-itachi'], 0).ok).toBe(false);
+    expect(dealDamage(state, 'p1-itachi', 3).dealt).toBe(0);
+    expect(dealDamage(state, 'p1-itachi', 1, { ongoing: true, cannotBeReduced: true }).state.players.p1.backRow[4]!.currentHP).toBe(hp - 1);
   });
 });
 
@@ -108,7 +137,7 @@ describe('Lingering effects on a defeated unit are dropped', () => {
           ...state.players.p1,
           backRow: state.players.p1.backRow.map((c, i) =>
             i === itachiIndex && c
-              ? { ...c, extra: { ...c.extra, amaterasuSchedule: [{ targetInstanceId: 'p2-kisame', ticksLeft: 2 }], mindPrisonUsedOn: ['p2-kisame'], damageTakenFrom: { 'p2-kisame': 3 } } }
+              ? { ...c, extra: { ...c.extra, amaterasuSchedule: [{ targetInstanceId: 'p2-kisame', ticksLeft: 2 }], damageTakenFrom: { 'p2-kisame': 3 } } }
               : c,
           ),
         },
@@ -117,7 +146,6 @@ describe('Lingering effects on a defeated unit are dropped', () => {
     state = dealDamage(state, 'p2-kisame', 9999).state;
     const itachi = state.players.p1.backRow[itachiIndex]!;
     expect(itachi.extra.amaterasuSchedule).toEqual([]);
-    expect(itachi.extra.mindPrisonUsedOn).toEqual([]);
     expect(itachi.extra.damageTakenFrom).toEqual({});
   });
 });

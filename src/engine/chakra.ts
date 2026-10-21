@@ -41,7 +41,7 @@ export function placeChakraSource(state: GameState, instanceId: string): GameSta
   if (!entry) {
     return appendLog(working, `${player} has no such card in hand to place as a Chakra source.`);
   }
-  // IMPLEMENTATION_PLAN.md's flagged assumption: only Hand Deck cards
+  // IMPLEMENTATION_PLAN.md's flagged assumption: only Jutsu Deck cards
   // (Jutsu/Mission/Terrain/Assist) can be Consumed this way, not an
   // as-yet-unplayed Character card.
   if (entry.kind !== 'card') {

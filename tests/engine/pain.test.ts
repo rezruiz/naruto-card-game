@@ -78,9 +78,9 @@ describe('Pain of the Six Paths', () => {
   it('Mechanized Guard negates a Physical attack on any Path, but not a Ninjutsu one', () => {
     const { state: base, ids } = withSixPaths(freshCombat(), 'p1');
     let state = { ...base, activePlayer: 'p2' as const, priorityPlayer: 'p2' as const };
-    state = giveChakra(state, 'p2', 4);
-    // Searing Migraine is Ninjutsu — Mechanized Guard shouldn't be able to intercept it.
-    state = activateAbility(state, 'p2-kakuzu', 'searing-migraine', [ids['human-path']], 0);
+    state = giveChakra(state, 'p2', 5);
+    // Thousand Hungry Sharks is Ninjutsu — Mechanized Guard shouldn't be able to intercept it.
+    state = activateAbility(state, 'p2-kisame', 'thousand-hungry-sharks', [ids['human-path']], 0);
     expect(state.stack).toHaveLength(1);
 
     state = giveChakra(state, 'p1', 2);

@@ -100,14 +100,14 @@ export interface TokenInstance {
 
 export type BoardOccupant = CharacterInstance | TokenInstance;
 
-/** A Jutsu/Mission/Terrain/Assist card drawn from the 40-card Hand Deck (SPEC.md §2, §10c). */
+/** A Jutsu/Mission/Terrain/Assist card drawn from the 40-card Jutsu Deck (SPEC.md §2, §10c). */
 export interface HandCardInstance {
   instanceId: string;
   defId: string;
 }
 
 /**
- * A single entry in a player's hand — either a Hand Deck card, or a
+ * A single entry in a player's hand — either a Jutsu Deck card, or a
  * Character card drawn via a Character Deck trigger (§8) and not yet
  * played. Both live in the same "hand" zone per SPEC.md §2/§8, even though
  * they come from two entirely separate decks.
@@ -154,7 +154,7 @@ export interface PlayerState {
   pendingHandReveal: { requestedBy: PlayerId; count: number } | null;
   /** Hand cards this player has revealed (Field Intelligence) — shown to the opponent even over the network until they leave hand or the turn ends. */
   revealedHandCards: string[];
-  /** Remaining shuffled Hand Deck (Jutsu/Mission/Terrain/Assist cards), §2. */
+  /** Remaining shuffled Jutsu Deck (Jutsu/Mission/Terrain/Assist cards), §2. */
   handDeck: HandCardInstance[];
   /** Remaining shuffled Character Deck, as entry ids (§2, §8) — see characters/deckEntries.ts. */
   characterDeck: string[];

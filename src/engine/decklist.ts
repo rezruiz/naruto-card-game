@@ -1,7 +1,7 @@
 import { CHARACTER_DECK_MANIFEST, getCharacterDeckEntry, listCharacterDeckEntries } from './characters';
 import { HAND_DECK_MANIFEST } from './deck';
 import { getHandCardDef, getMissionDef, listHandCardDefs } from './cards/registry';
-// Side-effect import — every Hand Deck card must be registered before the card pool is listed.
+// Side-effect import — every Jutsu Deck card must be registered before the card pool is listed.
 import './cards';
 import type { HandCardDef } from './cards/registry';
 import type { CharacterDeckEntry } from './characters';
@@ -14,7 +14,7 @@ import type { CharacterDeckEntry } from './characters';
 export interface DeckList {
   id: string;
   name: string;
-  /** Hand Deck card def id → copies. */
+  /** Jutsu Deck card def id → copies. */
   handDeck: Record<string, number>;
   /** Character Deck entry id → copies (more than 1 only for D Rank). */
   characterDeck: Record<string, number>;
@@ -29,7 +29,7 @@ export const CHARACTER_DECK_MIN = 12;
 export const CHARACTER_DECK_MAX = 18;
 export const RANK_CAPS: Partial<Record<CharacterDeckEntry['rank'], number>> = { S: 3, A: 4, B: 4 };
 
-/** How many copies of a card a deck may hold (§2/§10b): 3 for a Hand Deck card (1 for a Unique Mission); 1 for a character (unlimited for D Rank). */
+/** How many copies of a card a deck may hold (§2/§10b): 3 for a Jutsu Deck card (1 for a Unique Mission); 1 for a character (unlimited for D Rank). */
 export function copyLimit(kind: 'hand' | 'character', id: string): number {
   if (kind === 'hand') return getMissionDef(id)?.unique ? 1 : 3;
   return getCharacterDeckEntry(id)?.rank === 'D' ? Infinity : 1;
@@ -58,10 +58,10 @@ export function characterDeckSize(deck: DeckList): number {
 export function validateDeck(deck: DeckList): string[] {
   const errors: string[] = [];
   const hand = handDeckSize(deck);
-  if (hand < HAND_DECK_MIN || hand > HAND_DECK_MAX) errors.push(`Hand Deck has ${hand} cards — it needs ${HAND_DECK_MIN}–${HAND_DECK_MAX}.`);
+  if (hand < HAND_DECK_MIN || hand > HAND_DECK_MAX) errors.push(`Jutsu Deck has ${hand} cards — it needs ${HAND_DECK_MIN}–${HAND_DECK_MAX}.`);
   for (const [id, copies] of Object.entries(deck.handDeck)) {
     const def = getHandCardDef(id);
-    if (!def) errors.push(`Unknown Hand Deck card: ${id}.`);
+    if (!def) errors.push(`Unknown Jutsu Deck card: ${id}.`);
     else if (copies > copyLimit('hand', id)) errors.push(`${def.name}: at most ${copyLimit('hand', id)} ${copyLimit('hand', id) === 1 ? 'copy' : 'copies'}.`);
   }
 
@@ -83,7 +83,7 @@ export function validateDeck(deck: DeckList): string[] {
   return errors;
 }
 
-/** The deck as the engine builds it: a Hand Deck manifest and a Character Deck list. Unknown ids are dropped. */
+/** The deck as the engine builds it: a Jutsu Deck manifest and a Character Deck list. Unknown ids are dropped. */
 export function toManifests(deck: DeckList): { hand: { defId: string; copies: number }[]; characters: string[] } {
   const hand = Object.entries(deck.handDeck)
     .filter(([id, copies]) => copies > 0 && getHandCardDef(id))

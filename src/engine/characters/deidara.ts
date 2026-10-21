@@ -43,20 +43,6 @@ function makeClaySpider(owner: PlayerId, ownerInstanceId: string): TokenInstance
   };
 }
 
-// Usable up to 3 times/turn — overrides the default once-per-turn cap
-// (SPEC.md §9).
-const explosiveClay: AbilityDef = {
-  id: 'explosive-clay',
-  name: 'Explosive Clay',
-  cost: 1,
-  speed: 'Normal',
-  style: 'Explosion',
-  type: 'Ninjutsu',
-  usesPerTurn: 3,
-  maxTargets: 0,
-  resolve: (ctx) => appendLog(addClayCharges(ctx.state, ctx.sourceInstanceId, 1), 'Deidara generates 1 Clay Charge.'),
-};
-
 // Usable twice/turn — overrides the default once-per-turn cap. The 5-token
 // cap is enforced here rather than in the shared pipeline, since it's a
 // card-specific number on top of the flat 10-slot front row (SPEC.md §10).
@@ -80,8 +66,9 @@ const clSpiderAbility: AbilityDef = {
     if (!found) return ctx.state;
     const token = makeClaySpider(found.player, ctx.sourceInstanceId);
     // Clay Spiders have Ambush — no Field Orientation; they can act the turn they're made.
-    const next = placeToken(ctx.state, found.player, { ...token, status: { ...token.status, hasAmbush: true } }, { askPosition: true });
-    return appendLog(next, 'Deidara creates a Clay Spider token.');
+    let next = placeToken(ctx.state, found.player, { ...token, status: { ...token.status, hasAmbush: true } }, { askPosition: true });
+    next = addClayCharges(next, ctx.sourceInstanceId, 1);
+    return appendLog(next, `Deidara creates a Clay Spider token and gains 1 Clay Charge (${clayCharges(next, ctx.sourceInstanceId)}).`);
   },
 };
 
@@ -90,14 +77,14 @@ const clSpiderAbility: AbilityDef = {
 const detonationArt: AbilityDef = {
   id: 'detonation-art',
   name: 'Detonation Art',
-  cost: 3,
+  cost: 4,
   speed: 'Normal',
   style: 'Explosion',
   type: 'Ninjutsu',
   isDamaging: true,
   choices: (ctx) =>
     clayCharges(ctx.state, ctx.sourceInstanceId) >= 1
-      ? [{ id: 'spendCharge', kind: 'yesno', prompt: 'Spend 1 Clay Charge for 4 damage instead of 2?' }]
+      ? [{ id: 'spendCharge', kind: 'yesno', prompt: 'Spend 1 Clay Charge for 3 damage instead of 1?' }]
       : [],
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
@@ -110,7 +97,7 @@ const detonationArt: AbilityDef = {
         ? `Deidara spends 1 Clay Charge (${clayCharges(state, ctx.sourceInstanceId)} left) — upgraded Detonation Art.`
         : 'Deidara uses the base Detonation Art (no Clay Charge spent).',
     );
-    return dealDamage(state, target, upgraded ? 4 : 2).state;
+    return dealDamage(state, target, upgraded ? 3 : 1).state;
   },
 };
 
@@ -119,7 +106,7 @@ const detonationArt: AbilityDef = {
 const c3ShiSuri: AbilityDef = {
   id: 'c3-shi-suri',
   name: 'C3, Shi-Suri',
-  cost: 5,
+  cost: 7,
   speed: 'Normal',
   style: 'Explosion',
   type: 'Ninjutsu',
@@ -135,7 +122,7 @@ const c3ShiSuri: AbilityDef = {
     const target = ctx.targetInstanceIds[0];
     if (!target) return ctx.state;
     let state = addClayCharges(ctx.state, ctx.sourceInstanceId, -5);
-    state = dealDamage(state, target, 5).state;
+    state = dealDamage(state, target, 4).state;
 
     const found = findOccupant(state, target);
     if (found) {
@@ -206,13 +193,13 @@ const deathIsAnExplosionV1: AbilityDef = {
   resolve: (ctx) => {
     if (!findOccupant(ctx.state, ctx.sourceInstanceId)) return ctx.state;
     let state = addClayCharges(ctx.state, ctx.sourceInstanceId, -4);
-    state = deathIsAnExplosionBlast(state, ctx.sourceInstanceId, 8, 3);
+    state = deathIsAnExplosionBlast(state, ctx.sourceInstanceId, 7, 3);
     return deidaraDies(state, ctx.sourceInstanceId);
   },
 };
 
 // Version 2: a replacement for his death — when Deidara would be defeated
-// with a full Pool and 5 Clay Charges, he stays at 0 HP for a moment and his
+// with a full Pool and 4 Clay Charges, he stays at 0 HP for a moment and his
 // controller is ASKED whether to go out with the blast (never automatic).
 // Damage can't pause mid-resolution for a Reactive activation, so the
 // trigger is the defeat itself (a defeat hook), answered via a pending choice.
@@ -241,11 +228,11 @@ registerDefeatHook(DEF_ID, (state, instanceId) => {
   const deidara = found.occupant;
   if (deidara.extra.deathResolved) return null; // his decision is made — the defeat goes through
   if (deidara.extra.deathPending) return state; // already waiting on the answer; stays at 0 HP
-  if (!poolIsFull(state, instanceId) || clayCharges(state, instanceId) < 5) return null;
+  if (!poolIsFull(state, instanceId) || clayCharges(state, instanceId) < 4) return null;
   const marked = patchCharacter(state, instanceId, (d) => ({ ...d, extra: { ...d.extra, deathPending: true } }));
   return enqueueChoice(appendLog(marked, 'Deidara would be defeated — he can go out with Death is an Explosion.'), {
     player: found.player,
-    prompt: `Deidara would be defeated. Activate Death is an Explosion (Version 2)? Costs 6 Chakra + his entire Pool + 5 Clay Charges: 8 damage to every enemy, 5 to every ally. He dies either way.`,
+    prompt: `Deidara would be defeated. Activate Death is an Explosion (Version 2)? Costs 6 Chakra + his entire Pool + 4 Clay Charges: 7 damage to every enemy, 5 to every ally. He dies either way.`,
     options: [
       { id: 'activate', label: 'Activate — Art is an Explosion!' },
       { id: 'decline', label: 'Decline — just fall' },
@@ -272,8 +259,8 @@ registerChoiceResolver(V2_ID, (state, choice, optionIds) => {
   let next = generic < 6 ? appendWarning(state, `${player} is short ${6 - generic} Chakra for Death is an Explosion (trust mode — allowed).`) : state;
   next = { ...next, players: { ...next.players, [player]: { ...next.players[player], genericChakraAvailable: Math.max(0, generic - 6), fadingGenericChakra: Math.max(0, next.players[player].fadingGenericChakra - (6)) } } };
   next = patchCharacter(next, instanceId, (d) => ({ ...d, chakraPool: { ...d.chakraPool, current: 0 } }));
-  next = addClayCharges(next, instanceId, -5);
-  next = deathIsAnExplosionBlast(next, instanceId, 8, 5);
+  next = addClayCharges(next, instanceId, -4);
+  next = deathIsAnExplosionBlast(next, instanceId, 7, 5);
   return deidaraDies(next, instanceId);
 });
 
@@ -290,13 +277,13 @@ function removeSpiders(state: GameState, player: PlayerId, ids: string[]): GameS
 }
 
 // "Choose any number of your Clay Spider tokens and 1 target; they all
-// detonate against it for 1 damage each. 1 Chakra total per activation,
+// detonate against it for 1 damage each. 3 Chakra total per activation,
 // regardless of spider count." How many spiders is the player's choice;
 // the activating spider is always one of them. Detonated spiders are gone.
 const selfDetonate: AbilityDef = {
   id: 'self-detonate',
   name: 'Self Detonate',
-  cost: 1,
+  cost: 3,
   speed: 'Quick',
   style: 'None', // Tokens can't carry Styles yet — Explosion is flavor here (same as Pain's Paths)
   type: 'Ninjutsu',
@@ -357,8 +344,8 @@ registerCharacter({
   baseMaxHP: 10,
   basePoolCapacity: 3,
   styles: ['Explosion', 'Earth'],
-  abilities: [explosiveClay, clSpiderAbility, detonationArt, deathIsAnExplosionV1, deathIsAnExplosionV2],
+  abilities: [clSpiderAbility, detonationArt, deathIsAnExplosionV1, deathIsAnExplosionV2],
   ultimate: c3ShiSuri,
-  initialExtra: { clayCharges: 1 }, // Art is an Explosion: starts with 1 Clay Charge.
+  initialExtra: { clayCharges: 0 },
   synergy: ['Akatsuki'],
 });

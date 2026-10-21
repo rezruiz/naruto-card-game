@@ -951,7 +951,7 @@ function ViewGame({
             <div className="deck-actions">
               {state.phase === 'Draw' && !state.players[state.activePlayer].drawnThisDrawPhase && (
                 <button type="button" onClick={() => dispatch({ type: 'DRAW_PHASE_CARD' })} title="Your once-per-turn Draw Phase draw">
-                  {state.turn === 1 && state.activePlayer === state.firstPlayer ? 'Skip first-turn draw' : `Draw (Hand Deck: ${state.players[state.activePlayer].handDeck.length})`}
+                  {`Draw (Jutsu Deck: ${state.players[state.activePlayer].handDeck.length})`}
                 </button>
               )}
             </div>

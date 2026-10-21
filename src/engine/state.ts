@@ -3,7 +3,7 @@ import { BACK_ROW_SIZE, FRONT_ROW_SIZE } from './board';
 import { createCharacterInstance, CHARACTER_DECK_MANIFEST } from './characters';
 import { buildHandDeck, drawCard, revealCharacters, shuffle } from './deck';
 import { toManifests, type DeckList } from './decklist';
-// Side-effect import — registers every Hand Deck card (Jutsu/Assist/
+// Side-effect import — registers every Jutsu Deck card (Jutsu/Assist/
 // Terrain/Mission) before any deck is built.
 import './cards';
 

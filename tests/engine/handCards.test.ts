@@ -205,12 +205,13 @@ describe('Fireball Jutsu', () => {
   it('deals 3 to the target and 1 to each of up to 2 chosen adjacent characters, costing 3 from the Pool', () => {
     let { state, instanceId } = withHandCard(freshMain1(), 'p1', 'fireball-jutsu');
     state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Attack-type Jutsu are Combat-only
-    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c, i) => (i === 0 && c ? { ...c, chakraPool: { ...c.chakraPool, current: 3 } } : c)) } } };
+    // Itachi enables it (Fire, and no Elemental Versatility to muddy the cost).
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c, i) => (i === 4 && c ? { ...c, chakraPool: { ...c.chakraPool, current: 3 } } : c)) } } };
     const before = [0, 1, 2, 3].map((i) => hp(state, i));
 
-    state = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-hidan', 'p2-kakuzu', 'p2-deidara'], payFromPool: 3 });
+    state = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-itachi', targetInstanceIds: ['p2-hidan', 'p2-kakuzu', 'p2-deidara'], payFromPool: 3 });
     expect(state.stack).toHaveLength(1);
-    expect(state.players.p1.backRow[0]!.chakraPool.current).toBe(0);
+    expect(state.players.p1.backRow[4]!.chakraPool.current).toBe(0);
     state = resolveTop(state);
     expect(hp(state, 1)).toBe(before[1] - 3);
     expect(hp(state, 0)).toBe(before[0] - 1);
@@ -227,14 +228,14 @@ describe('Fireball Jutsu', () => {
 });
 
 describe("Kakuzu's mask cards", () => {
-  it('Searing Migraine (enabled by Kakuzu) deals 4 for 3 Chakra; Pressure Damage hits up to 2 enemies for 2', () => {
+  it('Searing Migraine (enabled by Kakuzu) deals 4 for 3 Chakra — 2 with his Elemental Versatility; Pressure Damage hits up to 2 enemies for 2', () => {
     let state = gameReducer(giveChakra(freshMain1(), 'p1', 6), { type: 'ADVANCE_PHASE' }); // Combat
     const hp = (s: GameState, i: number) => s.players.p2.backRow[i]!.currentHP;
     const before = [hp(state, 1), hp(state, 2), hp(state, 3)];
 
     const migraine = withHandCard(state, 'p1', 'jutsu-searing-migraine');
     state = gameReducer(migraine.state, { type: 'PLAY_HAND_CARD', instanceId: migraine.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-hidan'], payFromPool: 0 });
-    expect(state.players.p1.genericChakraAvailable).toBe(3);
+    expect(state.players.p1.genericChakraAvailable).toBe(4);
     state = resolveTop(state);
     expect(hp(state, 1)).toBe(before[0] - 4);
 
@@ -341,7 +342,7 @@ describe('Akatsuki Hideout (Terrain)', () => {
 describe('Missions (SPEC.md §13a)', () => {
   it('Bingo Book: Threat Level C draws a card when a C-rank enemy is defeated', () => {
     let { state, instanceId } = withHandCard(freshMain1(), 'p1', 'bingo-book-c');
-    // freshMain1()'s quick-start players have an empty Hand Deck by default
+    // freshMain1()'s quick-start players have an empty Jutsu Deck by default
     // — give p1 something to actually draw, so the "Draw a card" reward has
     // something to prove rather than triggering the deck-out damage rule.
     state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: [makeHandCardInstance('explosive-tag')] } } };

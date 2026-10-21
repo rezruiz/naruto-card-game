@@ -228,7 +228,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
             Characters
           </button>
           <button type="button" role="tab" aria-selected={tab === 'hand'} className={tab === 'hand' ? 'active' : ''} onClick={() => setTab('hand')}>
-            Hand Deck cards
+            Jutsu Deck cards
           </button>
         </div>
         <div className="collection__filters">
@@ -329,7 +329,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
             </span>
           ))}
         </div>
-        <CountBar label="Hand Deck" count={handDeckSize(deck)} min={HAND_DECK_MIN} max={HAND_DECK_MAX} />
+        <CountBar label="Jutsu Deck" count={handDeckSize(deck)} min={HAND_DECK_MIN} max={HAND_DECK_MAX} />
 
         <div className="deck-panel__list">
           <h3>Characters</h3>
@@ -341,7 +341,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
               <span className="deck-row__count">×{deck.characterDeck[c.id]}</span>
             </button>
           ))}
-          <h3>Hand Deck</h3>
+          <h3>Jutsu Deck</h3>
           {deckHand.length === 0 && <p className="deck-panel__empty">No cards yet.</p>}
           {deckHand.map((d) => (
             <button type="button" key={d.id} className={`deck-row deck-row--${d.cardType}`} disabled={readOnly} title={readOnly ? undefined : 'Remove one'} onClick={() => setCount('hand', d.id, -1)}>

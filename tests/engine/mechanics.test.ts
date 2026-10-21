@@ -7,7 +7,7 @@ import { registerHandCard } from '../../src/engine/cards/registry';
 import { makeHandCardInstance } from '../../src/engine/deck';
 import { gameReducer } from '../../src/engine/reducer';
 import type { AbilityChoices, GameState, PlayerId, TokenInstance } from '../../src/engine/types';
-import { freshCombat, freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
+import { freshCombat, freshMain1, giveChakra, playCard, resolveTop, withCharacterAt } from './testUtils';
 
 // Engine mechanics that used to be "simplified": source-aware damage modifiers, cost modifiers,
 // kill/damage tracking, redirects, and Pain's Rinnegan/Almighty Push/Beast bookkeeping.
@@ -44,26 +44,26 @@ function withPaths(s: GameState, owner: PlayerId): { s: GameState; paths: TokenI
 describe('Damage modifiers (who hits, with what)', () => {
   it("Konan's Paper Body: −2 from Taijutsu, +1 from Fire", () => {
     const s = withCharacterAt(freshCombat(), 'p1', 0, 'konan');
-    expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-konan']), 'p1-konan')).toBe(11); // 2 − 2
-    expect(hp(hit(s, 'p2-kakuzu', 'searing-migraine', ['p1-konan']), 'p1-konan')).toBe(6); // 4 + 1
+    expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-konan']), 'p1-konan')).toBe(11); // 1 − 2
+    expect(hp(hit(s, 'p2-itachi', 'great-fireball-technique', ['p1-konan']), 'p1-konan')).toBe(8); // Fire 2 + 1
   });
 
   it("Juzo's Iron-Forged Body: −1 from Taijutsu, never below 1", () => {
     const s = withCharacterAt(freshCombat(), 'p1', 0, 'juzo');
-    expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-juzo']), 'p1-juzo')).toBe(8); // 2 − 1
+    expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-juzo']), 'p1-juzo')).toBe(8); // 1 stays 1
     expect(hp(hit(s, 'p2-kakuzu', 'earth-grudge-fear', ['p1-juzo']), 'p1-juzo')).toBe(8); // 1 stays 1
   });
 
-  it("Itachi's Sharingan Foresight: −1 from Quick abilities targeting him", () => {
-    const s = freshCombat();
-    expect(hp(hit(s, 'p2-kakuzu', 'false-darkness', ['p1-itachi']), 'p1-itachi')).toBe(10); // Quick 2 − 1
-    expect(hp(hit(s, 'p2-kakuzu', 'searing-migraine', ['p1-itachi']), 'p1-itachi')).toBe(7); // Normal 4
+  it("Itachi's Sharingan Foresight: −1 from Quick abilities and Quick Jutsu targeting him", () => {
+    const s = giveChakra({ ...freshCombat(), activePlayer: 'p2', priorityPlayer: 'p2' }, 'p2', 20);
+    expect(hp(resolveTop(playCard(s, 'p2', 'jutsu-false-darkness', 'p2-kakuzu', ['p1-itachi'])), 'p1-itachi')).toBe(10); // Quick 2 − 1
+    expect(hp(hit(s, 'p2-kisame', 'thousand-hungry-sharks', ['p1-itachi']), 'p1-itachi')).toBe(7); // Normal 4
   });
 
-  it("Kakuzu's Iron Skin: −2 physical and −1 elemental until the end of the next turn", () => {
-    let s = hit(freshCombat(), 'p1-kakuzu', 'iron-skin', ['p2-deidara']);
-    expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-kakuzu']), 'p1-kakuzu')).toBe(5); // 2 − 2
-    s = hit(s, 'p2-kakuzu', 'searing-migraine', ['p1-kakuzu']); // Fire Ninjutsu 4 − 1
+  it("Kakuzu's Iron Skin: −2 physical and −2 elemental until the end of the next turn", () => {
+    let s = hit(freshCombat(), 'p1-kakuzu', 'iron-skin', []);
+    expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-kakuzu']), 'p1-kakuzu')).toBe(4); // 1 − 2
+    s = hit(s, 'p2-kisame', 'thousand-hungry-sharks', ['p1-kakuzu']); // Water Ninjutsu 4 − 2
     expect(hp(s, 'p1-kakuzu')).toBe(2);
   });
 
@@ -72,7 +72,7 @@ describe('Damage modifiers (who hits, with what)', () => {
     s = resolveTop(use({ ...s, phase: 'Main1' }, 'p1-yahiko', 'rallying-words', []));
     const before = hp(s, 'p2-deidara');
     s = hit(s, 'p1-hidan', 'triple-scythe-sweep', ['p2-deidara']);
-    expect(before - hp(s, 'p2-deidara')).toBe(3); // 2 + 1
+    expect(before - hp(s, 'p2-deidara')).toBe(2); // 1 + 1
     expect(unit(s, 'p1-hidan').extra.rallyingSpentOn).toBeDefined(); // used up
   });
 
@@ -90,30 +90,32 @@ describe('Damage modifiers (who hits, with what)', () => {
 describe('Cost modifiers', () => {
   it('attackers targeting a transformed Kisame pay +1', () => {
     const s = setExtra(freshCombat(), 'p2-kisame', { transformed: true });
-    expect(use(s, 'p1-hidan', 'triple-scythe-sweep', ['p2-kisame']).players.p1.genericChakraAvailable).toBe(17); // 2 + 1
-    expect(use(s, 'p1-hidan', 'triple-scythe-sweep', ['p2-deidara']).players.p1.genericChakraAvailable).toBe(18);
+    expect(use(s, 'p1-hidan', 'triple-scythe-sweep', ['p2-kisame']).players.p1.genericChakraAvailable).toBe(16); // 3 + 1
+    expect(use(s, 'p1-hidan', 'triple-scythe-sweep', ['p2-deidara']).players.p1.genericChakraAvailable).toBe(17);
   });
 
   it("Bingo Book C's reward: the next ability of the character that made the kill costs 2 less (once)", () => {
     let s = setExtra(freshCombat(), 'p1-hidan', { nextAbilityDiscount: 2 });
     s = use(s, 'p1-hidan', 'triple-scythe-sweep', ['p2-deidara']);
-    expect(s.players.p1.genericChakraAvailable).toBe(20); // 2 − 2
+    expect(s.players.p1.genericChakraAvailable).toBe(19); // 3 − 2
     expect(unit(s, 'p1-hidan').extra.nextAbilityDiscount).toBe(0);
   });
 
-  it("Uchiha Prodigy: a Quick Jutsu card Itachi could use costs 1 less while he's in play", () => {
-    registerHandCard({ id: 't-quick-jutsu', name: 'Test Quick Jutsu', cardType: 'jutsu', cost: 3, speed: 'Quick', style: 'None', type: 'Ninjutsu', maxTargets: 0, timing: 'either', resolve: (ctx) => ctx.state });
-    const card = makeHandCardInstance('t-quick-jutsu');
-    let s = giveChakra({ ...freshCombat(), priorityPlayer: 'p1' }, 'p1', 10);
-    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [{ kind: 'card', ...card }] } } };
-    s = gameReducer(s, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: [], payFromPool: 0 });
-    expect(s.players.p1.genericChakraAvailable).toBe(8); // 3 − 1
+  it('Genjutsu Master: a Genjutsu card Itachi enables costs 1 less (min 1) — not when someone else enables it', () => {
+    registerHandCard({ id: 't-genjutsu', name: 'Test Genjutsu', cardType: 'jutsu', cost: 3, speed: 'Quick', style: 'None', type: 'Genjutsu', maxTargets: 0, timing: 'either', resolve: (ctx) => ctx.state });
+    for (const [enabler, paid] of [['p1-itachi', 2], ['p1-kakuzu', 3]] as const) {
+      const card = makeHandCardInstance('t-genjutsu');
+      let s = giveChakra({ ...freshCombat(), priorityPlayer: 'p1' }, 'p1', 10);
+      s = { ...s, players: { ...s.players, p1: { ...s.players.p1, hand: [{ kind: 'card', ...card }] } } };
+      s = gameReducer(s, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: enabler, targetInstanceIds: [], payFromPool: 0 });
+      expect(s.players.p1.genericChakraAvailable).toBe(10 - paid);
+    }
   });
 });
 
 describe('Conditions that track who damaged or defeated whom', () => {
   it("Hidan can't be targeted by his own side while his Curse is active", () => {
-    const s = setExtra(freshCombat(), 'p1-hidan', { curseActive: true });
+    const s = setExtra(freshCombat(), 'p1-hidan', { curseActive: true, cursedTarget: 'p2-kisame' });
     expect(use(s, 'p1-kakuzu', 'earth-grudge-fear', ['p1-hidan']).stack).toHaveLength(0);
   });
 
@@ -124,11 +126,11 @@ describe('Conditions that track who damaged or defeated whom', () => {
   });
 
   it("Tsukuyomi: refused against a target that has dealt Itachi more than 6 damage", () => {
-    const base = setExtra(freshCombat(), 'p1-itachi', { mindPrisonUsedOn: ['p2-hidan'] });
+    const base = freshCombat();
     expect(use(setExtra(base, 'p1-itachi', { damageTakenFrom: { 'p2-hidan': 7 } }), 'p1-itachi', 'tsukuyomi-infinite-agony', ['p2-hidan']).stack).toHaveLength(0);
     expect(use(setExtra(base, 'p1-itachi', { damageTakenFrom: { 'p2-hidan': 6 } }), 'p1-itachi', 'tsukuyomi-infinite-agony', ['p2-hidan']).stack).toHaveLength(1);
     const tallied = hit(freshCombat(), 'p2-hidan', 'triple-scythe-sweep', ['p1-itachi']);
-    expect(unit(tallied, 'p1-itachi').extra.damageTakenFrom).toEqual({ 'p2-hidan': 2 });
+    expect(unit(tallied, 'p1-itachi').extra.damageTakenFrom).toEqual({ 'p2-hidan': 1 });
   });
 
   it('a kill is credited to the attacker — Patchwork Threads then takes an elemental Style from the defeated', () => {
@@ -137,7 +139,7 @@ describe('Conditions that track who damaged or defeated whom', () => {
     s = hit(s, 'p1-kakuzu', 'earth-grudge-fear', ['p2-kisame']);
     expect(unit(s, 'p1-kakuzu').extra.lastKillTurn).toBe(s.turn);
     s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'kakuzu' ? { ...c, chakraPool: { ...c.chakraPool, current: 2 }, status: { ...c.status, usedAbilitiesThisTurn: [] } } : c)) } } };
-    s = hit({ ...s, phase: 'Main1' }, 'p1-kakuzu', 'patchwork-threads', []);
+    s = resolveTop(use({ ...s, phase: 'Main1' }, 'p1-kakuzu', 'patchwork-threads', [], undefined, 2));
     expect(unit(s, 'p1-kakuzu').styles).toContain('Water');
   });
 });
@@ -150,14 +152,14 @@ describe('Redirects (the attack moves to the defender, with the reduction)', () 
     s = activateAbility(giveChakra({ ...s, priorityPlayer: 'p1' }, 'p1', 5), asura.instanceId, 'mechanized-guard', [], 0);
     for (let i = 0; i < 4; i++) s = gameReducer(s, { type: 'PASS_PRIORITY' });
     expect(hp(s, deva.instanceId)).toBe(7); // untouched at full HP (Deva Path HP 7)
-    expect(hp(s, asura.instanceId)).toBe(5); // 2 − 1
+    expect(hp(s, asura.instanceId)).toBe(6); // 1 − 1
   });
 
   it('Chakra Absorption: a Ninjutsu attack on a Path lands on Preta, reduced to 0, and Preta gains 1 Chakra', () => {
     const { s: base, paths } = withPaths(freshCombat(), 'p1');
     const human = paths[2];
     const preta = paths[4];
-    let s = use(base, 'p2-kakuzu', 'searing-migraine', [human.instanceId]);
+    let s = use(base, 'p2-kisame', 'thousand-hungry-sharks', [human.instanceId]);
     s = activateAbility(giveChakra({ ...s, priorityPlayer: 'p1' }, 'p1', 5), preta.instanceId, 'chakra-absorption', [], 0);
     for (let i = 0; i < 4; i++) s = gameReducer(s, { type: 'PASS_PRIORITY' });
     expect(hp(s, human.instanceId)).toBe(4);
@@ -243,7 +245,7 @@ describe('Other passives', () => {
   it("Spore Technique: the spored unit can't negate an attack on itself with its own ability", () => {
     let s = setExtra(freshCombat(), 'p1-itachi', { cannotNegateOwnDamageUntilTurn: 99 });
     s = use(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-itachi']);
-    s = activateAbility(giveChakra({ ...s, priorityPlayer: 'p1' }, 'p1', 5), 'p1-itachi', 'crow-clone', [], 0);
+    s = playCard(giveChakra({ ...s, priorityPlayer: 'p1' }, 'p1', 5), 'p1', 'jutsu-crow-clone', 'p1-itachi');
     expect(s.stack).toHaveLength(1); // Crow Clone refused
   });
 });

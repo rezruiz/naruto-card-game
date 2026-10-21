@@ -127,7 +127,7 @@ describe('Trust mode toggle (SET_RULES)', () => {
   it('switches modes, but not while actions are declared', () => {
     let s = gameReducer(freshMain1(), { type: 'SET_RULES', rules: 'trust' });
     expect(s.rules).toBe('trust');
-    s = gameReducer(s, { type: 'STAGE_ABILITY', instanceId: 'p1-deidara', abilityId: 'explosive-clay', targetInstanceIds: [], payFromPool: 0, force: true });
+    s = gameReducer(s, { type: 'STAGE_ABILITY', instanceId: 'p1-deidara', abilityId: 'c1-shi-wan', targetInstanceIds: [], payFromPool: 0, force: true });
     expect(s.staged).toHaveLength(1);
     s = gameReducer(s, { type: 'SET_RULES', rules: 'strict' });
     expect(s.rules).toBe('trust');
@@ -240,7 +240,7 @@ describe('Every tracked resource is visible (progressText guard)', () => {
     const s = freshMain1();
     const deidara = s.players.p1.backRow.find((c) => c?.defId === 'deidara')!;
     const kakuzu = s.players.p1.backRow.find((c) => c?.defId === 'kakuzu')!;
-    expect(trackedResources(s, deidara)).toContainEqual({ label: 'Clay Charges', value: '1', key: true });
+    expect(trackedResources(s, deidara)).toContainEqual({ label: 'Clay Charges', value: '0', key: true });
     expect(trackedResources(s, kakuzu)).toContainEqual({ label: 'Hearts', value: '5/5', key: true });
   });
 });

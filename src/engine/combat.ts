@@ -97,7 +97,7 @@ function applyDamageModifiers(
       const before = dmg;
       if (!unprotectable && (target.extra.ironSkinUntilTurn as number | undefined) !== undefined && (target.extra.ironSkinUntilTurn as number) >= turn) {
         if (isPhysicalType(src.type)) dmg = Math.max(0, dmg - 2);
-        else if (src.type === 'Ninjutsu' && src.style !== 'None') dmg = Math.max(0, dmg - 1);
+        else if (src.type === 'Ninjutsu' && src.style !== 'None') dmg = Math.max(0, dmg - 2);
         if (dmg < before) notes.push(`Iron Skin −${before - dmg}`);
       }
       if (passivesOn(target)) {
@@ -202,6 +202,11 @@ export function dealDamage(
   // §6.5b: a Retreated character can't be damaged at all — targeted or blanket — unless its controller has no non-Retreated character left, or the effect was already ongoing.
   if (occupant.status.retreated && !opts.ongoing && (state.resolutionShield.includes(occupant.instanceId) || state.players[player].backRow.some((c) => c && !c.status.retreated))) {
     return { state: appendLog(state, `${occupant.name} is Retreated and immune to damage.`), dealt: 0, defeated: false };
+  }
+
+  // Crow Clone: Itachi takes no new damage for the rest of the turn (lingering damage still lands, §9).
+  if (!opts.ongoing && occupant.extra.phasedOutTurn === state.turn) {
+    return { state: appendLog(state, `${occupant.name} has phased out — no damage.`), dealt: 0, defeated: false };
   }
 
   // Squad Formation (Mission, §13a): a single damage instance aimed at one

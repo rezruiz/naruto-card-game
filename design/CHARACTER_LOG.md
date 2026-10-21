@@ -29,6 +29,8 @@ remaining Styles to drop each time.
 re-entering with full HP (like a character freshly entering play) or
 something else — treat it as a fresh entry (full HP, new Field
 Orientation) until stated otherwise.
+**[Updated] Duplicate Styles:** Patchwork Threads can give him a second
+copy of a Style he already has; losing a Heart removes one copy.
 
 ### Iron Skin
 "Physical" and "elemental" aren't formally defined terms elsewhere in
@@ -42,16 +44,26 @@ rule even though Iron Skin predates it. "Next turn cycle" likewise isn't
 a formally defined duration (§6.9's default is "until end of turn,"
 which this ability explicitly overrides) — treat it as lasting through
 the end of the opponent's very next turn.
+**[Updated]** Iron Skin no longer strikes. Elemental reduction is −2
+(was −1), and while it holds Earth Grudge Fear deals +2 (3 total).
 
 ### Ultimate — Patchwork Threads
-The cost/effect math simplifies to one operative rule: **Kakuzu ends the
-activation with exactly 2 Chakra pooled**, regardless of how much was in
-his Pool when he activated it (spend it all, then the effect refunds 2).
-The card states only that final-state rule now, having dropped the
-"spend all → gain +2" arithmetic that produces it. The Style gained must
-be one the defeated character actually has and Kakuzu doesn't — if the
-defeated character's Styles are a subset of Kakuzu's already, this
-clause simply does nothing.
+**[Updated]** Costs 2 Chakra paid from his own Pool (generic Chakra
+can't pay it), then gives 2 back to the Pool — capped by the new
+capacity after the regenerated Heart. Heals 3. The Style comes from the
+defeated character's elemental Styles, and it may be one Kakuzu already
+has — he then holds two copies (see Five Hearts). A defeated character
+with no elemental Style gives none.
+
+### Elemental Versatility
+**[Updated]** Also applies to elemental Jutsu cards Kakuzu enables — the
+first elemental jutsu each turn, ability or card, gets the −1 (minimum
+1). Same for Yahiko.
+
+### Heart Masks
+Fetches 1 copy of each of the three cards still in the Jutsu Deck, then
+shuffles. Triggers on any entry, including as the starting character
+(after the opening hand is drawn). Missing cards are simply not found.
 
 ---
 
@@ -77,8 +89,11 @@ clause deals that same damage to the Cursed enemy too, on top of the
 ability's own +1 bonus on self-inflicted hits. The 3 HP self-damage floor
 means Hidan can never trigger his own first-defeat safety net (Jashin's
 Blessing) through self-damage under this Ultimate — that path is
-deliberately closed off. Blocking self-targeting on the activation turn
-specifically prevents an immediate lethal-mirror opening play. "Ends when
+deliberately closed off. **[Updated]** Self-targeting is allowed the
+same turn the Curse is activated, and while the Curse is active Triple
+Scythe Sweep costs 1 Chakra whichever target it hits. Self-damage below
+the 3 HP floor is cut short, but the Cursed enemy still takes the +1.
+The Curse ends when Hidan or the Cursed enemy leaves play. "Ends when
 that enemy is defeated" just clears the Curse — Hidan may immediately
 activate it again on a new target if he still has Chakra, since nothing
 here is once-per-turn beyond the ability's own normal cap (§9).
@@ -219,12 +234,18 @@ Phase attacks.
 
 ## Deidara
 
+### Clay Charges
+**[Updated]** Deidara starts with 0 Clay Charges (the Art is an
+Explosion trait is gone) and Explosive Clay is removed — charges come
+only from C1, Shi-Wan (1 per spider made) and Combine (2 per 4
+spiders).
+
 ### Clay Spider Token — Self Detonate
 "Choose any number of your Clay Spider tokens and 1 target" already
 implies all chosen spiders must share that one target within a single
 activation — there's no way to split one activation across multiple
 targets. If you want to hit two different targets, that's two separate
-activations (each its own 1-Chakra cost), not one activation with a
+activations (each its own 3-Chakra cost), not one activation with a
 split effect.
 
 ### Ultimate — C3, Shi-Suri / general "Pool must be full" pattern
@@ -272,6 +293,9 @@ wording independently. "Absorb" on both of these is the mechanic that
 feeds Samehada Fusion's 6-Chakra transformation threshold (see above) —
 it's a running, tracked total across activations of either ability, not
 a one-time flag.
+**[Updated]** Both cost 2 Chakra paid from Kisame's own Pool — generic
+Chakra can't pay them. Evolved checks its 6-pooled requirement before
+the cost is paid.
 
 ### Water Style: Water Prison Jutsu
 "Cannot use abilities that target a character" specifically means
@@ -301,34 +325,31 @@ based reaction, not a cast technique, so it doesn't cleanly fit any of
 the three (§6.8's guidance to leave Type unset rather than force a bad
 fit).
 
-### Genjutsu: Mind Prison
-This stun is broader than the generic Disabled state (§6.5a) — Disabled
-only blocks *acting*, but a Disabled character's stats can still be read
-by other effects and it can still be targeted/pooled into normally by
-its own controller in some contexts. Mind Prison's stun additionally and
-explicitly blocks Chakra pooling and any Jutsu card plays that the
-stunned character would otherwise enable, on top of blocking its own
-abilities. "Once per individual character, ever" is a permanent,
-whole-game tracked restriction on the *target* (not on Itachi, and not
-reset each turn like the normal once-per-turn ability cap, §9) — once
-Itachi has used Mind Prison on a given enemy character, he can never use
-it on that same character again for the rest of the game, even if that
-character leaves and re-enters play.
+### Genjutsu Master / Failing Health
+**[Updated]** Genjutsu Master replaces Uchiha Prodigy: −1 (minimum 1) on
+Genjutsu cards Itachi himself enables — not on cards another character
+enables while he's in play. Failing Health replaces Deterioration: the
+2-abilities-per-turn cap stays, and his Ultimate and Forbidden Technique
+can't both be used in one turn.
 
-**[Updated] Duration:** the stun covers **only its controller's turn**,
-never a whole turn cycle. Cast on Itachi's turn, it lasts through their
+### Genjutsu: Mind Prison (Jutsu card)
+**[Updated]** Mind Prison and Crow Clone moved off Itachi's card and are
+now Jutsu cards. Mind Prison costs 5, or 3 when a Genjutsu user (a
+character with a Genjutsu ability — Itachi, through Tsukuyomi) enables
+it; with Itachi, Genjutsu Master makes it 2. Its stun covers **only its
+target's controller's turn**: cast on your turn, it lasts through their
 next turn; cast during their turn (it's Quick), it lasts for the rest of
-that turn. Previously it ran through Itachi's following turn as well.
+that turn. The stunned character can't use abilities, have Chakra pooled
+into it, or enable Jutsu cards. No once-per-character limit.
 
-### Crow Clone
-Ties directly into §9's negating-a-target timing model — this is a
-self-directed target-negation Reactive Technique, triggered after an
-opponent's targeted ability has already fully activated (cost paid,
-target identified) but before it resolves. "Any targeting" means it
-works against *any* targeted ability aimed at Itachi, not just
-damage-dealing ones. Like Mind Prison, the "one time per character
-targeting him" restriction is permanent and per-attacking-character,
-tracked for the whole game, not per-turn.
+### Genjutsu: Crow Clone (Jutsu card)
+Itachi only. Attacks already waiting on Itachi lose him as a target (an
+attack with no other target fizzles), and for the rest of the turn he
+can't be targeted and takes no **new** damage. Damage from a lingering
+effect already attached to him (e.g. a burn) still lands — lingering
+damage must be explicitly included to be negated, and negating
+targeting never affects it, since it doesn't retarget. Spore Technique
+stops it, like any card that negates attacks on its own enabler.
 
 ### Ultimate — Amaterasu
 "Damage cannot be reduced" is a flat immunity to *any* reduction or
@@ -338,24 +359,18 @@ Path's V2, Preta's redirects, etc. all work by intercepting or
 redirecting a target, not by reducing an already-locked-in damage
 number; none of them would stop Amaterasu even if they otherwise could,
 since this ability explicitly overrides that entire category of
-response). Total damage across the full sequence is 3 (immediate) + 2 +
-2 (at your next two Upkeeps) = 7. **Open question:** the card doesn't
+response). **[Updated]** Total damage across the full sequence is 3 (immediate) +
+1 + 1 + 1 (at your next three Upkeeps) = 6. **Open question:** the card doesn't
 say what happens to the remaining scheduled ticks if the target is
 already defeated before a later Upkeep trigger — treat unresolved ticks
 against a dead target as simply not happening (nothing to deal damage
 to) rather than redirecting anywhere.
 
 ### Forbidden Technique — Mangekyō Sharingan: Tsukuyomi - Infinite Agony
-Two stacked conditions on the target, both of which must hold at
-activation: (1) it must currently be affected by Mind Prison — meaning
-Itachi must have already spent a Mind Prison activation on this exact
-character (and, per Mind Prison's own "once ever" restriction, can never
-do so again on them after this), and (2) it must not have dealt more
-than 6 damage to Itachi across the whole game so far — a permanent,
-cumulative, whole-game damage tracker on that specific enemy character,
-not a per-turn or per-encounter check.
-
-**[Updated] Duration:** the stun lasts **1 turn cycle** (was 2).
+**[Updated]** One condition: the target must not have dealt more than 6
+damage to Itachi across the whole game so far — a permanent, cumulative
+tracker on that specific enemy character, not a per-turn check. It no
+longer needs Mind Prison first. 5 damage, then stunned for 1 turn cycle.
 
 ---
 
@@ -859,9 +874,9 @@ interaction below as provisional until it's been reviewed.*
 tracked **per character**, not once globally for the team — each of
 your other Akatsuki-Synergy characters gets its own first-ability
 discount once per turn, not just whichever one happens to act first.
-This follows the same shape as Kakuzu's Elemental Versatility and
-Itachi's Uchiha Prodigy (both "first X each turn costs less," tracked
-on the character having the trait) — the difference here is the
+This follows the same shape as Kakuzu's Elemental Versatility
+("first X each turn costs less," tracked on the character having the
+trait) — the difference here is the
 discount applies to *other* characters' first abilities, not Yahiko's
 own. If a character has already gotten a discount from some other
 "first ability" source this turn (none currently exist, but flagging
@@ -873,7 +888,7 @@ Directly reuses Kakuzu's own trait name and wording (§Kakuzu above) —
 deliberate reuse of an established pattern rather than a new one, since
 the underlying mechanic (multi-Style character, discount on the first
 elemental jutsu each turn) is identical. Yahiko has an actual Water
-ability using the Water tag (Water Jet Stream/Water Pillar Wall below),
+ability using the Water tag (Water Pillar Wall below),
 but his Fire and Wind tags currently have **no abilities of his own**
 using them — same situation as Konan's Wind/Earth/Water/Yang tags
 (§Konan above): they exist purely so he can serve as the enabling
@@ -888,14 +903,13 @@ effect, just reframed around his canon kenjutsu implication (seen
 carrying a large sword in flashbacks) rather than thrown tools. No
 mechanical change from the rename.
 
-### Water Release: Water Jet Stream / Water Pillar Wall
-A matched offense/defense pair pulled directly from his summary (a
-water-stream attack, and defensive water pillars) — Water Pillar Wall
-follows the same "Prevent the next N damage" shield pattern already
+### Water Release: Water Pillar Wall
+**[Updated]** Water Jet Stream is removed. Pulled from his summary
+(defensive water pillars) — Water Pillar Wall follows the same "Prevent the next N damage" shield pattern already
 used elsewhere (Juzo Biwa's original Hiding Mist draft, Mission card
 rewards): a fixed-capacity prevention pool, not a percentage, expiring
 at end of turn per §6.9's default regardless of how much went unused.
-Both are Normal-speed (no listed Speed override), unlike Juzo's
+It's Normal-speed (no listed Speed override), unlike Juzo's
 Quick-Technique Hiding Mist — so Water Pillar Wall can only be cast
 during one of Yahiko's controller's own Main Phases, not reactively in
 response to an incoming attack. Flag if a Quick Technique version was
@@ -1193,7 +1207,7 @@ interpretive calls, flagged for review:
   or multiple triggers.
 
 ### Medical Chakra Infusion
-**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+**[New]** Added with 3 copies in the preset Jutsu Deck. Interpretive
 calls, flagged for review:
 - **"One of your characters" means a character, not a token** — the same
   reading as the Mission rewards that say "a character you control". So
@@ -1210,7 +1224,7 @@ calls, flagged for review:
   does nothing past max HP.
 
 ### Chakra Suppression
-**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+**[New]** Added with 3 copies in the preset Jutsu Deck. Interpretive
 calls, flagged for review:
 - **"Until its controller's next turn" is read as *through* that turn**
   (the same duration as Kakuzu's revival stun). Enemies
@@ -1236,7 +1250,7 @@ calls, flagged for review:
   turn N"**.
 
 ### Fireball Jutsu
-**[New]** Added with 1 copy in the preset Hand Deck. Interpretive
+**[New]** Added with 1 copy in the preset Jutsu Deck. Interpretive
 calls, flagged for review:
 - **Attack-type Jutsu:** it deals damage, so it's **Combat Phase only**
   and **once per turn by name** (§15.6), like Explosive Tag.
@@ -1258,7 +1272,7 @@ calls, flagged for review:
   he enables — the same as Lightning/Water Substitution today.
 
 ### Emergency Relief
-**[New]** Added with 3 copies in the preset Hand Deck. Interpretive
+**[New]** Added with 3 copies in the preset Jutsu Deck. Interpretive
 calls, flagged for review:
 - **Only losses after it's played count** (SPEC §0: cards only see what
   happens while they're in play), even though the Condition says "this
@@ -1371,9 +1385,9 @@ The deck's first Terrain card. Interpretive calls, flagged for review:
   upkeep, a Chakra gain, etc.), not the standard per-rank Upkeep table
   this Terrain reduces. Only non-starting Akatsuki-Synergy characters'
   ordinary Upkeep costs are affected.
-- **3 copies added to the Hand Deck manifest** (IMPLEMENTATION_PLAN.md)
+- **3 copies added to the Jutsu Deck manifest** (IMPLEMENTATION_PLAN.md)
   — the starter deck's real-card count rises from 33 to 36, so Chakra
-  Fodder filler drops from 7 to 4 to keep the Hand Deck at 40 (§2).
+  Fodder filler drops from 7 to 4 to keep the Jutsu Deck at 40 (§2).
 
 ### Jutsu Disruption
 Interpretive calls and clarifications, flagged for review:
