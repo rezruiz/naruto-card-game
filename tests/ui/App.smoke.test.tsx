@@ -95,8 +95,12 @@ describe('App (smoke)', () => {
 
     const handCard = container.querySelector('.player-board--bottom .hand-card:not(.hand-card--hidden)')!;
     const name = handCard.querySelector('.hand-card__name')!.textContent!;
-    fireEvent.click(handCard.querySelector('button')!); // Play — must not open the popup
-    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(handCard.querySelector('button')!); // Play — must not open the card's details popup
+    // (A random opening card may be illegal to play right now, which brings up the trust-mode
+    // "force it through?" prompt instead — that's fine; it just isn't the details popup.)
+    const afterPlay = screen.queryByRole('dialog');
+    expect(afterPlay?.querySelector('h2')?.textContent).not.toBe(name);
+    if (afterPlay) fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
 
     fireEvent.click(handCard);
     const dialog = screen.getByRole('dialog');

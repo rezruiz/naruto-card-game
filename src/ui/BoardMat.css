@@ -7,15 +7,24 @@
 
 .mat {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr) 112px;
+  grid-template-columns: 116px minmax(0, 1fr) 112px;
   grid-template-areas: 'terrain rows missions';
   gap: 10px;
   align-items: stretch;
   padding: 10px;
 }
 
-.mat__zone--terrain {
+/* The Terrain-side column also holds the player's Health plate, in their own bottom-left corner. */
+.mat__side--terrain {
   grid-area: terrain;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mat__side--terrain > .mat__zone {
+  flex: 1;
 }
 
 .mat__zone--missions {
@@ -180,7 +189,7 @@ button.in-play-chip--plain:hover {
 
 /* Top player's half reads as a mirror: zones swap sides like an opponent across the table. */
 .mat--top {
-  grid-template-columns: 112px minmax(0, 1fr) 92px;
+  grid-template-columns: 112px minmax(0, 1fr) 116px;
   grid-template-areas: 'missions rows terrain';
 }
 
@@ -197,5 +206,188 @@ button.in-play-chip--plain:hover {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+  }
+}
+
+/* ---- Health plate (Yu-Gi-Oh LP style) ---- */
+.health-plate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: linear-gradient(160deg, var(--card-bg), var(--panel-bg));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.battlefield-half--p1 .health-plate {
+  border-color: #3b82f6;
+}
+
+.battlefield-half--p2 .health-plate {
+  border-color: #ef4444;
+}
+
+.health-plate--active {
+  box-shadow: 0 0 0 3px var(--accent-bg), 0 0 14px rgba(124, 58, 237, 0.45);
+}
+
+.health-plate__who {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.health-plate__you,
+.health-plate__turn {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.health-plate__turn {
+  background: var(--accent);
+  color: var(--panel-bg);
+}
+
+.health-plate__value {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.health-plate__label {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.health-plate__number {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.health-plate--warn .health-plate__number {
+  color: #e0a030;
+}
+
+.health-plate--danger .health-plate__number {
+  color: #ef4444;
+}
+
+.health-plate__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.health-plate__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #2e9e5b;
+  transition: width 0.4s ease;
+}
+
+.health-plate--warn .health-plate__fill {
+  background: #e0a030;
+}
+
+.health-plate--danger .health-plate__fill {
+  background: #ef4444;
+}
+
+/* "−5" floats up and fades when Health drops (a gain shows in green). */
+.health-plate__change {
+  position: absolute;
+  left: 100%;
+  top: -4px;
+  margin-left: -26px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ef4444;
+  animation: health-change 1.8s ease-out forwards;
+  pointer-events: none;
+}
+
+.health-plate__change--gain {
+  color: #2e9e5b;
+}
+
+@keyframes health-change {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+}
+
+.health-plate--hit {
+  animation: health-hit 0.5s ease;
+}
+
+@keyframes health-hit {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+/* Trust-mode manual correction: tucked away until you hover the plate. */
+.health-plate__adjust {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.health-plate:hover .health-plate__adjust,
+.health-plate:focus-within .health-plate__adjust {
+  opacity: 1;
+}
+
+.health-plate__adjust button {
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: inherit;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-plate--hit,
+  .health-plate__change {
+    animation: none;
   }
 }

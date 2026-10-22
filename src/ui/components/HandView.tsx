@@ -35,6 +35,7 @@ export function HandView({
   mustPlayCPlus = false,
   onHandDragStart,
   onHandDragEnd,
+  ownerLabel,
 }: {
   hand: HandEntry[];
   canPlace: boolean;
@@ -60,6 +61,8 @@ export function HandView({
   /** A playable card started being dragged out of hand toward the board. */
   onHandDragStart?: (drag: HandDrag) => void;
   onHandDragEnd?: () => void;
+  /** Whose hand this is, e.g. "P1 (You)" — the hand header is how each player's area is labeled. */
+  ownerLabel?: string;
 }) {
   const [dragOver, setDragOver] = useState(false);
 
@@ -101,6 +104,7 @@ export function HandView({
       }}
     >
       <span className="hand-view__label">
+        {ownerLabel && <strong className="hand-view__owner">{ownerLabel} · </strong>}
         Hand ({hand.length})
         {onHandDragStart && canAct && <span className="hand-view__drop-hint"> — drag a card onto the board to play it</span>}
         {(onDropCharacter || onDropInPlayCard) && <span className="hand-view__drop-hint"> · drag a character, Mission or Terrain here to return it to hand</span>}

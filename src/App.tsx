@@ -35,7 +35,7 @@ import { RulesReference } from './ui/components/RulesReference';
 import { RuleWarnings } from './ui/components/RuleWarnings';
 import { HandView, type HandDrag } from './ui/components/HandView';
 import { PhaseIndicator } from './ui/components/PhaseIndicator';
-import { PlayerHealthBar } from './ui/components/PlayerHealthBar';
+import { HealthPlate } from './ui/components/HealthPlate';
 import { TurnControls } from './ui/components/TurnControls';
 import { useNetGame } from './net/useNetGame';
 import './App.css';
@@ -526,12 +526,6 @@ function ViewGame({
 
     const info = (
       <div className="board-section" key="info">
-        <PlayerHealthBar
-          player={player}
-          isActive={isActive}
-          isYou={myPlayerId !== null && myPlayerId === playerId}
-          onAdjust={trust && mine ? (delta) => dispatch({ type: 'ADJUST_PLAYER_HEALTH', player: playerId, delta }) : undefined}
-        />
         <UpkeepPanel entries={previewUpkeep(state, playerId)} />
         {player.pendingCharacterReveal && (
           <CharacterRevealPanel
@@ -729,6 +723,7 @@ function ViewGame({
         onOpenDetails={(name, subtitle, text) => setDetails({ kind: 'card', name, subtitle, text })}
         onHandDragStart={canPlayCards && !pending ? (drag) => setHandDrag({ ...drag, player: playerId }) : undefined}
         onHandDragEnd={endHandDrag}
+        ownerLabel={`${playerId.toUpperCase()}${myPlayerId !== null && myPlayerId === playerId ? ' (You)' : ''}`}
       />
     );
     const placingHere = placing && placing.player === playerId ? placing : null;
@@ -870,6 +865,15 @@ function ViewGame({
         )}
       </div>
     );
+    const healthPlate = (
+      <HealthPlate
+        key="health"
+        player={player}
+        isActive={isActive}
+        isYou={myPlayerId !== null && myPlayerId === playerId}
+        onAdjust={trust && mine ? (delta) => dispatch({ type: 'ADJUST_PLAYER_HEALTH', player: playerId, delta }) : undefined}
+      />
+    );
     const missionZone = (
       <div className={`mat__zone mat__zone--missions${player.missionsInPlay.length > 0 ? ' mat__zone--filled' : ''}`} key="missions">
         <span className="mat__zone-title">Missions</span>
@@ -931,7 +935,8 @@ function ViewGame({
             : undefined
         }
       >
-        {terrainZone}
+        {/* Health sits in each player's own bottom-left corner, Yu-Gi-Oh LP-style — mirrored, so the opponent's is top-right. */}
+        <div className="mat__side mat__side--terrain">{position === 'bottom' ? [terrainZone, healthPlate] : [healthPlate, terrainZone]}</div>
         <div className="mat__rows">{position === 'bottom' ? [tokenRow, characterRow] : [characterRow, tokenRow]}</div>
         {missionZone}
       </div>
@@ -943,8 +948,8 @@ function ViewGame({
     // after the shared battlefield for the bottom board.
     const hud = (
       <div className={`player-board player-board--${position} player-board--${playerId}`} key={playerId}>
-        {/* The hand sits nearest the board: right under it for the bottom player, right over it for the top one. */}
-        {position === 'bottom' ? [hand, chakra, info] : [info, chakra, hand]}
+        {/* Chakra sits right against the board, then the hand: board → Chakra → hand for the bottom player, mirrored for the top one. */}
+        {position === 'bottom' ? [chakra, hand, info] : [info, hand, chakra]}
       </div>
     );
 

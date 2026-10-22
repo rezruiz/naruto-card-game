@@ -7,7 +7,7 @@ import { toManifests, type DeckList } from './decklist';
 // Terrain/Mission) before any deck is built.
 import './cards';
 
-const STARTING_HEALTH = 20;
+export const STARTING_HEALTH = 20;
 
 /**
  * Default playtest roster — one of each currently-implemented character per

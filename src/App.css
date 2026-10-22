@@ -53,12 +53,13 @@
 }
 
 .chakra-symbol {
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .chakra-sources__boxes {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
 }
 
@@ -70,9 +71,9 @@
 
 /* Styled like a small card, tapped/untapped the way a land taps in MTG. */
 .chakra-source {
-  width: 32px;
-  height: 44px;
-  border-radius: 5px;
+  width: 46px;
+  height: 64px;
+  border-radius: 7px;
   border: 2px solid var(--accent);
   background: var(--accent-bg);
   cursor: pointer;
@@ -84,10 +85,16 @@
 }
 
 .chakra-source__symbol {
-  font-size: 16px;
+  font-size: 24px;
 }
 
+.chakra-source:not(:disabled):hover {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* Turned sideways it's wider than it is tall, so give it room not to overlap its neighbors. */
 .chakra-source--tapped {
+  margin: 0 9px;
   transform: rotate(90deg);
   opacity: 0.5;
   cursor: default;
