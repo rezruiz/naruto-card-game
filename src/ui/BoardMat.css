@@ -1,0 +1,201 @@
+/* ---- Battlefield mat: every character and token slot is always drawn ----
+   Each player's half is a grid: Terrain zone | the two rows | Missions zone.
+   The character row (10 positions, at most 5 characters) and the token row
+   (10 slots) line up one-to-one — token N sits directly in front of
+   character N — and scroll sideways together. Character row nearest the
+   player, token row toward the middle seam. */
+
+.mat {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 112px;
+  grid-template-areas: 'terrain rows missions';
+  gap: 10px;
+  align-items: stretch;
+  padding: 10px;
+}
+
+.mat__zone--terrain {
+  grid-area: terrain;
+}
+
+.mat__zone--missions {
+  grid-area: missions;
+}
+
+/* One scroll area for both rows, so they always stay lined up. */
+.mat__rows {
+  --slot-width: 118px;
+  grid-area: rows;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.mat__row {
+  display: grid;
+  grid-template-columns: repeat(10, var(--slot-width));
+  gap: 8px;
+  width: max-content;
+}
+
+/* A slot. Filled or empty, it keeps the same footprint so the board never jumps around. */
+.board-cell {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.board-cell--character {
+  min-height: 132px;
+}
+
+.board-cell--token {
+  min-height: 64px;
+}
+
+.board-cell--empty {
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--border);
+  background: repeating-linear-gradient(135deg, transparent 0 8px, rgba(127, 127, 127, 0.05) 8px 16px);
+}
+
+.board-cell--character.board-cell--empty {
+  border-width: 2px;
+}
+
+.board-cell__label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.45;
+}
+
+/* A slot you can place into right now. */
+.board-cell--legal {
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  border: 2px dashed var(--accent);
+  background: var(--accent-bg);
+  cursor: pointer;
+}
+
+.board-cell--legal:hover {
+  background: rgba(124, 58, 237, 0.16);
+}
+
+/* The card fills its slot. */
+.board-cell--filled > .compact-card,
+.board-cell--filled > .token-card {
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.board-cell--filled > .token-card {
+  padding: 5px 6px;
+  font-size: 11px;
+}
+
+.board-cell--push > .compact-card {
+  outline: 2px dashed var(--accent);
+}
+
+.board-cell--push > .board-slot__push {
+  margin-bottom: 4px;
+}
+
+/* Side zones (Terrain, Missions). */
+.mat__zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.mat__zone-title {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+
+.mat__zone-empty {
+  font-size: 12px;
+  opacity: 0.45;
+}
+
+/* A zone with a card in it: solid, highlighted border instead of the dashed empty outline. */
+.mat__zone--filled {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* The card name inside a zone: plain text, no pill. */
+.in-play-chip--plain {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: normal;
+  text-align: left;
+}
+
+button.in-play-chip--plain:hover {
+  text-decoration: underline;
+}
+
+.in-play-chip--plain.in-play-chip--hidden {
+  font-weight: 400;
+  font-style: italic;
+}
+
+.mat__zone .in-play-cards__mission {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Top player's half reads as a mirror: zones swap sides like an opponent across the table. */
+.mat--top {
+  grid-template-columns: 112px minmax(0, 1fr) 92px;
+  grid-template-areas: 'missions rows terrain';
+}
+
+@media (max-width: 760px) {
+  .mat {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'terrain' 'rows' 'missions';
+  }
+  .mat--top {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'missions' 'rows' 'terrain';
+  }
+  .mat__zone {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}

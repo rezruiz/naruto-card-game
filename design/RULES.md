@@ -60,8 +60,8 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 | **Jutsu Deck** | **50–80** shuffled cards (the preset is 48): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
 | **Character Deck** | 12–18 shuffled Character cards (13 in the preset). Drawn only by triggers (§11). |
 | **Hand** | Holds both Jutsu Deck cards and drawn Character cards. **No maximum hand size** *(placeholder)*. |
-| **Back row** | Up to **5 Characters**, ordered left→right by entry order (§13.1). |
-| **Front row** | Up to **10 Tokens**, in 5 column-pairs of 2 slots aligned to the back-row columns (§13.1). |
+| **Back row** | **10 positions**, holding up to **5 Characters** (§13.1). |
+| **Front row** | **10 slots** for up to **10 Tokens**, lined up one-to-one with the back row (§13.1). |
 | **Chakra sources** | Your placed Chakra cards; tapped for Chakra (§6.2). |
 | **Consumed pile** | Cards you Consume to place a Chakra source. Separate from the discard pile, and per-player. Far more permanent than the discard pile — retrievable only by some rare, specific effect (none exist yet). |
 | **Discard pile** | Discarded/replaced cards. |
@@ -395,11 +395,11 @@ See §13.5.
 ## 13. Combat, targeting & board geometry
 
 ### 13.1 Board layout
-Each player has a **back row** (Characters, ≤5) and a **front row** (Tokens, ≤10, a flat cap on top of card-specific token caps). Occupants sit left→right in the order they entered play (a new one joins at the right end unless a card says otherwise). The front row is **5 column-pairs of 2 slots**, each pair aligned with one back-row column (front slots 1–2 ↔ column 1, …).
+Each player has a **back row** of **10 positions** (at most **5 Characters** in play, §8.1) and a **front row** of **10 slots** (Tokens, ≤10, a flat cap on top of card-specific token caps). **[Updated]** The rows line up **one-to-one**: front slot N is directly in front of back position N. You choose where a new unit goes (§9 positioning in SPEC). **[Playtest]** The board draws all 10 slots of each row and scrolls sideways.
 
 ### 13.2 Adjacency and cross patterns
 - **Same-row:** the occupant immediately left/right within its own row.
-- **Cross-row:** a back-row Character's front neighbors are the Token(s) in its paired slots (up to 2); a front-row Token's back neighbor is the 1 Character in its paired column.
+- **Cross-row [Updated]:** a back-row Character's front neighbor is the 1 Token directly in front of it; a front-row Token's back neighbor is the 1 Character directly behind it.
 - A **cross pattern** hits the epicenter plus left, right, front and behind (up to 4 extra). Empty arms hit nothing. Adjacency **never crosses** between the two players' sides.
 
 ### 13.3 Targeting
@@ -734,6 +734,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 77. ✔ **New card: Water Dragon Jutsu** (Water, Ninjutsu): cost 1 + X (just X if paid from the enabling character's Pool); deal X damage to an enemy character, X up to 5. **1 copy** in the preset deck, now **48** cards. (SPEC §13b.)
 78. ✔ **Absorb goes to the generic pool by default:** absorbed Chakra is added to your available (generic) Chakra, is spent before your other generic Chakra, and whatever is left fades when the phase changes. Kisame's new **Samehada** trait stores it in his Pool instead (overflow past capacity becomes generic); Zetsu's Shared Reservoir already stores it in his Pool. The amount shows next to "Chakra available". (SPEC §6.8b, §13 Kisame.)
 79. ✔ **Character redesigns go live:** Itachi, Deidara, Kakuzu, Hidan, Yahiko and Kisame use their redesigned cards (Appendix A.1). Itachi's Mind Prison and Crow Clone are now Jutsu cards (**Genjutsu: Mind Prison**, **Genjutsu: Crow Clone**, A.3 — in the Deck Library, not in the preset Jutsu Deck); Uchiha Prodigy is replaced by **Genjutsu Master** and Deterioration by **Failing Health**. Kakuzu's mask techniques are now only cards, fetched by his **Heart Masks** trait. **Elemental Versatility** also discounts elemental Jutsu cards its character enables. A stunned character can't enable Jutsu cards. Deidara starts with 0 Clay Charges and Explosive Clay is gone. Supersedes the Itachi/Deidara/Kakuzu/Hidan/Yahiko/Kisame numbers in rulings 38 and 55. (SPEC §13, §13b.)
+80. ✔ **Board geometry: two one-to-one rows of 10.** The back row has **10 positions** (still at most **5 Characters**, §8.1) and the front row **10 Token slots**; front slot N is directly in front of back position N, so a Character has exactly 1 front neighbor and a Token 1 back neighbor (replaces the 5 column-pairs of 2 Token slots). Fixes a Character only seeing one of its two paired Tokens. **[Playtest]** The board draws every slot and scrolls sideways. (SPEC §9.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -1663,8 +1664,8 @@ Worked examples of the two path shapes:
   Character; hits 2 more Characters continuing left or right in the back
   row.
 - **Bent:** primary target must be a front-row Token; the 2nd hit is
-  whatever Character is aligned behind it in the back row (via the
-  column-pairing rule, §9); the 3rd hit is that Character's left or
+  whatever Character is directly behind it in the back row (§9); the
+  3rd hit is that Character's left or
   right neighbor in the back row (attacker's choice of side).
 In all cases, damage is 3 / 2 / 1 down the path in order, and the path
 simply stops early (dealing less total damage) if it runs off the edge

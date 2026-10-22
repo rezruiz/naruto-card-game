@@ -8,8 +8,16 @@ import type {
   TokenInstance,
 } from './types';
 
-export const BACK_ROW_SIZE = 5;
+/** Back-row positions. More than the character limit, so characters can spread out and line up with the tokens in front of them (§9). */
+export const BACK_ROW_SIZE = 10;
 export const FRONT_ROW_SIZE = 10;
+/** SPEC.md §6.5: at most 5 characters in play at once, whatever the number of back-row positions. */
+export const MAX_CHARACTERS = 5;
+
+/** How many characters this player has in their back row. */
+export function characterCount(state: GameState, player: PlayerId): number {
+  return state.players[player].backRow.filter((c) => c !== null).length;
+}
 
 // `rank` (not `chakraPool`) is the discriminator: Pain's Path tokens are the
 // one Token type that also carries a chakraPool (§10 exception), so that
@@ -58,7 +66,7 @@ export function placeToken(state: GameState, player: PlayerId, token: TokenInsta
 export function legalCharacterSlots(state: GameState, player: PlayerId): number[] {
   const row = state.players[player].backRow;
   const filled = row.flatMap((c, i) => (c ? [i] : []));
-  if (filled.length === row.length) return [];
+  if (filled.length >= MAX_CHARACTERS || filled.length === row.length) return [];
   if (filled.length === 0) return row.map((_, i) => i);
   const besideOne = row.flatMap((c, i) => (c === null && (row[i - 1] || row[i + 1]) ? [i] : []));
   return [...besideOne, ...filled].sort((a, b) => a - b);
@@ -136,7 +144,7 @@ export function countTokensOfType(state: GameState, player: PlayerId, defId: str
 /**
  * Places a character in the first open back-row slot (SPEC.md §9 — new
  * units join at the right end of their row). Returns the unchanged state
- * (with a log note) if the back row is full (§6.5's 5-character cap) — the
+ * (with a log note) if you're at §6.5's 5-character cap — the
  * caller should generally check room before paying any cost.
  */
 export function placeCharacter(state: GameState, player: PlayerId, character: CharacterInstance, slot?: number): GameState {
@@ -154,14 +162,14 @@ export function isToken(occ: BoardOccupant): occ is TokenInstance {
   return !isCharacter(occ);
 }
 
-/** Back-row column paired with a given front-row slot (SPEC.md §9). */
+/** The back-row slot directly behind a given front-row slot — the rows line up one-to-one (SPEC.md §9). */
 export function pairedBackColumn(frontIndex: number): number {
-  return Math.floor(frontIndex / 2);
+  return frontIndex;
 }
 
-/** The 1-2 front-row slots paired with a given back-row column. */
+/** The front-row slot directly in front of a given back-row slot. */
 export function pairedFrontSlots(backColumn: number): number[] {
-  return [backColumn * 2, backColumn * 2 + 1];
+  return [backColumn];
 }
 
 export function findOccupant(
@@ -225,7 +233,7 @@ export interface Adjacency {
 }
 
 /**
- * SPEC.md §9: same-row left/right, cross-row front/back via column pairing.
+ * SPEC.md §9: same-row left/right, cross-row front/back by matching position.
  * Only ever looks within the given player's own rows — never across players.
  */
 export function getAdjacent(
@@ -243,12 +251,11 @@ export function getAdjacent(
   let front: BoardOccupant | null = null;
   let back: BoardOccupant | null = null;
   if (zone === 'back') {
-    // Back row occupant's "front" is whatever sits in its paired front slots.
-    const [a, b] = pairedFrontSlots(index);
-    front = p.frontRow[a] ?? p.frontRow[b] ?? null;
+    // A character's "front" is the token in the same position of the front row.
+    front = p.frontRow[pairedFrontSlots(index)[0]] ?? null;
   } else {
-    // Front row occupant's "back" is the character in its paired back column.
-    back = p.backRow[pairedBackColumn(index)];
+    // A token's "back" is the character in the same position of the back row.
+    back = p.backRow[pairedBackColumn(index)] ?? null;
   }
 
   return { left, right, front, back };

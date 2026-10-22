@@ -1,4 +1,4 @@
-import { placeCharacter, placeToken } from '../board';
+import { legalCharacterSlots, placeCharacter, placeToken } from '../board';
 import { createCharacterInstance, getCharacterDef } from './registry';
 import { createSixPaths } from './pain';
 import { makeThirdKazekage } from './sasori';
@@ -24,8 +24,9 @@ export interface CharacterDeckEntry {
 
 let reinforcementCounter = 0;
 
+/** Room for one more character: under §6.5's 5-character cap (the back row itself has more positions). */
 function hasOpenBackRowSlot(state: GameState, player: PlayerId): boolean {
-  return state.players[player].backRow.some((c) => c === null);
+  return legalCharacterSlots(state, player).length > 0;
 }
 
 function spawnCharacter(defId: string): CharacterDeckEntry['spawn'] {

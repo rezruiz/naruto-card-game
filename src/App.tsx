@@ -33,12 +33,13 @@ import type { DeckList } from './engine/decklist';
 import { TokenCard } from './ui/components/TokenCard';
 import { RulesReference } from './ui/components/RulesReference';
 import { RuleWarnings } from './ui/components/RuleWarnings';
-import { HandView } from './ui/components/HandView';
+import { HandView, type HandDrag } from './ui/components/HandView';
 import { PhaseIndicator } from './ui/components/PhaseIndicator';
 import { PlayerHealthBar } from './ui/components/PlayerHealthBar';
 import { TurnControls } from './ui/components/TurnControls';
 import { useNetGame } from './net/useNetGame';
 import './App.css';
+import './ui/BoardMat.css';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
 
@@ -74,11 +75,14 @@ function InPlayChip({
   progress,
   onOpen,
   dragInstanceId,
+  plain,
 }: {
   label: string;
   name: string | undefined;
   progress?: string;
   onOpen: (name: string) => void;
+  /** Inside a board zone: just the card name as text — the zone's own title already says what it is. */
+  plain?: boolean;
   /** Trust mode, own card: can be dragged onto its owner's hand to take back an accidental play. */
   dragInstanceId?: string;
 }) {
@@ -93,14 +97,20 @@ function InPlayChip({
     : {};
   if (!name) {
     return (
-      <span className="in-play-chip in-play-chip--hidden" {...drag} title={dragInstanceId ? 'Drag onto your hand to return it to hand' : undefined}>
+      <span className={`in-play-chip in-play-chip--hidden${plain ? ' in-play-chip--plain' : ''}`} {...drag} title={dragInstanceId ? 'Drag onto your hand to return it to hand' : undefined}>
         Face-down {label}
       </span>
     );
   }
   return (
-    <button type="button" className="in-play-chip" title={dragInstanceId ? 'Click for card text · drag onto your hand to return it' : 'Click for card text'} onClick={() => onOpen(name)} {...drag}>
-      {label}: {name}
+    <button
+      type="button"
+      className={`in-play-chip${plain ? ' in-play-chip--plain' : ''}`}
+      title={dragInstanceId ? 'Click for card text · drag onto your hand to return it' : 'Click for card text'}
+      onClick={() => onOpen(name)}
+      {...drag}
+    >
+      {plain ? name : `${label}: ${name}`}
       {progress && <span className="in-play-chip__progress"> · {progress}</span>}
     </button>
   );
@@ -282,6 +292,16 @@ function ViewGame({
   const [details, setDetails] = useState<Details>(null);
   /** A character card from hand waiting for the player to pick its back-row slot (§9 positioning). */
   const [placing, setPlacing] = useState<{ player: PlayerId; instanceId: string; name: string } | null>(null);
+  /** A card being dragged out of a hand toward the board (Hearthstone-style play), and the slot it's hovering. */
+  const [handDrag, setHandDrag] = useState<(HandDrag & { player: PlayerId }) | null>(null);
+  const [dropSlot, setDropSlot] = useState<number | null>(null);
+  /** A declaration that breaks a strict rule, waiting on the player's "force it through?" answer. */
+  const [forcePrompt, setForcePrompt] = useState<{ warnings: string[]; declare: (force: boolean) => void } | null>(null);
+  const [confirmRestart, setConfirmRestart] = useState(false);
+  const endHandDrag = () => {
+    setHandDrag(null);
+    setDropSlot(null);
+  };
   // Seated across the table: you're always the bottom board, your opponent the top. (Local hotseat has no single 'you', so P1 sits at the bottom.)
   const bottomId: PlayerId = myPlayerId ?? 'p1';
   const topId: PlayerId = bottomId === 'p1' ? 'p2' : 'p1';
@@ -297,16 +317,18 @@ function ViewGame({
       dispatch({ type: 'ACTIVATE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices });
       return;
     }
-    const force = askToForce(abilityDeclarationWarnings(state, instanceId, abilityId, targets, payFromPool, choices));
-    if (force === null) return;
-    dispatch({ type: 'STAGE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices, force });
+    askToForce(abilityDeclarationWarnings(state, instanceId, abilityId, targets, payFromPool, choices), (force) =>
+      dispatch({ type: 'STAGE_ABILITY', instanceId, abilityId, targetInstanceIds: targets, payFromPool, choices, force }),
+    );
   }
 
-  /** Trust mode: an illegal declaration is only made if the player confirms forcing it through. False = it's legal; null = they backed out. */
-  function askToForce(warnings: string[]): boolean | null {
-    if (warnings.length === 0) return false;
-    const list = warnings.map((w) => `• ${w}`).join('\n');
-    return window.confirm(`Not legal under the strict rules:\n${list}\n\nForce it through anyway?`) ? true : null;
+  /**
+   * Trust mode: an illegal declaration is only made if the player confirms forcing it through. A legal one goes
+   * straight ahead; otherwise an in-page prompt lists why (browser confirm() pop-ups can be silently blocked).
+   */
+  function askToForce(warnings: string[], declare: (force: boolean) => void) {
+    if (warnings.length === 0) declare(false);
+    else setForcePrompt({ warnings, declare });
   }
 
   /**
@@ -423,8 +445,9 @@ function ViewGame({
         amount: next.amount ?? undefined,
       };
       if (trust) {
-        const force = askToForce(cardDeclarationWarnings(state, play.instanceId, play.enablingInstanceId, play.targetInstanceIds, play.payFromPool, play.amount));
-        if (force !== null) dispatch({ type: 'STAGE_CARD', ...play, force });
+        askToForce(cardDeclarationWarnings(state, play.instanceId, play.enablingInstanceId, play.targetInstanceIds, play.payFromPool, play.amount), (force) =>
+          dispatch({ type: 'STAGE_CARD', ...play, force }),
+        );
       } else {
         dispatch({ type: 'PLAY_HAND_CARD', ...play });
       }
@@ -485,6 +508,11 @@ function ViewGame({
 
   const detailsOwner = details?.kind === 'occupant' ? findOccupant(state, details.instanceId)?.player : undefined;
   const detailsCanAct = !!detailsOwner && isMyBoard(detailsOwner) && (trust || state.activePlayer === detailsOwner) && canAct && !setupBlocked;
+
+  /** A non-character card being dragged from this player's hand (it can be dropped on their Chakra row as a Chakra source). */
+  function myDragCard(playerId: PlayerId) {
+    return handDrag && handDrag.player === playerId && handDrag.kind === 'card' ? handDrag : null;
+  }
 
   function renderPlayerBoard(playerId: PlayerId, position: 'top' | 'bottom') {
     const player = state.players[playerId];
@@ -616,7 +644,30 @@ function ViewGame({
         })()}
       </div>
     );
+    const chakraDrop = myDragCard(playerId);
     const chakra = (
+      <div
+        key="chakra"
+        className={chakraDrop ? 'chakra-drop chakra-drop--active' : 'chakra-drop'}
+        title={chakraDrop ? 'Drop here to discard this card and place a Chakra source' : undefined}
+        onDragOver={
+          chakraDrop
+            ? (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+              }
+            : undefined
+        }
+        onDrop={
+          chakraDrop
+            ? (e) => {
+                e.preventDefault();
+                endHandDrag();
+                dispatch({ type: 'PLACE_CHAKRA_SOURCE', instanceId: chakraDrop.instanceId });
+              }
+            : undefined
+        }
+      >
       <ChakraSourceRow
         key="chakra"
         sources={player.chakraSources}
@@ -627,6 +678,7 @@ function ViewGame({
         onUntap={trust ? (sourceIndex) => dispatch({ type: 'UNTAP_CHAKRA_SOURCE', player: playerId, sourceIndex }) : undefined}
         onAdjustGeneric={trust && mine ? (delta) => dispatch({ type: 'ADJUST_GENERIC_CHAKRA', player: playerId, delta }) : undefined}
       />
+      </div>
     );
     const hand = (
       <HandView
@@ -675,89 +727,137 @@ function ViewGame({
             : undefined
         }
         onOpenDetails={(name, subtitle, text) => setDetails({ kind: 'card', name, subtitle, text })}
+        onHandDragStart={canPlayCards && !pending ? (drag) => setHandDrag({ ...drag, player: playerId }) : undefined}
+        onHandDragEnd={endHandDrag}
       />
     );
     const placingHere = placing && placing.player === playerId ? placing : null;
     const placeSlots = placingHere ? legalCharacterSlots(state, playerId) : [];
+    const myDrag = handDrag && handDrag.player === playerId ? handDrag : null;
+    // Pain has no back-row slot (he enters as 6 tokens), so he drops onto the board as a whole, like a Jutsu.
+    const dragSlots = myDrag?.kind === 'character' && myDrag.entryId !== 'pain' ? legalCharacterSlots(state, playerId) : [];
+    const dropOnBoard = !!myDrag && (myDrag.kind === 'card' || myDrag.entryId === 'pain');
     const placeAt = (slot: number) => {
       if (!placingHere) return;
       dispatch({ type: 'PLAY_CHARACTER', instanceId: placingHere.instanceId, slot });
       setPlacing(null);
     };
-    const back = (
-      <div className="board-row" key="back">
-        {player.backRow.map((character, slot) => {
-          const legal = placeSlots.includes(slot);
-          if (!character) {
-            return legal ? (
-              <button type="button" key={`slot-${slot}`} className="board-slot board-slot--legal" onClick={() => placeAt(slot)} title={`Play ${placingHere!.name} here`}>
-                Place here
-              </button>
-            ) : (
-              <div key={`slot-${slot}`} className="board-slot board-slot--empty" aria-label={`Empty slot ${slot + 1}`} />
-            );
+    // ---- The battlefield mat: every slot is always drawn, Yu-Gi-Oh-style ----
+    // One row of 10 character positions (at most 5 characters, §6.5) and one
+    // row of 10 token slots, lined up one-to-one: token slot N is directly in
+    // front of character slot N (§9). Both rows scroll sideways together.
+    // Side zones: Terrain (left) and Missions (right).
+    const characterCell = (slot: number) => {
+      const character = player.backRow[slot];
+      const legal = placeSlots.includes(slot);
+      // Dragging a character from this player's hand: its legal slots light up, and dropping on one plays it there.
+      const dropHere = dragSlots.includes(slot);
+      const dropProps = dropHere
+        ? {
+            onDragOver: (e: React.DragEvent) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              if (dropSlot !== slot) setDropSlot(slot);
+            },
+            onDragLeave: () => setDropSlot((cur) => (cur === slot ? null : cur)),
+            onDrop: (e: React.DragEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              dispatch({ type: 'PLAY_CHARACTER', instanceId: handDrag!.instanceId, slot });
+              endHandDrag();
+            },
           }
+        : {};
+      const dropClass = dropHere ? ` board-cell--drop${dropSlot === slot ? ' board-cell--drop-over' : ''}` : '';
+      if (!character) {
+        if (dropHere) {
           return (
-            <div key={character.instanceId} className={legal ? 'board-slot-wrap board-slot-wrap--legal' : 'board-slot-wrap'}>
-              {legal && (
-                <button type="button" className="board-slot__push" onClick={() => placeAt(slot)} title={`Play ${placingHere!.name} here — ${character.name} shifts aside`}>
-                  Place here ⇄
-                </button>
-              )}
-              <CharacterCard
-                character={character}
-                state={state}
-                isTargetable={isTargetable}
-                isEnablable={isEnablable}
-                onClickAsTarget={clickTarget}
-                onClickAsEnabler={clickEnabler}
-                onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
-                draggable={trust && mine && !pending}
-              />
+            <div key={`slot-${slot}`} className={`board-cell board-cell--character board-cell--empty${dropClass}`} aria-label={`Drop to play in slot ${slot + 1}`} {...dropProps}>
+              <span className="board-cell__label">Play here</span>
             </div>
           );
-        })}
-      </div>
-    );
+        }
+        return legal ? (
+          <button type="button" key={`slot-${slot}`} className="board-cell board-cell--character board-cell--legal" onClick={() => placeAt(slot)} title={`Play ${placingHere!.name} here`}>
+            Place here
+          </button>
+        ) : (
+          <div key={`slot-${slot}`} className="board-cell board-cell--character board-cell--empty" aria-label={`Empty character slot ${slot + 1}`}>
+            <span className="board-cell__label">Character</span>
+          </div>
+        );
+      }
+      return (
+        <div key={character.instanceId} className={`board-cell board-cell--character board-cell--filled${legal ? ' board-cell--push' : ''}${dropClass}`} {...dropProps}>
+          {legal && (
+            <button type="button" className="board-slot__push" onClick={() => placeAt(slot)} title={`Play ${placingHere!.name} here — ${character.name} shifts aside`}>
+              Place here ⇄
+            </button>
+          )}
+          <CharacterCard
+            character={character}
+            state={state}
+            isTargetable={isTargetable}
+            isEnablable={isEnablable}
+            onClickAsTarget={clickTarget}
+            onClickAsEnabler={clickEnabler}
+            onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
+            draggable={trust && mine && !pending}
+          />
+        </div>
+      );
+    };
     const tokenChoice = mine ? state.pendingChoices.find((c) => c.player === playerId && c.resolverId === 'token-slot') : undefined;
     const tokenSlots = tokenChoice ? tokenChoice.options.map((o) => Number(o.id)) : [];
-    const lastToken = player.frontRow.reduce((last, t, i) => (t ? i : last), -1);
-    const front = (
-      <div className="front-row" key="front">
-        {player.frontRow.map((token, slot) => {
-          if (token) {
-            return (
-              <TokenCard
-                key={token.instanceId}
-                token={token}
-                state={state}
-                isTargetable={isTargetable}
-                onClickAsTarget={clickTarget}
-                onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
-              />
-            );
-          }
-          if (tokenSlots.includes(slot)) {
-            return (
-              <button
-                type="button"
-                key={`fslot-${slot}`}
-                className="board-slot board-slot--legal board-slot--token"
-                onClick={() => dispatch({ type: 'RESOLVE_CHOICE', choiceId: tokenChoice!.id, optionIds: [String(slot)] })}
-              >
-                Here
-              </button>
-            );
-          }
-          // Gaps between tokens are drawn so positions stay visible; trailing empty slots are left out.
-          return slot < lastToken ? <div key={`fslot-${slot}`} className="board-slot board-slot--empty board-slot--token" aria-label={`Empty front slot ${slot + 1}`} /> : null;
-        })}
+    const tokenCell = (slot: number) => {
+      const token = player.frontRow[slot];
+      if (token) {
+        return (
+          <div key={token.instanceId} className="board-cell board-cell--token board-cell--filled">
+            <TokenCard
+              token={token}
+              state={state}
+              isTargetable={isTargetable}
+              onClickAsTarget={clickTarget}
+              onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
+            />
+          </div>
+        );
+      }
+      if (tokenSlots.includes(slot)) {
+        return (
+          <button
+            type="button"
+            key={`fslot-${slot}`}
+            className="board-cell board-cell--token board-cell--legal"
+            onClick={() => dispatch({ type: 'RESOLVE_CHOICE', choiceId: tokenChoice!.id, optionIds: [String(slot)] })}
+          >
+            Here
+          </button>
+        );
+      }
+      return (
+        <div key={`fslot-${slot}`} className="board-cell board-cell--token board-cell--empty" aria-label={`Empty token slot ${slot + 1}`}>
+          <span className="board-cell__label">Token</span>
+        </div>
+      );
+    };
+    const characterRow = (
+      <div className="mat__row mat__row--characters" key="back">
+        {player.backRow.map((_, slot) => characterCell(slot))}
       </div>
     );
-    const inPlay = (player.terrainInPlay || player.missionsInPlay.length > 0) && (
-      <div className="in-play-cards" key="inplay">
-        {player.terrainInPlay && (
+    const tokenRow = (
+      <div className="mat__row mat__row--tokens" key="front">
+        {player.frontRow.map((_, slot) => tokenCell(slot))}
+      </div>
+    );
+    const terrainZone = (
+      <div className={`mat__zone mat__zone--terrain${player.terrainInPlay ? ' mat__zone--filled' : ''}`} key="terrain">
+        <span className="mat__zone-title">Terrain</span>
+        {player.terrainInPlay ? (
           <InPlayChip
+            plain
             label="Terrain"
             name={getHandCardDef(player.terrainInPlay.defId)?.name}
             dragInstanceId={trust && mine ? player.terrainInPlay.instanceId : undefined}
@@ -765,10 +865,19 @@ function ViewGame({
               setDetails({ kind: 'card', name, subtitle: 'Terrain in play', text: getHandCardText(name), returnInstanceId: trust && mine ? player.terrainInPlay!.instanceId : undefined })
             }
           />
+        ) : (
+          <span className="mat__zone-empty">None</span>
         )}
+      </div>
+    );
+    const missionZone = (
+      <div className={`mat__zone mat__zone--missions${player.missionsInPlay.length > 0 ? ' mat__zone--filled' : ''}`} key="missions">
+        <span className="mat__zone-title">Missions</span>
+        {player.missionsInPlay.length === 0 && <span className="mat__zone-empty">None</span>}
         {player.missionsInPlay.map((m) => (
           <span className="in-play-cards__mission" key={m.instanceId}>
             <InPlayChip
+              plain
               label="Mission"
               name={m.defId === '__hidden__' ? undefined : getHandCardDef(m.defId)?.name}
               progress={m.defId === '__hidden__' ? undefined : missionProgressText(m.defId, m.extra)}
@@ -790,17 +899,41 @@ function ViewGame({
       </div>
     );
 
-    // The battlefield is ONE shared, wide, neutral-toned space (assembled in
-    // the main return below from both players' halves) rather than living
-    // inside each player's own colored HUD — each player still has their own
-    // board limits (5 characters, 10 tokens), but their deployed units render
-    // together, facing each other across the middle seam. Seated across the
-    // table: my back row is nearest me and my front row faces the middle —
-    // the opponent's side is the exact mirror.
-    const battlefieldRows = position === 'bottom' ? [front, back, inPlay] : [inPlay, back, front];
+    // The battlefield is ONE shared space (assembled in the main return below
+    // from both players' halves). Seated across the table: my character row is
+    // nearest me and my token row faces the middle — the opponent's side is
+    // the exact mirror, so the two token rows meet at the seam.
     const battlefield = (
-      <div className={`battlefield-half battlefield-half--${playerId}`} key={playerId}>
-        {battlefieldRows}
+      <div
+        className={`battlefield-half battlefield-half--${playerId} mat mat--${position}${dropOnBoard || dragSlots.length > 0 ? ' mat--drop-target' : ''}`}
+        key={playerId}
+        onDragOver={
+          dropOnBoard
+            ? (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+              }
+            : undefined
+        }
+        onDrop={
+          dropOnBoard
+            ? (e) => {
+                e.preventDefault();
+                const drag = myDrag!;
+                endHandDrag();
+                if (drag.kind === 'character') {
+                  dispatch({ type: 'PLAY_CHARACTER', instanceId: drag.instanceId });
+                  return;
+                }
+                const entry = player.hand.find((h): h is Extract<HandEntry, { kind: 'card' }> => h.kind === 'card' && h.instanceId === drag.instanceId);
+                if (entry) startPlayCard(playerId, entry);
+              }
+            : undefined
+        }
+      >
+        {terrainZone}
+        <div className="mat__rows">{position === 'bottom' ? [tokenRow, characterRow] : [characterRow, tokenRow]}</div>
+        {missionZone}
       </div>
     );
 
@@ -810,7 +943,8 @@ function ViewGame({
     // after the shared battlefield for the bottom board.
     const hud = (
       <div className={`player-board player-board--${position} player-board--${playerId}`} key={playerId}>
-        {[info, chakra, hand]}
+        {/* The hand sits nearest the board: right under it for the bottom player, right over it for the top one. */}
+        {position === 'bottom' ? [hand, chakra, info] : [info, chakra, hand]}
       </div>
     );
 
@@ -829,9 +963,7 @@ function ViewGame({
             <button
               type="button"
               title="Start a brand-new game with the same players (keeps the connection)"
-              onClick={() => {
-                if (window.confirm('Restart the game? The current game will be lost.')) onRestart();
-              }}
+              onClick={() => setConfirmRestart(true)}
             >
               Restart game
             </button>
@@ -1046,6 +1178,49 @@ function ViewGame({
         />
       )}
       {deckTool && <DeckToolsModal state={state} player={deckTool.player} tool={deckTool.tool} dispatch={dispatch} onClose={() => setDeckTool(null)} />}
+      {forcePrompt && (
+        <DetailsModal title="Not legal under the strict rules" subtitle="Trust mode — you can still force it through" hideText onClose={() => setForcePrompt(null)}>
+          <ul className="force-prompt__list">
+            {forcePrompt.warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+          <div className="force-prompt__actions">
+            <button type="button" onClick={() => setForcePrompt(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="force-prompt__force"
+              onClick={() => {
+                forcePrompt.declare(true);
+                setForcePrompt(null);
+              }}
+            >
+              Force it through
+            </button>
+          </div>
+        </DetailsModal>
+      )}
+      {confirmRestart && onRestart && (
+        <DetailsModal title="Restart the game?" subtitle="The current game will be lost." hideText onClose={() => setConfirmRestart(false)}>
+          <div className="force-prompt__actions">
+            <button type="button" onClick={() => setConfirmRestart(false)}>
+              Keep playing
+            </button>
+            <button
+              type="button"
+              className="force-prompt__force"
+              onClick={() => {
+                setConfirmRestart(false);
+                onRestart();
+              }}
+            >
+              Restart
+            </button>
+          </div>
+        </DetailsModal>
+      )}
       {details?.kind === 'card' && (
         <DetailsModal title={details.name} subtitle={details.subtitle} text={details.text} onClose={() => setDetails(null)}>
           {details.returnInstanceId && (

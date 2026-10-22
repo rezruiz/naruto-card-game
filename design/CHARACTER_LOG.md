@@ -217,7 +217,7 @@ Worked examples of the two path shapes:
   row.
 - **Bent:** primary target must be a front-row Token; the 2nd hit is
   whatever Character is aligned behind it in the back row (via the
-  column-pairing rule, §9); the 3rd hit is that Character's left or
+  one-to-one rows, §9); the 3rd hit is that Character's left or
   right neighbor in the back row (attacker's choice of side).
 In all cases, damage is 3 / 2 / 1 down the path in order, and the path
 simply stops early (dealing less total damage) if it runs off the edge

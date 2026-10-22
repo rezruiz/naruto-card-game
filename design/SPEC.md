@@ -774,10 +774,11 @@ starting-character treatment.)
 
 ## 9. Combat & Targeting
 
-**Board order — two rows per player:** each player's board has a **back
-row** (Characters, up to 5, §6.5) and a **front row** (Tokens, up to 10 —
-a flat cap that exists on top of any card-specific token cap, e.g. Clay
-Spider's own 5-token limit, §13).
+**Board order — two rows per player [Updated]:** each player's board has a
+**back row** of 10 positions for Characters (at most 5 Characters in play
+at once, §6.5 — the extra positions let them spread out) and a **front
+row** of 10 slots for Tokens (up to 10 — a flat cap that exists on top of
+any card-specific token cap, e.g. Clay Spider's own 5-token limit, §13).
 
 **Positioning [Updated]:** you choose where a new unit goes.
 - **Characters:** play a new character into a back-row slot of your
@@ -790,27 +791,24 @@ Spider's own 5-token limit, §13).
   you choose which of those slots. Tokens never push other tokens aside,
   and a token **can't be repositioned** after it's created.
 
-**Columns:** the front row is divided into 5 column-pairs (2 token slots
-each), and each pair aligns with one back-row column — so front-row
-slots 1-2 pair with back-row column 1, slots 3-4 with column 2, and so
-on. This is what lets front/back adjacency work despite the rows holding
-different numbers of slots.
+**Columns [Updated]:** the two rows line up one-to-one — front-row slot 1
+is directly in front of back-row position 1, slot 2 in front of position
+2, and so on through 10.
 
 **Adjacency comes in two shapes**, both referenced by "left/right of,"
 "adjacent to," or a **cross pattern**:
 - **Same-row (left/right)** — the occupant immediately before/after a
   given card within its own row. Unchanged from before.
-- **Cross-row (front/back)** — whatever occupant(s) sit in the other row
-  at that card's aligned column. A back-row Character's front neighbor is
-  the Token(s) in its paired front-row slots (up to 2); a front-row
-  Token's back neighbor is the 1 Character in its paired back-row column,
-  if any.
+- **Cross-row (front/back)** — whatever sits in the same position of the
+  other row. A back-row Character's front neighbor is the 1 Token directly
+  in front of it, if any; a front-row Token's back neighbor is the 1
+  Character directly behind it, if any.
 
 A **cross pattern** effect (e.g. Shinra Tensei, C3 Shi-Suri, §13) hits
 the epicenter/main target plus whatever's immediately left, right, in
 front of, and behind it — up to 4 additional occupants. Any arm with
-nothing there (edge of a row, empty paired slot, no card in the aligned
-column) simply doesn't hit anything, the same way being at the end of a
+nothing there (edge of a row, an empty slot in front or behind) simply
+doesn't hit anything, the same way being at the end of a
 row already means no left or right neighbor.
 
 None of this crosses between the two players' sides — adjacency and
