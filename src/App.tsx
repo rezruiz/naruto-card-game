@@ -68,6 +68,50 @@ type Details =
   | { kind: 'card'; name: string; subtitle: string; text?: string; returnInstanceId?: string }
   | null;
 
+/** A deck or pile on the board: a card-back (or face-up) stack whose thickness shows roughly how many cards are left, with its count and name. */
+function Pile({
+  label,
+  count,
+  kind,
+  sub,
+  faceUp,
+  title,
+  onClick,
+  disabledReason,
+}: {
+  label: string;
+  count: number;
+  kind: 'jutsu' | 'character' | 'graveyard' | 'consumed';
+  /** A second line under the name, e.g. the Character Deck's draw tax. */
+  sub?: string;
+  /** Discard-style piles are drawn face up (a plain card face) rather than as a card back. */
+  faceUp?: boolean;
+  title: string;
+  onClick?: () => void;
+  /** Why it can't be used right now — greys it out (the title explains). */
+  disabledReason?: string;
+}) {
+  const layers = Math.min(6, Math.ceil(count / 8));
+  const depth = Array.from({ length: layers }, (_, i) => `${i + 1}px ${i + 1}px 0 -1px var(--pile-edge)`).join(', ');
+  const clickable = !!onClick && !disabledReason;
+  return (
+    <button
+      type="button"
+      className={`pile pile--${kind}${faceUp ? ' pile--face-up' : ''}${count === 0 ? ' pile--empty' : ''}${clickable ? ' pile--clickable' : ''}${disabledReason ? ' pile--blocked' : ''}`}
+      title={title}
+      aria-label={`${label}: ${count} card${count === 1 ? '' : 's'}${sub ? `, ${sub}` : ''}`}
+      onClick={clickable ? onClick : undefined}
+      aria-disabled={!clickable}
+    >
+      <span className="pile__card" style={depth ? { boxShadow: depth } : undefined}>
+        <span className="pile__count">{count}</span>
+      </span>
+      <span className="pile__label">{label}</span>
+      {sub && <span className="pile__sub">{sub}</span>}
+    </button>
+  );
+}
+
 /** A Terrain/Mission in play: its name and, for a Mission, a live progress readout (e.g. "2/6 Untaps"). Clicking opens the full card text. Face-down (hidden) Missions show no name and can't be opened. */
 function InPlayChip({
   label,
@@ -298,6 +342,8 @@ function ViewGame({
   /** A declaration that breaks a strict rule, waiting on the player's "force it through?" answer. */
   const [forcePrompt, setForcePrompt] = useState<{ warnings: string[]; declare: (force: boolean) => void } | null>(null);
   const [confirmRestart, setConfirmRestart] = useState(false);
+  /** Whose Jutsu Deck menu (Draw / Shuffle / Search / Look at top) is open. */
+  const [deckMenuFor, setDeckMenuFor] = useState<PlayerId | null>(null);
   const endHandDrag = () => {
     setHandDrag(null);
     setDropSlot(null);
@@ -572,70 +618,6 @@ function ViewGame({
               Waiting for {playerId.toUpperCase()} to reveal {player.pendingHandReveal.count} card(s) (Field Intelligence)…
             </div>
           ))}
-        {trust && mine && !setupBlocked && (
-          <div className="deck-bar">
-            <span className="deck-bar__count">Deck: {player.handDeck.length}</span>
-            <button
-              type="button"
-              title="Manual correction: draw 1 extra card (your normal once-per-turn draw is the Draw button in the sidebar during your Draw Phase)"
-              onClick={() => dispatch({ type: 'DRAW_CARDS', player: playerId, count: 1 })}
-            >
-              Draw
-            </button>
-            <button type="button" onClick={() => dispatch({ type: 'SHUFFLE_DECK', player: playerId })}>
-              Shuffle
-            </button>
-            <button type="button" onClick={() => setDeckTool({ player: playerId, tool: 'search' })}>
-              Search…
-            </button>
-            <button type="button" onClick={() => setDeckTool({ player: playerId, tool: 'top' })}>
-              Look at top…
-            </button>
-            <button type="button" onClick={() => setDeckTool({ player: playerId, tool: 'discard' })}>
-              Discard pile ({player.discardPile.length})
-            </button>
-            <button
-              type="button"
-              title="Retrieve a card wrongly Consumed for a Chakra source (fixes an accidental or wrong placement)"
-              onClick={() => setDeckTool({ player: playerId, tool: 'consumed' })}
-            >
-              Consumed pile ({player.consumedPile.length})
-            </button>
-          </div>
-        )}
-        {mine && !setupBlocked && (() => {
-          const tax = currentTax(state, playerId);
-          const onTime = isActive && MAIN_PHASES.has(state.phase);
-          const blocker =
-            player.characterDeck.length === 0
-              ? 'Your Character Deck is empty.'
-              : player.pendingCharacterReveal
-                ? 'Pick from your current Character Deck reveal first.'
-                : !onTime && !trust
-                  ? 'Only during your own Main Phase.'
-                  : !trust && player.genericChakraAvailable < tax
-                    ? `Needs ${tax} available Chakra — tap Chakra sources first (you have ${player.genericChakraAvailable}).`
-                    : undefined;
-          return (
-            <div className="character-deck-bar">
-              <span className="character-deck-bar__info">
-                <strong>Character Deck:</strong> {player.characterDeck.length} card(s) · tax <strong>{tax}</strong> Chakra
-                {tax < 8 && <span className="character-deck-bar__next"> (next paid draw: {Math.min(8, tax + 2)})</span>}
-              </span>
-              <button
-                type="button"
-                className="character-deck-bar__draw"
-                disabled={!!blocker}
-                title={blocker ?? `Pay ${tax} Chakra: look at the top 2 of your Character Deck and keep 1. Resolves immediately (no stack). Playing the kept card later is free.`}
-                onClick={() => dispatch({ type: 'DRAW_CHARACTER_DECK', player: playerId })}
-              >
-                Pay {tax} Chakra &amp; draw a character
-              </button>
-              {blocker && <span className="character-deck-bar__reason">{blocker}</span>}
-              {!blocker && trust && !onTime && <span className="character-deck-bar__reason">Not your Main Phase — allowed in trust mode (flagged).</span>}
-            </div>
-          );
-        })()}
       </div>
     );
     const chakraDrop = myDragCard(playerId);
@@ -903,6 +885,99 @@ function ViewGame({
       </div>
     );
 
+    // ---- Right column: graveyard + Consumed pile on top, Jutsu Deck + Character Deck below (Yu-Gi-Oh style) ----
+    const tax = currentTax(state, playerId);
+    const onTime = isActive && MAIN_PHASES.has(state.phase);
+    const characterDrawBlocker =
+      player.characterDeck.length === 0
+        ? 'Your Character Deck is empty.'
+        : player.pendingCharacterReveal
+          ? 'Pick from your current Character Deck reveal first.'
+          : !onTime && !trust
+            ? 'Only during your own Main Phase.'
+            : !trust && player.genericChakraAvailable < tax
+              ? `Needs ${tax} available Chakra — tap Chakra sources first (you have ${player.genericChakraAvailable}).`
+              : undefined;
+    const canUseDecks = mine && !setupBlocked;
+    const deckMenuOpen = deckMenuFor === playerId;
+    const piles = (
+      <div className="deck-col__row" key="piles">
+        <Pile
+          label="Graveyard"
+          count={player.discardPile.length}
+          kind="graveyard"
+          faceUp
+          title="Discard pile — click to look through it"
+          onClick={canUseDecks && trust ? () => setDeckTool({ player: playerId, tool: 'discard' }) : undefined}
+        />
+        <Pile
+          label="Consumed"
+          count={player.consumedPile.length}
+          kind="consumed"
+          faceUp
+          title="Cards Consumed for Chakra sources — click to retrieve one placed by mistake"
+          onClick={canUseDecks && trust ? () => setDeckTool({ player: playerId, tool: 'consumed' }) : undefined}
+        />
+      </div>
+    );
+    const deckMenuItems: [string, string, () => void][] = [
+      ['Draw 1', 'Manual correction: draw 1 extra card (your normal once-per-turn draw is the Draw button in the sidebar during your Draw Phase)', () => dispatch({ type: 'DRAW_CARDS', player: playerId, count: 1 })],
+      ['Shuffle', 'Shuffle your Jutsu Deck', () => dispatch({ type: 'SHUFFLE_DECK', player: playerId })],
+      ['Search…', 'Search your Jutsu Deck for a card', () => setDeckTool({ player: playerId, tool: 'search' })],
+      ['Look at top…', 'Look at the top cards of your Jutsu Deck', () => setDeckTool({ player: playerId, tool: 'top' })],
+    ];
+    const decks = (
+      <div className="deck-col__row" key="decks">
+        <div className="deck-col__menu-anchor">
+          <Pile
+            label="Jutsu Deck"
+            count={player.handDeck.length}
+            kind="jutsu"
+            title={canUseDecks && trust ? 'Jutsu Deck — click for Draw, Shuffle, Search, Look at top' : 'Jutsu Deck'}
+            onClick={canUseDecks && trust ? () => setDeckMenuFor(deckMenuOpen ? null : playerId) : undefined}
+          />
+          {deckMenuOpen && canUseDecks && trust && (
+            <div className={`deck-menu deck-menu--${position}`} role="menu">
+              {deckMenuItems.map(([label, hint, act]) => (
+                <button
+                  key={label}
+                  type="button"
+                  role="menuitem"
+                  title={hint}
+                  onClick={() => {
+                    setDeckMenuFor(null);
+                    act();
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <Pile
+          label="Character Deck"
+          count={player.characterDeck.length}
+          kind="character"
+          sub={`Tax ${tax}`}
+          disabledReason={canUseDecks ? characterDrawBlocker : undefined}
+          title={
+            canUseDecks
+              ? (characterDrawBlocker ??
+                `Pay ${tax} Chakra: look at the top 2 of your Character Deck and keep 1. Resolves immediately (no stack). Playing the kept card later is free.${tax < 8 ? ` Next paid draw: ${Math.min(8, tax + 2)}.` : ''}${trust && !onTime ? ' Not your Main Phase — allowed in trust mode (flagged).' : ''}`)
+              : `Character Deck — draws cost ${tax} Chakra`
+          }
+          onClick={canUseDecks && !characterDrawBlocker ? () => dispatch({ type: 'DRAW_CHARACTER_DECK', player: playerId }) : undefined}
+        />
+      </div>
+    );
+    const deckColumn = (
+      <div className="mat__side mat__side--decks" key="decks-col">
+        {/* Mirrored like the rest of the board: graveyard toward the middle seam, decks nearest the player. */}
+        {position === 'bottom' ? [piles, decks] : [decks, piles]}
+      </div>
+    );
+
     // The battlefield is ONE shared space (assembled in the main return below
     // from both players' halves). Seated across the table: my character row is
     // nearest me and my token row faces the middle — the opponent's side is
@@ -935,10 +1010,10 @@ function ViewGame({
             : undefined
         }
       >
-        {/* Health sits in each player's own bottom-left corner, Yu-Gi-Oh LP-style — mirrored, so the opponent's is top-right. */}
-        <div className="mat__side mat__side--terrain">{position === 'bottom' ? [terrainZone, healthPlate] : [healthPlate, terrainZone]}</div>
+        {/* Left column: Missions over Terrain, with Health in each player's own bottom-left corner (Yu-Gi-Oh LP-style) — mirrored for the opponent. */}
+        <div className="mat__side mat__side--field">{position === 'bottom' ? [missionZone, terrainZone, healthPlate] : [healthPlate, terrainZone, missionZone]}</div>
         <div className="mat__rows">{position === 'bottom' ? [tokenRow, characterRow] : [characterRow, tokenRow]}</div>
-        {missionZone}
+        {deckColumn}
       </div>
     );
 
@@ -981,6 +1056,10 @@ function ViewGame({
         </span>
       </div>
       <div className="game-layout">
+        {/* The log sits on the far left, always in view, so both players can follow what happened. */}
+        <aside className="game-log">
+          <ActionLog log={state.log} />
+        </aside>
         <div className="game-main">
           {top.hud}
           <div className="shared-battlefield">
@@ -1158,7 +1237,6 @@ function ViewGame({
           <RulesReference />
         </aside>
       </div>
-      <ActionLog log={state.log} />
       {details?.kind === 'occupant' && (
         <CharacterDetailsModal
           state={state}

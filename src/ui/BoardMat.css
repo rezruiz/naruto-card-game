@@ -1,5 +1,7 @@
 /* ---- Battlefield mat: every character and token slot is always drawn ----
-   Each player's half is a grid: Terrain zone | the two rows | Missions zone.
+   Each player's half is a grid: field column (Missions over Terrain, Health in
+   the corner) | the two rows | deck column (graveyard + Consumed pile over the
+   Jutsu Deck and Character Deck).
    The character row (10 positions, at most 5 characters) and the token row
    (10 slots) line up one-to-one — token N sits directly in front of
    character N — and scroll sideways together. Character row nearest the
@@ -7,28 +9,45 @@
 
 .mat {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr) 112px;
-  grid-template-areas: 'terrain rows missions';
+  grid-template-columns: 116px minmax(0, 1fr) 136px;
+  grid-template-areas: 'field rows decks';
   gap: 10px;
   align-items: stretch;
   padding: 10px;
 }
 
-/* The Terrain-side column also holds the player's Health plate, in their own bottom-left corner. */
-.mat__side--terrain {
-  grid-area: terrain;
+/* Field column: Missions over Terrain, with the player's Health plate in their own bottom-left corner. */
+.mat__side--field {
+  grid-area: field;
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
 }
 
-.mat__side--terrain > .mat__zone {
+.mat__side--field > .mat__zone {
   flex: 1;
 }
 
-.mat__zone--missions {
-  grid-area: missions;
+/* Deck column: graveyard + Consumed pile, then the two decks. */
+.mat__side--decks {
+  grid-area: decks;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.deck-col__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.deck-col__menu-anchor {
+  position: relative;
 }
 
 /* One scroll area for both rows, so they always stay lined up. */
@@ -189,18 +208,23 @@ button.in-play-chip--plain:hover {
 
 /* Top player's half reads as a mirror: zones swap sides like an opponent across the table. */
 .mat--top {
-  grid-template-columns: 112px minmax(0, 1fr) 116px;
-  grid-template-areas: 'missions rows terrain';
+  grid-template-columns: 136px minmax(0, 1fr) 116px;
+  grid-template-areas: 'decks rows field';
 }
 
 @media (max-width: 760px) {
   .mat {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'terrain' 'rows' 'missions';
+    grid-template-areas: 'field' 'rows' 'decks';
   }
   .mat--top {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'missions' 'rows' 'terrain';
+    grid-template-areas: 'decks' 'rows' 'field';
+  }
+  .mat__side--field,
+  .mat__side--decks {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
   .mat__zone {
     flex-direction: row;
@@ -389,5 +413,200 @@ button.in-play-chip--plain:hover {
   .health-plate--hit,
   .health-plate__change {
     animation: none;
+  }
+}
+
+/* ---- Decks and piles on the board ---- */
+.pile {
+  --pile-edge: #1b1530;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+  min-width: 0;
+}
+
+/* The top card of the stack; its box-shadow layers (set inline) give the stack thickness. */
+.pile__card {
+  position: relative;
+  width: 54px;
+  height: 76px;
+  border-radius: 6px;
+  border: 2px solid #4b3b7a;
+  background: repeating-linear-gradient(45deg, #2b2340, #2b2340 6px, #3a2f57 6px, #3a2f57 12px);
+  display: grid;
+  place-items: center;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.pile--character .pile__card {
+  border-color: #a3271b;
+  background: repeating-linear-gradient(45deg, #3a1d1d, #3a1d1d 6px, #522727 6px, #522727 12px);
+}
+
+.pile--character {
+  --pile-edge: #2a1212;
+}
+
+/* Graveyard / Consumed: face-up piles. */
+.pile--face-up {
+  --pile-edge: var(--card-border);
+}
+
+.pile--face-up .pile__card {
+  border: 2px solid var(--card-border);
+  background: var(--card-bg);
+}
+
+.pile--empty .pile__card {
+  border-style: dashed;
+  background: transparent;
+  box-shadow: none !important;
+  opacity: 0.6;
+}
+
+.pile__count {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+.pile--face-up .pile__count {
+  color: var(--text);
+  text-shadow: none;
+}
+
+.pile__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.pile__sub {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.pile--clickable {
+  cursor: pointer;
+}
+
+.pile--clickable:hover .pile__card,
+.pile--clickable:focus-visible .pile__card {
+  transform: translateY(-2px);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.pile--blocked .pile__card {
+  filter: grayscale(0.6);
+  opacity: 0.6;
+}
+
+/* The Jutsu Deck's tool menu. */
+.deck-menu {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  min-width: 130px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Opens away from the board edge: upward for the bottom player, downward for the top one. */
+.deck-menu--bottom {
+  bottom: calc(100% + 6px);
+}
+
+.deck-menu--top {
+  top: calc(100% + 6px);
+}
+
+.deck-menu button {
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.deck-menu button:hover {
+  background: var(--accent-bg);
+}
+
+/* ---- Page layout: log (left) | board and hands (middle) | turn controls (right) ---- */
+.game-log {
+  order: -1;
+  width: 250px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 12px;
+}
+
+.game-log .action-log {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 24px);
+  box-sizing: border-box;
+  padding: 10px 12px;
+}
+
+.game-log .action-log h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.game-log .action-log ul {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 1.4;
+  scrollbar-width: thin;
+}
+
+.game-log .action-log li + li {
+  margin-top: 3px;
+}
+
+/* Narrow screens: everything stacks, and the log moves below the board. */
+@media (max-width: 1000px) {
+  .game-layout {
+    flex-wrap: wrap;
+  }
+
+  .game-log {
+    order: 1;
+    width: 100%;
+    position: static;
+  }
+
+  .game-log .action-log {
+    max-height: 320px;
   }
 }
