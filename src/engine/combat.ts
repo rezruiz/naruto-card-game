@@ -365,7 +365,7 @@ function applyDefeatInner(
       // Path rather than to Pain himself) override this via their own
       // token-defeat hooks once that structure is implemented.
       next = fizzleOwnedTokens(next, player, occupant.instanceId);
-      next = recordCharacterDefeat(next, player, occupant.rank, occupant.styles, killerInstanceId);
+      next = recordCharacterDefeat(next, player, occupant.rank, occupant.styles, killerInstanceId, characterCardOf(occupant.defId));
     }
   } else {
     const frontRow = p.frontRow.slice();
@@ -390,13 +390,18 @@ function applyDefeatInner(
     if (occupant.extra.painPath && !painPathsRemain(next, player)) {
       next = appendLog(next, `${occupant.name} is defeated.`);
       next = appendLog(next, 'Pain of the Six Paths is defeated — all six Paths have fallen.');
-      next = recordCharacterDefeat(next, player, 'S', ['None'], killerInstanceId);
+      next = recordCharacterDefeat(next, player, 'S', ['None'], killerInstanceId, 'pain');
       return checkWinner(next);
     }
   }
 
   next = appendLog(next, `${occupant.name} is defeated.`);
   return checkWinner(next);
+}
+
+/** The Character Deck card a character in play came from — the same id, except Sasori, whose later forms are still his Hiruko card. */
+function characterCardOf(defId: string): string {
+  return defId.startsWith('sasori') ? 'sasori-hiruko' : defId;
 }
 
 /** Whether any of this player's Pain Path tokens is still in play — while one is, Pain of the Six Paths is a character in play. */
@@ -410,8 +415,19 @@ export function painPathsRemain(state: GameState, player: PlayerId): boolean {
  * trigger, the opponent's "defeated an enemy of Rank X" Mission event, and
  * kill credit on the unit that made the kill.
  */
-function recordCharacterDefeat(state: GameState, player: PlayerId, rank: CharacterInstance['rank'], styles: Style[], killerInstanceId?: string): GameState {
+function recordCharacterDefeat(
+  state: GameState,
+  player: PlayerId,
+  rank: CharacterInstance['rank'],
+  styles: Style[],
+  killerInstanceId?: string,
+  /** The defeated character's Character Deck card, which goes to its owner's Character graveyard. */
+  cardId?: string,
+): GameState {
   let next = loseHealth(state, player, HEALTH_LOST_ON_DEFEAT[rank] ?? 0);
+  if (cardId) {
+    next = { ...next, players: { ...next.players, [player]: { ...next.players[player], characterGraveyard: [...next.players[player].characterGraveyard, cardId] } } };
+  }
   // §8's Reinforcement trigger is recorded here, at the moment of defeat
   // (whether any other C-rank-or-higher character is still standing —
   // D-ranks don't count; Pain counts while any of his Paths stands), and

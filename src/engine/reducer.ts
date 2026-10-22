@@ -34,12 +34,15 @@ import {
   adjustPlayerHealth,
   adjustPool,
   dealManualDamage,
+  characterDeckTake,
   deckTake,
   deckToBottom,
   drawCards,
   moveHandCard,
+  returnFromCharacterGraveyard,
   returnFromConsumed,
   returnFromDiscard,
+  shuffleCharacterDeck,
   shuffleDeck,
   toggleStatus,
   untapChakraSource,
@@ -444,6 +447,12 @@ function reduce(state: GameState, action: GameAction): GameState {
       return deckTake(drained, action.player, action.instanceId, action.shuffle);
     case 'DECK_TO_BOTTOM':
       return deckToBottom(drained, action.player, action.instanceId);
+    case 'SHUFFLE_CHARACTER_DECK':
+      return shuffleCharacterDeck(drained, action.player);
+    case 'CHARACTER_DECK_TAKE':
+      return characterDeckTake(drained, action.player, action.index);
+    case 'RETURN_FROM_CHARACTER_GRAVEYARD':
+      return returnFromCharacterGraveyard(drained, action.player, action.index);
     case 'RETURN_CHARACTER_TO_HAND':
       return returnCharacterToHand(drained, action.instanceId);
     case 'RETURN_IN_PLAY_CARD_TO_HAND':

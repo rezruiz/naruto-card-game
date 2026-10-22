@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ChakraSource } from '../../engine/types';
 
 export function ChakraSourceRow({
@@ -8,6 +9,7 @@ export function ChakraSourceRow({
   onTap,
   onUntap,
   onAdjustGeneric,
+  endSlot,
 }: {
   sources: ChakraSource[];
   genericChakraAvailable: number;
@@ -19,6 +21,8 @@ export function ChakraSourceRow({
   onUntap?: (index: number) => void;
   /** Trust mode: manual correction of the available Chakra count. */
   onAdjustGeneric?: (delta: number) => void;
+  /** Shown at the far right of the row (the Consumed pile — the cards spent to place these sources). */
+  endSlot?: ReactNode;
 }) {
   return (
     <div className="chakra-sources">
@@ -61,6 +65,7 @@ export function ChakraSourceRow({
         ))}
         {sources.length === 0 && <span className="chakra-sources__empty">No Chakra sources placed yet</span>}
       </div>
+      {endSlot && <div className="chakra-sources__end">{endSlot}</div>}
     </div>
   );
 }

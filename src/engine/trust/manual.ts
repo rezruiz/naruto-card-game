@@ -154,6 +154,38 @@ export function deckTake(state: GameState, player: PlayerId, instanceId: string,
   return appendLog(next, `${player} takes a card from their deck${doShuffle ? ' and shuffles' : ''}.`);
 }
 
+export function shuffleCharacterDeck(state: GameState, player: PlayerId): GameState {
+  return appendLog(withPlayer(state, player, { characterDeck: shuffle(state.players[player].characterDeck) }), `${player} shuffles their Character Deck.`);
+}
+
+let characterTakeCounter = 0;
+
+/** Character Deck search: take the card at `index` into hand, then shuffle. A manual tool — no tax is paid and the tax doesn't change. */
+export function characterDeckTake(state: GameState, player: PlayerId, index: number): GameState {
+  const p = state.players[player];
+  const entryId = p.characterDeck[index];
+  if (entryId === undefined) return state;
+  characterTakeCounter += 1;
+  const next = withPlayer(state, player, {
+    characterDeck: shuffle(p.characterDeck.filter((_, i) => i !== index)),
+    hand: [...p.hand, { kind: 'character', instanceId: `${player}-char-search-${characterTakeCounter}`, entryId }],
+  });
+  return appendLog(next, `(manual) ${player} searches their Character Deck, takes a card and shuffles.`);
+}
+
+/** Trust-mode correction: a defeated character's card back from the Character graveyard to hand. */
+export function returnFromCharacterGraveyard(state: GameState, player: PlayerId, index: number): GameState {
+  const p = state.players[player];
+  const entryId = p.characterGraveyard[index];
+  if (entryId === undefined) return state;
+  characterTakeCounter += 1;
+  const next = withPlayer(state, player, {
+    characterGraveyard: p.characterGraveyard.filter((_, i) => i !== index),
+    hand: [...p.hand, { kind: 'character', instanceId: `${player}-char-grave-${characterTakeCounter}`, entryId }],
+  });
+  return appendLog(next, `(manual) ${player} returns a Character card from their Character graveyard to hand.`);
+}
+
 /** Look-at-top-X: put a card from the deck on the bottom. */
 export function deckToBottom(state: GameState, player: PlayerId, instanceId: string): GameState {
   const p = state.players[player];

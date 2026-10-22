@@ -160,7 +160,10 @@ export interface PlayerState {
   characterDeck: string[];
   /** Cards spent to place Chakra sources (§5.2) — separate from, and far more permanent than, the discard pile. */
   consumedPile: HandCardInstance[];
+  /** The Jutsu graveyard: discarded Jutsu Deck cards. */
   discardPile: HandCardInstance[];
+  /** The Character graveyard: the Character Deck cards of this player's defeated characters (entry ids, oldest first). Tokens never go here. */
+  characterGraveyard: string[];
   /**
    * Character Deck entries currently revealed and awaiting a CHOOSE_CHARACTER
    * action (§3's Setup draw, or a §8 Reinforcement draw) — null when nothing
@@ -376,6 +379,11 @@ export type GameAction =
   | { type: 'SHUFFLE_DECK'; player: PlayerId }
   | { type: 'DECK_TAKE'; player: PlayerId; instanceId: string; shuffle: boolean }
   | { type: 'DECK_TO_BOTTOM'; player: PlayerId; instanceId: string }
+  /** Trust-mode Character Deck tools: shuffle it, or search it (take the card at `index` to hand, then shuffle). */
+  | { type: 'SHUFFLE_CHARACTER_DECK'; player: PlayerId }
+  | { type: 'CHARACTER_DECK_TAKE'; player: PlayerId; index: number }
+  /** Trust-mode correction: a Character card in the Character graveyard back to hand. */
+  | { type: 'RETURN_FROM_CHARACTER_GRAVEYARD'; player: PlayerId; index: number }
   | { type: 'RETURN_CHARACTER_TO_HAND'; instanceId: string }
   | { type: 'RETURN_IN_PLAY_CARD_TO_HAND'; instanceId: string }
   | { type: 'RETREAT'; instanceId: string }

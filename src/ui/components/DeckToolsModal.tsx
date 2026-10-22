@@ -2,9 +2,16 @@ import { useState } from 'react';
 import { getHandCardDef } from '../../engine/cards/registry';
 import type { GameAction, GameState, PlayerId } from '../../engine/types';
 import { DetailsModal } from './DetailsModal';
-import { getHandCardText } from '../cardInfo';
+import { getCharacterCardText, getHandCardText } from '../cardInfo';
+import { getCharacterDeckEntry } from '../../engine/characters';
 
-export type DeckTool = 'search' | 'top' | 'discard' | 'consumed';
+/** Jutsu Deck tools (search, look at the top, discard pile, Consumed pile) and Character Deck tools (search, Character graveyard). */
+export type DeckTool = 'search' | 'top' | 'discard' | 'consumed' | 'char-search' | 'char-graveyard';
+
+const characterName = (entryId: string) => {
+  const entry = getCharacterDeckEntry(entryId);
+  return entry ? `${entry.name} (Rank ${entry.rank})` : 'Unknown character';
+};
 
 const cardName = (defId: string) => getHandCardDef(defId)?.name ?? 'Unknown card';
 
@@ -15,6 +22,10 @@ function CardDetailsToggle({ open, onToggle }: { open: boolean; onToggle: () => 
       {open ? 'Hide details' : 'Details'}
     </button>
   );
+}
+
+function CharacterDetailsText({ entryId }: { entryId: string }) {
+  return <div className="deck-list__details">{getCharacterCardText(entryId) ?? 'No card text available.'}</div>;
 }
 
 function CardDetailsText({ defId }: { defId: string }) {
@@ -49,10 +60,76 @@ export function DeckToolsModal({
   );
   const detailsText = (instanceId: string, defId: string) => (openId === instanceId ? <CardDetailsText defId={defId} /> : null);
 
+  // Character Deck search: entries are listed by name but taken by their position in the deck.
+  if (tool === 'char-search') {
+    const listed = p.characterDeck.map((entryId, index) => ({ entryId, index })).sort((a, b) => characterName(a.entryId).localeCompare(characterName(b.entryId)));
+    return (
+      <DetailsModal hideText title="Search Character Deck" subtitle={`${p.characterDeck.length} cards — taking one shuffles the deck afterward (no tax is paid)`} onClose={onClose}>
+        <div className="deck-list">
+          {listed.length === 0 && <span className="details-modal__note">The Character Deck is empty.</span>}
+          {listed.map(({ entryId, index }) => {
+            const key = `char-${index}`;
+            return (
+              <div key={key} className="deck-list__entry">
+                <div className="deck-list__row">
+                  <span>{characterName(entryId)}</span>
+                  <span>
+                    {details(key)}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dispatch({ type: 'CHARACTER_DECK_TAKE', player, index });
+                        onClose();
+                      }}
+                    >
+                      Take to hand
+                    </button>
+                  </span>
+                </div>
+                {openId === key ? <CharacterDetailsText entryId={entryId} /> : null}
+              </div>
+            );
+          })}
+        </div>
+      </DetailsModal>
+    );
+  }
+
+  if (tool === 'char-graveyard') {
+    return (
+      <DetailsModal hideText title="Character graveyard" subtitle={`${p.characterGraveyard.length} defeated character(s)`} onClose={onClose}>
+        <div className="deck-list">
+          {p.characterGraveyard.length === 0 && <span className="details-modal__note">No characters have been defeated yet.</span>}
+          {p.characterGraveyard.map((entryId, index) => {
+            const key = `grave-${index}`;
+            return (
+              <div key={key} className="deck-list__entry">
+                <div className="deck-list__row">
+                  <span>{characterName(entryId)}</span>
+                  <span>
+                    {details(key)}
+                    <button
+                      type="button"
+                      title="Manual correction — e.g. a character defeated by mistake"
+                      onClick={() => dispatch({ type: 'RETURN_FROM_CHARACTER_GRAVEYARD', player, index })}
+                    >
+                      Return to hand
+                    </button>
+                  </span>
+                </div>
+                {openId === key ? <CharacterDetailsText entryId={entryId} /> : null}
+              </div>
+            );
+          })}
+        </div>
+      </DetailsModal>
+    );
+  }
+
   if (tool === 'search') {
     const sorted = p.handDeck.slice().sort((a, b) => cardName(a.defId).localeCompare(cardName(b.defId)));
     return (
-      <DetailsModal hideText title="Search deck" subtitle={`${p.handDeck.length} cards — taking one shuffles the deck afterward`} onClose={onClose}>
+      <DetailsModal hideText title="Search Jutsu Deck" subtitle={`${p.handDeck.length} cards — taking one shuffles the deck afterward`} onClose={onClose}>
         <div className="deck-list">
           {sorted.length === 0 && <span className="details-modal__note">The deck is empty.</span>}
           {sorted.map((c) => (
@@ -188,9 +265,9 @@ export function DeckToolsModal({
   }
 
   return (
-    <DetailsModal hideText title="Discard pile" subtitle={`${p.discardPile.length} cards · ${p.consumedPile.length} consumed for Chakra`} onClose={onClose}>
+    <DetailsModal hideText title="Jutsu graveyard" subtitle={`${p.discardPile.length} discarded card(s)`} onClose={onClose}>
       <div className="deck-list">
-        {p.discardPile.length === 0 && <span className="details-modal__note">The discard pile is empty.</span>}
+        {p.discardPile.length === 0 && <span className="details-modal__note">The Jutsu graveyard is empty.</span>}
         {p.discardPile.map((c) => (
           <div key={c.instanceId} className="deck-list__entry">
             <div className="deck-list__row">

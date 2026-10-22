@@ -64,7 +64,8 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 | **Front row** | **10 slots** for up to **10 Tokens**, lined up one-to-one with the back row (§13.1). |
 | **Chakra sources** | Your placed Chakra cards; tapped for Chakra (§6.2). |
 | **Consumed pile** | Cards you Consume to place a Chakra source. Separate from the discard pile, and per-player. Far more permanent than the discard pile — retrievable only by some rare, specific effect (none exist yet). |
-| **Discard pile** | Discarded/replaced cards. |
+| **Discard pile** (Jutsu graveyard) | Discarded/replaced Jutsu Deck cards. |
+| **Character graveyard** **[Updated]** | The Character cards of your defeated characters (Pain goes here when his last Path falls; tokens never do). Public. |
 | **Terrain slot** | At most 1 Terrain in play per side. |
 | **Missions in play** | Capped at your controlled-character count (§15.2). |
 

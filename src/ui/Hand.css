@@ -229,3 +229,15 @@
   outline-offset: 2px;
   border-radius: 8px;
 }
+
+.details-modal__actions .force-prompt__confirm {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel-bg);
+  font-weight: 600;
+}
+
+.deck-menu button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

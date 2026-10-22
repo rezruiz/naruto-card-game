@@ -1,7 +1,7 @@
 /* ---- Battlefield mat: every character and token slot is always drawn ----
    Each player's half is a grid: field column (Missions over Terrain, Health in
-   the corner) | the two rows | deck column (graveyard + Consumed pile over the
-   Jutsu Deck and Character Deck).
+   the corner) | the two rows | deck column (graveyard over the Jutsu Deck and
+   Character Deck). The Consumed pile lives at the right end of the Chakra row.
    The character row (10 positions, at most 5 characters) and the token row
    (10 slots) line up one-to-one — token N sits directly in front of
    character N — and scroll sideways together. Character row nearest the
@@ -29,7 +29,7 @@
   flex: 1;
 }
 
-/* Deck column: graveyard + Consumed pile, then the two decks. */
+/* Deck column: graveyard, then the two decks. */
 .mat__side--decks {
   grid-area: decks;
   display: flex;
@@ -609,4 +609,24 @@ button.in-play-chip--plain:hover {
   .game-log .action-log {
     max-height: 320px;
   }
+}
+
+/* The Consumed pile at the right end of the Chakra row. */
+.chakra-sources__end {
+  margin-left: auto;
+}
+
+.pile--small {
+  flex-direction: row;
+  gap: 6px;
+}
+
+.pile--small .pile__card {
+  width: 36px;
+  height: 50px;
+  border-radius: 5px;
+}
+
+.pile--small .pile__count {
+  font-size: 14px;
 }

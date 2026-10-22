@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { gameReducer, setupPending } from './engine/reducer';
 import { createSetupState } from './engine/state';
 import { findOccupant, isCharacter, legalCharacterSlots } from './engine/board';
@@ -78,6 +78,7 @@ function Pile({
   title,
   onClick,
   disabledReason,
+  small,
 }: {
   label: string;
   count: number;
@@ -90,6 +91,8 @@ function Pile({
   onClick?: () => void;
   /** Why it can't be used right now — greys it out (the title explains). */
   disabledReason?: string;
+  /** A smaller stack, for tight spots like the Chakra row. */
+  small?: boolean;
 }) {
   const layers = Math.min(6, Math.ceil(count / 8));
   const depth = Array.from({ length: layers }, (_, i) => `${i + 1}px ${i + 1}px 0 -1px var(--pile-edge)`).join(', ');
@@ -97,7 +100,7 @@ function Pile({
   return (
     <button
       type="button"
-      className={`pile pile--${kind}${faceUp ? ' pile--face-up' : ''}${count === 0 ? ' pile--empty' : ''}${clickable ? ' pile--clickable' : ''}${disabledReason ? ' pile--blocked' : ''}`}
+      className={`pile pile--${kind}${small ? ' pile--small' : ''}${faceUp ? ' pile--face-up' : ''}${count === 0 ? ' pile--empty' : ''}${clickable ? ' pile--clickable' : ''}${disabledReason ? ' pile--blocked' : ''}`}
       title={title}
       aria-label={`${label}: ${count} card${count === 1 ? '' : 's'}${sub ? `, ${sub}` : ''}`}
       onClick={clickable ? onClick : undefined}
@@ -342,8 +345,10 @@ function ViewGame({
   /** A declaration that breaks a strict rule, waiting on the player's "force it through?" answer. */
   const [forcePrompt, setForcePrompt] = useState<{ warnings: string[]; declare: (force: boolean) => void } | null>(null);
   const [confirmRestart, setConfirmRestart] = useState(false);
-  /** Whose Jutsu Deck menu (Draw / Shuffle / Search / Look at top) is open. */
-  const [deckMenuFor, setDeckMenuFor] = useState<PlayerId | null>(null);
+  /** Which deck's menu is open (Jutsu: Draw / Shuffle / Search / Look at top; Character: Draw / Shuffle / Search). */
+  const [deckMenuFor, setDeckMenuFor] = useState<{ player: PlayerId; deck: 'jutsu' | 'character' } | null>(null);
+  /** A Character Deck draw waiting on the player to confirm paying the tax. */
+  const [confirmCharacterDraw, setConfirmCharacterDraw] = useState<PlayerId | null>(null);
   const endHandDrag = () => {
     setHandDrag(null);
     setDropSlot(null);
@@ -653,6 +658,17 @@ function ViewGame({
         onTap={(sourceIndex) => dispatch({ type: 'TAP_CHAKRA_SOURCE', sourceIndex, player: playerId })}
         onUntap={trust ? (sourceIndex) => dispatch({ type: 'UNTAP_CHAKRA_SOURCE', player: playerId, sourceIndex }) : undefined}
         onAdjustGeneric={trust && mine ? (delta) => dispatch({ type: 'ADJUST_GENERIC_CHAKRA', player: playerId, delta }) : undefined}
+        endSlot={
+          <Pile
+            label="Consumed"
+            count={player.consumedPile.length}
+            kind="consumed"
+            faceUp
+            small
+            title="Cards Consumed to place Chakra sources — click to retrieve one placed by mistake"
+            onClick={mine && !setupBlocked && trust ? () => setDeckTool({ player: playerId, tool: 'consumed' }) : undefined}
+          />
+        }
       />
       </div>
     );
@@ -885,7 +901,8 @@ function ViewGame({
       </div>
     );
 
-    // ---- Right column: graveyard + Consumed pile on top, Jutsu Deck + Character Deck below (Yu-Gi-Oh style) ----
+    // ---- Right column (Yu-Gi-Oh style): each deck with its own graveyard above it ----
+    // Jutsu graveyard over the Jutsu Deck, Character graveyard over the Character Deck.
     const tax = currentTax(state, playerId);
     const onTime = isActive && MAIN_PHASES.has(state.phase);
     const characterDrawBlocker =
@@ -899,76 +916,105 @@ function ViewGame({
               ? `Needs ${tax} available Chakra — tap Chakra sources first (you have ${player.genericChakraAvailable}).`
               : undefined;
     const canUseDecks = mine && !setupBlocked;
-    const deckMenuOpen = deckMenuFor === playerId;
     const piles = (
       <div className="deck-col__row" key="piles">
         <Pile
-          label="Graveyard"
+          label="Jutsu Graveyard"
           count={player.discardPile.length}
           kind="graveyard"
           faceUp
-          title="Discard pile — click to look through it"
+          title="Discarded Jutsu Deck cards — click to look through them"
           onClick={canUseDecks && trust ? () => setDeckTool({ player: playerId, tool: 'discard' }) : undefined}
         />
         <Pile
-          label="Consumed"
-          count={player.consumedPile.length}
-          kind="consumed"
+          label="Character Graveyard"
+          count={player.characterGraveyard.length}
+          kind="graveyard"
           faceUp
-          title="Cards Consumed for Chakra sources — click to retrieve one placed by mistake"
-          onClick={canUseDecks && trust ? () => setDeckTool({ player: playerId, tool: 'consumed' }) : undefined}
+          title="Defeated characters — click to look through them"
+          onClick={canUseDecks && trust ? () => setDeckTool({ player: playerId, tool: 'char-graveyard' }) : undefined}
         />
       </div>
     );
-    const deckMenuItems: [string, string, () => void][] = [
-      ['Draw 1', 'Manual correction: draw 1 extra card (your normal once-per-turn draw is the Draw button in the sidebar during your Draw Phase)', () => dispatch({ type: 'DRAW_CARDS', player: playerId, count: 1 })],
-      ['Shuffle', 'Shuffle your Jutsu Deck', () => dispatch({ type: 'SHUFFLE_DECK', player: playerId })],
-      ['Search…', 'Search your Jutsu Deck for a card', () => setDeckTool({ player: playerId, tool: 'search' })],
-      ['Look at top…', 'Look at the top cards of your Jutsu Deck', () => setDeckTool({ player: playerId, tool: 'top' })],
+    type MenuItem = { label: string; hint: string; act: () => void; disabled?: boolean };
+    const jutsuMenu: MenuItem[] = [
+      { label: 'Draw 1', hint: 'Manual correction: draw 1 extra card (your normal once-per-turn draw is the Draw button in the sidebar during your Draw Phase)', act: () => dispatch({ type: 'DRAW_CARDS', player: playerId, count: 1 }) },
+      { label: 'Shuffle', hint: 'Shuffle your Jutsu Deck', act: () => dispatch({ type: 'SHUFFLE_DECK', player: playerId }) },
+      { label: 'Search…', hint: 'Search your Jutsu Deck for a card', act: () => setDeckTool({ player: playerId, tool: 'search' }) },
+      { label: 'Look at top…', hint: 'Look at the top cards of your Jutsu Deck', act: () => setDeckTool({ player: playerId, tool: 'top' }) },
     ];
-    const decks = (
-      <div className="deck-col__row" key="decks">
+    const characterMenu: MenuItem[] = [
+      {
+        label: `Draw — pay ${tax} Chakra…`,
+        hint: characterDrawBlocker ?? 'Look at the top 2 of your Character Deck and keep 1 — you confirm the cost first',
+        act: () => setConfirmCharacterDraw(playerId),
+        disabled: !!characterDrawBlocker,
+      },
+      ...(trust
+        ? [
+            { label: 'Shuffle', hint: 'Shuffle your Character Deck', act: () => dispatch({ type: 'SHUFFLE_CHARACTER_DECK', player: playerId }) },
+            { label: 'Search…', hint: 'Search your Character Deck for a card (no tax paid — a manual tool)', act: () => setDeckTool({ player: playerId, tool: 'char-search' }) },
+          ]
+        : []),
+    ];
+    const deckWithMenu = (deck: 'jutsu' | 'character', pile: ReactNode, items: MenuItem[]) => {
+      const open = deckMenuFor?.player === playerId && deckMenuFor.deck === deck;
+      return (
         <div className="deck-col__menu-anchor">
-          <Pile
-            label="Jutsu Deck"
-            count={player.handDeck.length}
-            kind="jutsu"
-            title={canUseDecks && trust ? 'Jutsu Deck — click for Draw, Shuffle, Search, Look at top' : 'Jutsu Deck'}
-            onClick={canUseDecks && trust ? () => setDeckMenuFor(deckMenuOpen ? null : playerId) : undefined}
-          />
-          {deckMenuOpen && canUseDecks && trust && (
+          {pile}
+          {open && (
             <div className={`deck-menu deck-menu--${position}`} role="menu">
-              {deckMenuItems.map(([label, hint, act]) => (
+              {items.map((item) => (
                 <button
-                  key={label}
+                  key={item.label}
                   type="button"
                   role="menuitem"
-                  title={hint}
+                  title={item.hint}
+                  disabled={item.disabled}
                   onClick={() => {
                     setDeckMenuFor(null);
-                    act();
+                    item.act();
                   }}
                 >
-                  {label}
+                  {item.label}
                 </button>
               ))}
             </div>
           )}
         </div>
-        <Pile
-          label="Character Deck"
-          count={player.characterDeck.length}
-          kind="character"
-          sub={`Tax ${tax}`}
-          disabledReason={canUseDecks ? characterDrawBlocker : undefined}
-          title={
-            canUseDecks
-              ? (characterDrawBlocker ??
-                `Pay ${tax} Chakra: look at the top 2 of your Character Deck and keep 1. Resolves immediately (no stack). Playing the kept card later is free.${tax < 8 ? ` Next paid draw: ${Math.min(8, tax + 2)}.` : ''}${trust && !onTime ? ' Not your Main Phase — allowed in trust mode (flagged).' : ''}`)
-              : `Character Deck — draws cost ${tax} Chakra`
-          }
-          onClick={canUseDecks && !characterDrawBlocker ? () => dispatch({ type: 'DRAW_CHARACTER_DECK', player: playerId }) : undefined}
-        />
+      );
+    };
+    const toggleMenu = (deck: 'jutsu' | 'character') => () =>
+      setDeckMenuFor((cur) => (cur?.player === playerId && cur.deck === deck ? null : { player: playerId, deck }));
+    const decks = (
+      <div className="deck-col__row" key="decks">
+        {deckWithMenu(
+          'jutsu',
+          <Pile
+            label="Jutsu Deck"
+            count={player.handDeck.length}
+            kind="jutsu"
+            title={canUseDecks && trust ? 'Jutsu Deck — click for Draw, Shuffle, Search, Look at top' : 'Jutsu Deck'}
+            onClick={canUseDecks && trust ? toggleMenu('jutsu') : undefined}
+          />,
+          jutsuMenu,
+        )}
+        {deckWithMenu(
+          'character',
+          <Pile
+            label="Character Deck"
+            count={player.characterDeck.length}
+            kind="character"
+            sub={`Tax ${tax}`}
+            title={
+              canUseDecks
+                ? `Character Deck — click to draw (${tax} Chakra)${trust ? ', shuffle or search' : ''}${tax < 8 ? `. Next paid draw: ${Math.min(8, tax + 2)}` : ''}${characterDrawBlocker ? `. Can't draw now: ${characterDrawBlocker}` : ''}`
+                : `Character Deck — draws cost ${tax} Chakra`
+            }
+            onClick={canUseDecks ? toggleMenu('character') : undefined}
+          />,
+          characterMenu,
+        )}
       </div>
     );
     const deckColumn = (
@@ -1281,6 +1327,34 @@ function ViewGame({
               }}
             >
               Force it through
+            </button>
+          </div>
+        </DetailsModal>
+      )}
+      {confirmCharacterDraw && (
+        <DetailsModal
+          title={`Draw from your Character Deck for ${currentTax(state, confirmCharacterDraw)} Chakra?`}
+          subtitle="Look at the top 2 and keep 1; the other goes to the bottom. It resolves right away and can't be responded to."
+          hideText
+          onClose={() => setConfirmCharacterDraw(null)}
+        >
+          <p className="details-modal__note">
+            You have {state.players[confirmCharacterDraw].genericChakraAvailable} Chakra available.
+            {currentTax(state, confirmCharacterDraw) < 8 && ` Your next paid draw will cost ${Math.min(8, currentTax(state, confirmCharacterDraw) + 2)}.`}
+          </p>
+          <div className="force-prompt__actions">
+            <button type="button" onClick={() => setConfirmCharacterDraw(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="force-prompt__confirm"
+              onClick={() => {
+                dispatch({ type: 'DRAW_CHARACTER_DECK', player: confirmCharacterDraw });
+                setConfirmCharacterDraw(null);
+              }}
+            >
+              Pay &amp; draw
             </button>
           </div>
         </DetailsModal>
