@@ -256,8 +256,9 @@
 /* The cost gem (rank badge for characters), like Hearthstone's mana crystal. */
 .lib-card__gem {
   position: absolute;
-  top: -8px;
-  left: -8px;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 30px;
   height: 30px;
   border-radius: 50%;
