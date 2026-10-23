@@ -6,7 +6,16 @@ import './cardStyles.css';
 // Shared card-face helpers for anywhere a card is drawn as a card (the deck
 // library's collection, the hand): its cost gem, type line and one-line text.
 
-const STYLE_COLOR: Record<string, string> = { Water: 'water', Earth: 'earth', Fire: 'fire', Lightning: 'lightning', Wind: 'wind' };
+const STYLE_COLOR: Record<string, string> = { Water: 'water', Earth: 'earth', Fire: 'fire', Lightning: 'lightning', Wind: 'wind', Genjutsu: 'genjutsu', Taijutsu: 'taijutsu' };
+
+/**
+ * The Style a card is shown under in the UI (color coding, the Deck Library's Style sections and filter).
+ * Genjutsu and Taijutsu cards count as their own "Genjutsu" / "Taijutsu" Style here, whatever their printed
+ * Style; display only, the rules (e.g. who can enable a card) still use def.style.
+ */
+export function displayStyle(def: Pick<HandCardDef, 'style' | 'type'>): string {
+  return def.type === 'Genjutsu' || def.type === 'Taijutsu' ? def.type : def.style;
+}
 
 /** The card's color-coding class (cardStyles.css): its Style's color, light purple for any other (unique/kekkei genkai) Style, neutral for none. */
 export function styleClass(style: string): string {

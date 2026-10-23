@@ -1266,9 +1266,9 @@ calls, flagged for review:
   and **once per turn by name** (§15.6), like Explosive Tag.
 - **Enabler:** needs a **Fire**-Style character in play (Kakuzu in the
   preset deck).
-- **Pool discount:** follows the Substitution convention — paying any of
-  it from the enabling character's own Pool makes the cost 3; the rest
-  comes from generic Chakra.
+- **Cost [Updated]:** a flat 3 Chakra, from generic Chakra, the enabling
+  character's Pool, or a split. The old Pool discount (4, or 3 if any was
+  paid from the enabler's Pool) is gone.
 - **Adjacency** is the §9 sense Explosive Tag uses: front, behind, left
   or right of the target. You pick 0, 1 or 2 of those to take 1 damage
   each; with fewer than 2 adjacent units, fewer are hit.

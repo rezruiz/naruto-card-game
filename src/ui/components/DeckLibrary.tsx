@@ -18,7 +18,7 @@ import type { HandCardDef } from '../../engine/cards/registry';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
 import { newDeckId } from '../deckStorage';
 import { DetailsModal } from './DetailsModal';
-import { CHARACTER_STYLE_CLASS, styleClass, RANK_ORDER, TYPE_LABEL, byCost, byRank, characterInfo, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
+import { CHARACTER_STYLE_CLASS, displayStyle, styleClass, RANK_ORDER, TYPE_LABEL, byCost, byRank, characterInfo, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
 import { FilterMenu, SortMenu, type Option } from './LibraryControls';
 import { getCharacterDef, type CharacterDeckEntry } from '../../engine/characters';
 import type { ReactNode } from 'react';
@@ -75,8 +75,8 @@ interface Section<T> {
 function sectionHand(cards: HandCardDef[], sort: HandSort): Section<HandCardDef>[] {
   const sorted = [...cards].sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : byCost);
   const byStyle = (list: HandCardDef[]): Group<HandCardDef>[] => {
-    const keys = [...new Set(list.map((d) => d.style))].sort(byStyleName);
-    return keys.map((k) => ({ key: k, title: keys.length > 1 ? styleLabel(k) : undefined, items: list.filter((d) => d.style === k) }));
+    const keys = [...new Set(list.map(displayStyle))].sort(byStyleName);
+    return keys.map((k) => ({ key: k, title: keys.length > 1 ? styleLabel(k) : undefined, items: list.filter((d) => displayStyle(d) === k) }));
   };
   if (sort === 'type') {
     return TYPE_ORDER.map((t) => ({ key: t, title: TYPE_SECTION[t], groups: byStyle(sorted.filter((d) => d.cardType === t)) })).filter((sec) => sec.groups.length > 0);
@@ -226,7 +226,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
 
   const hand = useMemo(() => handCardPool().sort(byCost), []);
   const characters = useMemo(() => characterPool().sort(byRank), []);
-  const styles = useMemo(() => [...new Set(hand.map((d) => d.style).filter((s) => s !== 'None'))].sort(), [hand]);
+  const styles = useMemo(() => [...new Set(hand.map(displayStyle).filter((s) => s !== 'None'))].sort(), [hand]);
   const charStyleList = useMemo(() => [...new Set(characters.flatMap((c) => charStylesOf(c)).filter((s) => s !== 'None'))].sort(), [characters]);
   const errors = validateDeck(deck);
   const query = search.trim().toLowerCase();
@@ -238,7 +238,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
   const shownHand = hand.filter(
     (d) =>
       pass(handFilters, 'type', d.cardType) &&
-      pass(handFilters, 'style', d.style) &&
+      pass(handFilters, 'style', displayStyle(d)) &&
       pass(handFilters, 'speed', d.speed) &&
       pass(handFilters, 'cost', costBucket(d)) &&
       (!handInDeck || (deck.handDeck[d.id] ?? 0) > 0) &&
@@ -357,7 +357,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
                 const inDeck = deck.handDeck[d.id] ?? 0;
                 const limit = copyLimit('hand', d.id);
                 return (
-                  <div key={d.id} className={`lib-card lib-card--${d.cardType} ${styleClass(d.style)}${inDeck >= limit ? ' lib-card--maxed' : ''}${readOnly ? ' lib-card--readonly' : ''}`} {...tileHandlers('hand', d.id)}>
+                  <div key={d.id} className={`lib-card lib-card--${d.cardType} ${styleClass(displayStyle(d))}${inDeck >= limit ? ' lib-card--maxed' : ''}${readOnly ? ' lib-card--readonly' : ''}`} {...tileHandlers('hand', d.id)}>
                     <span className="lib-card__gem">{handCardCost(d)}</span>
                     <button type="button" className="lib-card__info" aria-label={`${d.name} details`} onClick={(e) => info(e, d.name, handCardSubtitle(d), getHandCardText(d.name))}>
                       ⓘ

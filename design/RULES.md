@@ -481,8 +481,8 @@ Full text is in Appendix A. Timing and implementation:
 | **Field Intelligence** | Normal, **Main only**, 1 | Opponent reveals 2 cards of their choice; you draw 1. |
 | **Deploy Medic Corps** | Normal, **Main or Combat**, 2 | Target one of **your Retreated** characters (explicit exception to Retreat immunity). At the start of each of your next **4** Upkeeps, heal it 1 HP; **cancelled** if it stops being Retreated. |
 | **Medical Chakra Infusion** | Normal, **Main or Combat**, 1 | Heal 2 HP to one of your characters (not above max HP; not a token, not a Retreated character). |
-| **Fireball Jutsu** (Fire) | **Normal, Attack-type — Combat only**, 4 / 3 from Pool | 3 damage to a target, 1 to each of up to 2 characters adjacent to it (your choice). **Once per turn.** |
-| **Pressure Damage** (Wind) | **Normal, Attack-type — Combat only**, 3 | 2 damage to up to 2 enemy characters. **Once per turn.** |
+| **Fireball Jutsu** (Fire) | **Normal, Attack-type — Combat only**, 3 | 3 damage to a target, 1 to each of up to 2 characters adjacent to it (your choice). **Once per turn.** |
+| **Pressure Damage** (Wind) | **Normal, Attack-type — Combat only**, 4 | 3 damage to up to 2 enemy characters. **Once per turn.** |
 | **Searing Migraine** (Fire) | **Normal, Attack-type — Combat only**, 3 | 4 damage. **Once per turn.** |
 | **False Darkness** (Lightning) | **Quick**, 2 | 2 damage. |
 | **Genjutsu: Mind Prison** (None) | **Quick**, 5 (3 if a Genjutsu user enables it) | Stun target enemy character for its controller's turn: no abilities, no pooling into it, no enabling Jutsu cards. |
@@ -499,7 +499,7 @@ Full text is in Appendix A. Timing and implementation:
 | **Earth Style: Mud Wall** (Earth) | **Reactive**, 2 / 1 from Pool | Prevent 2 of a targeted Ninjutsu or Physical attack on one of your characters (not Genjutsu). Not in the preset deck. |
 | **Kunai Deflection** (Taijutsu) | **Reactive**, 2 / 1 from Pool | Prevent 1 of a targeted Ninjutsu or Physical attack on the **enabling** character (not Genjutsu). Prevention, not negation — Spore Technique doesn't stop it. Not in the preset deck. |
 | **Water Style: Water Shark Bullet** (Water) | **Normal, Attack-type — Combat only**, 3 | 2 damage, Absorb 1 from the target into the enabler. **Once per turn.** Not in the preset deck. |
-| **Wind Style: Great Breakthrough** (Wind) | **Normal, Attack-type — Combat only**, 3 | **Chooses** (doesn't target) up to 3 enemy units, Characters or Tokens: 1 damage each. **Once per turn.** Not in the preset deck. |
+| **Wind Style: Great Breakthrough** (Wind) | **Normal, Attack-type — Combat only**, 2 | **Chooses** (doesn't target) up to 3 enemy units, Characters or Tokens: 1 damage each. **Once per turn.** Not in the preset deck. |
 | **Finishing Blow** (Taijutsu) | **Normal, Attack-type — Combat only**, 2 | Target enemy character at ≤ half its max HP (rounded down): 2 damage, 3 if it has ≤ 3 HP. Fizzles if it's healed above half before resolving. **Once per turn.** Not in the preset deck. |
 | **Senbon Volley** (Bukijutsu) | **Normal, Attack-type — Combat only**, 2 | 2 damage; +1 Poison counter if the enabler has the Poison Style. **Once per turn.** Not in the preset deck. |
 | **Scroll of Techniques** | Normal, **Main only**, 1 | Look at the top 3; take 1 Jutsu (Assist counts) whose Style matches one of your characters' Styles (Style: None never matches); shuffle the rest back. Not in the preset deck. |
@@ -762,6 +762,8 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 94. ✔ **New card: Wind Style: Vacuum Bullets** (Wind, Ninjutsu, 3 + X Chakra, X is 1–3): X times, deal 2 damage to target enemy unit; the same unit may be chosen more than once. X is how many times you choose a target. Each time is a separate 2-damage instance, so damage reduction applies to each one. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
 95. ✔ **New card: Wind Style: Air Bullets** (Wind, Ninjutsu, 1 + X Chakra, X is 1–4): X times, deal 1 damage to target enemy unit; the same unit may be chosen more than once. Works like Vacuum Bullets: X is how many times you choose a target, and each time is a separate instance of damage. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
 96. ✔ **New card: Earth Style: Hiding Like a Mole Technique** (Earth, Ninjutsu, 4 Chakra): until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. Blanket and splash effects still reach it (§9). If the next attack it uses in that time — its own ability or a Jutsu card it enables — is Taijutsu, that attack deals +2 damage. Any other attack used first uses the bonus up. The hiding lasts the full duration even after it attacks. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
+97. ✔ **Wind cost and damage changes:** **Pressure Damage** now costs 4 Chakra (was 3) and deals 3 damage to up to 2 enemy characters (was 2). **Wind Style: Great Breakthrough** now costs 2 Chakra (was 3). (SPEC §13b.)
+98. ✔ **Fireball Jutsu costs 3:** a flat 3 Chakra (was 4, or 3 if paid from the enabling character's Pool). The Pool discount is removed. (SPEC §13b.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -1380,15 +1382,14 @@ adjacent to it in one direction of your choice (front, behind, left, or
 right, §9).
 
 **Fireball Jutsu** — Style: Fire, Type: Ninjutsu
-Cost: 4 Chakra (3 if paid from the enabling character's own Chakra
-Pool). *(full nuance: design/CHARACTER_LOG.md)*
+Cost: 3 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
 Effect: Deal 3 damage to a character and 1 damage to each character
 adjacent to it, up to 2 other characters (your choice which 2 adjacent
 to the target, §9).
 
 **Pressure Damage** — Style: Wind, Type: Ninjutsu
-Cost: 3 Chakra.
-Effect: Deal 2 damage to up to 2 enemy characters.
+Cost: 4 Chakra.
+Effect: Deal 3 damage to up to 2 enemy characters.
 
 **Searing Migraine** — Style: Fire, Type: Ninjutsu
 Cost: 3 Chakra.
@@ -1456,7 +1457,7 @@ Cost: 3 Chakra.
 Effect: Deal 2 damage, Absorb 1 (§6.8b).
 
 **Wind Style: Great Breakthrough** — Style: Wind, Type: Ninjutsu
-Cost: 3 Chakra.
+Cost: 2 Chakra.
 Effect: Deal 1 damage to each of up to 3 enemy units.
 
 **Finishing Blow** — Style: None, Type: Taijutsu
@@ -2777,9 +2778,9 @@ calls, flagged for review:
   and **once per turn by name** (§15.6), like Explosive Tag.
 - **Enabler:** needs a **Fire**-Style character in play (Kakuzu in the
   preset deck).
-- **Pool discount:** follows the Substitution convention — paying any of
-  it from the enabling character's own Pool makes the cost 3; the rest
-  comes from generic Chakra.
+- **Cost [Updated]:** a flat 3 Chakra, from generic Chakra, the enabling
+  character's Pool, or a split. The old Pool discount (4, or 3 if any was
+  paid from the enabler's Pool) is gone.
 - **Adjacency** is the §9 sense Explosive Tag uses: front, behind, left
   or right of the target. You pick 0, 1 or 2 of those to take 1 damage
   each; with fewer than 2 adjacent units, fewer are hit.
@@ -3175,8 +3176,8 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | Deploy Medic Corps | 2 | jutsu | 2 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | may target a Retreated ally |
 | Medical Chakra Infusion | 3 | jutsu | 1 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | characters only, not tokens |
 | Chakra Suppression | 3 | jutsu | 2 | Quick | None | Sealing | — | 1 (enemy) | characters only, not tokens |
-| Fireball Jutsu | 1 | jutsu | variable | Normal | Fire | Ninjutsu | Combat only | 3 (any) | Attack-type (once/turn by name); cheaper if paid from enabler's Pool |
-| Pressure Damage | 1 | jutsu | 3 | Normal | Wind | Ninjutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
+| Fireball Jutsu | 1 | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | 3 (any) | Attack-type (once/turn by name) |
+| Pressure Damage | 1 | jutsu | 4 | Normal | Wind | Ninjutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
 | Searing Migraine | 1 | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name) |
 | False Darkness | 1 | jutsu | 2 | Quick | Lightning | Ninjutsu | — | 1 (enemy) | — |
 | Genjutsu: Mind Prison | 0 (library only) | jutsu | variable | Quick | None | Genjutsu | — | 1 (enemy) | 5, or 3 with a Genjutsu user enabling |
@@ -3194,7 +3195,7 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | Earth Style: Mud Wall | 0 | jutsu | variable | Reactive | Earth | Ninjutsu | — | 1 (ally) | cheaper if paid from enabler's Pool; not in the preset deck |
 | Kunai Deflection | 0 | jutsu | variable | Reactive | None | Taijutsu | — | none/auto | protects its enabler; cheaper if paid from enabler's Pool; not in the preset deck |
 | Water Style: Water Shark Bullet | 0 | jutsu | 3 | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
-| Wind Style: Great Breakthrough | 0 | jutsu | 3 | Normal | Wind | Ninjutsu | Combat only | up to 3 chosen (enemy) | chooses, doesn't target; Attack-type (once/turn by name); not in the preset deck |
+| Wind Style: Great Breakthrough | 0 | jutsu | 2 | Normal | Wind | Ninjutsu | Combat only | up to 3 chosen (enemy) | chooses, doesn't target; Attack-type (once/turn by name); not in the preset deck |
 | Finishing Blow | 0 | jutsu | 2 | Normal | None | Taijutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
 | Senbon Volley | 0 | jutsu | 2 | Normal | None | Bukijutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
 | Scroll of Techniques | 0 | jutsu | 1 | Normal | None | None | Main only | none/auto | not in the preset deck |

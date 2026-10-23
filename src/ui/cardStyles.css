@@ -46,6 +46,22 @@
   --tint: rgba(110, 200, 104, 0.2);
 }
 
+/* Genjutsu cards: shown as their own Style (cardDisplay.ts displayStyle). */
+.card-style--genjutsu {
+  --gem-top: #b3323f;
+  --gem-bottom: #6a0f1a;
+  --gem-text: #ffffff;
+  --tint: rgba(150, 24, 38, 0.17);
+}
+
+/* Taijutsu cards: shown as their own Style too — a plain light grey (no blue cast, unlike No Style). */
+.card-style--taijutsu {
+  --gem-top: #ededed;
+  --gem-bottom: #b4b4b4;
+  --gem-text: #222222;
+  --tint: rgba(150, 150, 150, 0.18);
+}
+
 /* Explosion, Gravity, Paper, Poison, Ritual, Yang and other kekkei genkai / special Styles. */
 .card-style--unique {
   --gem-top: #ecdcff;
@@ -86,6 +102,8 @@
 }
 
 .card-style--water .lib-card__gem,
-.card-style--water .hand-card__gem {
+.card-style--water .hand-card__gem,
+.card-style--genjutsu .lib-card__gem,
+.card-style--genjutsu .hand-card__gem {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
 }

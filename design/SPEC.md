@@ -1706,15 +1706,14 @@ adjacent to it in one direction of your choice (front, behind, left, or
 right, §9).
 
 **Fireball Jutsu** — Style: Fire, Type: Ninjutsu
-Cost: 4 Chakra (3 if paid from the enabling character's own Chakra
-Pool). *(full nuance: design/CHARACTER_LOG.md)*
+Cost: 3 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
 Effect: Deal 3 damage to a character and 1 damage to each character
 adjacent to it, up to 2 other characters (your choice which 2 adjacent
 to the target, §9).
 
 **Pressure Damage** — Style: Wind, Type: Ninjutsu
-Cost: 3 Chakra.
-Effect: Deal 2 damage to up to 2 enemy characters.
+Cost: 4 Chakra.
+Effect: Deal 3 damage to up to 2 enemy characters.
 
 **Searing Migraine** — Style: Fire, Type: Ninjutsu
 Cost: 3 Chakra.
@@ -1782,7 +1781,7 @@ Cost: 3 Chakra.
 Effect: Deal 2 damage, Absorb 1 (§6.8b).
 
 **Wind Style: Great Breakthrough** — Style: Wind, Type: Ninjutsu
-Cost: 3 Chakra.
+Cost: 2 Chakra.
 Effect: Deal 1 damage to each of up to 3 enemy units.
 
 **Finishing Blow** — Style: None, Type: Taijutsu

@@ -303,8 +303,7 @@ const fireballJutsu: HandCardDef = {
   id: 'fireball-jutsu',
   name: 'Fireball Jutsu',
   cardType: 'jutsu',
-  cost: (_ctx, payFromPool) => (payFromPool > 0 ? 3 : 4),
-  offersPoolDiscount: true,
+  cost: 3,
   speed: 'Normal',
   style: 'Fire',
   type: 'Ninjutsu',
@@ -335,7 +334,7 @@ const pressureDamageCard: HandCardDef = {
   id: 'jutsu-pressure-damage',
   name: 'Pressure Damage',
   cardType: 'jutsu',
-  cost: 3,
+  cost: 4,
   speed: 'Normal',
   style: 'Wind',
   type: 'Ninjutsu',
@@ -345,7 +344,7 @@ const pressureDamageCard: HandCardDef = {
   legalityCheck: (ctx) => ctx.targetInstanceIds.length >= 1 && new Set(ctx.targetInstanceIds).size === ctx.targetInstanceIds.length,
   resolve: (ctx) => {
     let state = ctx.state;
-    for (const target of ctx.targetInstanceIds.slice(0, 2)) state = dealDamage(state, target, 2).state;
+    for (const target of ctx.targetInstanceIds.slice(0, 2)) state = dealDamage(state, target, 3).state;
     return state;
   },
 };
@@ -472,7 +471,7 @@ const greatBreakthrough: HandCardDef = {
   id: 'great-breakthrough',
   name: 'Wind Style: Great Breakthrough',
   cardType: 'jutsu',
-  cost: 3,
+  cost: 2,
   speed: 'Normal',
   style: 'Wind',
   type: 'Ninjutsu',

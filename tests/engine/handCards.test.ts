@@ -202,7 +202,7 @@ describe('Chakra Suppression', () => {
 describe('Fireball Jutsu', () => {
   const hp = (s: GameState, i: number) => s.players.p2.backRow[i]!.currentHP;
 
-  it('deals 3 to the target and 1 to each of up to 2 chosen adjacent characters, costing 3 from the Pool', () => {
+  it('deals 3 to the target and 1 to each of up to 2 chosen adjacent characters, for 3 Chakra (here all from the Pool)', () => {
     let { state, instanceId } = withHandCard(freshMain1(), 'p1', 'fireball-jutsu');
     state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Attack-type Jutsu are Combat-only
     // Itachi enables it (Fire, and no Elemental Versatility to muddy the cost).
@@ -225,10 +225,17 @@ describe('Fireball Jutsu', () => {
     state = gameReducer(giveChakra(state, 'p1', 4), { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-hidan', 'p2-kisame'], payFromPool: 0 });
     expect(state.stack).toHaveLength(0);
   });
+  it('costs a flat 3 from generic Chakra too (no Pool discount)', () => {
+    let { state, instanceId } = withHandCard(freshMain1(), 'p1', 'fireball-jutsu');
+    state = gameReducer(giveChakra(state, 'p1', 3), { type: 'ADVANCE_PHASE' });
+    state = gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-itachi', targetInstanceIds: ['p2-hidan'], payFromPool: 0 });
+    expect(state.stack).toHaveLength(1);
+    expect(state.players.p1.genericChakraAvailable).toBe(0);
+  });
 });
 
 describe("Kakuzu's mask cards", () => {
-  it('Searing Migraine (enabled by Kakuzu) deals 4 for 3 Chakra — 2 with his Elemental Versatility; Pressure Damage hits up to 2 enemies for 2', () => {
+  it('Searing Migraine (enabled by Kakuzu) deals 4 for 3 Chakra — 2 with his Elemental Versatility; Pressure Damage hits up to 2 enemies for 3', () => {
     let state = gameReducer(giveChakra(freshMain1(), 'p1', 6), { type: 'ADVANCE_PHASE' }); // Combat
     const hp = (s: GameState, i: number) => s.players.p2.backRow[i]!.currentHP;
     const before = [hp(state, 1), hp(state, 2), hp(state, 3)];
@@ -241,7 +248,7 @@ describe("Kakuzu's mask cards", () => {
 
     const pressure = withHandCard(state, 'p1', 'jutsu-pressure-damage');
     state = resolveTop(gameReducer(pressure.state, { type: 'PLAY_HAND_CARD', instanceId: pressure.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-deidara', 'p2-kisame'], payFromPool: 0 }));
-    expect([hp(state, 2), hp(state, 3)]).toEqual([before[1] - 2, before[2] - 2]);
+    expect([hp(state, 2), hp(state, 3)]).toEqual([before[1] - 3, before[2] - 3]);
   });
 });
 
