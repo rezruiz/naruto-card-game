@@ -31,7 +31,8 @@ export function cardStage(p: PendingCard): CardStage {
   if (needsEnablingCharacter(p.def) && !p.enablingInstanceId) return 'enabler';
   const maxTargets = p.def.maxTargets ?? 1;
   if (!p.targetsConfirmed && maxTargets > 0 && p.targets.length < maxTargets) return 'target';
-  if (p.def.needsAmountChoice && p.amount === null) return 'amount';
+  const wantsAmount = typeof p.def.needsAmountChoice === 'function' ? p.def.needsAmountChoice(p.targets) : !!p.def.needsAmountChoice;
+  if (wantsAmount && p.amount === null) return 'amount';
   if (p.def.offersPoolDiscount && p.payFromPool === null) return 'payFromPool';
   return 'ready';
 }

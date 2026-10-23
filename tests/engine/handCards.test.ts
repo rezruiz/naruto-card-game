@@ -5,7 +5,7 @@ import { dealDamage } from '../../src/engine/combat';
 import { makeHandCardInstance } from '../../src/engine/deck';
 import { previewUpkeep } from '../../src/engine/upkeep';
 import { redactStateFor } from '../../src/engine/redact';
-import { freshMain1, giveChakra, resolveTop } from './testUtils';
+import { freshMain1, giveChakra, playCard, resolveTop } from './testUtils';
 import type { GameState } from '../../src/engine/types';
 
 function withHandCard(state: GameState, player: 'p1' | 'p2', defId: string) {
@@ -404,5 +404,196 @@ describe('Missions (SPEC.md §13a)', () => {
     result = dealDamage(state, target, 1);
     expect(hp(result.state, target)).toBe(hp(state, target)); // untouched — redirected away
     expect(hp(state, absorber) - hp(result.state, absorber)).toBe(1);
+  });
+});
+
+describe('Earth Style: Added Weight Rock Technique', () => {
+  it('Quick, 2, Earth: the target\'s abilities and the Jutsu cards it enables cost 1 more through its controller\'s next turn', () => {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 2), 'p1', 'jutsu-added-weight-rock');
+    expect(gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-hidan', targetInstanceIds: ['p2-kakuzu'], payFromPool: 0 }).stack).toHaveLength(0); // needs Earth
+    state = resolveTop(gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-kakuzu'], payFromPool: 0 }));
+    const until = state.players.p2.backRow[0]!.extra.addedWeightUntilTurn as number;
+    expect(until).toBe(state.turn + 1);
+
+    // On p2's turn, Kakuzu's Earth Grudge Fear (2) costs 3, and a card he enables costs 1 more.
+    let p2: GameState = { ...state, turn: until, activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Combat' };
+    p2 = giveChakra(p2, 'p2', 3);
+    p2 = activateAbility(p2, 'p2-kakuzu', 'earth-grudge-fear', ['p1-hidan'], 0);
+    expect(p2.players.p2.genericChakraAvailable).toBe(0);
+    const card = withHandCard({ ...giveChakra(state, 'p2', 5), turn: until, activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Combat' }, 'p2', 'jutsu-searing-migraine');
+    // Searing Migraine is 3; −1 Elemental Versatility, +1 Added Weight → 3.
+    const played = gameReducer(card.state, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p2-kakuzu', targetInstanceIds: ['p1-hidan'], payFromPool: 0 });
+    expect(played.players.p2.genericChakraAvailable).toBe(2);
+
+    // Gone the turn after.
+    const later: GameState = { ...giveChakra(state, 'p2', 2), turn: until + 1, activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Combat' };
+    expect(activateAbility(later, 'p2-kakuzu', 'earth-grudge-fear', ['p1-hidan'], 0).players.p2.genericChakraAvailable).toBe(0);
+  });
+
+  it("cast on the target's own turn, it lasts through their following turn", () => {
+    let { state, instanceId } = withHandCard(giveChakra({ ...freshMain1(), activePlayer: 'p2', priorityPlayer: 'p1' }, 'p1', 2), 'p1', 'jutsu-added-weight-rock');
+    state = resolveTop(gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-kakuzu'], payFromPool: 0 }));
+    expect(state.players.p2.backRow[0]!.extra.addedWeightUntilTurn).toBe(state.turn + 2);
+  });
+});
+
+describe('Earth Style: Earth Flow River', () => {
+  it('1 damage to the target and each enemy beside it in its row; those characters can\'t Retreat through their controller\'s next turn', () => {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 3), 'p1', 'jutsu-earth-flow-river');
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Combat (an Attack-type card)
+    const row = state.players.p2.backRow;
+    const mid = row.findIndex((c, i) => c && row[i - 1] && row[i + 1]);
+    const [l, t, r] = [row[mid - 1]!, row[mid]!, row[mid + 1]!];
+    const others = row.filter((c, i) => c && Math.abs(i - mid) > 1).map((c) => [c!.instanceId, c!.currentHP] as const);
+    state = resolveTop(gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: [t.instanceId], payFromPool: 0 }));
+    const hp = (id: string) => state.players.p2.backRow.find((c) => c?.instanceId === id)?.currentHP;
+    expect([hp(l.instanceId), hp(t.instanceId), hp(r.instanceId)]).toEqual([l.currentHP - 1, t.currentHP - 1, r.currentHP - 1]);
+    for (const [id, before] of others) expect(hp(id)).toBe(before);
+    const lock = state.players.p2.backRow.find((c) => c?.instanceId === t.instanceId)!.extra.retreatLockedUntilTurn as number;
+    expect(lock).toBe(state.turn + 1);
+
+    // On p2's turn, Retreat is refused.
+    let p2: GameState = { ...giveChakra(state, 'p2', 5), turn: lock, activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Main1' };
+    p2 = gameReducer(p2, { type: 'RETREAT', instanceId: t.instanceId });
+    expect(p2.players.p2.backRow.find((c) => c?.instanceId === t.instanceId)!.status.retreated).toBe(false);
+  });
+
+  it('needs an Earth enabler', () => {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 3), 'p1', 'jutsu-earth-flow-river');
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' });
+    expect(gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-hidan', targetInstanceIds: ['p2-hidan'], payFromPool: 0 }).stack).toHaveLength(0);
+  });
+});
+
+describe('Fire Style: Phoenix Flower', () => {
+  function setup() {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 3), 'p1', 'jutsu-phoenix-flower');
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Combat (an Attack-type card)
+    const row = state.players.p2.backRow;
+    const i = row.findIndex((c, k) => c && row[k + 1]);
+    return { state, instanceId, a: row[i]!, b: row[i + 1]!, far: row.find((c, k) => c && Math.abs(k - i) > 1 && Math.abs(k - (i + 1)) > 1) };
+  }
+  const hp = (state: GameState, id: string) => state.players.p2.backRow.find((c) => c?.instanceId === id)?.currentHP;
+  const play = (state: GameState, instanceId: string, targets: string[], amount?: number) =>
+    gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: targets, payFromPool: 0, amount });
+
+  it('splits 3 damage between 2 adjacent enemy targets as chosen — 0 allowed', () => {
+    const { state, instanceId, a, b } = setup();
+    let next = resolveTop(play(state, instanceId, [a.instanceId, b.instanceId], 1));
+    expect([hp(next, a.instanceId), hp(next, b.instanceId)]).toEqual([a.currentHP - 1, b.currentHP - 2]);
+    next = resolveTop(play(state, instanceId, [a.instanceId, b.instanceId], 0));
+    expect([hp(next, a.instanceId), hp(next, b.instanceId)]).toEqual([a.currentHP, b.currentHP - 3]);
+  });
+
+  it('a single target takes all 3; the 2 targets must be different and adjacent', () => {
+    const { state, instanceId, a, b, far } = setup();
+    expect(hp(resolveTop(play(state, instanceId, [a.instanceId])), a.instanceId)).toBe(a.currentHP - 3);
+    expect(play(state, instanceId, [a.instanceId, a.instanceId], 1).stack).toHaveLength(0);
+    if (far) expect(play(state, instanceId, [a.instanceId, far.instanceId], 1).stack).toHaveLength(0);
+    expect(play(state, instanceId, [a.instanceId, b.instanceId], 1).stack).toHaveLength(1);
+  });
+});
+
+describe('Fire Style: Dragon Fire Technique', () => {
+  const hp = (state: GameState, id: string) => state.players.p2.backRow.find((c) => c?.instanceId === id)?.currentHP;
+  function setup() {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 4), 'p1', 'jutsu-dragon-fire');
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Combat (an Attack-type card)
+    return { state, instanceId, row: state.players.p2.backRow };
+  }
+  const play = (state: GameState, instanceId: string, targets: string[]) =>
+    gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: targets, payFromPool: 0 });
+
+  it('3 to the target, 2 to the adjacent unit in the chosen direction, 1 to the next one on', () => {
+    const { state, instanceId, row } = setup();
+    const i = row.findIndex((c, k) => c && row[k + 1] && row[k + 2]);
+    const [a, b, c] = [row[i]!, row[i + 1]!, row[i + 2]!];
+    const next = resolveTop(play(state, instanceId, [a.instanceId, b.instanceId]));
+    expect([hp(next, a.instanceId), hp(next, b.instanceId), hp(next, c.instanceId)]).toEqual([a.currentHP - 3, b.currentHP - 2, c.currentHP - 1]);
+  });
+
+  it('stops at the edge or an empty space; the 2nd pick must be adjacent, and is required when a neighbor exists', () => {
+    const { state, instanceId, row } = setup();
+    const last = row.reduce((m, c, k) => (c ? k : m), -1);
+    const [a, b] = [row[last]!, row[last - 1]!];
+    // Toward the start of the row from its last unit, the line runs on; from the second-to-last toward the end, it stops after 2.
+    const edge = resolveTop(play(state, instanceId, [b.instanceId, a.instanceId]));
+    expect([hp(edge, b.instanceId), hp(edge, a.instanceId)]).toEqual([b.currentHP - 3, a.currentHP - 2]);
+    expect(play(state, instanceId, [a.instanceId]).stack).toHaveLength(0); // has a neighbor: must pick a direction
+    const far = row.find((c, k) => c && k < last - 1);
+    if (far) expect(play(state, instanceId, [a.instanceId, far.instanceId]).stack).toHaveLength(0);
+  });
+});
+
+describe('Wind Style: Vacuum Bullets', () => {
+  const hp = (state: GameState, id: string) => state.players.p2.backRow.find((c) => c?.instanceId === id)?.currentHP;
+  function setup(chakra: number) {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', chakra), 'p1', 'jutsu-vacuum-bullets');
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Combat (an Attack-type card)
+    const units = state.players.p2.backRow.filter((c) => c !== null);
+    const pick = (defId: string) => units.find((u) => u!.defId === defId)!; // plain HP, no Hearts/Immortality
+    return { state, instanceId, a: pick('deidara'), b: pick('kisame') };
+  }
+  const play = (state: GameState, instanceId: string, targets: string[]) =>
+    gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: targets, payFromPool: 0 });
+
+  it('costs 3 + X and deals 2 damage X times; the same unit can be picked more than once', () => {
+    // Kakuzu enables it, so Elemental Versatility takes 1 off: 3 + 3 − 1 = 5.
+    const { state, instanceId, a, b } = setup(5);
+    const played = play(state, instanceId, [a.instanceId, b.instanceId, a.instanceId]);
+    expect(played.players.p1.genericChakraAvailable).toBe(0);
+    const next = resolveTop(played);
+    expect([hp(next, a.instanceId), hp(next, b.instanceId)]).toEqual([a.currentHP - 4, b.currentHP - 2]);
+  });
+
+  it('X = 1 costs 4; it needs at least 1 target and Chakra for X', () => {
+    // Through Kakuzu (−1): X = 1 costs 3, X = 2 costs 4.
+    const { state, instanceId, a, b } = setup(3);
+    expect(play(state, instanceId, [a.instanceId, b.instanceId]).stack).toHaveLength(0); // 4 needed, 3 available
+    expect(play(state, instanceId, []).stack).toHaveLength(0);
+    const played = play(state, instanceId, [a.instanceId]);
+    expect(played.players.p1.genericChakraAvailable).toBe(0);
+    expect(hp(resolveTop(played), a.instanceId)).toBe(a.currentHP - 2);
+  });
+});
+
+describe('Wind Style: Air Bullets', () => {
+  it('costs 1 + X (X up to 4) and deals 1 damage X times; the same unit can be picked more than once', () => {
+    let { state, instanceId } = withHandCard(giveChakra(freshMain1(), 'p1', 4), 'p1', 'jutsu-air-bullets');
+    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Combat (an Attack-type card)
+    const units = state.players.p2.backRow.filter((c) => c !== null);
+    const [a, b] = [units.find((u) => u!.defId === 'deidara')!, units.find((u) => u!.defId === 'kisame')!];
+    const play = (targets: string[]) => gameReducer(state, { type: 'PLAY_HAND_CARD', instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: targets, payFromPool: 0 });
+    expect(play([a.instanceId, a.instanceId, b.instanceId, a.instanceId, b.instanceId]).stack).toHaveLength(0); // X can't be 5
+    // Through Kakuzu (Elemental Versatility −1): 1 + 4 − 1 = 4.
+    const played = play([a.instanceId, a.instanceId, b.instanceId, a.instanceId]);
+    expect(played.players.p1.genericChakraAvailable).toBe(0);
+    const next = resolveTop(played);
+    const hp = (id: string) => next.players.p2.backRow.find((c) => c?.instanceId === id)?.currentHP;
+    expect([hp(a.instanceId), hp(b.instanceId)]).toEqual([a.currentHP - 3, b.currentHP - 1]);
+  });
+});
+
+describe('Earth Style: Hiding Like a Mole Technique', () => {
+  const hp = (s: GameState, id: string) => [...s.players.p1.backRow, ...s.players.p2.backRow].find((c) => c?.instanceId === id)?.currentHP;
+  const hidden = () => resolveTop(playCard(giveChakra(freshMain1(), 'p1', 20), 'p1', 'jutsu-hiding-like-a-mole', 'p1-kakuzu'));
+
+  it("the enabler can't be targeted through its controller's next turn, except by itself", () => {
+    const s = hidden();
+    expect(s.players.p1.backRow.find((c) => c?.instanceId === 'p1-kakuzu')!.extra.moleHiddenUntilTurn).toBe(s.turn + 2);
+    const theirs: GameState = { ...giveChakra(s, 'p2', 20), turn: s.turn + 1, activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Combat' };
+    expect(activateAbility(theirs, 'p2-kakuzu', 'earth-grudge-fear', ['p1-kakuzu'], 0).stack).toHaveLength(0);
+    expect(playCard(theirs, 'p2', 'jutsu-searing-migraine', 'p2-kakuzu', ['p1-kakuzu']).stack).toHaveLength(0);
+    expect(activateAbility({ ...theirs, turn: s.turn + 3 }, 'p2-kakuzu', 'earth-grudge-fear', ['p1-kakuzu'], 0).stack).toHaveLength(1);
+    expect(activateAbility({ ...s, phase: 'Combat' }, 'p1-kakuzu', 'earth-grudge-fear', ['p1-kakuzu'], 0).stack).toHaveLength(1);
+  });
+
+  it('its next attack deals +2 if it is Taijutsu; a different attack first uses the bonus up', () => {
+    const s: GameState = { ...hidden(), phase: 'Combat' };
+    const taijutsu = resolveTop(activateAbility(s, 'p1-kakuzu', 'earth-grudge-fear', ['p2-deidara'], 0));
+    expect(hp(s, 'p2-deidara')! - hp(taijutsu, 'p2-deidara')!).toBe(3); // 1 + 2
+    const ninjutsu = resolveTop(playCard(s, 'p1', 'jutsu-searing-migraine', 'p1-kakuzu', ['p2-deidara']));
+    const after = resolveTop(activateAbility(ninjutsu, 'p1-kakuzu', 'earth-grudge-fear', ['p2-deidara'], 0));
+    expect(hp(ninjutsu, 'p2-deidara')! - hp(after, 'p2-deidara')!).toBe(1);
   });
 });

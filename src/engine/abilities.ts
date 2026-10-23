@@ -1,5 +1,5 @@
 import { appendLog, appendWarning } from './phases/phaseMachine';
-import { findOccupant, isCharacter, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant } from './board';
+import { findOccupant, isCharacter, isHidingLikeAMole, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant } from './board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from './stack';
 import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
 import { getCharacterDef, getTokenDef } from './characters/registry';
@@ -127,6 +127,8 @@ export function resolveCost(ability: AbilityDef, ctx: AbilityContext): number {
   // Bingo Book: Threat Level C — the next ability used by the character that defeated its target costs 2 less.
   const bingoDiscount = (source?.occupant.extra.nextAbilityDiscount as number | undefined) ?? 0;
   if (bingoDiscount > 0) cost = Math.max(0, cost - bingoDiscount);
+  // Earth Style: Added Weight Rock Technique — +1 while it lasts.
+  if (source && ((source.occupant.extra.addedWeightUntilTurn as number | undefined) ?? -1) >= ctx.state.turn) cost += 1;
   return cost;
 }
 
@@ -298,6 +300,7 @@ export function checkLegality(
         if (nonRetreatedExists) return { ok: false, reason: `${targetFound.occupant.name} is Retreated and can't be targeted.` };
       }
       if (isPhasedOut(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} has phased out (Crow Clone) and can't be targeted this turn.` };
+      if (targetId !== sourceInstanceId && isHidingLikeAMole(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} is Hiding Like a Mole and can't be targeted.` };
     }
   }
 

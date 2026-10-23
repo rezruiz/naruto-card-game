@@ -39,6 +39,11 @@ export function retreat(state: GameState, instanceId: string): GameState {
   if (!relaxed && stunUntil !== undefined && state.turn <= stunUntil) {
     return appendLog(working, `${character.name} is stunned and can't Retreat right now.`);
   }
+  const mudUntil = character.extra.retreatLockedUntilTurn as number | undefined;
+  if (mudUntil !== undefined && state.turn <= mudUntil) {
+    if (!relaxed) return appendLog(working, `${character.name} is stuck in Earth Flow River and can't Retreat right now.`);
+    working = appendWarning(working, `${character.name} is stuck in Earth Flow River — Retreating isn't legal under the strict rules, allowed anyway (trust mode).`);
+  }
   if (!relaxed && character.status.usedAbilitiesThisTurn.length > 0) {
     return appendLog(working, `${character.name} has already acted this turn and can't Retreat.`);
   }

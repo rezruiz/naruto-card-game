@@ -876,6 +876,13 @@ prevented by the usual effects, and Retreat immunity (§6.5b) still
 applies unless the card makes an explicit exception. Examples: Wind
 Style: Great Breakthrough, Smoke Out (§13b).
 
+**Split damage:** when a card deals X damage "split however you choose"
+between targets, you choose the split when you choose the targets, and
+you may assign 0 to any target. A target assigned 0 is still targeted.
+This is the default for every split effect unless the card says
+otherwise (e.g. "at least 1 each") or its wording clearly implies it.
+Example: Water Style: Thousand Hungry Sharks (§13b).
+
 **Negating a target vs. negating damage:** these are two different
 interactions, and card text needs to be read carefully to tell which one
 an effect is doing:
@@ -1728,6 +1735,34 @@ Effect: Negate all targeting of Itachi and all new damage to him for the rest of
 **Water Style: Thousand Hungry Sharks** — Style: Water, Type: Ninjutsu
 Cost: 6 Chakra.
 Effect: Deal 4 damage, split however you choose between any number of enemy targets.
+
+**Earth Style: Added Weight Rock Technique** — Style: Earth, Quick Technique, Type: Ninjutsu
+Cost: 2 Chakra.
+Effect: Until the end of its controller's next turn, target enemy character's abilities, and the Jutsu cards it enables, cost 1 more Chakra.
+
+**Earth Style: Earth Flow River** — Style: Earth, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 1 damage to target enemy unit and 1 damage to each enemy unit beside it in its row. Until the end of their controller's next turn, those units can't Retreat.
+
+**Fire Style: Phoenix Flower** — Style: Fire, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 3 damage, split however you choose between up to 2 target enemy units adjacent to each other.
+
+**Fire Style: Dragon Fire Technique** — Style: Fire, Type: Ninjutsu
+Cost: 4 Chakra.
+Effect: Deal 3 damage to target enemy unit, 2 damage to the unit adjacent to it in one direction of your choice (front, behind, left or right), and 1 damage to the next unit in that same direction. The chain stops at the first space with no unit.
+
+**Wind Style: Vacuum Bullets** — Style: Wind, Type: Ninjutsu
+Cost: 3 + X Chakra (X is 1, 2 or 3).
+Effect: X times, deal 2 damage to target enemy unit. You may choose the same unit more than once.
+
+**Wind Style: Air Bullets** — Style: Wind, Type: Ninjutsu
+Cost: 1 + X Chakra (X is 1, 2, 3 or 4).
+Effect: X times, deal 1 damage to target enemy unit. You may choose the same unit more than once.
+
+**Earth Style: Hiding Like a Mole Technique** — Style: Earth, Type: Ninjutsu
+Cost: 4 Chakra.
+Effect: Until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. If the next attack it uses during that time is a Taijutsu attack, that attack deals +2 damage.
 
 **Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
 Cost: 1 + X Chakra (just X if paid from the enabling character's own

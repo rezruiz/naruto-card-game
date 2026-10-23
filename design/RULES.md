@@ -418,6 +418,8 @@ A single-target effect is presumed to **target** that character even without the
 
 **Choosing vs. targeting [Updated]:** a card that says **"choose"** instead of "target" makes a **game action that can't be interacted with** — the choice is never targeting. Nothing can negate, redirect or respond to it, and targeting-keyed effects (target negation, "whenever targeted" triggers, extra costs to target a unit, "can't be targeted") ignore it. The chosen units are still **affected** normally: their damage can still be reduced or prevented, and Retreat immunity still applies unless the card makes an explicit exception. Examples: Wind Style: Great Breakthrough, Smoke Out.
 
+**Split damage [Updated]:** when a card deals X damage **"split however you choose"** between targets, you choose the split when you choose the targets, and **you may assign 0 to any target** (it's still targeted). This is the default for every split effect unless the card says otherwise (e.g. "at least 1 each") or its wording clearly implies it. Example: Water Style: Thousand Hungry Sharks.
+
 ### 13.6 Negating a target vs. negating damage
 - **Negating damage:** the ability still targets and resolves; only the damage number is prevented/reduced.
 - **Negating the target:** strips the target's legality **before it locks in**; **target-dependent parts fizzle** as if never triggered. The ability is still **activated** — cost paid, triggered, target identified — the negation intervenes only at the later moment the target would be *confirmed*. **Only the parts that needed that target fizzle**; comma-independent parts (e.g., "Prevent the next 2 damage dealt to you") still resolve.
@@ -486,6 +488,13 @@ Full text is in Appendix A. Timing and implementation:
 | **Genjutsu: Mind Prison** (None) | **Quick**, 5 (3 if a Genjutsu user enables it) | Stun target enemy character for its controller's turn: no abilities, no pooling into it, no enabling Jutsu cards. |
 | **Genjutsu: Crow Clone** (None) | **Quick**, 2 — Itachi only | Negate all targeting of Itachi and all new damage to him for the rest of this turn. |
 | **Water Style: Thousand Hungry Sharks** (Water) | **Normal, Attack-type — Combat only**, 6 | 4 damage split however you choose between any number of enemy targets. **Once per turn.** |
+| **Earth Style: Added Weight Rock Technique** (Earth) | **Quick**, 2 | Target enemy character's abilities and the Jutsu cards it enables cost 1 more, through its controller's next turn. |
+| **Earth Style: Earth Flow River** (Earth) | **Normal, Attack-type — Combat only**, 3 | 1 damage to the target and each enemy unit beside it in its row; those characters can't Retreat through their controller's next turn. **Once per turn.** |
+| **Fire Style: Phoenix Flower** (Fire) | **Normal, Attack-type — Combat only**, 3 | 3 damage split however you choose (0 allowed) between up to 2 target enemy units adjacent to each other. **Once per turn.** |
+| **Fire Style: Dragon Fire Technique** (Fire) | **Normal, Attack-type — Combat only**, 4 | 3 damage to the target, 2 to the unit adjacent to it in a chosen direction, 1 to the next unit in that direction; stops at the first space with no unit. **Once per turn.** |
+| **Wind Style: Vacuum Bullets** (Wind) | **Normal, Attack-type — Combat only**, 3 + X (X ≤ 3) | X times, 2 damage to target enemy unit; the same unit may be chosen more than once. **Once per turn.** |
+| **Wind Style: Air Bullets** (Wind) | **Normal, Attack-type — Combat only**, 1 + X (X ≤ 4) | X times, 1 damage to target enemy unit; the same unit may be chosen more than once. **Once per turn.** |
+| **Earth Style: Hiding Like a Mole Technique** (Earth) | **Normal, Main only**, 4 | The enabler can't be targeted (except by itself) through your next turn; its next attack in that time deals +2 if Taijutsu. |
 | **Water Dragon Jutsu** (Water) | **Normal, Attack-type — Combat only**, 1+X (X from Pool) | X damage to an enemy character, X up to 5. **Once per turn.** |
 | **Earth Style: Mud Wall** (Earth) | **Reactive**, 2 / 1 from Pool | Prevent 2 of a targeted Ninjutsu or Physical attack on one of your characters (not Genjutsu). Not in the preset deck. |
 | **Kunai Deflection** (Taijutsu) | **Reactive**, 2 / 1 from Pool | Prevent 1 of a targeted Ninjutsu or Physical attack on the **enabling** character (not Genjutsu). Prevention, not negation — Spore Technique doesn't stop it. Not in the preset deck. |
@@ -745,6 +754,14 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 86. ✔ **Samehada Fusion reworked:** Water Style attacks no longer cost 1 less while transformed (still +1 damage). "Attackers targeting him pay +1 Chakra" is replaced by: when an enemy Ninjutsu attack aimed at the transformed Kisame resolves, Kisame Absorbs 1 from its user (into his Pool, counting toward his absorbed total). (SPEC §13 Kisame.)
 87. ✔ **Water Style: Water Prison Jutsu costs 5** (was 4), and it's disabled while Kisame is transformed, like Samehada Strike. (SPEC §13 Kisame.)
 88. ✔ **Thousand Hungry Sharks is back on Kisame's card at 8:** he has it as his own ability (8 Chakra, same effect: 4 damage split between any number of enemy targets); the Jutsu card stays separate at 6. While transformed, Samehada Fusion's +1 damage and Absorb 1 apply to it. (SPEC §13 Kisame.)
+89. ✔ **New card: Earth Style: Added Weight Rock Technique** (Earth, Quick, Ninjutsu, 2 Chakra): until the end of its controller's next turn, target enemy character's abilities and the Jutsu cards it enables cost 1 more Chakra. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
+90. ✔ **New card: Earth Style: Earth Flow River** (Earth, Ninjutsu, 3 Chakra): deal 1 damage to target enemy unit and 1 to each enemy unit beside it in its row (left and right, not across rows); until the end of their controller's next turn those units can't Retreat. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
+91. ✔ **Split damage may assign 0:** when a card splits X damage between targets, you choose the split along with the targets and may assign 0 to any of them (a target assigned 0 is still targeted). This is the default for all split effects unless a card says or clearly implies otherwise. (SPEC §9.)
+92. ✔ **New card: Fire Style: Phoenix Flower** (Fire, Ninjutsu, 3 Chakra): deal 3 damage, split however you choose between up to 2 target enemy units adjacent to each other (front, behind, left or right, §9). Either target may take 0. With 1 target it takes all 3. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
+93. ✔ **New card: Fire Style: Dragon Fire Technique** (Fire, Ninjutsu, 4 Chakra): deal 3 damage to target enemy unit, 2 to the unit adjacent to it in one direction of your choice (front, behind, left or right, §9), and 1 to the next unit in that same direction. The line is fixed before damage is dealt and stops at the first space with no unit (an edge or empty slot); the rest of the chain is skipped. If the target has a neighbor, you must choose a direction that has one. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
+94. ✔ **New card: Wind Style: Vacuum Bullets** (Wind, Ninjutsu, 3 + X Chakra, X is 1–3): X times, deal 2 damage to target enemy unit; the same unit may be chosen more than once. X is how many times you choose a target. Each time is a separate 2-damage instance, so damage reduction applies to each one. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
+95. ✔ **New card: Wind Style: Air Bullets** (Wind, Ninjutsu, 1 + X Chakra, X is 1–4): X times, deal 1 damage to target enemy unit; the same unit may be chosen more than once. Works like Vacuum Bullets: X is how many times you choose a target, and each time is a separate instance of damage. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
+96. ✔ **New card: Earth Style: Hiding Like a Mole Technique** (Earth, Ninjutsu, 4 Chakra): until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. Blanket and splash effects still reach it (§9). If the next attack it uses in that time — its own ability or a Jutsu card it enables — is Taijutsu, that attack deals +2 damage. Any other attack used first uses the bonus up. The hiding lasts the full duration even after it attacks. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -1392,6 +1409,34 @@ Effect: Negate all targeting of Itachi and all new damage to him for the rest of
 **Water Style: Thousand Hungry Sharks** — Style: Water, Type: Ninjutsu
 Cost: 6 Chakra.
 Effect: Deal 4 damage, split however you choose between any number of enemy targets.
+
+**Earth Style: Added Weight Rock Technique** — Style: Earth, Quick Technique, Type: Ninjutsu
+Cost: 2 Chakra.
+Effect: Until the end of its controller's next turn, target enemy character's abilities, and the Jutsu cards it enables, cost 1 more Chakra.
+
+**Earth Style: Earth Flow River** — Style: Earth, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 1 damage to target enemy unit and 1 damage to each enemy unit beside it in its row. Until the end of their controller's next turn, those units can't Retreat.
+
+**Fire Style: Phoenix Flower** — Style: Fire, Type: Ninjutsu
+Cost: 3 Chakra.
+Effect: Deal 3 damage, split however you choose between up to 2 target enemy units adjacent to each other.
+
+**Fire Style: Dragon Fire Technique** — Style: Fire, Type: Ninjutsu
+Cost: 4 Chakra.
+Effect: Deal 3 damage to target enemy unit, 2 damage to the unit adjacent to it in one direction of your choice (front, behind, left or right), and 1 damage to the next unit in that same direction. The chain stops at the first space with no unit.
+
+**Wind Style: Vacuum Bullets** — Style: Wind, Type: Ninjutsu
+Cost: 3 + X Chakra (X is 1, 2 or 3).
+Effect: X times, deal 2 damage to target enemy unit. You may choose the same unit more than once.
+
+**Wind Style: Air Bullets** — Style: Wind, Type: Ninjutsu
+Cost: 1 + X Chakra (X is 1, 2, 3 or 4).
+Effect: X times, deal 1 damage to target enemy unit. You may choose the same unit more than once.
+
+**Earth Style: Hiding Like a Mole Technique** — Style: Earth, Type: Ninjutsu
+Cost: 4 Chakra.
+Effect: Until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. If the next attack it uses during that time is a Taijutsu attack, that attack deals +2 damage.
 
 **Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
 Cost: 1 + X Chakra (just X if paid from the enabling character's own
@@ -3137,6 +3182,13 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | Genjutsu: Mind Prison | 0 (library only) | jutsu | variable | Quick | None | Genjutsu | — | 1 (enemy) | 5, or 3 with a Genjutsu user enabling |
 | Genjutsu: Crow Clone | 0 (library only) | jutsu | 2 | Quick | None | Genjutsu | — | none/auto | Itachi only |
 | Water Style: Thousand Hungry Sharks | 0 (library only) | jutsu | variable | Normal | Water | Ninjutsu | Combat only | up to 4 (enemy) | 4 damage split by picks |
+| Earth Style: Added Weight Rock Technique | 0 (library only) | jutsu | 2 | Quick | Earth | Ninjutsu | — | 1 (enemy) | +1 cost through its controller's next turn |
+| Earth Style: Earth Flow River | 0 (library only) | jutsu | 3 | Normal | Earth | Ninjutsu | Combat only | 1 (enemy) | splash to row neighbors; no Retreat |
+| Fire Style: Phoenix Flower | 0 (library only) | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | up to 2 (enemy, adjacent) | 3 damage split as chosen |
+| Fire Style: Dragon Fire Technique | 0 (library only) | jutsu | 4 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) + direction pick | 3/2/1 down a line |
+| Wind Style: Vacuum Bullets | 0 (library only) | jutsu | 3 + X | Normal | Wind | Ninjutsu | Combat only | X picks, 1–3 (enemy) | 2 damage per pick, repeats allowed |
+| Wind Style: Air Bullets | 0 (library only) | jutsu | 1 + X | Normal | Wind | Ninjutsu | Combat only | X picks, 1–4 (enemy) | 1 damage per pick, repeats allowed |
+| Earth Style: Hiding Like a Mole Technique | 0 (library only) | jutsu | 4 | Normal | Earth | Ninjutsu | Main only | — (the enabler) | can't be targeted except by itself; next Taijutsu attack +2 |
 | Water Dragon Jutsu | 1 | jutsu | variable | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | X up to 5; cheaper if paid from enabler's Pool |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
 | Earth Style: Mud Wall | 0 | jutsu | variable | Reactive | Earth | Ninjutsu | — | 1 (ally) | cheaper if paid from enabler's Pool; not in the preset deck |

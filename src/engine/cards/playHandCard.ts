@@ -1,6 +1,6 @@
 import { samehadaFusionAbsorb } from '../characters/kisame';
 import { getCharacterDef } from '../characters/registry';
-import { findOccupant, isCharacter, patchCharacter, isPhasedOut } from '../board';
+import { findOccupant, isCharacter, patchCharacter, isHidingLikeAMole, isPhasedOut } from '../board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
@@ -41,6 +41,9 @@ export function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool:
   let cost = typeof def.cost === 'function' ? def.cost(ctx, payFromPool) : def.cost;
   if (genjutsuMasterApplies(ctx.state, def, ctx.enablingInstanceId) && cost > 1) cost -= 1;
   if (elementalVersatilityApplies(ctx.state, def, ctx.enablingInstanceId) && cost > 1) cost -= 1;
+  // Earth Style: Added Weight Rock Technique on the enabling character — +1 while it lasts.
+  const enabler = ctx.enablingInstanceId ? findOccupant(ctx.state, ctx.enablingInstanceId)?.occupant : undefined;
+  if (enabler && ((enabler.extra.addedWeightUntilTurn as number | undefined) ?? -1) >= ctx.state.turn) cost += 1;
   return cost;
 }
 
@@ -72,7 +75,7 @@ function checkEnabler(state: GameState, player: PlayerId, def: HandCardDef, enab
   return { ok: true };
 }
 
-function checkTargets(state: GameState, player: PlayerId, def: HandCardDef, targetInstanceIds: string[]): Legality {
+function checkTargets(state: GameState, player: PlayerId, def: HandCardDef, targetInstanceIds: string[], enablingInstanceId: string): Legality {
   if ((def.maxTargets ?? 1) === 0) return { ok: true };
   const side = def.targetSide ?? 'enemy';
   for (const targetId of targetInstanceIds) {
@@ -87,6 +90,8 @@ function checkTargets(state: GameState, player: PlayerId, def: HandCardDef, targ
       if (nonRetreatedExists) return { ok: false, reason: `${targetFound.occupant.name} is Retreated and can't be targeted.` };
     }
     if (isPhasedOut(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} has phased out (Crow Clone) and can't be targeted this turn.` };
+    // It can still target itself — with its own abilities or a card it enables.
+    if (targetId !== enablingInstanceId && isHidingLikeAMole(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} is Hiding Like a Mole and can't be targeted.` };
   }
   return { ok: true };
 }
@@ -130,7 +135,7 @@ export function checkHandCardLegality(
     return { ok: false, reason: `${player} doesn't currently have priority.` };
   }
 
-  const targetCheck = checkTargets(state, player, def, targetInstanceIds);
+  const targetCheck = checkTargets(state, player, def, targetInstanceIds, enablingInstanceId);
   if (!targetCheck.ok) return targetCheck;
 
   const ctx: HandCardContext = { state, player, enablingInstanceId, targetInstanceIds, amount };

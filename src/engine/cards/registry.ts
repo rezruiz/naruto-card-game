@@ -46,7 +46,7 @@ export interface HandCardDef {
   /** True when this card's cost function meaningfully changes depending on how much is paid from the enabling character's own Pool (the Substitution family's discount) — the UI offers the player that choice instead of always paying all-generic. */
   offersPoolDiscount?: boolean;
   /** True when the player should choose a numeric amount (HandCardContext.amount) before this card resolves, e.g. Chakra Transfer's X. */
-  needsAmountChoice?: boolean;
+  needsAmountChoice?: boolean | ((targetInstanceIds: string[]) => boolean);
   /** UI label for the amount stepper, e.g. "Chakra to transfer". */
   amountLabel?: string;
   /** Upper bound offered to the player for the amount stepper — called once targets/enabler are chosen. */

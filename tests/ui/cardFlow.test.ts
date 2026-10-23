@@ -63,4 +63,10 @@ describe('cardStage (the enabler -> pool-discount -> target(s) -> amount pipelin
     const p2 = { ...p1, targetsConfirmed: true };
     expect(cardStage(p2)).toBe('ready');
   });
+
+  it('an amount choice can depend on the targets picked (Phoenix Flower asks for the split only with 2 targets)', () => {
+    const p0 = { ...newPendingCard('p1', 'c1', def({ maxTargets: 2, needsAmountChoice: (t) => t.length === 2 })), enablingInstanceId: 'p1-kakuzu' };
+    expect(cardStage({ ...p0, targets: ['a'], targetsConfirmed: true })).toBe('ready');
+    expect(cardStage({ ...p0, targets: ['a', 'b'] })).toBe('amount');
+  });
 });

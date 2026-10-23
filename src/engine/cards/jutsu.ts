@@ -716,6 +716,195 @@ const thousandHungrySharks: HandCardDef = {
   },
 };
 
+// Through the end of the target's controller's next turn (cast on your turn,
+// that's their coming turn; cast on theirs, it's Quick, through their following
+// one): its abilities and the Jutsu cards it enables cost 1 more (abilities.ts /
+// playHandCard.ts read addedWeightUntilTurn).
+const addedWeightRock: HandCardDef = {
+  id: 'jutsu-added-weight-rock',
+  name: 'Earth Style: Added Weight Rock Technique',
+  cardType: 'jutsu',
+  cost: 2,
+  speed: 'Quick',
+  style: 'Earth',
+  type: 'Ninjutsu',
+  targetSide: 'enemy',
+  legalityCheck: (ctx) => {
+    const found = ctx.targetInstanceIds[0] ? findOccupant(ctx.state, ctx.targetInstanceIds[0]) : undefined;
+    return !!found && found.player !== ctx.player && isCharacter(found.occupant);
+  },
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    const found = target ? findOccupant(ctx.state, target) : undefined;
+    if (!found || !isCharacter(found.occupant)) return ctx.state;
+    const until = ctx.state.activePlayer === found.player ? ctx.state.turn + 2 : ctx.state.turn + 1;
+    const state = patchCharacter(ctx.state, found.occupant.instanceId, (c) => ({ ...c, extra: { ...c.extra, addedWeightUntilTurn: until } }));
+    return appendLog(state, `Added Weight Rock Technique: ${found.occupant.name}'s abilities and the Jutsu cards it enables cost 1 more through its controller's next turn.`);
+  },
+};
+
+// 1 damage to the target and to each enemy unit beside it in its row (left/right,
+// not across rows); the characters hit can't Retreat through their controller's
+// next turn (retreat.ts reads retreatLockedUntilTurn).
+const earthFlowRiver: HandCardDef = {
+  id: 'jutsu-earth-flow-river',
+  name: 'Earth Style: Earth Flow River',
+  cardType: 'jutsu',
+  cost: 3,
+  speed: 'Normal',
+  style: 'Earth',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  resolve: (ctx) => {
+    const target = ctx.targetInstanceIds[0];
+    const found = target ? findOccupant(ctx.state, target) : undefined;
+    if (!found) return ctx.state;
+    const adj = getAdjacent(ctx.state, found.player, found.zone, found.index);
+    const hit = [found.occupant.instanceId, ...[adj.left, adj.right].filter((o) => o !== null).map((o) => o!.instanceId)];
+    const until = ctx.state.activePlayer === found.player ? ctx.state.turn + 2 : ctx.state.turn + 1;
+    let state = appendLog(ctx.state, 'Earth Flow River turns the ground to mud.');
+    for (const id of hit) {
+      if (findOccupant(state, id)) state = dealDamage(state, id, 1).state;
+      const still = findOccupant(state, id);
+      if (still && isCharacter(still.occupant)) {
+        state = patchCharacter(state, id, (c) => ({ ...c, extra: { ...c.extra, retreatLockedUntilTurn: Math.max(until, (c.extra.retreatLockedUntilTurn as number | undefined) ?? -1) } }));
+      }
+    }
+    return state;
+  },
+};
+
+// 3 damage split between 1 or 2 enemy units adjacent to each other (front/
+// behind/left/right, §9). With 2 targets the player picks how much the first
+// takes (0–3, §9 Split damage: 0 is allowed); the second takes the rest.
+const PHOENIX_FLOWER_DAMAGE = 3;
+const phoenixFlower: HandCardDef = {
+  id: 'jutsu-phoenix-flower',
+  name: 'Fire Style: Phoenix Flower',
+  cardType: 'jutsu',
+  cost: 3,
+  speed: 'Normal',
+  style: 'Fire',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  maxTargets: 2,
+  needsAmountChoice: (targets) => targets.length === 2,
+  amountLabel: 'Damage to the first target (the second takes the rest)',
+  maxAmount: () => PHOENIX_FLOWER_DAMAGE,
+  legalityCheck: (ctx) => {
+    const [first, second] = ctx.targetInstanceIds;
+    if (!first) return false;
+    if (!second) return true;
+    if (second === first) return false;
+    const found = findOccupant(ctx.state, first);
+    if (!found) return false;
+    const adj = getAdjacent(ctx.state, found.player, found.zone, found.index);
+    return [adj.left, adj.right, adj.front, adj.back].some((o) => o?.instanceId === second);
+  },
+  resolve: (ctx) => {
+    const [first, second] = ctx.targetInstanceIds;
+    if (!first) return ctx.state;
+    const toFirst = second ? Math.max(0, Math.min(PHOENIX_FLOWER_DAMAGE, ctx.amount ?? 2)) : PHOENIX_FLOWER_DAMAGE;
+    let state = ctx.state;
+    if (toFirst > 0 && findOccupant(state, first)) state = dealDamage(state, first, toFirst).state;
+    if (second && PHOENIX_FLOWER_DAMAGE - toFirst > 0 && findOccupant(state, second)) state = dealDamage(state, second, PHOENIX_FLOWER_DAMAGE - toFirst).state;
+    return state;
+  },
+};
+
+// 3 / 2 / 1 down a line: the target, the unit adjacent to it in the direction
+// the player picks (the 2nd pick, front/behind/left/right, §9), then the next
+// unit on in that same direction. The line is fixed before any damage lands and
+// stops at the first empty space or edge. With no adjacent unit, the 2nd pick is
+// skipped; when one exists it's required.
+type Direction = 'left' | 'right' | 'front' | 'back';
+function dragonFireLine(state: GameState, first: string, second: string | undefined): string[] | null {
+  const a = findOccupant(state, first);
+  if (!a) return null;
+  const adj = getAdjacent(state, a.player, a.zone, a.index);
+  const dirs: Direction[] = ['left', 'right', 'front', 'back'];
+  if (!second) return dirs.some((d) => adj[d]) ? null : [first];
+  const dir = dirs.find((d) => adj[d]?.instanceId === second);
+  if (!dir) return null;
+  const b = findOccupant(state, second)!;
+  const third = getAdjacent(state, b.player, b.zone, b.index)[dir];
+  return third ? [first, second, third.instanceId] : [first, second];
+}
+const dragonFire: HandCardDef = {
+  id: 'jutsu-dragon-fire',
+  name: 'Fire Style: Dragon Fire Technique',
+  cardType: 'jutsu',
+  cost: 4,
+  speed: 'Normal',
+  style: 'Fire',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  maxTargets: 2,
+  legalityCheck: (ctx) => !!ctx.targetInstanceIds[0] && dragonFireLine(ctx.state, ctx.targetInstanceIds[0], ctx.targetInstanceIds[1]) !== null,
+  resolve: (ctx) => {
+    const [first, second] = ctx.targetInstanceIds;
+    const line = first ? dragonFireLine(ctx.state, first, second) : null;
+    if (!line) return ctx.state;
+    let state = ctx.state;
+    line.forEach((id, i) => {
+      if (findOccupant(state, id)) state = dealDamage(state, id, 3 - i).state;
+    });
+    return state;
+  },
+};
+
+// Wind Style "bullets": X is the number of picks (1 to maxX), and each pick is
+// its own instance of damage — picking a unit twice hits it twice (reduction
+// applies to each hit). Cost: base + X.
+function windBullets(id: string, name: string, base: number, perHit: number, maxX: number): HandCardDef {
+  return {
+    id,
+    name,
+    cardType: 'jutsu',
+    cost: (ctx) => base + Math.max(1, Math.min(maxX, ctx.targetInstanceIds.length)),
+    speed: 'Normal',
+    style: 'Wind',
+    type: 'Ninjutsu',
+    isDamaging: true,
+    targetSide: 'enemy',
+    maxTargets: maxX,
+    legalityCheck: (ctx) => ctx.targetInstanceIds.length >= 1 && ctx.targetInstanceIds.length <= maxX,
+    resolve: (ctx) => {
+      let state = ctx.state;
+      for (const target of ctx.targetInstanceIds.slice(0, maxX)) {
+        if (findOccupant(state, target)) state = dealDamage(state, target, perHit).state;
+      }
+      return state;
+    },
+  };
+}
+const vacuumBullets = windBullets('jutsu-vacuum-bullets', 'Wind Style: Vacuum Bullets', 3, 2, 3);
+const airBullets = windBullets('jutsu-air-bullets', 'Wind Style: Air Bullets', 1, 1, 4);
+
+// The enabler can't be targeted through the end of its controller's next turn
+// (board.ts isHidingLikeAMole); its next attack in that time deals +2 if it's
+// Taijutsu (combat.ts applyDamageModifiers).
+const hidingLikeAMole: HandCardDef = {
+  id: 'jutsu-hiding-like-a-mole',
+  name: 'Earth Style: Hiding Like a Mole Technique',
+  cardType: 'jutsu',
+  cost: 4,
+  speed: 'Normal',
+  style: 'Earth',
+  type: 'Ninjutsu',
+  maxTargets: 0,
+  resolve: (ctx) => {
+    const found = ctx.enablingInstanceId ? findOccupant(ctx.state, ctx.enablingInstanceId) : undefined;
+    if (!found || !isCharacter(found.occupant)) return ctx.state;
+    const until = ctx.state.activePlayer === found.player ? ctx.state.turn + 2 : ctx.state.turn + 1;
+    const state = patchCharacter(ctx.state, found.occupant.instanceId, (c) => ({ ...c, extra: { ...c.extra, moleHiddenUntilTurn: until, moleSpentOn: undefined } }));
+    return appendLog(state, `${found.occupant.name} burrows underground (Hiding Like a Mole): it can't be targeted through turn ${until}.`);
+  },
+};
+
 for (const def of [
   substitution,
   lightningSubstitution,
@@ -746,6 +935,13 @@ for (const def of [
   mindPrisonCard,
   crowCloneCard,
   thousandHungrySharks,
+  addedWeightRock,
+  earthFlowRiver,
+  phoenixFlower,
+  dragonFire,
+  vacuumBullets,
+  airBullets,
+  hidingLikeAMole,
 ]) {
   registerHandCard(def);
 }

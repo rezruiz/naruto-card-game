@@ -81,6 +81,8 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
     (v as number) > 0 && occ.extra.damagePreventionUntilTurn === s.turn ? { label: 'Damage prevention', value: `${v} this turn`, key: true } : undefined,
   damagePreventionUntilTurn: () => undefined, // shown via damagePreventionRemaining
   painPath: () => undefined, // internal marker: one of Pain's six Paths
+  addedWeightUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: 'Added Weight', value: `Abilities and enabled Jutsu cost +1 through turn ${v}`, key: true } : undefined),
+  retreatLockedUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: "Can't Retreat", value: `Through turn ${v} (Earth Flow River)`, key: true } : undefined),
   poolLockedUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: "Can't be pooled into", value: `Through turn ${v}`, key: true } : undefined),
   stunnedUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: 'Stunned', value: `Through turn ${v}`, key: true } : undefined),
   targetLockUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: "Can't use targeted abilities", value: `Through turn ${v}`, key: true } : undefined),
@@ -91,6 +93,11 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
   rallyingWordsBonusTurn: (v, s, occ) =>
     v === s.turn && !occ.extra.rallyingSpentOn ? { label: 'Rallying Words', value: '+1 damage on next attack this turn', key: true } : undefined,
   rallyingSpentOn: () => undefined, // shown via rallyingWordsBonusTurn
+  moleHiddenUntilTurn: (v, s, occ) =>
+    (v as number) >= s.turn
+      ? { label: 'Hiding Like a Mole', value: `Can't be targeted through turn ${v}${occ.extra.moleSpentOn ? '' : '; next attack +2 if Taijutsu'}`, key: true }
+      : undefined,
+  moleSpentOn: () => undefined, // shown via moleHiddenUntilTurn
   damagedEnemies: (v, s) => ({ label: 'Enemies damaged (Curse targets)', value: names(s, v) }),
   revivePending: (v) => (v ? { label: "Kakuzu's revival", value: 'Would be defeated — waiting on your answer', key: true } : undefined),
   reviveResolved: () => undefined, // internal: the revival decision was made

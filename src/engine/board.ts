@@ -128,6 +128,11 @@ export function isPhasedOut(state: GameState, occ: BoardOccupant): boolean {
   return occ.extra.phasedOutTurn === state.turn;
 }
 
+/** Earth Style: Hiding Like a Mole Technique — this unit can't be targeted (through moleHiddenUntilTurn). */
+export function isHidingLikeAMole(state: GameState, occ: BoardOccupant): boolean {
+  return ((occ.extra.moleHiddenUntilTurn as number | undefined) ?? -1) >= state.turn;
+}
+
 export function painUnitId(player: PlayerId): string {
   return `pain-${player}`;
 }
