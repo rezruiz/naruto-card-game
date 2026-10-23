@@ -494,7 +494,7 @@ Full text is in Appendix A. Timing and implementation:
 | **Fire Style: Dragon Fire Technique** (Fire) | **Normal, Attack-type — Combat only**, 4 | 3 damage to the target, 2 to the unit adjacent to it in a chosen direction, 1 to the next unit in that direction; stops at the first space with no unit. **Once per turn.** |
 | **Wind Style: Vacuum Bullets** (Wind) | **Normal, Attack-type — Combat only**, 3 + X (X ≤ 3) | X times, 2 damage to target enemy unit; the same unit may be chosen more than once. **Once per turn.** |
 | **Wind Style: Air Bullets** (Wind) | **Normal, Attack-type — Combat only**, 1 + X (X ≤ 4) | X times, 1 damage to target enemy unit; the same unit may be chosen more than once. **Once per turn.** |
-| **Earth Style: Hiding Like a Mole Technique** (Earth) | **Normal, Main only**, 4 | The enabler can't be targeted (except by itself) through your next turn; its next attack in that time deals +2 if Taijutsu. |
+| **Earth Style: Hiding Like a Mole Technique** (Earth) | **Normal, Main only**, 4 | The enabler can't be targeted (except by itself) through your next turn, until it uses an attack; that attack deals +2 if Taijutsu. |
 | **Water Dragon Jutsu** (Water) | **Normal, Attack-type — Combat only**, 1+X (X from Pool) | X damage to an enemy character, X up to 5. **Once per turn.** |
 | **Earth Style: Mud Wall** (Earth) | **Reactive**, 2 / 1 from Pool | Prevent 2 of a targeted Ninjutsu or Physical attack on one of your characters (not Genjutsu). Not in the preset deck. |
 | **Kunai Deflection** (Taijutsu) | **Reactive**, 2 / 1 from Pool | Prevent 1 of a targeted Ninjutsu or Physical attack on the **enabling** character (not Genjutsu). Prevention, not negation — Spore Technique doesn't stop it. Not in the preset deck. |
@@ -761,9 +761,10 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 93. ✔ **New card: Fire Style: Dragon Fire Technique** (Fire, Ninjutsu, 4 Chakra): deal 3 damage to target enemy unit, 2 to the unit adjacent to it in one direction of your choice (front, behind, left or right, §9), and 1 to the next unit in that same direction. The line is fixed before damage is dealt and stops at the first space with no unit (an edge or empty slot); the rest of the chain is skipped. If the target has a neighbor, you must choose a direction that has one. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
 94. ✔ **New card: Wind Style: Vacuum Bullets** (Wind, Ninjutsu, 3 + X Chakra, X is 1–3): X times, deal 2 damage to target enemy unit; the same unit may be chosen more than once. X is how many times you choose a target. Each time is a separate 2-damage instance, so damage reduction applies to each one. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
 95. ✔ **New card: Wind Style: Air Bullets** (Wind, Ninjutsu, 1 + X Chakra, X is 1–4): X times, deal 1 damage to target enemy unit; the same unit may be chosen more than once. Works like Vacuum Bullets: X is how many times you choose a target, and each time is a separate instance of damage. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
-96. ✔ **New card: Earth Style: Hiding Like a Mole Technique** (Earth, Ninjutsu, 4 Chakra): until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. Blanket and splash effects still reach it (§9). If the next attack it uses in that time — its own ability or a Jutsu card it enables — is Taijutsu, that attack deals +2 damage. Any other attack used first uses the bonus up. The hiding lasts the full duration even after it attacks. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.)
+96. ✔ **New card: Earth Style: Hiding Like a Mole Technique** (Earth, Ninjutsu, 4 Chakra): until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. Blanket and splash effects still reach it (§9). If the next attack it uses in that time — its own ability or a Jutsu card it enables — is Taijutsu, that attack deals +2 damage. Any other attack used first uses the bonus up. The hiding lasts the full duration even after it attacks. In the Deck Library, not in the preset Jutsu Deck. (SPEC §13b.) *(Changed by ruling 99.)*
 97. ✔ **Wind cost and damage changes:** **Pressure Damage** now costs 4 Chakra (was 3) and deals 3 damage to up to 2 enemy characters (was 2). **Wind Style: Great Breakthrough** now costs 2 Chakra (was 3). (SPEC §13b.)
 98. ✔ **Fireball Jutsu costs 3:** a flat 3 Chakra (was 4, or 3 if paid from the enabling character's Pool). The Pool discount is removed. (SPEC §13b.)
+99. ✔ **Hiding Like a Mole ends when it attacks:** the hiding ends as soon as the character uses an attack (its own damaging ability or a damaging Jutsu card it enables). It ends on activation, before the attack resolves, so the opponent can target it in response. If that attack is Taijutsu it still deals +2. (SPEC §13b; nuance in CHARACTER_LOG.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -1436,8 +1437,8 @@ Cost: 1 + X Chakra (X is 1, 2, 3 or 4).
 Effect: X times, deal 1 damage to target enemy unit. You may choose the same unit more than once.
 
 **Earth Style: Hiding Like a Mole Technique** — Style: Earth, Type: Ninjutsu
-Cost: 4 Chakra.
-Effect: Until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. If the next attack it uses during that time is a Taijutsu attack, that attack deals +2 damage.
+Cost: 4 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. This ends as soon as it uses an attack; if that attack is Taijutsu, it deals +2 damage.
 
 **Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
 Cost: 1 + X Chakra (just X if paid from the enabling character's own
@@ -3009,6 +3010,23 @@ damage rather than negate targeting) — this is a pure negation with an
 attached punish, closer in spirit to Deva Path's Shinra Tensei V2 but
 with an added counter-attack Shinra Tensei V2 doesn't have.
 
+### Earth Style: Hiding Like a Mole Technique
+- **Who it hides:** the character that enabled the card. "Can't be
+  targeted" blocks every other source, friend or foe, but the character
+  can still target itself with its own abilities and the Jutsu cards it
+  enables. Blanket and splash effects still reach it (§9).
+- **What counts as "uses an attack":** activating one of its own
+  damaging abilities, or enabling a damaging Jutsu card. Non-attacking
+  abilities and cards (e.g. Added Weight Rock Technique) don't end it.
+- **It ends on activation:** the moment the attack is activated, before
+  it resolves and before anyone can respond. The opponent can target
+  the character in response to that same attack.
+- **The +2:** applies only to that one attack, and only if it's
+  Taijutsu; it adds to every hit of that attack. A non-Taijutsu attack
+  ends the hiding with no bonus.
+- **Duration:** otherwise it lasts until the end of your next turn (cast
+  on your turn, that's through your following turn).
+
 ---
 
 # APPENDIX C — WHAT THE ENGINE ACTUALLY IMPLEMENTS
@@ -3189,7 +3207,7 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | Fire Style: Dragon Fire Technique | 0 (library only) | jutsu | 4 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) + direction pick | 3/2/1 down a line |
 | Wind Style: Vacuum Bullets | 0 (library only) | jutsu | 3 + X | Normal | Wind | Ninjutsu | Combat only | X picks, 1–3 (enemy) | 2 damage per pick, repeats allowed |
 | Wind Style: Air Bullets | 0 (library only) | jutsu | 1 + X | Normal | Wind | Ninjutsu | Combat only | X picks, 1–4 (enemy) | 1 damage per pick, repeats allowed |
-| Earth Style: Hiding Like a Mole Technique | 0 (library only) | jutsu | 4 | Normal | Earth | Ninjutsu | Main only | — (the enabler) | can't be targeted except by itself; next Taijutsu attack +2 |
+| Earth Style: Hiding Like a Mole Technique | 0 (library only) | jutsu | 4 | Normal | Earth | Ninjutsu | Main only | — (the enabler) | can't be targeted except by itself; ends when it attacks (+2 if Taijutsu) |
 | Water Dragon Jutsu | 1 | jutsu | variable | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | X up to 5; cheaper if paid from enabler's Pool |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
 | Earth Style: Mud Wall | 0 | jutsu | variable | Reactive | Earth | Ninjutsu | — | 1 (ally) | cheaper if paid from enabler's Pool; not in the preset deck |

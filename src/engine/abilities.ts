@@ -1,5 +1,5 @@
 import { appendLog, appendWarning } from './phases/phaseMachine';
-import { findOccupant, isCharacter, isHidingLikeAMole, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant } from './board';
+import { findOccupant, isCharacter, isHidingLikeAMole, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant, surfaceFromMole } from './board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from './stack';
 import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
 import { getCharacterDef, getTokenDef } from './characters/registry';
@@ -437,9 +437,11 @@ export function activateAbility(
     next = patchOccupant(next, sourceInstanceId, (o) => ({ ...o, extra: { ...o.extra, nextAbilityDiscount: 0 } }));
   }
 
+  const itemId = `stack-${next.stack.length}-${sourceInstanceId}-${abilityId}`;
+  if (ability.isDamaging) next = surfaceFromMole(next, sourceInstanceId, itemId, ability.type);
   const ctx: AbilityContext = { state: next, sourceInstanceId, targetInstanceIds, choices };
   next = pushStackItem(next, {
-    id: `stack-${next.stack.length}-${sourceInstanceId}-${abilityId}`,
+    id: itemId,
     controllerId: player,
     sourceInstanceId,
     sourceName: source.name,

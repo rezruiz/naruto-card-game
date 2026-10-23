@@ -1496,3 +1496,20 @@ Wall or the Pain-deck's redirect abilities (which reduce/redirect
 damage rather than negate targeting) — this is a pure negation with an
 attached punish, closer in spirit to Deva Path's Shinra Tensei V2 but
 with an added counter-attack Shinra Tensei V2 doesn't have.
+
+### Earth Style: Hiding Like a Mole Technique
+- **Who it hides:** the character that enabled the card. "Can't be
+  targeted" blocks every other source, friend or foe, but the character
+  can still target itself with its own abilities and the Jutsu cards it
+  enables. Blanket and splash effects still reach it (§9).
+- **What counts as "uses an attack":** activating one of its own
+  damaging abilities, or enabling a damaging Jutsu card. Non-attacking
+  abilities and cards (e.g. Added Weight Rock Technique) don't end it.
+- **It ends on activation:** the moment the attack is activated, before
+  it resolves and before anyone can respond. The opponent can target
+  the character in response to that same attack.
+- **The +2:** applies only to that one attack, and only if it's
+  Taijutsu; it adds to every hit of that attack. A non-Taijutsu attack
+  ends the hiding with no bonus.
+- **Duration:** otherwise it lasts until the end of your next turn (cast
+  on your turn, that's through your following turn).

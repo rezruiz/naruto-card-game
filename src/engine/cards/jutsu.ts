@@ -884,8 +884,8 @@ const vacuumBullets = windBullets('jutsu-vacuum-bullets', 'Wind Style: Vacuum Bu
 const airBullets = windBullets('jutsu-air-bullets', 'Wind Style: Air Bullets', 1, 1, 4);
 
 // The enabler can't be targeted through the end of its controller's next turn
-// (board.ts isHidingLikeAMole); its next attack in that time deals +2 if it's
-// Taijutsu (combat.ts applyDamageModifiers).
+// (board.ts isHidingLikeAMole). Activating an attack ends it on the spot, and a
+// Taijutsu attack gets +2 (board.ts surfaceFromMole, combat.ts).
 const hidingLikeAMole: HandCardDef = {
   id: 'jutsu-hiding-like-a-mole',
   name: 'Earth Style: Hiding Like a Mole Technique',
@@ -899,7 +899,7 @@ const hidingLikeAMole: HandCardDef = {
     const found = ctx.enablingInstanceId ? findOccupant(ctx.state, ctx.enablingInstanceId) : undefined;
     if (!found || !isCharacter(found.occupant)) return ctx.state;
     const until = ctx.state.activePlayer === found.player ? ctx.state.turn + 2 : ctx.state.turn + 1;
-    const state = patchCharacter(ctx.state, found.occupant.instanceId, (c) => ({ ...c, extra: { ...c.extra, moleHiddenUntilTurn: until, moleSpentOn: undefined } }));
+    const state = patchCharacter(ctx.state, found.occupant.instanceId, (c) => ({ ...c, extra: { ...c.extra, moleHiddenUntilTurn: until, moleBonusItem: undefined } }));
     return appendLog(state, `${found.occupant.name} burrows underground (Hiding Like a Mole): it can't be targeted through turn ${until}.`);
   },
 };

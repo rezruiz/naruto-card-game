@@ -78,13 +78,10 @@ function applyDamageModifiers(
       notes.push('+1 Rallying Words');
       next = patchOccupant(next, attacker.instanceId, (o) => ({ ...o, extra: { ...o.extra, rallyingSpentOn: src.itemId } }));
     }
-    // Hiding Like a Mole: the next attack it uses while hidden deals +2 if it's Taijutsu (every hit of that one attack); any other attack uses it up.
-    if (attacker && ((attacker.extra.moleHiddenUntilTurn as number | undefined) ?? -1) >= turn && (attacker.extra.moleSpentOn ?? src.itemId) === src.itemId) {
-      if (src.type === 'Taijutsu') {
-        dmg += 2;
-        notes.push('+2 Hiding Like a Mole');
-      }
-      next = patchOccupant(next, attacker.instanceId, (o) => ({ ...o, extra: { ...o.extra, moleSpentOn: src.itemId } }));
+    // Hiding Like a Mole: the Taijutsu attack it surfaced with deals +2 (every hit of that one attack; board.ts surfaceFromMole).
+    if (attacker && attacker.extra.moleBonusItem === src.itemId) {
+      dmg += 2;
+      notes.push('+2 Hiding Like a Mole');
     }
   }
 

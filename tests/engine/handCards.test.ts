@@ -595,12 +595,28 @@ describe('Earth Style: Hiding Like a Mole Technique', () => {
     expect(activateAbility({ ...s, phase: 'Combat' }, 'p1-kakuzu', 'earth-grudge-fear', ['p1-kakuzu'], 0).stack).toHaveLength(1);
   });
 
-  it('its next attack deals +2 if it is Taijutsu; a different attack first uses the bonus up', () => {
+  const kakuzu = (s: GameState) => s.players.p1.backRow.find((c) => c?.instanceId === 'p1-kakuzu')!;
+
+  it('activating an attack ends it on the spot, before the attack resolves; a Taijutsu attack deals +2', () => {
     const s: GameState = { ...hidden(), phase: 'Combat' };
-    const taijutsu = resolveTop(activateAbility(s, 'p1-kakuzu', 'earth-grudge-fear', ['p2-deidara'], 0));
+    const activated = activateAbility(s, 'p1-kakuzu', 'earth-grudge-fear', ['p2-deidara'], 0);
+    expect(activated.stack).toHaveLength(1);
+    expect(kakuzu(activated).extra.moleHiddenUntilTurn).toBeUndefined(); // targetable while its attack is still on the stack
+    // p2 can answer with a Quick card aimed at it — refused while it was hidden, legal now.
+    expect(playCard({ ...giveChakra(s, 'p2', 5), priorityPlayer: 'p2' }, 'p2', 'jutsu-added-weight-rock', 'p2-kakuzu', ['p1-kakuzu']).stack).toHaveLength(0);
+    expect(playCard({ ...giveChakra(activated, 'p2', 5), priorityPlayer: 'p2' }, 'p2', 'jutsu-added-weight-rock', 'p2-kakuzu', ['p1-kakuzu']).stack).toHaveLength(2);
+    expect(kakuzu(activated).extra.moleBonusItem).toBe(activated.stack[0].id); // the +2 belongs to this one attack
+    const taijutsu = resolveTop(activated);
     expect(hp(s, 'p2-deidara')! - hp(taijutsu, 'p2-deidara')!).toBe(3); // 1 + 2
-    const ninjutsu = resolveTop(playCard(s, 'p1', 'jutsu-searing-migraine', 'p1-kakuzu', ['p2-deidara']));
-    const after = resolveTop(activateAbility(ninjutsu, 'p1-kakuzu', 'earth-grudge-fear', ['p2-deidara'], 0));
-    expect(hp(ninjutsu, 'p2-deidara')! - hp(after, 'p2-deidara')!).toBe(1);
+  });
+
+  it('a non-Taijutsu attack ends it with no bonus; a non-attack card does not end it', () => {
+    const s: GameState = { ...hidden(), phase: 'Combat' };
+    const ninjutsu = playCard(s, 'p1', 'jutsu-searing-migraine', 'p1-kakuzu', ['p2-deidara']);
+    expect(kakuzu(ninjutsu).extra.moleHiddenUntilTurn).toBeUndefined();
+    expect(hp(s, 'p2-deidara')! - hp(resolveTop(ninjutsu), 'p2-deidara')!).toBe(4); // Searing Migraine's 4, no +2
+    const weight = playCard(s, 'p1', 'jutsu-added-weight-rock', 'p1-kakuzu', ['p2-deidara']);
+    expect(weight.stack).toHaveLength(1);
+    expect(kakuzu(weight).extra.moleHiddenUntilTurn).toBe(s.turn + 2);
   });
 });

@@ -93,11 +93,11 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
   rallyingWordsBonusTurn: (v, s, occ) =>
     v === s.turn && !occ.extra.rallyingSpentOn ? { label: 'Rallying Words', value: '+1 damage on next attack this turn', key: true } : undefined,
   rallyingSpentOn: () => undefined, // shown via rallyingWordsBonusTurn
-  moleHiddenUntilTurn: (v, s, occ) =>
-    (v as number) >= s.turn
-      ? { label: 'Hiding Like a Mole', value: `Can't be targeted through turn ${v}${occ.extra.moleSpentOn ? '' : '; next attack +2 if Taijutsu'}`, key: true }
+  moleHiddenUntilTurn: (v, s) =>
+    v !== undefined && (v as number) >= s.turn
+      ? { label: 'Hiding Like a Mole', value: `Can't be targeted through turn ${v}, or until it attacks (+2 if Taijutsu)`, key: true }
       : undefined,
-  moleSpentOn: () => undefined, // shown via moleHiddenUntilTurn
+  moleBonusItem: () => undefined, // internal: the Taijutsu attack it surfaced with
   damagedEnemies: (v, s) => ({ label: 'Enemies damaged (Curse targets)', value: names(s, v) }),
   revivePending: (v) => (v ? { label: "Kakuzu's revival", value: 'Would be defeated — waiting on your answer', key: true } : undefined),
   reviveResolved: () => undefined, // internal: the revival decision was made

@@ -133,6 +133,21 @@ export function isHidingLikeAMole(state: GameState, occ: BoardOccupant): boolean
   return ((occ.extra.moleHiddenUntilTurn as number | undefined) ?? -1) >= state.turn;
 }
 
+/**
+ * Hiding Like a Mole ends the moment the hidden unit activates an attack (its own damaging ability or a
+ * damaging Jutsu card it enables) — on activation, before anyone can respond. A Taijutsu attack gets +2:
+ * the bonus is tied to that attack's stack item (moleBonusItem, read in combat.ts).
+ */
+export function surfaceFromMole(state: GameState, unitId: string, itemId: string, attackType: string): GameState {
+  const found = findOccupant(state, unitId);
+  if (!found || !isHidingLikeAMole(state, found.occupant)) return state;
+  const next = patchOccupant(state, unitId, (o) => ({
+    ...o,
+    extra: { ...o.extra, moleHiddenUntilTurn: undefined, moleBonusItem: attackType === 'Taijutsu' ? itemId : undefined },
+  }));
+  return appendLog(next, `${found.occupant.name} surfaces to attack — Hiding Like a Mole ends${attackType === 'Taijutsu' ? ' (+2 damage on this Taijutsu attack)' : ''}.`);
+}
+
 export function painUnitId(player: PlayerId): string {
   return `pain-${player}`;
 }

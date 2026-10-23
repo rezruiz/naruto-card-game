@@ -1,6 +1,6 @@
 import { samehadaFusionAbsorb } from '../characters/kisame';
 import { getCharacterDef } from '../characters/registry';
-import { findOccupant, isCharacter, patchCharacter, isHidingLikeAMole, isPhasedOut } from '../board';
+import { findOccupant, isCharacter, patchCharacter, isHidingLikeAMole, isPhasedOut, surfaceFromMole } from '../board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
@@ -230,9 +230,11 @@ export function playHandCard(
   }
 
   if (def.cardType === 'jutsu' || def.cardType === 'assist') {
+    const itemId = `stack-${next.stack.length}-${cardInstanceId}`;
+    if (def.isDamaging && enablingInstanceId) next = surfaceFromMole(next, enablingInstanceId, itemId, def.type);
     const stackCtx: HandCardContext = { ...ctx, state: next };
     return pushStackItem(next, {
-      id: `stack-${next.stack.length}-${cardInstanceId}`,
+      id: itemId,
       controllerId: player,
       sourceInstanceId: enablingInstanceId || `${player}-hand`,
       sourceName: def.name,

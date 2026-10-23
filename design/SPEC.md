@@ -1760,8 +1760,8 @@ Cost: 1 + X Chakra (X is 1, 2, 3 or 4).
 Effect: X times, deal 1 damage to target enemy unit. You may choose the same unit more than once.
 
 **Earth Style: Hiding Like a Mole Technique** — Style: Earth, Type: Ninjutsu
-Cost: 4 Chakra.
-Effect: Until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. If the next attack it uses during that time is a Taijutsu attack, that attack deals +2 damage.
+Cost: 4 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Effect: Until the end of your next turn, the enabling character can't be targeted, except by its own abilities and the Jutsu cards it enables. This ends as soon as it uses an attack; if that attack is Taijutsu, it deals +2 damage.
 
 **Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
 Cost: 1 + X Chakra (just X if paid from the enabling character's own
