@@ -4,7 +4,7 @@ import { CHARACTER_DRAG_TYPE, IN_PLAY_CARD_DRAG_TYPE } from './CharacterCard';
 import { getHandCardDef } from '../../engine/cards/registry';
 import { getCharacterDeckEntry } from '../../engine/characters';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
-import { characterInfo, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
+import { characterInfo, handCardCost, handCardSubtitle, handCardSummary, CHARACTER_STYLE_CLASS, styleClass } from '../cardDisplay';
 import '../Hand.css';
 
 /** Drag data type for a card dragged out of hand onto the board (Hearthstone-style play). */
@@ -120,7 +120,7 @@ export function HandView({
             const { hp, styles } = characterInfo(charEntry);
             return (
               <div
-                className={`hand-card hand-card--character${required ? ' hand-card--required' : ''}${playable ? ' hand-card--playable' : ''}`}
+                className={`hand-card hand-card--character ${CHARACTER_STYLE_CLASS}${required ? ' hand-card--required' : ''}${playable ? ' hand-card--playable' : ''}`}
                 key={entry.instanceId}
                 title={playable ? 'Drag onto one of your character slots to play it · click for details' : 'Click for details'}
                 onClick={() => onOpenDetails(charEntry.name, `Character card · Rank ${charEntry.rank} — in hand`, getCharacterCardText(entry.entryId))}
@@ -156,7 +156,7 @@ export function HandView({
           const playable = canAct && !pendingCardInstanceId;
           return (
             <div
-              className={`hand-card hand-card--${def.cardType}${isPending ? ' hand-card--pending' : ''}${playable ? ' hand-card--playable' : ''}`}
+              className={`hand-card hand-card--${def.cardType} ${styleClass(def.style)}${isPending ? ' hand-card--pending' : ''}${playable ? ' hand-card--playable' : ''}`}
               key={entry.instanceId}
               title={playable ? 'Drag onto the board to play it (or onto your Chakra row to place it as a Chakra source) · click for details' : 'Click for details'}
               onClick={() => onOpenDetails(def.name, `${def.cardType} card — in hand`, getHandCardText(def.name))}

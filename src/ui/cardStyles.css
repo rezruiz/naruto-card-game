@@ -1,0 +1,91 @@
+/* ---- Style color coding for cards (deck library tiles and cards in hand) ----
+   The card keeps the UI's normal card colors; the Style shows in the cost gem's
+   fill and a faint tint across the top of the card. Gem text color is picked
+   per Style for contrast (dark text on the light fills, white on the deep ones). */
+
+.card-style {
+  --gem-top: #c9cfda;
+  --gem-bottom: #8a94a7;
+  --gem-text: #1c2230;
+  --gem-ring: var(--panel-bg);
+  --tint: transparent;
+}
+
+.card-style--water {
+  --gem-top: #2f7cc6;
+  --gem-bottom: #0c4a8f;
+  --gem-text: #ffffff;
+  --tint: rgba(24, 104, 196, 0.13);
+}
+
+.card-style--earth {
+  --gem-top: #ead0a8;
+  --gem-bottom: #b88c5c;
+  --gem-text: #33200d;
+  --tint: rgba(176, 132, 85, 0.16);
+}
+
+.card-style--fire {
+  --gem-top: #ffa36b;
+  --gem-bottom: #e0502a;
+  --gem-text: #2a0a00;
+  --tint: rgba(230, 92, 42, 0.13);
+}
+
+.card-style--lightning {
+  --gem-top: #c8eaff;
+  --gem-bottom: #6ec3f4;
+  --gem-text: #0b3550;
+  --tint: rgba(96, 186, 240, 0.17);
+}
+
+.card-style--wind {
+  --gem-top: #d3f6cc;
+  --gem-bottom: #7fcf78;
+  --gem-text: #143c12;
+  --tint: rgba(110, 200, 104, 0.17);
+}
+
+/* Explosion, Gravity, Paper, Poison, Ritual, Yang and other kekkei genkai / special Styles. */
+.card-style--unique {
+  --gem-top: #ecdcff;
+  --gem-bottom: #b58ff0;
+  --gem-text: #2d1352;
+  --tint: rgba(170, 128, 236, 0.15);
+}
+
+/* Character cards: a white gem and a light sheen. */
+.card-style--character {
+  --gem-top: #ffffff;
+  --gem-bottom: #d8dbe3;
+  --gem-text: #262833;
+  --gem-ring: var(--card-border);
+  --tint: rgba(255, 255, 255, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card-style--character {
+    --tint: rgba(255, 255, 255, 0.07);
+  }
+}
+
+/* The faint tint, kept through hover (which swaps the card's base color). */
+.lib-card.card-style,
+.lib-card.card-style:hover,
+.hand-view .hand-card.card-style,
+.hand-view .hand-card.card-style:hover,
+.hand-view .hand-card.card-style:focus-within {
+  background-image: linear-gradient(180deg, var(--tint) 0%, transparent 62%);
+}
+
+.card-style .lib-card__gem,
+.card-style .hand-card__gem {
+  background: radial-gradient(circle at 35% 30%, var(--gem-top), var(--gem-bottom));
+  color: var(--gem-text);
+  border-color: var(--gem-ring);
+}
+
+.card-style--water .lib-card__gem,
+.card-style--water .hand-card__gem {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}

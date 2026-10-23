@@ -1,9 +1,20 @@
 import { getCharacterDef, type CharacterDeckEntry } from '../engine/characters';
 import type { HandCardDef } from '../engine/cards/registry';
 import { getHandCardText } from './cardInfo';
+import './cardStyles.css';
 
 // Shared card-face helpers for anywhere a card is drawn as a card (the deck
 // library's collection, the hand): its cost gem, type line and one-line text.
+
+const STYLE_COLOR: Record<string, string> = { Water: 'water', Earth: 'earth', Fire: 'fire', Lightning: 'lightning', Wind: 'wind' };
+
+/** The card's color-coding class (cardStyles.css): its Style's color, light purple for any other (unique/kekkei genkai) Style, neutral for none. */
+export function styleClass(style: string): string {
+  return `card-style card-style--${style === 'None' ? 'none' : (STYLE_COLOR[style] ?? 'unique')}`;
+}
+
+/** Character cards are white. */
+export const CHARACTER_STYLE_CLASS = 'card-style card-style--character';
 
 export const RANK_ORDER = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D'];
 export const TYPE_LABEL: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assist', mission: 'Mission', terrain: 'Terrain' };

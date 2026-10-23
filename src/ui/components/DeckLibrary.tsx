@@ -18,8 +18,106 @@ import type { HandCardDef } from '../../engine/cards/registry';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
 import { newDeckId } from '../deckStorage';
 import { DetailsModal } from './DetailsModal';
-import { RANK_ORDER, TYPE_LABEL, byCost, byRank, characterInfo, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
+import { CHARACTER_STYLE_CLASS, styleClass, RANK_ORDER, TYPE_LABEL, byCost, byRank, characterInfo, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
+import { FilterMenu, SortMenu, type Option } from './LibraryControls';
+import { getCharacterDef, type CharacterDeckEntry } from '../../engine/characters';
+import type { ReactNode } from 'react';
 import './DeckLibrary.css';
+
+// ---- Collection: sorting, sectioning, filtering ---------------------------------
+
+type HandSort = 'type' | 'style' | 'cost' | 'name';
+type CharSort = 'rank' | 'name' | 'hp';
+const HAND_SORTS: Option<HandSort>[] = [
+  { id: 'type', label: 'Type › Style › Cost' },
+  { id: 'style', label: 'Style › Cost' },
+  { id: 'cost', label: 'Cost' },
+  { id: 'name', label: 'Name (A–Z)' },
+];
+const CHAR_SORTS: Option<CharSort>[] = [
+  { id: 'rank', label: 'Rank' },
+  { id: 'name', label: 'Name (A–Z)' },
+  { id: 'hp', label: 'HP (high to low)' },
+];
+const TYPE_ORDER: HandCardDef['cardType'][] = ['jutsu', 'assist', 'mission', 'terrain'];
+const TYPE_SECTION: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assists', mission: 'Missions', terrain: 'Terrain' };
+const COST_BUCKETS: Option[] = [
+  { id: '0-1', label: '0–1' },
+  { id: '2-3', label: '2–3' },
+  { id: '4-5', label: '4–5' },
+  { id: '6+', label: '6+' },
+];
+
+function costBucket(d: HandCardDef): string {
+  const n = Number(handCardCost(d));
+  if (Number.isNaN(n)) return '6+';
+  return n <= 1 ? '0-1' : n <= 3 ? '2-3' : n <= 5 ? '4-5' : '6+';
+}
+const styleLabel = (st: string) => (st === 'None' ? 'No Style' : st);
+/** Style order inside a section: No Style first, then A–Z. */
+const byStyleName = (a: string, b: string) => (a === 'None' ? -1 : b === 'None' ? 1 : a.localeCompare(b));
+function charStylesOf(c: CharacterDeckEntry): string[] {
+  const st = (getCharacterDef(c.id)?.styles ?? []).filter((x) => x !== 'None');
+  return st.length ? st : ['None'];
+}
+
+interface Group<T> {
+  key: string;
+  title?: string;
+  items: T[];
+}
+interface Section<T> {
+  key: string;
+  title?: string;
+  groups: Group<T>[];
+}
+
+function sectionHand(cards: HandCardDef[], sort: HandSort): Section<HandCardDef>[] {
+  const sorted = [...cards].sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : byCost);
+  const byStyle = (list: HandCardDef[]): Group<HandCardDef>[] => {
+    const keys = [...new Set(list.map((d) => d.style))].sort(byStyleName);
+    return keys.map((k) => ({ key: k, title: keys.length > 1 ? styleLabel(k) : undefined, items: list.filter((d) => d.style === k) }));
+  };
+  if (sort === 'type') {
+    return TYPE_ORDER.map((t) => ({ key: t, title: TYPE_SECTION[t], groups: byStyle(sorted.filter((d) => d.cardType === t)) })).filter((sec) => sec.groups.length > 0);
+  }
+  if (sort === 'style') {
+    return byStyle(sorted).map((g) => ({ key: g.key, title: styleLabel(g.key), groups: [{ key: g.key, items: g.items }] }));
+  }
+  return sorted.length ? [{ key: 'all', groups: [{ key: 'all', items: sorted }] }] : [];
+}
+
+function sectionCharacters(chars: CharacterDeckEntry[], sort: CharSort): Section<CharacterDeckEntry>[] {
+  if (sort === 'rank') {
+    const sorted = [...chars].sort(byRank);
+    return RANK_ORDER.filter((r) => sorted.some((c) => c.rank === r)).map((r) => ({ key: r, title: `${r} Rank`, groups: [{ key: r, items: sorted.filter((c) => c.rank === r) }] }));
+  }
+  const hp = (c: CharacterDeckEntry) => getCharacterDef(c.id)?.baseMaxHP ?? 0;
+  const sorted = [...chars].sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => hp(b) - hp(a) || a.name.localeCompare(b.name));
+  return sorted.length ? [{ key: 'all', groups: [{ key: 'all', items: sorted }] }] : [];
+}
+
+function renderSections<T>(sections: Section<T>[], tile: (item: T) => ReactNode) {
+  return sections.map((sec) => (
+    <section key={sec.key} className="lib-section">
+      {sec.title && (
+        <h3 className="lib-section__title">
+          {sec.title} <span>({sec.groups.reduce((n, g) => n + g.items.length, 0)})</span>
+        </h3>
+      )}
+      {sec.groups.map((g) => (
+        <div key={g.key} className="lib-section__group">
+          {g.title && (
+            <h4 className="lib-section__sub">
+              {g.title} <span>({g.items.length})</span>
+            </h4>
+          )}
+          <div className="collection__grid">{g.items.map(tile)}</div>
+        </div>
+      ))}
+    </section>
+  ));
+}
 
 // ---- Deck list (all decks) --------------------------------------------------
 
@@ -117,25 +215,44 @@ type DeckUpdate = (deck: DeckList) => DeckList;
 function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChange: (update: DeckUpdate) => void; onDone: () => void; onCopy: () => void }) {
   const [tab, setTab] = useState<Tab>('characters');
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | HandCardDef['cardType']>('all');
-  const [styleFilter, setStyleFilter] = useState('all');
-  const [rankFilter, setRankFilter] = useState('all');
+  const [handSort, setHandSort] = useState<HandSort>('type');
+  const [charSort, setCharSort] = useState<CharSort>('rank');
+  const [handFilters, setHandFilters] = useState<Record<string, string[]>>({});
+  const [charFilters, setCharFilters] = useState<Record<string, string[]>>({});
+  const [handInDeck, setHandInDeck] = useState(false);
+  const [charInDeck, setCharInDeck] = useState(false);
   const [details, setDetails] = useState<{ title: string; subtitle: string; text?: string } | null>(null);
   const readOnly = !!deck.preset;
 
   const hand = useMemo(() => handCardPool().sort(byCost), []);
   const characters = useMemo(() => characterPool().sort(byRank), []);
   const styles = useMemo(() => [...new Set(hand.map((d) => d.style).filter((s) => s !== 'None'))].sort(), [hand]);
+  const charStyleList = useMemo(() => [...new Set(characters.flatMap((c) => charStylesOf(c)).filter((s) => s !== 'None'))].sort(), [characters]);
   const errors = validateDeck(deck);
   const query = search.trim().toLowerCase();
 
+  const pass = (filters: Record<string, string[]>, group: string, value: string | string[]) => {
+    const want = filters[group] ?? [];
+    return want.length === 0 || (Array.isArray(value) ? value.some((v) => want.includes(v)) : want.includes(value));
+  };
   const shownHand = hand.filter(
     (d) =>
-      (typeFilter === 'all' || d.cardType === typeFilter) &&
-      (styleFilter === 'all' || (styleFilter === 'None' ? d.style === 'None' : d.style === styleFilter)) &&
+      pass(handFilters, 'type', d.cardType) &&
+      pass(handFilters, 'style', d.style) &&
+      pass(handFilters, 'speed', d.speed) &&
+      pass(handFilters, 'cost', costBucket(d)) &&
+      (!handInDeck || (deck.handDeck[d.id] ?? 0) > 0) &&
       (!query || `${d.name} ${handCardSummary(d)}`.toLowerCase().includes(query)),
   );
-  const shownCharacters = characters.filter((c) => (rankFilter === 'all' || c.rank === rankFilter) && (!query || c.name.toLowerCase().includes(query)));
+  const shownCharacters = characters.filter(
+    (c) =>
+      pass(charFilters, 'rank', c.rank) &&
+      pass(charFilters, 'style', charStylesOf(c)) &&
+      (!charInDeck || (deck.characterDeck[c.id] ?? 0) > 0) &&
+      (!query || c.name.toLowerCase().includes(query)),
+  );
+  const handSections = sectionHand(shownHand, handSort);
+  const charSections = sectionCharacters(shownCharacters, charSort);
 
   const setCount = (kind: Tab, id: string, delta: number) => {
     if (readOnly) return;
@@ -185,46 +302,46 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
           <input type="search" placeholder="Search cards…" value={search} onChange={(e) => setSearch(e.target.value)} />
           {tab === 'hand' ? (
             <>
-              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)} aria-label="Card type">
-                <option value="all">All types</option>
-                {Object.entries(TYPE_LABEL).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <select value={styleFilter} onChange={(e) => setStyleFilter(e.target.value)} aria-label="Style">
-                <option value="all">All Styles</option>
-                <option value="None">No Style</option>
-                {styles.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+              <SortMenu options={HAND_SORTS} value={handSort} onChange={setHandSort} />
+              <FilterMenu
+                groups={[
+                  { id: 'type', label: 'Type', options: TYPE_ORDER.map((t) => ({ id: t, label: TYPE_LABEL[t] })) },
+                  { id: 'style', label: 'Style', options: [{ id: 'None', label: 'No Style' }, ...styles.map((st) => ({ id: st, label: st }))] },
+                  { id: 'speed', label: 'Speed', options: ['Normal', 'Quick', 'Reactive'].map((sp) => ({ id: sp, label: sp })) },
+                  { id: 'cost', label: 'Cost', options: COST_BUCKETS },
+                ]}
+                value={handFilters}
+                onChange={setHandFilters}
+                inDeckOnly={handInDeck}
+                onInDeckOnly={setHandInDeck}
+              />
             </>
           ) : (
-            <select value={rankFilter} onChange={(e) => setRankFilter(e.target.value)} aria-label="Rank">
-              <option value="all">All Ranks</option>
-              {RANK_ORDER.filter((r) => characters.some((c) => c.rank === r)).map((r) => (
-                <option key={r} value={r}>
-                  {r} Rank
-                </option>
-              ))}
-            </select>
+            <>
+              <SortMenu options={CHAR_SORTS} value={charSort} onChange={setCharSort} />
+              <FilterMenu
+                groups={[
+                  { id: 'rank', label: 'Rank', options: RANK_ORDER.filter((r) => characters.some((c) => c.rank === r)).map((r) => ({ id: r, label: `${r} Rank` })) },
+                  { id: 'style', label: 'Style', options: [{ id: 'None', label: 'No Style' }, ...charStyleList.map((st) => ({ id: st, label: st }))] },
+                ]}
+                value={charFilters}
+                onChange={setCharFilters}
+                inDeckOnly={charInDeck}
+                onInDeckOnly={setCharInDeck}
+              />
+            </>
           )}
         </div>
         <p className="collection__hint">{readOnly ? 'Built-in deck — copy it to make changes.' : 'Click a card to add it · right-click to remove it · ⓘ for the full text.'}</p>
 
-        <div className="collection__grid">
-          {tab === 'characters'
-            ? shownCharacters.map((c) => {
+        {tab === 'characters'
+          ? renderSections(charSections, (c) => {
                 const inDeck = deck.characterDeck[c.id] ?? 0;
                 const limit = copyLimit('character', c.id);
                 const { hp, styles: charStyles } = characterInfo(c);
                 const full = inDeck >= limit;
                 return (
-                  <div key={c.id} className={`lib-card lib-card--character${full ? ' lib-card--maxed' : ''}${readOnly ? ' lib-card--readonly' : ''}`} {...tileHandlers('characters', c.id)}>
+                  <div key={c.id} className={`lib-card lib-card--character ${CHARACTER_STYLE_CLASS}${full ? ' lib-card--maxed' : ''}${readOnly ? ' lib-card--readonly' : ''}`} {...tileHandlers('characters', c.id)}>
                     <span className="lib-card__gem lib-card__gem--rank">{c.rank}</span>
                     <button type="button" className="lib-card__info" aria-label={`${c.name} details`} onClick={(e) => info(e, c.name, `${c.rank} Rank character`, getCharacterCardText(c.id))}>
                       ⓘ
@@ -235,12 +352,12 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
                     {inDeck > 0 && <div className="lib-card__count">{limit === Infinity ? `×${inDeck}` : `${inDeck}/${limit}`}</div>}
                   </div>
                 );
-              })
-            : shownHand.map((d) => {
+          })
+          : renderSections(handSections, (d) => {
                 const inDeck = deck.handDeck[d.id] ?? 0;
                 const limit = copyLimit('hand', d.id);
                 return (
-                  <div key={d.id} className={`lib-card lib-card--${d.cardType}${inDeck >= limit ? ' lib-card--maxed' : ''}${readOnly ? ' lib-card--readonly' : ''}`} {...tileHandlers('hand', d.id)}>
+                  <div key={d.id} className={`lib-card lib-card--${d.cardType} ${styleClass(d.style)}${inDeck >= limit ? ' lib-card--maxed' : ''}${readOnly ? ' lib-card--readonly' : ''}`} {...tileHandlers('hand', d.id)}>
                     <span className="lib-card__gem">{handCardCost(d)}</span>
                     <button type="button" className="lib-card__info" aria-label={`${d.name} details`} onClick={(e) => info(e, d.name, handCardSubtitle(d), getHandCardText(d.name))}>
                       ⓘ
@@ -255,9 +372,8 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
                     )}
                   </div>
                 );
-              })}
-          {(tab === 'characters' ? shownCharacters : shownHand).length === 0 && <p className="collection__empty">No cards match these filters.</p>}
-        </div>
+          })}
+        {(tab === 'characters' ? shownCharacters : shownHand).length === 0 && <p className="collection__empty">No cards match these filters.</p>}
       </section>
 
       <aside className="deck-panel">
@@ -293,12 +409,19 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
           ))}
           <h3>Jutsu Deck</h3>
           {deckHand.length === 0 && <p className="deck-panel__empty">No cards yet.</p>}
-          {deckHand.map((d) => (
-            <button type="button" key={d.id} className={`deck-row deck-row--${d.cardType}`} disabled={readOnly} title={readOnly ? undefined : 'Remove one'} onClick={() => setCount('hand', d.id, -1)}>
-              <span className="deck-row__cost">{handCardCost(d)}</span>
-              <span className="deck-row__name">{d.name}</span>
-              <span className="deck-row__count">×{deck.handDeck[d.id]}</span>
-            </button>
+          {sectionHand(deckHand, 'type').map((sec) => (
+            <div key={sec.key} className="deck-panel__type">
+              <h4 className="deck-panel__type-title">
+                {sec.title} <span>({sec.groups.reduce((n, g) => n + g.items.reduce((m, d) => m + (deck.handDeck[d.id] ?? 0), 0), 0)})</span>
+              </h4>
+              {sec.groups.flatMap((g) => g.items).map((d) => (
+                <button type="button" key={d.id} className={`deck-row deck-row--${d.cardType}`} disabled={readOnly} title={readOnly ? undefined : 'Remove one'} onClick={() => setCount('hand', d.id, -1)}>
+                  <span className="deck-row__cost">{handCardCost(d)}</span>
+                  <span className="deck-row__name">{d.name}</span>
+                  <span className="deck-row__count">×{deck.handDeck[d.id]}</span>
+                </button>
+              ))}
+            </div>
           ))}
         </div>
 

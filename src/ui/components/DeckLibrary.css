@@ -171,7 +171,7 @@
   gap: 8px;
 }
 
-.collection__filters input,
+.collection__filters input[type='search'],
 .collection__filters select {
   font: inherit;
   font-size: 13px;
@@ -182,7 +182,7 @@
   color: inherit;
 }
 
-.collection__filters input {
+.collection__filters input[type='search'] {
   flex: 1 1 180px;
 }
 
@@ -534,4 +534,145 @@
 .lobby-deck__note--warn {
   color: #c9822b;
   opacity: 1;
+}
+
+/* ---- Collection sections + Sort/Filter buttons ---- */
+.lib-section + .lib-section {
+  margin-top: 10px;
+}
+
+.lib-section__title {
+  margin: 6px 0 2px;
+  padding-bottom: 4px;
+  font-size: 15px;
+  border-bottom: 1px solid var(--border);
+}
+
+.lib-section__sub {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.lib-section__title span,
+.lib-section__sub span {
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.lib-popover {
+  position: relative;
+}
+
+.library .lib-popover__button--active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.lib-popover__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 200px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.lib-sort {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.library .lib-sort__option {
+  text-align: left;
+  border-color: transparent;
+}
+
+.library .lib-sort__option--on {
+  background: var(--accent-bg);
+  font-weight: 600;
+}
+
+.lib-filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 8px 12px;
+  width: min(420px, 86vw);
+  font-size: 13px;
+}
+
+.lib-filter__group {
+  margin: 0;
+  padding: 4px 6px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lib-filter__group legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.lib-filter__check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lib-filter__check input {
+  margin: 0;
+}
+
+.lib-filter__group {
+  align-self: start;
+}
+
+.lib-filter__check--wide,
+.library .lib-filter__clear {
+  grid-column: 1 / -1;
+}
+
+/* Deck list (right panel): Jutsu Deck cards grouped by type */
+.deck-panel__type-title {
+  margin: 8px 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.deck-panel__type-title span {
+  font-weight: 400;
+}
+
+/* Narrow screens: the Sort/Filter panels span the controls row instead of hanging off one button. */
+.collection__filters {
+  position: relative;
+}
+
+@media (max-width: 700px) {
+  .lib-popover {
+    position: static;
+  }
+
+  .lib-popover__panel {
+    left: 0;
+    right: 0;
+  }
+
+  .lib-filter {
+    width: auto;
+  }
 }
