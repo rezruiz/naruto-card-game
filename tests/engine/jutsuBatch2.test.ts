@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { makeHandCardInstance } from '../../src/engine/deck';
-import { freshCombat, freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
+import { freshCombat, freshMain1, giveChakra, resolveTop, withCharacterAt, playCard } from './testUtils';
 import type { GameState, PlayerId } from '../../src/engine/types';
 
 // The 2026-10-19 Jutsu batch (SPEC.md §13b): Mud Wall, Kunai Deflection,
@@ -30,10 +30,10 @@ function patchBackRow(s: GameState, player: PlayerId, i: number, patch: (c: NonN
   };
 }
 
-/** p2 (active, Combat) aims Kisame's Thousand Hungry Sharks (4 damage, Water Ninjutsu) at p1's Hidan; p1 then has priority to respond. */
+/** p2 (active, Combat) aims the Thousand Hungry Sharks card (enabled by Kisame: all 4 damage, Water Ninjutsu) at p1's Hidan; p1 then has priority to respond. */
 function p2AttacksHidan(state: GameState): GameState {
   const s: GameState = { ...giveChakra(state, 'p2', 6), activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Combat' };
-  return activateAbility(s, 'p2-kisame', 'thousand-hungry-sharks', ['p1-hidan'], 0);
+  return playCard(s, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', ['p1-hidan']);
 }
 
 describe('Earth Style: Mud Wall', () => {

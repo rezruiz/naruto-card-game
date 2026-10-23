@@ -275,7 +275,7 @@ strike on the way out.
 ## Kisame
 
 ### Samehada Fusion
-The "6 Chakra absorbed" threshold is tracked via the **Absorb** effects
+The "10 Chakra absorbed" threshold (was 6) is tracked via the **Absorb** effects
 on Samehada Strike and Samehada Strike Evolved below — using either
 ability's Absorb clause is what accumulates toward this trait's
 transformation trigger; there's no separate, standalone way to "absorb"
@@ -284,13 +284,24 @@ combat-damage threshold (≥7 damage taken while transformed) or a
 resource-based check at Upkeep (Pool ≤3) — these aren't mutually
 exclusive triggers, just two independent conditions that both end the
 same state.
+**[Updated]** While transformed, every Ninjutsu attack from Kisame has
+Absorb 1 — his own abilities and the Jutsu cards he enables (e.g. Water
+Style: Thousand Hungry Sharks, now a card). It absorbs from the attack's
+first target and counts toward his absorbed total.
+**[Updated]** The −1 cost on Water Style attacks is gone, and so is the +1
+Chakra to target him. Instead, when an enemy Ninjutsu attack aimed at the
+transformed Kisame resolves, he Absorbs 1 from its user: he gains 1 into his
+Pool and the user loses 1 pooled Chakra if it has any. A Jutsu card's user is
+the character that enabled it. Taijutsu, Bukijutsu and Genjutsu attacks
+don't trigger it, and neither does an attack that no longer targets him when
+it resolves (negated or redirected).
 
 ### Samehada Strike / Samehada Strike Evolved
 Both now use the formal **Absorb X** keyword (§6.8b) — this is the card
 pair whose repeated pattern the keyword was formalized from, after
 Zetsu's Sinister Whisper/Clone Strike converged on the exact same
 wording independently. "Absorb" on both of these is the mechanic that
-feeds Samehada Fusion's 6-Chakra transformation threshold (see above) —
+feeds Samehada Fusion's 10-Chakra transformation threshold (see above) —
 it's a running, tracked total across activations of either ability, not
 a one-time flag.
 **[Updated]** Both cost 2 Chakra paid from Kisame's own Pool — generic
@@ -305,15 +316,14 @@ blanket/untargeted effect if one of its abilities happened to have that
 shape (none currently in the Akatsuki deck do, but the restriction as
 worded wouldn't stop one).
 
-### Water Style: Super Shark Bomb Jutsu
-Worked example: target has 6 Chakra pooled → this deals 1 (base) + 6
-(bonus, 1 per pooled Chakra on the target) = 7 damage, then the target
-loses 7÷2 = 3 (rounded down) of its pooled Chakra. The damage-scaling
-clause and the Chakra-drain clause both key off the target's pooled
-Chakra, but at two different moments — the bonus damage uses the pool
-*before* this ability resolves; the drain amount is calculated from the
-*total damage dealt* (base + bonus combined), not from the pool amount
-directly.
+### Ultimate — Water Style: Super Shark Bomb Jutsu
+**[Updated]** Now Kisame's Ultimate: 6 Chakra, and the cost must be fully
+paid with his pooled Chakra.
+X is the Chakra pooled on the target when it lands (a target with 3 pooled
+takes 6). Absorb 2 then takes up to 2 from that same Pool into Kisame's.
+The old "≥4 absorbed, ≥3 pooled" requirement and the half-damage drain are
+gone. While transformed, Samehada Fusion's +1 Water damage applies and its
+Absorb 1 is added on top.
 
 ---
 

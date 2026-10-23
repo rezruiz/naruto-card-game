@@ -2,8 +2,7 @@ import { countTokensOfType, findOccupant, isCharacter, patchOccupant, placeToken
 import { dealDamage, registerDefeatHook } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
 import { applyPoison } from '../poison';
-import { findAbility } from '../abilities';
-import { redirectAttack } from '../cards/negation';
+import { redirectAttack, stackItemInfo } from '../cards/negation';
 import type { AbilityDef } from '../abilities';
 import { registerCharacter, registerTokenDef } from './registry';
 import type { GameState, PlayerId, StackItem, TokenInstance } from '../types';
@@ -50,10 +49,8 @@ function makePuppetSoldier(owner: PlayerId, ownerInstanceId: string): TokenInsta
 
 /** Was the given stack item's own ability Ninjutsu, Taijutsu, or Bukijutsu (SPEC.md's "Physical" grouping, §6.8)? */
 function isNinjutsuOrPhysical(state: GameState, item: StackItem): boolean {
-  const attacker = findOccupant(state, item.sourceInstanceId);
-  if (!attacker) return false;
-  const ability = findAbility(attacker.occupant.defId, item.abilityId);
-  return !!ability && (ability.type === 'Ninjutsu' || ability.type === 'Taijutsu' || ability.type === 'Bukijutsu');
+  const type = stackItemInfo(state, item)?.type; // an ability or a Jutsu card
+  return type === 'Ninjutsu' || type === 'Taijutsu' || type === 'Bukijutsu';
 }
 
 const tailStrike: AbilityDef = {

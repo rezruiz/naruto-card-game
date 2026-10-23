@@ -1,7 +1,8 @@
+import { samehadaFusionAbsorb } from '../characters/kisame';
 import { getCharacterDef } from '../characters/registry';
 import { findOccupant, isCharacter, patchCharacter, isPhasedOut } from '../board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
-import { cursingHidan, targetingSurcharge } from '../abilities';
+import { cursingHidan } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
 import { getHandCardDef, needsEnablingCharacter, targetedIds } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
@@ -40,7 +41,7 @@ export function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool:
   let cost = typeof def.cost === 'function' ? def.cost(ctx, payFromPool) : def.cost;
   if (genjutsuMasterApplies(ctx.state, def, ctx.enablingInstanceId) && cost > 1) cost -= 1;
   if (elementalVersatilityApplies(ctx.state, def, ctx.enablingInstanceId) && cost > 1) cost -= 1;
-  return cost + targetingSurcharge(ctx.state, ctx.player, targetedIds(def, ctx.targetInstanceIds));
+  return cost;
 }
 
 /**
@@ -235,8 +236,12 @@ export function playHandCard(
       targets: targetedIds(def, targetInstanceIds),
       costText: describeCost(cost, payFromPool),
       // A choosing card's units ride along here, not on the stack item (nothing can retarget or negate a choice).
-      resolve: (resolveState, item) =>
-        def.resolve({ ...stackCtx, state: resolveState, targetInstanceIds: def.chooses ? targetInstanceIds : (item?.targets ?? targetInstanceIds) }),
+      resolve: (resolveState, item) => {
+        const targets = def.chooses ? targetInstanceIds : (item?.targets ?? targetInstanceIds);
+        const after = def.resolve({ ...stackCtx, state: resolveState, targetInstanceIds: targets });
+        // Samehada Fusion: a transformed Kisame's Ninjutsu attacks (Jutsu cards he enables included) Absorb 1.
+        return def.isDamaging && def.type === 'Ninjutsu' && enablingInstanceId ? samehadaFusionAbsorb(after, enablingInstanceId, targets) : after;
+      },
     });
   }
 

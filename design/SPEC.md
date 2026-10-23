@@ -1283,23 +1283,27 @@ Ninjutsu) — two versions: *(full nuance: design/CHARACTER_LOG.md)*
 
 ### Kisame, Tailless Tailed Beast (S Rank)
 **HP: 10** · Pool Capacity: 12
-Specialization: Assault / Tactician · Styles: Water · Synergy: Akatsuki, Itachi
+Specialization: Assault / Tactician · Styles: Water · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Samehada — Absorbed Chakra is stored in Kisame's Chakra Pool; Chakra
   absorbed past his Pool's capacity becomes generic Chakra instead.
-- Samehada Fusion — Once Samehada absorbs 6 Chakra, Kisame may enter
+- Samehada Fusion — Once Samehada absorbs 10 Chakra, Kisame may enter
   Samehada Shark Transformation: +6 Pool, +6 max HP (16 total), Water
-  Style attacks +1 damage/−1 cost (Samehada Strike disabled), attackers
-  targeting him pay +1 Chakra. Exits after ≥7 damage post-transformation,
-  or at Upkeep with Pool ≤3.
+  Style attacks +1 damage (Samehada Strike and Water Prison Jutsu
+  disabled), all Ninjutsu attacks from Kisame have Absorb 1, and incoming Ninjutsu attacks Absorb 1 from
+  their user to Kisame. Exits after ≥7 damage post-transformation, or at
+  Upkeep with Pool ≤3.
 
 Abilities:
 - Samehada Strike — 2 Chakra from his Pool, Type: Taijutsu: Deal 1, Absorb 3.
 - Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Taijutsu: Deal 2, Absorb 4.
-- Water Style: Water Prison Jutsu — 4 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
-- Water Style: Super Shark Bomb Jutsu — Requires ≥4 Chakra absorbed and ≥3 pooled. 4 Chakra, Type: Ninjutsu: Deal 1 damage, +1 per Chakra pooled on the target. Target loses pooled Chakra equal to half the damage dealt (rounded down).
-- Water Style: Thousand Hungry Sharks — Can be used twice per turn while in Samehada Shark Transformation, 5 Chakra, Type: Ninjutsu: Deal 4 damage.
+- Water Style: Water Prison Jutsu — 5 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
+- Water Style: Thousand Hungry Sharks — 8 Chakra, Type: Ninjutsu: Deal 4 damage, split however you choose between any number of enemy targets.
+
+Ultimate — Water Style: Super Shark Bomb Jutsu (6 Chakra, Style: Water,
+Type: Ninjutsu): Cost must be fully paid with pooled Chakra. Deal 3 + X
+damage, where X is the Chakra pooled on the target. Absorb 2.
 
 ### Itachi of the Sharingan (S Rank)
 **HP: 11** · Pool Capacity: 4 (placeholder)
@@ -1720,6 +1724,10 @@ Effect: Stun target enemy character for its controller's turn — through their 
 **Genjutsu: Crow Clone** — Style: None, Quick Technique, Type: Genjutsu
 Cost: 2 Chakra. Itachi only — can only be played with Itachi enabling it.
 Effect: Negate all targeting of Itachi and all new damage to him for the rest of this turn.
+
+**Water Style: Thousand Hungry Sharks** — Style: Water, Type: Ninjutsu
+Cost: 6 Chakra.
+Effect: Deal 4 damage, split however you choose between any number of enemy targets.
 
 **Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
 Cost: 1 + X Chakra (just X if paid from the enabling character's own

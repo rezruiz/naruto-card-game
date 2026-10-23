@@ -119,16 +119,6 @@ function computeFirstAbilityDiscount(ctx: AbilityContext, ability: AbilityDef): 
   return { eligible: elemental || leader, elemental, leader };
 }
 
-/** Samehada Shark Transformation: "attackers targeting him pay +1 Chakra" — +1 for each transformed enemy Kisame among the targets. Shared with hand cards (playHandCard.ts). */
-export function targetingSurcharge(state: GameState, actingPlayer: PlayerId | undefined, targetInstanceIds: string[]): number {
-  let extra = 0;
-  for (const id of new Set(targetInstanceIds)) {
-    const t = findOccupant(state, id);
-    if (t && t.player !== actingPlayer && t.occupant.defId === 'kisame' && t.occupant.extra.transformed) extra += 1;
-  }
-  return extra;
-}
-
 export function resolveCost(ability: AbilityDef, ctx: AbilityContext): number {
   const base = typeof ability.cost === 'function' ? ability.cost(ctx) : ability.cost;
   const discount = computeFirstAbilityDiscount(ctx, ability);
@@ -137,7 +127,7 @@ export function resolveCost(ability: AbilityDef, ctx: AbilityContext): number {
   // Bingo Book: Threat Level C — the next ability used by the character that defeated its target costs 2 less.
   const bingoDiscount = (source?.occupant.extra.nextAbilityDiscount as number | undefined) ?? 0;
   if (bingoDiscount > 0) cost = Math.max(0, cost - bingoDiscount);
-  return cost + targetingSurcharge(ctx.state, source?.player, ctx.targetInstanceIds);
+  return cost;
 }
 
 /**

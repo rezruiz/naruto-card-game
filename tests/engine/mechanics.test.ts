@@ -57,13 +57,13 @@ describe('Damage modifiers (who hits, with what)', () => {
   it("Itachi's Sharingan Foresight: −1 from Quick abilities and Quick Jutsu targeting him", () => {
     const s = giveChakra({ ...freshCombat(), activePlayer: 'p2', priorityPlayer: 'p2' }, 'p2', 20);
     expect(hp(resolveTop(playCard(s, 'p2', 'jutsu-false-darkness', 'p2-kakuzu', ['p1-itachi'])), 'p1-itachi')).toBe(10); // Quick 2 − 1
-    expect(hp(hit(s, 'p2-kisame', 'thousand-hungry-sharks', ['p1-itachi']), 'p1-itachi')).toBe(7); // Normal 4
+    expect(hp(resolveTop(playCard(s, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', ['p1-itachi'])), 'p1-itachi')).toBe(7); // Normal 4
   });
 
   it("Kakuzu's Iron Skin: −2 physical and −2 elemental until the end of the next turn", () => {
     let s = hit(freshCombat(), 'p1-kakuzu', 'iron-skin', []);
     expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-kakuzu']), 'p1-kakuzu')).toBe(4); // 1 − 2
-    s = hit(s, 'p2-kisame', 'thousand-hungry-sharks', ['p1-kakuzu']); // Water Ninjutsu 4 − 2
+    s = resolveTop(playCard(giveChakra({ ...s, activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Combat' }, 'p2', 20), 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', ['p1-kakuzu'])); // Water Ninjutsu 4 − 2
     expect(hp(s, 'p1-kakuzu')).toBe(2);
   });
 
@@ -88,10 +88,17 @@ describe('Damage modifiers (who hits, with what)', () => {
 });
 
 describe('Cost modifiers', () => {
-  it('attackers targeting a transformed Kisame pay +1', () => {
-    const s = setExtra(freshCombat(), 'p2-kisame', { transformed: true });
-    expect(use(s, 'p1-hidan', 'triple-scythe-sweep', ['p2-kisame']).players.p1.genericChakraAvailable).toBe(16); // 3 + 1
-    expect(use(s, 'p1-hidan', 'triple-scythe-sweep', ['p2-deidara']).players.p1.genericChakraAvailable).toBe(17);
+  it("an enemy Ninjutsu attack on a transformed Kisame lets him Absorb 1 from its user (no extra cost to target him)", () => {
+    let s = setExtra(freshCombat(), 'p2-kisame', { transformed: true, absorbedChakra: 10 });
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'itachi' ? { ...c, chakraPool: { ...c.chakraPool, current: 2 } } : c)) } } };
+    s = use(s, 'p1-itachi', 'great-fireball-technique', ['p2-kisame']);
+    expect(s.players.p1.genericChakraAvailable).toBe(16); // printed 4, no surcharge
+    s = resolveTop(s);
+    expect(unit(s, 'p2-kisame').extra.absorbedChakra).toBe(11);
+    expect(unit(s, 'p1-itachi').chakraPool!.current).toBe(1);
+    // A Taijutsu attack doesn't feed it.
+    const t = resolveTop(use(setExtra(freshCombat(), 'p2-kisame', { transformed: true, absorbedChakra: 10 }), 'p1-itachi', 'crow-shuriken-barrage', ['p2-kisame']));
+    expect(unit(t, 'p2-kisame').extra.absorbedChakra).toBe(10);
   });
 
   it("Bingo Book C's reward: the next ability of the character that made the kill costs 2 less (once)", () => {
@@ -159,7 +166,7 @@ describe('Redirects (the attack moves to the defender, with the reduction)', () 
     const { s: base, paths } = withPaths(freshCombat(), 'p1');
     const human = paths[2];
     const preta = paths[4];
-    let s = use(base, 'p2-kisame', 'thousand-hungry-sharks', [human.instanceId]);
+    let s = playCard(giveChakra({ ...base, activePlayer: 'p2', priorityPlayer: 'p2', phase: 'Combat' }, 'p2', 20), 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', [human.instanceId]);
     s = activateAbility(giveChakra({ ...s, priorityPlayer: 'p1' }, 'p1', 5), preta.instanceId, 'chakra-absorption', [], 0);
     for (let i = 0; i < 4; i++) s = gameReducer(s, { type: 'PASS_PRIORITY' });
     expect(hp(s, human.instanceId)).toBe(4);

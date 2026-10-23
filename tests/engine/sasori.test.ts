@@ -4,7 +4,7 @@ import { dealDamage } from '../../src/engine/combat';
 import { gameReducer } from '../../src/engine/reducer';
 import { placeToken } from '../../src/engine/board';
 import { makeThirdKazekage } from '../../src/engine/characters';
-import { freshCombat, giveChakra, resolveTop, withCharacterAt } from './testUtils';
+import { freshCombat, giveChakra, resolveTop, withCharacterAt, playCard } from './testUtils';
 
 function withSasori() {
   return withCharacterAt(freshCombat(), 'p1', 0, 'sasori-hiruko'); // replaces p1's Kakuzu slot
@@ -64,8 +64,8 @@ describe('Sasori', () => {
   it('Puppet Shell Guard redirects a Ninjutsu/Physical attack on Third Kazekage onto Hiruko, reduced by 2', () => {
     let { state, kazekageId } = withSasoriAndKazekage();
     state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
-    state = giveChakra(state, 'p2', 5);
-    state = activateAbility(state, 'p2-kisame', 'thousand-hungry-sharks', [kazekageId], 0); // 4 damage, Ninjutsu
+    state = giveChakra(state, 'p2', 6);
+    state = playCard(state, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', [kazekageId]); // 4 damage, Ninjutsu
     expect(state.stack).toHaveLength(1);
 
     state = giveChakra(state, 'p1', 2);
@@ -83,8 +83,8 @@ describe('Sasori', () => {
   it('Iron Sand Wall reduces the next hit against a friendly unit by 2', () => {
     let { state, kazekageId } = withSasoriAndKazekage();
     state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
-    state = giveChakra(state, 'p2', 5);
-    state = activateAbility(state, 'p2-kisame', 'thousand-hungry-sharks', ['p1-hidan'], 0); // 4 damage, Ninjutsu
+    state = giveChakra(state, 'p2', 6);
+    state = playCard(state, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', ['p1-hidan']); // 4 damage, Ninjutsu
     expect(state.stack).toHaveLength(1);
 
     state = giveChakra(state, 'p1', 3);
@@ -102,8 +102,8 @@ describe('Sasori', () => {
   it('Iron Sand Wall: the player may pay X more Chakra (up to 4) to reduce it by a further X', () => {
     let { state, kazekageId } = withSasoriAndKazekage();
     state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
-    state = giveChakra(state, 'p2', 5);
-    state = activateAbility(state, 'p2-kisame', 'thousand-hungry-sharks', ['p1-hidan'], 0); // 4 damage, Ninjutsu
+    state = giveChakra(state, 'p2', 6);
+    state = playCard(state, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', ['p1-hidan']); // 4 damage, Ninjutsu
 
     state = giveChakra(state, 'p1', 6);
     state = activateAbility(state, kazekageId, 'iron-sand-wall', ['p1-hidan'], 0, { choices: { extraX: 2 } });

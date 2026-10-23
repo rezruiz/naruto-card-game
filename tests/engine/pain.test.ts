@@ -4,7 +4,7 @@ import { dealDamage } from '../../src/engine/combat';
 import { gameReducer } from '../../src/engine/reducer';
 import { placeToken } from '../../src/engine/board';
 import { createSixPaths } from '../../src/engine/characters';
-import { freshCombat, freshMain1, giveChakra, resolveTop } from './testUtils';
+import { freshCombat, freshMain1, giveChakra, resolveTop, playCard } from './testUtils';
 import type { GameState, PlayerId } from '../../src/engine/types';
 
 function withSixPaths(state: GameState, player: PlayerId): { state: GameState; ids: Record<string, string> } {
@@ -78,9 +78,9 @@ describe('Pain of the Six Paths', () => {
   it('Mechanized Guard negates a Physical attack on any Path, but not a Ninjutsu one', () => {
     const { state: base, ids } = withSixPaths(freshCombat(), 'p1');
     let state = { ...base, activePlayer: 'p2' as const, priorityPlayer: 'p2' as const };
-    state = giveChakra(state, 'p2', 5);
+    state = giveChakra(state, 'p2', 6);
     // Thousand Hungry Sharks is Ninjutsu — Mechanized Guard shouldn't be able to intercept it.
-    state = activateAbility(state, 'p2-kisame', 'thousand-hungry-sharks', [ids['human-path']], 0);
+    state = playCard(state, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', [ids['human-path']]);
     expect(state.stack).toHaveLength(1);
 
     state = giveChakra(state, 'p1', 2);

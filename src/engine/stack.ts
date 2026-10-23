@@ -1,3 +1,4 @@
+import { samehadaIncomingAbsorb } from './characters/kisame';
 import { appendLog, otherPlayer } from './phases/phaseMachine';
 import type { GameState, PlayerId, StackItem } from './types';
 
@@ -65,7 +66,9 @@ export function resolveTopOfStack(state: GameState): GameState {
       damageAdjust: top.damageAdjust,
     },
   };
+  const before = next;
   next = top.resolve(next, top);
+  next = samehadaIncomingAbsorb(before, next, top);
   return { ...next, resolving: outer, priorityPlayer: next.activePlayer, passesInARow: 0 };
 }
 

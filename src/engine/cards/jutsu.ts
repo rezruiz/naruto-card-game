@@ -1,3 +1,4 @@
+import { dealSplitDamage, SHARKS_DAMAGE } from '../characters/kisame';
 import { getCharacterDef } from '../characters/registry';
 import { findOccupant, getAdjacent, isCharacter, patchCharacter } from '../board';
 import { absorbChakra, dealDamage, healOccupant } from '../combat';
@@ -690,6 +691,31 @@ const crowCloneCard: HandCardDef = {
   },
 };
 
+// The card version of Kisame's ability (he also has it at 8). 4 damage split
+// however the player likes (dealSplitDamage, kisame.ts). Samehada Fusion: a
+// transformed Kisame enabling it deals 1 more.
+function sharksEnabledByTransformedKisame(state: GameState, enablerId: string): boolean {
+  const e = enablerId ? findOccupant(state, enablerId)?.occupant : undefined;
+  return !!e && e.defId === 'kisame' && e.extra.transformed === true;
+}
+const thousandHungrySharks: HandCardDef = {
+  id: 'jutsu-thousand-hungry-sharks',
+  name: 'Water Style: Thousand Hungry Sharks',
+  cardType: 'jutsu',
+  cost: 6,
+  speed: 'Normal',
+  style: 'Water',
+  type: 'Ninjutsu',
+  isDamaging: true,
+  targetSide: 'enemy',
+  maxTargets: SHARKS_DAMAGE,
+  legalityCheck: (ctx) => ctx.targetInstanceIds.length >= 1,
+  resolve: (ctx) => {
+    const picks = ctx.targetInstanceIds.slice(0, SHARKS_DAMAGE + 1);
+    return dealSplitDamage(ctx.state, picks, SHARKS_DAMAGE + (sharksEnabledByTransformedKisame(ctx.state, ctx.enablingInstanceId) ? 1 : 0));
+  },
+};
+
 for (const def of [
   substitution,
   lightningSubstitution,
@@ -719,6 +745,7 @@ for (const def of [
   waterDragonJutsu,
   mindPrisonCard,
   crowCloneCard,
+  thousandHungrySharks,
 ]) {
   registerHandCard(def);
 }

@@ -1,9 +1,8 @@
 import { countTokensOfType, findOccupant, getCrossPatternTargets, painUnitId, patchOccupant, placeToken } from '../board';
 import { dealDamage, healOccupant } from '../combat';
 import { appendLog, otherPlayer } from '../phases/phaseMachine';
-import { findAbility } from '../abilities';
 import { drawCard } from '../deck';
-import { redirectAttack } from '../cards/negation';
+import { redirectAttack, stackItemInfo } from '../cards/negation';
 import type { AbilityDef } from '../abilities';
 import { registerTokenDef } from './registry';
 import type { GameState, PlayerId, StackItem, TokenInstance } from '../types';
@@ -81,10 +80,9 @@ function makeBeast(defId: string, name: string, owner: PlayerId, animalPathInsta
   };
 }
 
-/** The Type of the ability behind a given stack item (looked up via its source's own defId), or undefined if it can't be resolved. */
+/** The Type of the ability or Jutsu card behind a given stack item, or undefined if it can't be resolved. */
 function stackItemAbilityType(state: GameState, item: StackItem) {
-  const attacker = findOccupant(state, item.sourceInstanceId);
-  return attacker ? findAbility(attacker.occupant.defId, item.abilityId)?.type : undefined;
+  return stackItemInfo(state, item)?.type;
 }
 
 function isPhysical(state: GameState, item: StackItem): boolean {

@@ -485,6 +485,7 @@ Full text is in Appendix A. Timing and implementation:
 | **False Darkness** (Lightning) | **Quick**, 2 | 2 damage. |
 | **Genjutsu: Mind Prison** (None) | **Quick**, 5 (3 if a Genjutsu user enables it) | Stun target enemy character for its controller's turn: no abilities, no pooling into it, no enabling Jutsu cards. |
 | **Genjutsu: Crow Clone** (None) | **Quick**, 2 — Itachi only | Negate all targeting of Itachi and all new damage to him for the rest of this turn. |
+| **Water Style: Thousand Hungry Sharks** (Water) | **Normal, Attack-type — Combat only**, 6 | 4 damage split however you choose between any number of enemy targets. **Once per turn.** |
 | **Water Dragon Jutsu** (Water) | **Normal, Attack-type — Combat only**, 1+X (X from Pool) | X damage to an enemy character, X up to 5. **Once per turn.** |
 | **Earth Style: Mud Wall** (Earth) | **Reactive**, 2 / 1 from Pool | Prevent 2 of a targeted Ninjutsu or Physical attack on one of your characters (not Genjutsu). Not in the preset deck. |
 | **Kunai Deflection** (Taijutsu) | **Reactive**, 2 / 1 from Pool | Prevent 1 of a targeted Ninjutsu or Physical attack on the **enabling** character (not Genjutsu). Prevention, not negation — Spore Technique doesn't stop it. Not in the preset deck. |
@@ -736,6 +737,14 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 78. ✔ **Absorb goes to the generic pool by default:** absorbed Chakra is added to your available (generic) Chakra, is spent before your other generic Chakra, and whatever is left fades when the phase changes. Kisame's new **Samehada** trait stores it in his Pool instead (overflow past capacity becomes generic); Zetsu's Shared Reservoir already stores it in his Pool. The amount shows next to "Chakra available". (SPEC §6.8b, §13 Kisame.)
 79. ✔ **Character redesigns go live:** Itachi, Deidara, Kakuzu, Hidan, Yahiko and Kisame use their redesigned cards (Appendix A.1). Itachi's Mind Prison and Crow Clone are now Jutsu cards (**Genjutsu: Mind Prison**, **Genjutsu: Crow Clone**, A.3 — in the Deck Library, not in the preset Jutsu Deck); Uchiha Prodigy is replaced by **Genjutsu Master** and Deterioration by **Failing Health**. Kakuzu's mask techniques are now only cards, fetched by his **Heart Masks** trait. **Elemental Versatility** also discounts elemental Jutsu cards its character enables. A stunned character can't enable Jutsu cards. Deidara starts with 0 Clay Charges and Explosive Clay is gone. Supersedes the Itachi/Deidara/Kakuzu/Hidan/Yahiko/Kisame numbers in rulings 38 and 55. (SPEC §13, §13b.)
 80. ✔ **Board geometry: two one-to-one rows of 10.** The back row has **10 positions** (still at most **5 Characters**, §8.1) and the front row **10 Token slots**; front slot N is directly in front of back position N, so a Character has exactly 1 front neighbor and a Token 1 back neighbor (replaces the 5 column-pairs of 2 Token slots). Fixes a Character only seeing one of its two paired Tokens. **[Playtest]** The board draws every slot and scrolls sideways. (SPEC §9.)
+81. ✔ **Thousand Hungry Sharks is a card:** removed from Kisame's abilities and made a Jutsu card — **Water Style: Thousand Hungry Sharks** (Water, Ninjutsu, 6 Chakra): deal 4 damage split however you choose between any number of enemy targets. Each pick is 1 damage (pick a unit twice for 2); damage left unassigned lands on the last pick. Enabled by a transformed Kisame it deals 5 (Samehada Fusion). In the Deck Library, not in the preset Jutsu Deck. (SPEC §13, §13b.)
+82. ✔ **Samehada Fusion adds Absorb 1:** while transformed, every Ninjutsu attack from Kisame — his own abilities and the Jutsu cards he enables — has Absorb 1 (from the attack's first target), and it counts toward his absorbed total. (SPEC §13 Kisame.)
+83. ✔ **Super Shark Bomb Jutsu is Kisame's Ultimate:** 6 Chakra; the cost must be fully paid with pooled Chakra. Deal 3 + X damage, where X is the Chakra pooled on the target; Absorb 2. The old absorbed/pooled requirements and the half-damage drain are gone. While transformed, Samehada Fusion still applies (+1 damage and its Absorb 1). (SPEC §13 Kisame.)
+84. ✔ **Samehada Fusion needs 10 absorbed Chakra** (was 6) before Kisame can transform. (SPEC §13 Kisame.)
+85. ✔ **Kisame's Synergy is Akatsuki only** (the Itachi tag is removed). (SPEC §13 Kisame.)
+86. ✔ **Samehada Fusion reworked:** Water Style attacks no longer cost 1 less while transformed (still +1 damage). "Attackers targeting him pay +1 Chakra" is replaced by: when an enemy Ninjutsu attack aimed at the transformed Kisame resolves, Kisame Absorbs 1 from its user (into his Pool, counting toward his absorbed total). (SPEC §13 Kisame.)
+87. ✔ **Water Style: Water Prison Jutsu costs 5** (was 4), and it's disabled while Kisame is transformed, like Samehada Strike. (SPEC §13 Kisame.)
+88. ✔ **Thousand Hungry Sharks is back on Kisame's card at 8:** he has it as his own ability (8 Chakra, same effect: 4 damage split between any number of enemy targets); the Jutsu card stays separate at 6. While transformed, Samehada Fusion's +1 damage and Absorb 1 apply to it. (SPEC §13 Kisame.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -938,23 +947,27 @@ Ninjutsu) — two versions: *(full nuance: design/CHARACTER_LOG.md)*
 
 ### Kisame, Tailless Tailed Beast (S Rank)
 **HP: 10** · Pool Capacity: 12
-Specialization: Assault / Tactician · Styles: Water · Synergy: Akatsuki, Itachi
+Specialization: Assault / Tactician · Styles: Water · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Samehada — Absorbed Chakra is stored in Kisame's Chakra Pool; Chakra
   absorbed past his Pool's capacity becomes generic Chakra instead.
-- Samehada Fusion — Once Samehada absorbs 6 Chakra, Kisame may enter
+- Samehada Fusion — Once Samehada absorbs 10 Chakra, Kisame may enter
   Samehada Shark Transformation: +6 Pool, +6 max HP (16 total), Water
-  Style attacks +1 damage/−1 cost (Samehada Strike disabled), attackers
-  targeting him pay +1 Chakra. Exits after ≥7 damage post-transformation,
-  or at Upkeep with Pool ≤3.
+  Style attacks +1 damage (Samehada Strike and Water Prison Jutsu
+  disabled), all Ninjutsu attacks from Kisame have Absorb 1, and incoming Ninjutsu attacks Absorb 1 from
+  their user to Kisame. Exits after ≥7 damage post-transformation, or at
+  Upkeep with Pool ≤3.
 
 Abilities:
 - Samehada Strike — 2 Chakra from his Pool, Type: Taijutsu: Deal 1, Absorb 3.
 - Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Taijutsu: Deal 2, Absorb 4.
-- Water Style: Water Prison Jutsu — 4 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
-- Water Style: Super Shark Bomb Jutsu — Requires ≥4 Chakra absorbed and ≥3 pooled. 4 Chakra, Type: Ninjutsu: Deal 1 damage, +1 per Chakra pooled on the target. Target loses pooled Chakra equal to half the damage dealt (rounded down).
-- Water Style: Thousand Hungry Sharks — Can be used twice per turn while in Samehada Shark Transformation, 5 Chakra, Type: Ninjutsu: Deal 4 damage.
+- Water Style: Water Prison Jutsu — 5 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
+- Water Style: Thousand Hungry Sharks — 8 Chakra, Type: Ninjutsu: Deal 4 damage, split however you choose between any number of enemy targets.
+
+Ultimate — Water Style: Super Shark Bomb Jutsu (6 Chakra, Style: Water,
+Type: Ninjutsu): Cost must be fully paid with pooled Chakra. Deal 3 + X
+damage, where X is the Chakra pooled on the target. Absorb 2.
 
 ### Itachi of the Sharingan (S Rank)
 **HP: 11** · Pool Capacity: 4 (placeholder)
@@ -1376,6 +1389,10 @@ Effect: Stun target enemy character for its controller's turn — through their 
 Cost: 2 Chakra. Itachi only — can only be played with Itachi enabling it.
 Effect: Negate all targeting of Itachi and all new damage to him for the rest of this turn.
 
+**Water Style: Thousand Hungry Sharks** — Style: Water, Type: Ninjutsu
+Cost: 6 Chakra.
+Effect: Deal 4 damage, split however you choose between any number of enemy targets.
+
 **Water Dragon Jutsu** — Style: Water, Type: Ninjutsu
 Cost: 1 + X Chakra (just X if paid from the enabling character's own
 Chakra Pool).
@@ -1724,7 +1741,7 @@ strike on the way out.
 ## Kisame
 
 ### Samehada Fusion
-The "6 Chakra absorbed" threshold is tracked via the **Absorb** effects
+The "10 Chakra absorbed" threshold (was 6) is tracked via the **Absorb** effects
 on Samehada Strike and Samehada Strike Evolved below — using either
 ability's Absorb clause is what accumulates toward this trait's
 transformation trigger; there's no separate, standalone way to "absorb"
@@ -1733,13 +1750,24 @@ combat-damage threshold (≥7 damage taken while transformed) or a
 resource-based check at Upkeep (Pool ≤3) — these aren't mutually
 exclusive triggers, just two independent conditions that both end the
 same state.
+**[Updated]** While transformed, every Ninjutsu attack from Kisame has
+Absorb 1 — his own abilities and the Jutsu cards he enables (e.g. Water
+Style: Thousand Hungry Sharks, now a card). It absorbs from the attack's
+first target and counts toward his absorbed total.
+**[Updated]** The −1 cost on Water Style attacks is gone, and so is the +1
+Chakra to target him. Instead, when an enemy Ninjutsu attack aimed at the
+transformed Kisame resolves, he Absorbs 1 from its user: he gains 1 into his
+Pool and the user loses 1 pooled Chakra if it has any. A Jutsu card's user is
+the character that enabled it. Taijutsu, Bukijutsu and Genjutsu attacks
+don't trigger it, and neither does an attack that no longer targets him when
+it resolves (negated or redirected).
 
 ### Samehada Strike / Samehada Strike Evolved
 Both now use the formal **Absorb X** keyword (§6.8b) — this is the card
 pair whose repeated pattern the keyword was formalized from, after
 Zetsu's Sinister Whisper/Clone Strike converged on the exact same
 wording independently. "Absorb" on both of these is the mechanic that
-feeds Samehada Fusion's 6-Chakra transformation threshold (see above) —
+feeds Samehada Fusion's 10-Chakra transformation threshold (see above) —
 it's a running, tracked total across activations of either ability, not
 a one-time flag.
 **[Updated]** Both cost 2 Chakra paid from Kisame's own Pool — generic
@@ -1754,15 +1782,14 @@ blanket/untargeted effect if one of its abilities happened to have that
 shape (none currently in the Akatsuki deck do, but the restriction as
 worded wouldn't stop one).
 
-### Water Style: Super Shark Bomb Jutsu
-Worked example: target has 6 Chakra pooled → this deals 1 (base) + 6
-(bonus, 1 per pooled Chakra on the target) = 7 damage, then the target
-loses 7÷2 = 3 (rounded down) of its pooled Chakra. The damage-scaling
-clause and the Chakra-drain clause both key off the target's pooled
-Chakra, but at two different moments — the bonus damage uses the pool
-*before* this ability resolves; the drain amount is calculated from the
-*total damage dealt* (base + bonus combined), not from the pool amount
-directly.
+### Ultimate — Water Style: Super Shark Bomb Jutsu
+**[Updated]** Now Kisame's Ultimate: 6 Chakra, and the cost must be fully
+paid with his pooled Chakra.
+X is the Chakra pooled on the target when it lands (a target with 3 pooled
+takes 6). Absorb 2 then takes up to 2 from that same Pool into Kisame's.
+The old "≥4 absorbed, ≥3 pooled" requirement and the half-damage drain are
+gone. While transformed, Samehada Fusion's +1 Water damage applies and its
+Absorb 1 is added on top.
 
 ---
 
@@ -2981,7 +3008,7 @@ HP 10 · Pool capacity 3 · Styles: Explosion, Earth · Synergy: Akatsuki
 
 ### Kisame — S Rank
 
-HP 10 · Pool capacity 12 · Styles: Water · Synergy: Akatsuki, Itachi
+HP 10 · Pool capacity 12 · Styles: Water · Synergy: Akatsuki
 
 Engine flags: absorbed Chakra goes into its Pool; has an Upkeep passive
 
@@ -2989,9 +3016,9 @@ Engine flags: absorbed Chakra goes into its Pool; has an Upkeep passive
 |---|---|---|---|---|---|---|---|---|
 | Samehada Strike | 2 | Normal | Water | Taijutsu | yes | 1 | enemy | paid from Pool |
 | Samehada Strike Evolved | 2 | Normal | Water | Taijutsu | yes | 1 | enemy | paid from Pool |
-| Water Style: Water Prison Jutsu | variable | Normal | Water | Ninjutsu | no | 1 | enemy | — |
+| Water Style: Water Prison Jutsu | 5 | Normal | Water | Ninjutsu | no | 1 | enemy | not while transformed |
+| Water Style: Thousand Hungry Sharks | 8 | Normal | Water | Ninjutsu | yes | up to 4 | enemy | 4 damage split by picks |
 | Water Style: Super Shark Bomb Jutsu | variable | Normal | Water | Ninjutsu | yes | 1 | enemy | — |
-| Water Style: Thousand Hungry Sharks | variable | Normal | Water | Ninjutsu | yes | 1 | enemy | 2/turn |
 | Samehada Shark Transformation | 0 | Normal | None | None | no | none/auto | — | — |
 
 ### Itachi — S Rank
@@ -3109,6 +3136,7 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 | False Darkness | 1 | jutsu | 2 | Quick | Lightning | Ninjutsu | — | 1 (enemy) | — |
 | Genjutsu: Mind Prison | 0 (library only) | jutsu | variable | Quick | None | Genjutsu | — | 1 (enemy) | 5, or 3 with a Genjutsu user enabling |
 | Genjutsu: Crow Clone | 0 (library only) | jutsu | 2 | Quick | None | Genjutsu | — | none/auto | Itachi only |
+| Water Style: Thousand Hungry Sharks | 0 (library only) | jutsu | variable | Normal | Water | Ninjutsu | Combat only | up to 4 (enemy) | 4 damage split by picks |
 | Water Dragon Jutsu | 1 | jutsu | variable | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | X up to 5; cheaper if paid from enabler's Pool |
 | Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
 | Earth Style: Mud Wall | 0 | jutsu | variable | Reactive | Earth | Ninjutsu | — | 1 (ally) | cheaper if paid from enabler's Pool; not in the preset deck |

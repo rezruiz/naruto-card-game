@@ -4,13 +4,16 @@ import { appendLog } from '../phases/phaseMachine';
 import { isLowerRank } from '../ranks';
 import type { AbilityDef, AbilityContext } from '../abilities';
 import { registerCharacter } from './registry';
-import type { GameState } from '../types';
+import { stackItemInfo } from '../cards/negation';
+import type { GameState, StackItem } from '../types';
 
 const DEF_ID = 'kisame';
 
 // Samehada Shark Transformation stat swing (SPEC.md's "+6 Pool, +6 max HP").
 const TRANSFORM_HP = 6;
 const TRANSFORM_POOL = 6;
+/** Samehada Fusion: absorbed Chakra needed before he can transform. */
+const FUSION_THRESHOLD = 10;
 
 function isTransformed(ctx: AbilityContext): boolean {
   const found = findOccupant(ctx.state, ctx.sourceInstanceId);
@@ -21,7 +24,7 @@ function isTransformed(ctx: AbilityContext): boolean {
  * Reverts Samehada Shark Transformation (SPEC.md: "Exits after ≥7 damage
  * post-transformation, or at Upkeep with Pool ≤3"). Resets the absorbed-
  * Chakra counter too, since re-entering the form again requires banking a
- * fresh 6.
+ * fresh FUSION_THRESHOLD.
  */
 function revertTransformation(state: GameState, instanceId: string): GameState {
   let next = patchCharacter(state, instanceId, (k) => ({
@@ -35,6 +38,59 @@ function revertTransformation(state: GameState, instanceId: string): GameState {
     extra: { ...k.extra, transformed: false, transformDamageTaken: 0, absorbedChakra: 0 },
   }));
   return appendLog(next, 'Kisame reverts out of Samehada Shark Transformation.');
+}
+
+/**
+ * Samehada Fusion: while transformed, every Ninjutsu attack from Kisame has
+ * Absorb 1 — his own abilities and the Jutsu cards he enables. Absorbs from
+ * the attack's first target still in play, and counts toward his absorbed total.
+ */
+export function samehadaFusionAbsorb(state: GameState, kisameId: string, targetIds: string[]): GameState {
+  const kisame = findOccupant(state, kisameId);
+  if (!kisame || kisame.occupant.defId !== DEF_ID || !kisame.occupant.extra.transformed) return state;
+  const target = targetIds.find((id) => id !== kisameId && findOccupant(state, id));
+  if (!target) return state;
+  let next = absorbChakra(state, kisameId, target, 1);
+  next = patchCharacter(next, kisameId, (k) => ({ ...k, extra: { ...k.extra, absorbedChakra: ((k.extra.absorbedChakra as number) ?? 0) + 1 } }));
+  return next;
+}
+
+/**
+ * Samehada Fusion: while transformed, an enemy Ninjutsu attack aimed at Kisame
+ * lets him Absorb 1 from its user when it resolves (stack.ts calls this with
+ * the state from just before the attack resolved, to read what it was).
+ */
+export function samehadaIncomingAbsorb(before: GameState, after: GameState, item: StackItem): GameState {
+  const info = stackItemInfo(before, item);
+  if (!info || !info.isDamaging || info.type !== 'Ninjutsu') return after;
+  let next = after;
+  for (const id of new Set(item.targets)) {
+    const k = findOccupant(next, id);
+    if (!k || k.occupant.defId !== DEF_ID || !k.occupant.extra.transformed || k.player === item.controllerId) continue;
+    next = absorbChakra(next, id, item.sourceInstanceId, 1);
+    next = patchCharacter(next, id, (c) => ({ ...c, extra: { ...c.extra, absorbedChakra: ((c.extra.absorbedChakra as number) ?? 0) + 1 } }));
+    next = appendLog(next, 'Samehada feeds on the incoming Ninjutsu — Kisame absorbs 1 from its user.');
+  }
+  return next;
+}
+
+/** Thousand Hungry Sharks (ability and Jutsu card): 4 damage. */
+export const SHARKS_DAMAGE = 4;
+
+/**
+ * Splits `total` damage over the picked units: each pick is 1 damage (pick a
+ * unit twice for 2), and whatever isn't assigned lands on the last pick — one
+ * pick puts all of it on one unit. Each unit takes its share as one hit.
+ */
+export function dealSplitDamage(state: GameState, picks: string[], total: number): GameState {
+  if (picks.length === 0) return state;
+  const split = new Map<string, number>();
+  picks.forEach((id, i) => split.set(id, (split.get(id) ?? 0) + (i === picks.length - 1 ? Math.max(1, total - (picks.length - 1)) : 1)));
+  let next = state;
+  for (const [id, dmg] of split) {
+    if (findOccupant(next, id)) next = dealDamage(next, id, dmg).state;
+  }
+  return next;
 }
 
 const samehadaStrike: AbilityDef = {
@@ -94,7 +150,7 @@ const samehadaStrikeEvolved: AbilityDef = {
 const waterPrisonJutsu: AbilityDef = {
   id: 'water-prison-jutsu',
   name: 'Water Style: Water Prison Jutsu',
-  cost: (ctx) => (isTransformed(ctx) ? 3 : 4),
+  cost: 5,
   speed: 'Normal',
   style: 'Water',
   type: 'Ninjutsu',
@@ -102,6 +158,7 @@ const waterPrisonJutsu: AbilityDef = {
     const source = findOccupant(ctx.state, ctx.sourceInstanceId);
     const target = ctx.targetInstanceIds[0] ? findOccupant(ctx.state, ctx.targetInstanceIds[0]) : null;
     if (!source || !isCharacter(source.occupant) || !target || !isCharacter(target.occupant)) return false;
+    if (source.occupant.extra.transformed) return false; // Samehada Fusion disables it
     return isLowerRank(target.occupant.rank, source.occupant.rank);
   },
   resolve: (ctx) => {
@@ -115,64 +172,52 @@ const waterPrisonJutsu: AbilityDef = {
   },
 };
 
+// Ultimate: 6 Chakra, paid from his Pool only. Deal 3 + X (X = Chakra pooled
+// on the target as it lands), Absorb 2. While transformed, Samehada Fusion's
+// +1 Water damage applies, and its Absorb 1 on top.
 const superSharkBombJutsu: AbilityDef = {
   id: 'super-shark-bomb-jutsu',
   name: 'Water Style: Super Shark Bomb Jutsu',
-  cost: (ctx) => (isTransformed(ctx) ? 3 : 4),
+  cost: 6,
+  requiresFullPoolPayment: true,
   speed: 'Normal',
   style: 'Water',
   type: 'Ninjutsu',
   isDamaging: true,
-  legalityCheck: (ctx) => {
-    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    if (!found || !isCharacter(found.occupant)) return false;
-    const k = found.occupant;
-    return ((k.extra.absorbedChakra as number) ?? 0) >= 4 && k.chakraPool.current >= 3;
-  },
+  isUltimate: true,
   resolve: (ctx) => {
     const targetId = ctx.targetInstanceIds[0];
     if (!targetId) return ctx.state;
     const targetFound = findOccupant(ctx.state, targetId);
-    const pooled = targetFound && isCharacter(targetFound.occupant) ? targetFound.occupant.chakraPool.current : 0;
-    const dmg = 1 + pooled + (isTransformed(ctx) ? 1 : 0);
+    const pooled = targetFound?.occupant.chakraPool?.current ?? 0;
+    const dmg = 3 + pooled + (isTransformed(ctx) ? 1 : 0);
     let state = dealDamage(ctx.state, targetId, dmg).state;
-    const drain = Math.floor(dmg / 2);
-    if (drain > 0 && targetFound && isCharacter(targetFound.occupant)) {
-      state = patchCharacter(state, targetId, (t) => ({
-        ...t,
-        chakraPool: { ...t.chakraPool, current: Math.max(0, t.chakraPool.current - drain) },
-      }));
-      state = appendLog(state, `The target loses ${drain} pooled Chakra to Super Shark Bomb Jutsu.`);
+    if (findOccupant(state, targetId)) {
+      state = absorbChakra(state, ctx.sourceInstanceId, targetId, 2);
+      state = patchCharacter(state, ctx.sourceInstanceId, (k) => ({ ...k, extra: { ...k.extra, absorbedChakra: ((k.extra.absorbedChakra as number) ?? 0) + 2 } }));
     }
-    return state;
+    return samehadaFusionAbsorb(state, ctx.sourceInstanceId, [targetId]);
   },
 };
 
+// Also a Jutsu card (cards/jutsu.ts, cost 6); as Kisame's own ability it costs 8.
 const thousandHungrySharks: AbilityDef = {
   id: 'thousand-hungry-sharks',
   name: 'Water Style: Thousand Hungry Sharks',
-  cost: (ctx) => (isTransformed(ctx) ? 4 : 5),
+  cost: 8,
   speed: 'Normal',
   style: 'Water',
   type: 'Ninjutsu',
   isDamaging: true,
-  usesPerTurn: 2,
-  legalityCheck: (ctx) => {
-    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    if (!found || !isCharacter(found.occupant)) return false;
-    const usedAlready = found.occupant.status.usedAbilitiesThisTurn.filter((id) => id === 'thousand-hungry-sharks').length;
-    return found.occupant.extra.transformed === true || usedAlready === 0;
-  },
+  maxTargets: SHARKS_DAMAGE,
+  legalityCheck: (ctx) => ctx.targetInstanceIds.length >= 1,
   resolve: (ctx) => {
-    const target = ctx.targetInstanceIds[0];
-    if (!target) return ctx.state;
-    return dealDamage(ctx.state, target, isTransformed(ctx) ? 5 : 4).state;
+    const picks = ctx.targetInstanceIds.slice(0, SHARKS_DAMAGE + 1);
+    const state = dealSplitDamage(ctx.state, picks, SHARKS_DAMAGE + (isTransformed(ctx) ? 1 : 0));
+    return samehadaFusionAbsorb(state, ctx.sourceInstanceId, picks);
   },
 };
 
-// "Attackers targeting him pay +1 Chakra" while transformed is applied to
-// every ability and hand card that targets him (abilities.ts resolveCost,
-// playHandCard.ts).
 const samehadaSharkTransformation: AbilityDef = {
   id: 'samehada-shark-transformation',
   name: 'Samehada Shark Transformation',
@@ -185,7 +230,7 @@ const samehadaSharkTransformation: AbilityDef = {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     if (!found || !isCharacter(found.occupant)) return false;
     const k = found.occupant;
-    return !k.extra.transformed && ((k.extra.absorbedChakra as number) ?? 0) >= 6;
+    return !k.extra.transformed && ((k.extra.absorbedChakra as number) ?? 0) >= FUSION_THRESHOLD;
   },
   resolve: (ctx) => {
     let state = patchCharacter(ctx.state, ctx.sourceInstanceId, (k) => ({
@@ -211,12 +256,12 @@ registerCharacter({
     samehadaStrike,
     samehadaStrikeEvolved,
     waterPrisonJutsu,
-    superSharkBombJutsu,
     thousandHungrySharks,
     samehadaSharkTransformation,
   ],
+  ultimate: superSharkBombJutsu,
   initialExtra: { absorbedChakra: 0, transformed: false, transformDamageTaken: 0 },
-  synergy: ['Akatsuki', 'Itachi'],
+  synergy: ['Akatsuki'],
   onUpkeep: (state, instanceId) => {
     const found = findOccupant(state, instanceId);
     if (!found || !isCharacter(found.occupant)) return state;
