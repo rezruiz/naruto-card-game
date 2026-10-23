@@ -15,35 +15,35 @@
   --gem-top: #2f7cc6;
   --gem-bottom: #0c4a8f;
   --gem-text: #ffffff;
-  --tint: rgba(24, 104, 196, 0.13);
+  --tint: rgba(24, 104, 196, 0.16);
 }
 
 .card-style--earth {
   --gem-top: #ead0a8;
   --gem-bottom: #b88c5c;
   --gem-text: #33200d;
-  --tint: rgba(176, 132, 85, 0.16);
+  --tint: rgba(176, 132, 85, 0.19);
 }
 
 .card-style--fire {
   --gem-top: #ffa36b;
   --gem-bottom: #e0502a;
   --gem-text: #2a0a00;
-  --tint: rgba(230, 92, 42, 0.13);
+  --tint: rgba(230, 92, 42, 0.16);
 }
 
 .card-style--lightning {
   --gem-top: #c8eaff;
   --gem-bottom: #6ec3f4;
   --gem-text: #0b3550;
-  --tint: rgba(96, 186, 240, 0.17);
+  --tint: rgba(96, 186, 240, 0.2);
 }
 
 .card-style--wind {
   --gem-top: #d3f6cc;
   --gem-bottom: #7fcf78;
   --gem-text: #143c12;
-  --tint: rgba(110, 200, 104, 0.17);
+  --tint: rgba(110, 200, 104, 0.2);
 }
 
 /* Explosion, Gravity, Paper, Poison, Ritual, Yang and other kekkei genkai / special Styles. */
@@ -51,7 +51,7 @@
   --gem-top: #ecdcff;
   --gem-bottom: #b58ff0;
   --gem-text: #2d1352;
-  --tint: rgba(170, 128, 236, 0.15);
+  --tint: rgba(170, 128, 236, 0.18);
 }
 
 /* Character cards: a white gem and a light sheen. */
@@ -60,12 +60,12 @@
   --gem-bottom: #d8dbe3;
   --gem-text: #262833;
   --gem-ring: var(--card-border);
-  --tint: rgba(255, 255, 255, 0.6);
+  --tint: rgba(255, 255, 255, 0.68);
 }
 
 @media (prefers-color-scheme: dark) {
   .card-style--character {
-    --tint: rgba(255, 255, 255, 0.07);
+    --tint: rgba(255, 255, 255, 0.09);
   }
 }
 
@@ -75,7 +75,7 @@
 .hand-view .hand-card.card-style,
 .hand-view .hand-card.card-style:hover,
 .hand-view .hand-card.card-style:focus-within {
-  background-image: linear-gradient(180deg, var(--tint) 0%, transparent 62%);
+  background-image: linear-gradient(180deg, var(--tint) 0%, var(--tint) 18%, transparent 82%);
 }
 
 .card-style .lib-card__gem,
