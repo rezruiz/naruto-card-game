@@ -353,9 +353,13 @@ that turn. The stunned character can't use abilities, have Chakra pooled
 into it, or enable Jutsu cards. No once-per-character limit.
 
 ### Genjutsu: Crow Clone (Jutsu card)
-Itachi only. Attacks already waiting on Itachi lose him as a target (an
-attack with no other target fizzles), and for the rest of the turn he
-can't be targeted and takes no **new** damage. Damage from a lingering
+**[Updated]** No longer Itachi-only: any character with **Sharingan** can
+enable it. Sharingan is a Style tag (a kekkei genkai, not an element):
+Itachi has it, and Kakuzu's Patchwork Threads can't take it since it only
+steals elemental Styles. Itachi's **Summoning: Crows** tutors it to the
+top of the Jutsu Deck. Attacks already waiting on the enabling character
+lose it as a target (an attack with no other target fizzles), and for
+the rest of the turn it can't be targeted and takes no **new** damage. Damage from a lingering
 effect already attached to him (e.g. a burn) still lands — lingering
 damage must be explicitly included to be negated, and negating
 targeting never affects it, since it doesn't retarget. Spore Technique

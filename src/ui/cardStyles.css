@@ -54,8 +54,8 @@
   --tint: rgba(150, 24, 38, 0.17);
 }
 
-/* Taijutsu cards: shown as their own Style too — a plain light grey (no blue cast, unlike No Style). */
-.card-style--taijutsu {
+/* Physical cards (Taijutsu and Bukijutsu): shown as their own Style too — a plain light grey (no blue cast, unlike No Style). */
+.card-style--physical {
   --gem-top: #ededed;
   --gem-bottom: #b4b4b4;
   --gem-text: #222222;

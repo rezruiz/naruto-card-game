@@ -68,8 +68,11 @@ and a Character Deck of 12-18 cards.
 | Jutsu Deck | **Maximum 80 cards** (minimum 50) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
 | Character Deck | 12-18 cards | Character cards | Only via specific triggers (§8) |
 
-The preset Akatsuki Jutsu Deck used in this prototype is 48 cards — 2
-short of the 50-card minimum.
+The preset Akatsuki Jutsu Deck used in this prototype is 50 cards — 1 of
+each No Style, Physical (Taijutsu and Bukijutsu), Genjutsu, Earth, Fire,
+Water and Wind Jutsu card (2 Substitution, 2 Reconnaissance, 3 Medical
+Chakra Infusion, 3 Scroll of Techniques), 1 False Darkness, 1 of each
+Mission and 2 Akatsuki Hideout — exactly the 50-card minimum.
 
 Character cards are **never** in the Jutsu Deck and are never drawn
 by a normal draw step — they only enter your hand through the Character
@@ -1314,7 +1317,7 @@ damage, where X is the Chakra pooled on the target. Absorb 2.
 
 ### Itachi of the Sharingan (S Rank)
 **HP: 11** · Pool Capacity: 4 (placeholder)
-Specialization: Tactician / Assault · Styles: Fire · Synergy: Akatsuki
+Specialization: Tactician / Assault · Styles: Fire, Sharingan · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Sharingan Foresight — Whenever an enemy targets Itachi with a Quick
@@ -1327,6 +1330,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
 Abilities:
 - Crow Shuriken Barrage — 2 Chakra, Style: None, Type: Taijutsu: Deal 1 damage.
 - Fire Release: Great Fireball — 4 Chakra, Style: Fire, Type: Ninjutsu: Deal 2 damage.
+- Summoning: Crows — 1 Chakra, Style: None, Type: Ninjutsu: Search your Jutsu Deck for a Genjutsu: Crow Clone, shuffle your Jutsu Deck, then put that card on top.
 
 Ultimate — Amaterasu (8 Chakra, Style: Fire, Type: Ninjutsu): Deal 3
 damage to target enemy, plus 1 more at the start of each of your next 3
@@ -1728,8 +1732,9 @@ Cost: 5 Chakra (3 if a Genjutsu user — a character with a Genjutsu ability —
 Effect: Stun target enemy character for its controller's turn — through their next turn, or the rest of the current one if cast during their turn: it can't use abilities, have Chakra pooled into it, or enable Jutsu cards.
 
 **Genjutsu: Crow Clone** — Style: None, Quick Technique, Type: Genjutsu
-Cost: 2 Chakra. Itachi only — can only be played with Itachi enabling it.
-Effect: Negate all targeting of Itachi and all new damage to him for the rest of this turn.
+Cost: 2 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Condition: the enabling character has Sharingan.
+Effect: Negate all targeting of the enabling character and all new damage to it for the rest of this turn.
 
 **Water Style: Thousand Hungry Sharks** — Style: Water, Type: Ninjutsu
 Cost: 6 Chakra.
@@ -1804,10 +1809,8 @@ Effect: Choose 1 Retreated enemy character (this card may choose a Retreated cha
 Cost: 1 Chakra.
 Effect: Draw 1 card. You may pay 2 additional Chakra to then draw another card.
 
-*The nine cards above (Earth Style: Mud Wall through Reconnaissance)
-are implemented but not yet in the preset Jutsu Deck. Wind Style: Great
-Breakthrough and Smoke Out **choose** their units rather than targeting
-them (§9).*
+*Wind Style: Great Breakthrough and Smoke Out **choose** their units
+rather than targeting them (§9).*
 
 **Assist Cards** (see §10c):
 

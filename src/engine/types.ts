@@ -46,7 +46,9 @@ export type Style =
   | 'Paper'
   | 'Yang'
   | 'Poison'
-  | 'Ritual';
+  | 'Ritual'
+  /** A kekkei genkai tag, not an element: Itachi has it; Genjutsu: Crow Clone needs it. */
+  | 'Sharingan';
 
 export type AbilityType = 'Ninjutsu' | 'Taijutsu' | 'Bukijutsu' | 'Genjutsu' | 'Sealing' | 'None';
 

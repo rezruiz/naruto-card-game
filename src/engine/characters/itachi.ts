@@ -1,6 +1,7 @@
 import { findOccupant, isCharacter, patchCharacter } from '../board';
 import { dealDamage } from '../combat';
 import { appendLog } from '../phases/phaseMachine';
+import { shuffle } from '../deck';
 import type { AbilityDef } from '../abilities';
 import { registerCharacter } from './registry';
 
@@ -31,6 +32,34 @@ const greatFireballTechnique: AbilityDef = {
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
     return target ? dealDamage(ctx.state, target, 2).state : ctx.state;
+  },
+};
+
+// Searches his controller's Jutsu Deck for Genjutsu: Crow Clone, shuffles the
+// rest, and puts it on top. No copy left: the deck is just shuffled.
+const CROW_CLONE_ID = 'jutsu-crow-clone';
+const summoningCrows: AbilityDef = {
+  id: 'summoning-crows',
+  name: 'Summoning: Crows',
+  cost: 1,
+  speed: 'Normal',
+  style: 'None',
+  type: 'Ninjutsu',
+  maxTargets: 0,
+  resolve: (ctx) => {
+    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
+    if (!found) return ctx.state;
+    const p = ctx.state.players[found.player];
+    const crow = p.handDeck.find((c) => c.defId === CROW_CLONE_ID);
+    const rest = shuffle(p.handDeck.filter((c) => c !== crow));
+    const handDeck = crow ? [crow, ...rest] : rest;
+    const state = { ...ctx.state, players: { ...ctx.state.players, [found.player]: { ...p, handDeck } } };
+    return appendLog(
+      state,
+      crow
+        ? `Summoning: Crows — ${found.player} finds Genjutsu: Crow Clone, shuffles the Jutsu Deck and puts it on top.`
+        : `Summoning: Crows — no Genjutsu: Crow Clone in ${found.player}'s Jutsu Deck; it's shuffled.`,
+    );
   },
 };
 
@@ -103,8 +132,8 @@ registerCharacter({
   rank: 'S',
   baseMaxHP: 11,
   basePoolCapacity: 4,
-  styles: ['Fire'],
-  abilities: [crowShurikenBarrage, greatFireballTechnique, tsukuyomiInfiniteAgony],
+  styles: ['Fire', 'Sharingan'],
+  abilities: [crowShurikenBarrage, greatFireballTechnique, summoningCrows, tsukuyomiInfiniteAgony],
   ultimate: amaterasu,
   maxAbilitiesPerTurn: 2,
   runsHooksWhenInert: ['upkeep'], // Amaterasu's burn keeps ticking even if Itachi Retreats — an already-activated effect (§6.5b)

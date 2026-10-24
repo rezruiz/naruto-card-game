@@ -677,16 +677,20 @@ const crowCloneCard: HandCardDef = {
   type: 'Genjutsu',
   maxTargets: 0,
   negatesTargetingOfSelf: true,
-  legalityCheck: (ctx) => findOccupant(ctx.state, ctx.enablingInstanceId)?.occupant.defId === 'itachi',
+  // Condition: the enabling character has Sharingan (a Style tag — Itachi has it).
+  legalityCheck: (ctx) => {
+    const enabler = findOccupant(ctx.state, ctx.enablingInstanceId)?.occupant;
+    return !!enabler && isCharacter(enabler) && enabler.styles.includes('Sharingan');
+  },
   resolve: (ctx) => {
-    const itachiId = ctx.enablingInstanceId;
-    const itachi = findOccupant(ctx.state, itachiId);
-    if (!itachi) return ctx.state;
+    const userId = ctx.enablingInstanceId;
+    const user = findOccupant(ctx.state, userId);
+    if (!user) return ctx.state;
     const stack = ctx.state.stack
-      .map((item) => (item.targets.includes(itachiId) ? { ...item, targets: item.targets.filter((t) => t !== itachiId) } : item))
-      .filter((item) => !(item.targets.length === 0 && ctx.state.stack.find((o) => o.id === item.id)!.targets.includes(itachiId)));
-    const state = patchCharacter({ ...ctx.state, stack }, itachiId, (c) => ({ ...c, extra: { ...c.extra, phasedOutTurn: ctx.state.turn } }));
-    return appendLog(state, 'Itachi phases out — Crow Clone: no targeting of him and no new damage to him for the rest of this turn.');
+      .map((item) => (item.targets.includes(userId) ? { ...item, targets: item.targets.filter((t) => t !== userId) } : item))
+      .filter((item) => !(item.targets.length === 0 && ctx.state.stack.find((o) => o.id === item.id)!.targets.includes(userId)));
+    const state = patchCharacter({ ...ctx.state, stack }, userId, (c) => ({ ...c, extra: { ...c.extra, phasedOutTurn: ctx.state.turn } }));
+    return appendLog(state, `${user.occupant.name} phases out — Crow Clone: no targeting of it and no new damage to it for the rest of this turn.`);
   },
 };
 

@@ -26,37 +26,64 @@ export function makeHandCardInstance(defId: string): HandCardInstance {
 }
 
 /**
- * The 48-card Akatsuki Jutsu Deck manifest — 2 short of SPEC §2's 50-card
- * minimum (the build doesn't enforce deck size). 9 Missions, 34 Jutsu,
- * 3 Terrain, 2 Assist.
+ * The 50-card Akatsuki Jutsu Deck manifest — exactly SPEC §2's 50-card
+ * minimum. 7 Missions, 41 Jutsu, 2 Terrain (grouped below the way the Deck
+ * Library shows them).
  */
 export const HAND_DECK_MANIFEST: { defId: string; copies: number }[] = [
-  { defId: 'unshakable-resolve', copies: 2 },
+  // Missions (7)
+  { defId: 'unshakable-resolve', copies: 1 },
   { defId: 'bingo-book-s', copies: 1 },
   { defId: 'bingo-book-a', copies: 1 },
   { defId: 'bingo-book-b', copies: 1 },
   { defId: 'bingo-book-c', copies: 1 },
   { defId: 'squad-formation', copies: 1 },
-  { defId: 'emergency-relief', copies: 2 },
-  { defId: 'substitution', copies: 3 },
-  { defId: 'lightning-substitution', copies: 3 },
-  { defId: 'water-substitution', copies: 3 },
-  { defId: 'incoming-mission-assignment', copies: 2 },
-  { defId: 'chakra-transfer', copies: 2 },
-  { defId: 'field-intelligence', copies: 2 },
-  { defId: 'deploy-medic-corps', copies: 2 },
+  { defId: 'emergency-relief', copies: 1 },
+  // No Style (18)
+  { defId: 'substitution', copies: 2 },
+  { defId: 'jutsu-disruption', copies: 1 },
+  { defId: 'chakra-transfer', copies: 1 },
+  { defId: 'deploy-medic-corps', copies: 1 },
   { defId: 'medical-chakra-infusion', copies: 3 },
-  { defId: 'chakra-suppression', copies: 3 },
+  { defId: 'field-intelligence', copies: 1 },
+  { defId: 'incoming-mission-assignment', copies: 1 },
+  { defId: 'battlefield-selection', copies: 1 },
+  { defId: 'reconnaissance', copies: 2 },
+  { defId: 'scroll-of-techniques', copies: 3 },
+  { defId: 'smoke-out', copies: 1 },
+  { defId: 'chakra-suppression', copies: 1 },
+  // Physical: Taijutsu and Bukijutsu (4)
+  { defId: 'finishing-blow', copies: 1 },
+  { defId: 'kunai-deflection', copies: 1 },
+  { defId: 'explosive-tag', copies: 1 },
+  { defId: 'senbon-volley', copies: 1 },
+  // Genjutsu (2)
+  { defId: 'jutsu-mind-prison', copies: 1 },
+  { defId: 'jutsu-crow-clone', copies: 1 },
+  // Earth (4)
+  { defId: 'mud-wall', copies: 1 },
+  { defId: 'jutsu-added-weight-rock', copies: 1 },
+  { defId: 'jutsu-earth-flow-river', copies: 1 },
+  { defId: 'jutsu-hiding-like-a-mole', copies: 1 },
+  // Fire (4)
   { defId: 'fireball-jutsu', copies: 1 },
-  { defId: 'jutsu-pressure-damage', copies: 1 },
   { defId: 'jutsu-searing-migraine', copies: 1 },
-  { defId: 'jutsu-false-darkness', copies: 1 },
+  { defId: 'jutsu-phoenix-flower', copies: 1 },
+  { defId: 'jutsu-dragon-fire', copies: 1 },
+  // Water (4)
+  { defId: 'water-substitution', copies: 1 },
   { defId: 'water-dragon-jutsu', copies: 1 },
-  { defId: 'jutsu-disruption', copies: 2 },
-  { defId: 'explosive-tag', copies: 2 },
-  { defId: 'battlefield-selection', copies: 2 },
-  { defId: 'akatsuki-hideout', copies: 3 },
-  { defId: 'chidori-interception', copies: 2 },
+  { defId: 'water-shark-bullet', copies: 1 },
+  { defId: 'jutsu-thousand-hungry-sharks', copies: 1 },
+  // Wind (4)
+  { defId: 'jutsu-pressure-damage', copies: 1 },
+  { defId: 'great-breakthrough', copies: 1 },
+  { defId: 'jutsu-vacuum-bullets', copies: 1 },
+  { defId: 'jutsu-air-bullets', copies: 1 },
+  // Lightning (1)
+  { defId: 'jutsu-false-darkness', copies: 1 },
+  // Terrain (2)
+  { defId: 'akatsuki-hideout', copies: 2 },
 ];
 
 export function buildHandDeck(manifest: { defId: string; copies: number }[] = HAND_DECK_MANIFEST): HandCardInstance[] {

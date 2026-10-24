@@ -97,9 +97,13 @@ describe('Genjutsu: Mind Prison (Jutsu card)', () => {
 });
 
 describe('Genjutsu: Crow Clone (Jutsu card)', () => {
-  it('Itachi only', () => {
+  it('needs a Sharingan user to enable it — Itachi has Sharingan', () => {
     const { state, instanceId } = withHandCard(giveChakra(freshCombat(), 'p1', 2), 'p1', 'jutsu-crow-clone');
     expect(play(state, instanceId, 'p1-kakuzu').stack).toHaveLength(0);
+    expect(state.players.p1.backRow.find((c) => c?.defId === 'itachi')!.styles).toContain('Sharingan');
+    // Any character with Sharingan can: give Kakuzu the tag.
+    const tagged: GameState = { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow: state.players.p1.backRow.map((c) => (c?.defId === 'kakuzu' ? { ...c, styles: [...c.styles, 'Sharingan'] } : c)) } } };
+    expect(play(tagged, instanceId, 'p1-kakuzu').stack).toHaveLength(1);
   });
 
   it('negates targeting of Itachi and all new damage to him for the rest of the turn — lingering damage still lands', () => {
@@ -147,5 +151,25 @@ describe('Lingering effects on a defeated unit are dropped', () => {
     const itachi = state.players.p1.backRow[itachiIndex]!;
     expect(itachi.extra.amaterasuSchedule).toEqual([]);
     expect(itachi.extra.damageTakenFrom).toEqual({});
+  });
+});
+
+describe('Itachi: Summoning: Crows', () => {
+  it('finds Genjutsu: Crow Clone in the Jutsu Deck, shuffles the rest and puts it on top', () => {
+    let state = giveChakra({ ...freshCombat(), phase: 'Main1' }, 'p1', 1);
+    const deck = ['substitution', 'jutsu-crow-clone', 'explosive-tag', 'reconnaissance'].map(makeHandCardInstance);
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: deck } } };
+    state = resolveTop(activateAbility(state, 'p1-itachi', 'summoning-crows', [], 0));
+    expect(state.players.p1.handDeck[0].defId).toBe('jutsu-crow-clone');
+    expect(state.players.p1.handDeck).toHaveLength(4);
+    expect(state.players.p1.genericChakraAvailable).toBe(0);
+  });
+
+  it('with no Crow Clone left it just shuffles', () => {
+    let state = giveChakra({ ...freshCombat(), phase: 'Main1' }, 'p1', 1);
+    const deck = ['substitution', 'explosive-tag'].map(makeHandCardInstance);
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: deck } } };
+    state = resolveTop(activateAbility(state, 'p1-itachi', 'summoning-crows', [], 0));
+    expect(state.players.p1.handDeck.map((c) => c.defId).sort()).toEqual(['explosive-tag', 'substitution']);
   });
 });

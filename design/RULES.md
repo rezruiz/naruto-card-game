@@ -87,7 +87,7 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 - **Jutsu Deck: up to 3 copies** of any card. A Mission follows this limit unless marked **Unique** (then 1 copy).
 
 ### 2.4 The preset Akatsuki decks
-**Jutsu Deck (the preset is 48 cards):** 2× Unshakable Resolve, 1× each of Bingo Book S / A / B / C, 1× Squad Formation, 2× Emergency Relief (9); 3× each of Substitution, Lightning Substitution, Water Substitution (9); 2× each of Incoming Mission Assignment, Chakra Transfer, Field Intelligence, Deploy Medic Corps, Jutsu Disruption, Explosive Tag, Battlefield Selection (14); 3× each of Medical Chakra Infusion and Chakra Suppression (6); 1× each of Fireball Jutsu, Pressure Damage, Searing Migraine, False Darkness, Water Dragon Jutsu (5); 3× Akatsuki Hideout (3); 2× Chidori Interception (2). = **48**, no filler — 2 short of the 50-card minimum.
+**Jutsu Deck (the preset is 50 cards):** 1× each of Unshakable Resolve, Bingo Book S / A / B / C, Squad Formation, Emergency Relief (7 Missions); 1× each of Jutsu Disruption, Chakra Transfer, Deploy Medic Corps, Field Intelligence, Incoming Mission Assignment, Battlefield Selection, Smoke Out, Chakra Suppression, 2× each of Substitution and Reconnaissance, and 3× each of Medical Chakra Infusion and Scroll of Techniques (18 No Style); 1× each of Finishing Blow, Kunai Deflection, Explosive Tag, Senbon Volley (4 Physical: Taijutsu and Bukijutsu); 1× each of Genjutsu: Mind Prison, Genjutsu: Crow Clone (2 Genjutsu); 1× each of Earth Style: Mud Wall, Added Weight Rock Technique, Earth Flow River, Hiding Like a Mole Technique (4 Earth); 1× each of Fireball Jutsu, Searing Migraine, Fire Style: Phoenix Flower, Dragon Fire Technique (4 Fire); 1× each of Water Substitution, Water Dragon Jutsu, Water Style: Water Shark Bullet, Thousand Hungry Sharks (4 Water); 1× each of Pressure Damage, Wind Style: Great Breakthrough, Vacuum Bullets, Air Bullets (4 Wind); 1× False Darkness (1 Lightning); 2× Akatsuki Hideout (2 Terrain). = **50** — exactly the 50-card minimum.
 
 **Character Deck (13):** Kakuzu, Hidan, Deidara, Kisame, Itachi, Konan, Sasori, Zetsu, Juzo Biwa, Yahiko, Pain of the Six Paths, and **2× Amegakure Civilian Rebel**. Rank tally: S×3 (Kisame, Itachi, Pain), A×4 (Kakuzu, Deidara, Konan, Sasori), B×3 (Hidan, Zetsu, Juzo), C×1 (Yahiko), D×2 — all caps satisfied.
 
@@ -486,7 +486,7 @@ Full text is in Appendix A. Timing and implementation:
 | **Searing Migraine** (Fire) | **Normal, Attack-type — Combat only**, 3 | 4 damage. **Once per turn.** |
 | **False Darkness** (Lightning) | **Quick**, 2 | 2 damage. |
 | **Genjutsu: Mind Prison** (None) | **Quick**, 5 (3 if a Genjutsu user enables it) | Stun target enemy character for its controller's turn: no abilities, no pooling into it, no enabling Jutsu cards. |
-| **Genjutsu: Crow Clone** (None) | **Quick**, 2 — Itachi only | Negate all targeting of Itachi and all new damage to him for the rest of this turn. |
+| **Genjutsu: Crow Clone** (None) | **Quick**, 2 — Sharingan users | Negate all targeting of the enabling character and all new damage to it for the rest of this turn. |
 | **Water Style: Thousand Hungry Sharks** (Water) | **Normal, Attack-type — Combat only**, 6 | 4 damage split however you choose between any number of enemy targets. **Once per turn.** |
 | **Earth Style: Added Weight Rock Technique** (Earth) | **Quick**, 2 | Target enemy character's abilities and the Jutsu cards it enables cost 1 more, through its controller's next turn. |
 | **Earth Style: Earth Flow River** (Earth) | **Normal, Attack-type — Combat only**, 3 | 1 damage to the target and each enemy unit beside it in its row; those characters can't Retreat through their controller's next turn. **Once per turn.** |
@@ -496,15 +496,15 @@ Full text is in Appendix A. Timing and implementation:
 | **Wind Style: Air Bullets** (Wind) | **Normal, Attack-type — Combat only**, 1 + X (X ≤ 4) | X times, 1 damage to target enemy unit; the same unit may be chosen more than once. **Once per turn.** |
 | **Earth Style: Hiding Like a Mole Technique** (Earth) | **Normal, Main only**, 4 | The enabler can't be targeted (except by itself) through your next turn, until it uses an attack; that attack deals +2 if Taijutsu. |
 | **Water Dragon Jutsu** (Water) | **Normal, Attack-type — Combat only**, 1+X (X from Pool) | X damage to an enemy character, X up to 5. **Once per turn.** |
-| **Earth Style: Mud Wall** (Earth) | **Reactive**, 2 / 1 from Pool | Prevent 2 of a targeted Ninjutsu or Physical attack on one of your characters (not Genjutsu). Not in the preset deck. |
-| **Kunai Deflection** (Taijutsu) | **Reactive**, 2 / 1 from Pool | Prevent 1 of a targeted Ninjutsu or Physical attack on the **enabling** character (not Genjutsu). Prevention, not negation — Spore Technique doesn't stop it. Not in the preset deck. |
-| **Water Style: Water Shark Bullet** (Water) | **Normal, Attack-type — Combat only**, 3 | 2 damage, Absorb 1 from the target into the enabler. **Once per turn.** Not in the preset deck. |
-| **Wind Style: Great Breakthrough** (Wind) | **Normal, Attack-type — Combat only**, 2 | **Chooses** (doesn't target) up to 3 enemy units, Characters or Tokens: 1 damage each. **Once per turn.** Not in the preset deck. |
-| **Finishing Blow** (Taijutsu) | **Normal, Attack-type — Combat only**, 2 | Target enemy character at ≤ half its max HP (rounded down): 2 damage, 3 if it has ≤ 3 HP. Fizzles if it's healed above half before resolving. **Once per turn.** Not in the preset deck. |
-| **Senbon Volley** (Bukijutsu) | **Normal, Attack-type — Combat only**, 2 | 2 damage; +1 Poison counter if the enabler has the Poison Style. **Once per turn.** Not in the preset deck. |
-| **Scroll of Techniques** | Normal, **Main only**, 1 | Look at the top 3; take 1 Jutsu (Assist counts) whose Style matches one of your characters' Styles (Style: None never matches); shuffle the rest back. Not in the preset deck. |
-| **Smoke Out** | Normal, **Main only**, 4 | **Chooses** (doesn't target) a Retreated enemy character — an explicit exception to Retreat immunity — and forces it out of Retreat with Field Orientation. Not in the preset deck. |
-| **Reconnaissance** | Normal, **Main only**, 1 (+2) | Draw 1; if you paid 2 more when playing it (your choice), draw 1 more. Not in the preset deck. |
+| **Earth Style: Mud Wall** (Earth) | **Reactive**, 2 / 1 from Pool | Prevent 2 of a targeted Ninjutsu or Physical attack on one of your characters (not Genjutsu). |
+| **Kunai Deflection** (Taijutsu) | **Reactive**, 2 / 1 from Pool | Prevent 1 of a targeted Ninjutsu or Physical attack on the **enabling** character (not Genjutsu). Prevention, not negation — Spore Technique doesn't stop it. |
+| **Water Style: Water Shark Bullet** (Water) | **Normal, Attack-type — Combat only**, 3 | 2 damage, Absorb 1 from the target into the enabler. **Once per turn.** |
+| **Wind Style: Great Breakthrough** (Wind) | **Normal, Attack-type — Combat only**, 2 | **Chooses** (doesn't target) up to 3 enemy units, Characters or Tokens: 1 damage each. **Once per turn.** |
+| **Finishing Blow** (Taijutsu) | **Normal, Attack-type — Combat only**, 2 | Target enemy character at ≤ half its max HP (rounded down): 2 damage, 3 if it has ≤ 3 HP. Fizzles if it's healed above half before resolving. **Once per turn.** |
+| **Senbon Volley** (Bukijutsu) | **Normal, Attack-type — Combat only**, 2 | 2 damage; +1 Poison counter if the enabler has the Poison Style. **Once per turn.** |
+| **Scroll of Techniques** | Normal, **Main only**, 1 | Look at the top 3; take 1 Jutsu (Assist counts) whose Style matches one of your characters' Styles (Style: None never matches); shuffle the rest back. |
+| **Smoke Out** | Normal, **Main only**, 4 | **Chooses** (doesn't target) a Retreated enemy character — an explicit exception to Retreat immunity — and forces it out of Retreat with Field Orientation. |
+| **Reconnaissance** | Normal, **Main only**, 1 (+2) | Draw 1; if you paid 2 more when playing it (your choice), draw 1 more. |
 | **Chakra Suppression** (Sealing) | **Quick**, 2 | Target enemy character can't be pooled into **through** its controller's next turn. Characters only, not tokens. |
 | **Akatsuki Hideout** (Terrain) | Normal, **Main only**, **2** | Upkeep −1 for Akatsuki-Synergy characters (min 1). |
 | **Missions (7)** | Normal, **Main only** | See Appendix A. **Emergency Relief** counts your own characters defeated (any rank, tokens don't count) after it's played; at 2, you immediately take a free Character Deck draw (look at 2, keep 1) that doesn't raise the tax. |
@@ -765,6 +765,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 97. ✔ **Wind cost and damage changes:** **Pressure Damage** now costs 4 Chakra (was 3) and deals 3 damage to up to 2 enemy characters (was 2). **Wind Style: Great Breakthrough** now costs 2 Chakra (was 3). (SPEC §13b.)
 98. ✔ **Fireball Jutsu costs 3:** a flat 3 Chakra (was 4, or 3 if paid from the enabling character's Pool). The Pool discount is removed. (SPEC §13b.)
 99. ✔ **Hiding Like a Mole ends when it attacks:** the hiding ends as soon as the character uses an attack (its own damaging ability or a damaging Jutsu card it enables). It ends on activation, before the attack resolves, so the opponent can target it in response. If that attack is Taijutsu it still deals +2. (SPEC §13b; nuance in CHARACTER_LOG.)
+100. ✔ **Crow Clone opens up; Itachi gets Sharingan and Summoning: Crows; new preset Jutsu Deck:** **Genjutsu: Crow Clone** is no longer Itachi-only. Condition: the enabling character has **Sharingan**, a new Style tag (a kekkei genkai, not an element; Kakuzu can't take it). Itachi has it (Styles: Fire, Sharingan). Itachi gains **Summoning: Crows** (1 Chakra, Style: None, Type: Ninjutsu): search your Jutsu Deck for a Genjutsu: Crow Clone, shuffle, then put it on top. The preset Jutsu Deck is rebuilt at **50** cards: 1 of each No Style, Physical (Taijutsu and Bukijutsu), Genjutsu, Earth, Fire, Water and Wind card (2 Substitution, 2 Reconnaissance, 3 Medical Chakra Infusion, 3 Scroll of Techniques), 1 False Darkness, 1 of each Mission, 2 Akatsuki Hideout. (SPEC §2, §13, §13b.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -991,7 +992,7 @@ damage, where X is the Chakra pooled on the target. Absorb 2.
 
 ### Itachi of the Sharingan (S Rank)
 **HP: 11** · Pool Capacity: 4 (placeholder)
-Specialization: Tactician / Assault · Styles: Fire · Synergy: Akatsuki
+Specialization: Tactician / Assault · Styles: Fire, Sharingan · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Sharingan Foresight — Whenever an enemy targets Itachi with a Quick
@@ -1004,6 +1005,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
 Abilities:
 - Crow Shuriken Barrage — 2 Chakra, Style: None, Type: Taijutsu: Deal 1 damage.
 - Fire Release: Great Fireball — 4 Chakra, Style: Fire, Type: Ninjutsu: Deal 2 damage.
+- Summoning: Crows — 1 Chakra, Style: None, Type: Ninjutsu: Search your Jutsu Deck for a Genjutsu: Crow Clone, shuffle your Jutsu Deck, then put that card on top.
 
 Ultimate — Amaterasu (8 Chakra, Style: Fire, Type: Ninjutsu): Deal 3
 damage to target enemy, plus 1 more at the start of each of your next 3
@@ -1405,8 +1407,9 @@ Cost: 5 Chakra (3 if a Genjutsu user — a character with a Genjutsu ability —
 Effect: Stun target enemy character for its controller's turn — through their next turn, or the rest of the current one if cast during their turn: it can't use abilities, have Chakra pooled into it, or enable Jutsu cards.
 
 **Genjutsu: Crow Clone** — Style: None, Quick Technique, Type: Genjutsu
-Cost: 2 Chakra. Itachi only — can only be played with Itachi enabling it.
-Effect: Negate all targeting of Itachi and all new damage to him for the rest of this turn.
+Cost: 2 Chakra. *(full nuance: design/CHARACTER_LOG.md)*
+Condition: the enabling character has Sharingan.
+Effect: Negate all targeting of the enabling character and all new damage to it for the rest of this turn.
 
 **Water Style: Thousand Hungry Sharks** — Style: Water, Type: Ninjutsu
 Cost: 6 Chakra.
@@ -1481,10 +1484,8 @@ Effect: Choose 1 Retreated enemy character (this card may choose a Retreated cha
 Cost: 1 Chakra.
 Effect: Draw 1 card. You may pay 2 additional Chakra to then draw another card.
 
-*The nine cards above (Earth Style: Mud Wall through Reconnaissance)
-are implemented but not yet in the preset Jutsu Deck. Wind Style: Great
-Breakthrough and Smoke Out **choose** their units rather than targeting
-them (§9).*
+*Wind Style: Great Breakthrough and Smoke Out **choose** their units
+rather than targeting them (§9).*
 
 **Assist Cards** (see §10c):
 
@@ -1866,9 +1867,13 @@ that turn. The stunned character can't use abilities, have Chakra pooled
 into it, or enable Jutsu cards. No once-per-character limit.
 
 ### Genjutsu: Crow Clone (Jutsu card)
-Itachi only. Attacks already waiting on Itachi lose him as a target (an
-attack with no other target fizzles), and for the rest of the turn he
-can't be targeted and takes no **new** damage. Damage from a lingering
+**[Updated]** No longer Itachi-only: any character with **Sharingan** can
+enable it. Sharingan is a Style tag (a kekkei genkai, not an element):
+Itachi has it, and Kakuzu's Patchwork Threads can't take it since it only
+steals elemental Styles. Itachi's **Summoning: Crows** tutors it to the
+top of the Jutsu Deck. Attacks already waiting on the enabling character
+lose it as a target (an attack with no other target fizzles), and for
+the rest of the turn it can't be targeted and takes no **new** damage. Damage from a lingering
 effect already attached to him (e.g. a burn) still lands — lingering
 damage must be explicitly included to be negated, and negating
 targeting never affects it, since it doesn't retarget. Spore Technique
@@ -3087,7 +3092,7 @@ Engine flags: absorbed Chakra goes into its Pool; has an Upkeep passive
 
 ### Itachi — S Rank
 
-HP 11 · Pool capacity 4 · Styles: Fire · Synergy: Akatsuki
+HP 11 · Pool capacity 4 · Styles: Fire, Sharingan · Synergy: Akatsuki
 
 Engine flags: max 2 abilities per turn; has an Upkeep passive
 
@@ -3095,6 +3100,7 @@ Engine flags: max 2 abilities per turn; has an Upkeep passive
 |---|---|---|---|---|---|---|---|---|
 | Crow Shuriken Barrage | 2 | Normal | None | Taijutsu | yes | 1 | enemy | — |
 | Fire Release: Great Fireball | 4 | Normal | Fire | Ninjutsu | yes | 1 | enemy | — |
+| Summoning: Crows | 1 | Normal | None | Ninjutsu | no | none/auto | — | tutors Crow Clone to the top of the Jutsu Deck |
 | Mangekyō Sharingan: Tsukuyomi - Infinite Agony | 8 | Normal | None | Genjutsu | yes | 1 | enemy | Forbidden |
 | Amaterasu | 8 | Normal | Fire | Ninjutsu | yes | 1 | enemy | Ultimate |
 
@@ -3174,55 +3180,55 @@ HP 3 · Pool capacity 1 · Styles: None · Synergy: None
 |---|---|---|---|---|---|---|---|---|
 | Shinobi Strike | 1 | Normal | None | Taijutsu | yes | 1 | enemy | — |
 
-### Jutsu Deck cards (48)
+### Jutsu Deck cards (50 in the preset)
 
 | Card | Copies | Kind | Cost | Speed | Style | Type | Normal-speed timing | Targets | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| Unshakable Resolve | 2 | mission | 1 | Normal | None | None | Main only | none/auto | — |
+| Unshakable Resolve | 1 | mission | 1 | Normal | None | None | Main only | none/auto | — |
 | Bingo Book: Threat Level S | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
 | Bingo Book: Threat Level A | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
 | Bingo Book: Threat Level B | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
 | Bingo Book: Threat Level C | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
 | Squad Formation | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
-| Emergency Relief | 2 | mission | 0 | Normal | None | None | Main only | none/auto | — |
-| Substitution | 3 | jutsu | variable | Reactive | None | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
-| Lightning Substitution | 3 | jutsu | variable | Reactive | Lightning | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
-| Water Substitution | 3 | jutsu | variable | Reactive | Water | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
-| Incoming Mission Assignment | 2 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |
-| Chakra Transfer | 2 | jutsu | 0 | Normal | None | Ninjutsu | Main or Combat | 2 (ally) | player chooses amount |
-| Field Intelligence | 2 | jutsu | 1 | Normal | None | None | Main only | none/auto | — |
-| Deploy Medic Corps | 2 | jutsu | 2 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | may target a Retreated ally |
+| Emergency Relief | 1 | mission | 0 | Normal | None | None | Main only | none/auto | — |
+| Substitution | 2 | jutsu | variable | Reactive | None | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
+| Lightning Substitution | 0 | jutsu | variable | Reactive | Lightning | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
+| Water Substitution | 1 | jutsu | variable | Reactive | Water | Ninjutsu | — | none/auto | cheaper if paid from enabler's Pool |
+| Incoming Mission Assignment | 1 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |
+| Chakra Transfer | 1 | jutsu | 0 | Normal | None | Ninjutsu | Main or Combat | 2 (ally) | player chooses amount |
+| Field Intelligence | 1 | jutsu | 1 | Normal | None | None | Main only | none/auto | — |
+| Deploy Medic Corps | 1 | jutsu | 2 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | may target a Retreated ally |
 | Medical Chakra Infusion | 3 | jutsu | 1 | Normal | None | Ninjutsu | Main or Combat | 1 (ally) | characters only, not tokens |
-| Chakra Suppression | 3 | jutsu | 2 | Quick | None | Sealing | — | 1 (enemy) | characters only, not tokens |
+| Chakra Suppression | 1 | jutsu | 2 | Quick | None | Sealing | — | 1 (enemy) | characters only, not tokens |
 | Fireball Jutsu | 1 | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | 3 (any) | Attack-type (once/turn by name) |
 | Pressure Damage | 1 | jutsu | 4 | Normal | Wind | Ninjutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
 | Searing Migraine | 1 | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name) |
 | False Darkness | 1 | jutsu | 2 | Quick | Lightning | Ninjutsu | — | 1 (enemy) | — |
-| Genjutsu: Mind Prison | 0 (library only) | jutsu | variable | Quick | None | Genjutsu | — | 1 (enemy) | 5, or 3 with a Genjutsu user enabling |
-| Genjutsu: Crow Clone | 0 (library only) | jutsu | 2 | Quick | None | Genjutsu | — | none/auto | Itachi only |
-| Water Style: Thousand Hungry Sharks | 0 (library only) | jutsu | variable | Normal | Water | Ninjutsu | Combat only | up to 4 (enemy) | 4 damage split by picks |
-| Earth Style: Added Weight Rock Technique | 0 (library only) | jutsu | 2 | Quick | Earth | Ninjutsu | — | 1 (enemy) | +1 cost through its controller's next turn |
-| Earth Style: Earth Flow River | 0 (library only) | jutsu | 3 | Normal | Earth | Ninjutsu | Combat only | 1 (enemy) | splash to row neighbors; no Retreat |
-| Fire Style: Phoenix Flower | 0 (library only) | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | up to 2 (enemy, adjacent) | 3 damage split as chosen |
-| Fire Style: Dragon Fire Technique | 0 (library only) | jutsu | 4 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) + direction pick | 3/2/1 down a line |
-| Wind Style: Vacuum Bullets | 0 (library only) | jutsu | 3 + X | Normal | Wind | Ninjutsu | Combat only | X picks, 1–3 (enemy) | 2 damage per pick, repeats allowed |
-| Wind Style: Air Bullets | 0 (library only) | jutsu | 1 + X | Normal | Wind | Ninjutsu | Combat only | X picks, 1–4 (enemy) | 1 damage per pick, repeats allowed |
-| Earth Style: Hiding Like a Mole Technique | 0 (library only) | jutsu | 4 | Normal | Earth | Ninjutsu | Main only | — (the enabler) | can't be targeted except by itself; ends when it attacks (+2 if Taijutsu) |
+| Genjutsu: Mind Prison | 1 | jutsu | variable | Quick | None | Genjutsu | — | 1 (enemy) | 5, or 3 with a Genjutsu user enabling |
+| Genjutsu: Crow Clone | 1 | jutsu | 2 | Quick | None | Genjutsu | — | none/auto | needs a Sharingan enabler |
+| Water Style: Thousand Hungry Sharks | 1 | jutsu | variable | Normal | Water | Ninjutsu | Combat only | up to 4 (enemy) | 4 damage split by picks |
+| Earth Style: Added Weight Rock Technique | 1 | jutsu | 2 | Quick | Earth | Ninjutsu | — | 1 (enemy) | +1 cost through its controller's next turn |
+| Earth Style: Earth Flow River | 1 | jutsu | 3 | Normal | Earth | Ninjutsu | Combat only | 1 (enemy) | splash to row neighbors; no Retreat |
+| Fire Style: Phoenix Flower | 1 | jutsu | 3 | Normal | Fire | Ninjutsu | Combat only | up to 2 (enemy, adjacent) | 3 damage split as chosen |
+| Fire Style: Dragon Fire Technique | 1 | jutsu | 4 | Normal | Fire | Ninjutsu | Combat only | 1 (enemy) + direction pick | 3/2/1 down a line |
+| Wind Style: Vacuum Bullets | 1 | jutsu | 3 + X | Normal | Wind | Ninjutsu | Combat only | X picks, 1–3 (enemy) | 2 damage per pick, repeats allowed |
+| Wind Style: Air Bullets | 1 | jutsu | 1 + X | Normal | Wind | Ninjutsu | Combat only | X picks, 1–4 (enemy) | 1 damage per pick, repeats allowed |
+| Earth Style: Hiding Like a Mole Technique | 1 | jutsu | 4 | Normal | Earth | Ninjutsu | Main only | — (the enabler) | can't be targeted except by itself; ends when it attacks (+2 if Taijutsu) |
 | Water Dragon Jutsu | 1 | jutsu | variable | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | X up to 5; cheaper if paid from enabler's Pool |
-| Jutsu Disruption | 2 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
-| Earth Style: Mud Wall | 0 | jutsu | variable | Reactive | Earth | Ninjutsu | — | 1 (ally) | cheaper if paid from enabler's Pool; not in the preset deck |
-| Kunai Deflection | 0 | jutsu | variable | Reactive | None | Taijutsu | — | none/auto | protects its enabler; cheaper if paid from enabler's Pool; not in the preset deck |
-| Water Style: Water Shark Bullet | 0 | jutsu | 3 | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
-| Wind Style: Great Breakthrough | 0 | jutsu | 2 | Normal | Wind | Ninjutsu | Combat only | up to 3 chosen (enemy) | chooses, doesn't target; Attack-type (once/turn by name); not in the preset deck |
-| Finishing Blow | 0 | jutsu | 2 | Normal | None | Taijutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
-| Senbon Volley | 0 | jutsu | 2 | Normal | None | Bukijutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name); not in the preset deck |
-| Scroll of Techniques | 0 | jutsu | 1 | Normal | None | None | Main only | none/auto | not in the preset deck |
-| Smoke Out | 0 | jutsu | 4 | Normal | None | None | Main only | 1 chosen (enemy, Retreated) | chooses, doesn't target; not in the preset deck |
-| Reconnaissance | 0 | jutsu | variable | Normal | None | None | Main only | none/auto | player chooses whether to pay 2 more; not in the preset deck |
-| Explosive Tag | 2 | jutsu | 1 | Normal | None | Bukijutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
-| Battlefield Selection | 2 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |
-| Akatsuki Hideout | 3 | terrain | 2 | Normal | None | None | Main only | none/auto | Synergy: Akatsuki |
-| Chidori Interception | 2 | assist | variable | Reactive | Lightning | Ninjutsu | — | none/auto | — |
+| Jutsu Disruption | 1 | jutsu | 2 | Reactive | None | Ninjutsu | — | 1 (any) | — |
+| Earth Style: Mud Wall | 1 | jutsu | variable | Reactive | Earth | Ninjutsu | — | 1 (ally) | cheaper if paid from enabler's Pool |
+| Kunai Deflection | 1 | jutsu | variable | Reactive | None | Taijutsu | — | none/auto | protects its enabler; cheaper if paid from enabler's Pool |
+| Water Style: Water Shark Bullet | 1 | jutsu | 3 | Normal | Water | Ninjutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name) |
+| Wind Style: Great Breakthrough | 1 | jutsu | 2 | Normal | Wind | Ninjutsu | Combat only | up to 3 chosen (enemy) | chooses, doesn't target; Attack-type (once/turn by name) |
+| Finishing Blow | 1 | jutsu | 2 | Normal | None | Taijutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name) |
+| Senbon Volley | 1 | jutsu | 2 | Normal | None | Bukijutsu | Combat only | 1 (enemy) | Attack-type (once/turn by name) |
+| Scroll of Techniques | 3 | jutsu | 1 | Normal | None | None | Main only | none/auto | — |
+| Smoke Out | 1 | jutsu | 4 | Normal | None | None | Main only | 1 chosen (enemy, Retreated) | chooses, doesn't target |
+| Reconnaissance | 2 | jutsu | variable | Normal | None | None | Main only | none/auto | player chooses whether to pay 2 more |
+| Explosive Tag | 1 | jutsu | 1 | Normal | None | Bukijutsu | Combat only | 2 (enemy) | Attack-type (once/turn by name) |
+| Battlefield Selection | 1 | jutsu | 0 | Normal | None | None | Main only | none/auto | — |
+| Akatsuki Hideout | 2 | terrain | 2 | Normal | None | None | Main only | none/auto | Synergy: Akatsuki |
+| Chidori Interception | 0 | assist | variable | Reactive | Lightning | Ninjutsu | — | none/auto | — |
 
 ## C.2 Implementation status by card
 

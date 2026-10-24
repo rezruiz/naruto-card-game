@@ -33,6 +33,7 @@ const ABILITY_TEXT: Record<string, string> = {
   // Itachi
   'crow-shuriken-barrage': 'Deal 1 damage.',
   'great-fireball-technique': 'Deal 2 damage.',
+  'summoning-crows': 'Search your Jutsu Deck for Genjutsu: Crow Clone; shuffle, then put it on top.',
   amaterasu: 'Deal 3 damage, then 1 more at each of your next 3 Upkeeps. Can’t be reduced.',
   'tsukuyomi-infinite-agony': 'Target that hasn’t dealt Itachi more than 6 damage this game: deal 5 and stun it for 1 turn cycle.',
   // Konan

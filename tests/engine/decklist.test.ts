@@ -105,3 +105,9 @@ describe('Deck library — deck lists (SPEC.md §2)', () => {
     expect(toManifests(deck).hand.some((h) => h.defId === 'no-such-card')).toBe(false);
   });
 });
+
+describe('the preset deck', () => {
+  it('is legal: 50 Jutsu Deck cards, 13 characters', () => {
+    expect(validateDeck(presetDeck())).toEqual([]);
+  });
+});
