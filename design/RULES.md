@@ -58,7 +58,7 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 | Zone | What it is |
 |---|---|
 | **Jutsu Deck** | **50–80** shuffled cards (the preset is 48): Jutsu, Assist, Terrain, Mission. Drawn one per turn. |
-| **Character Deck** | 12–18 shuffled Character cards (13 in the preset). Drawn only by triggers (§11). |
+| **Character Deck** | 10–15 shuffled Character cards (12 in the preset). Drawn only by triggers (§11). |
 | **Hand** | Holds both Jutsu Deck cards and drawn Character cards. **No maximum hand size** *(placeholder)*. |
 | **Back row** | **10 positions**, holding up to **5 Characters** (§13.1). |
 | **Front row** | **10 slots** for up to **10 Tokens**, lined up one-to-one with the back row (§13.1). |
@@ -77,10 +77,10 @@ Every card is mechanically tight, flavor-accurate, easy to parse standalone, and
 | Deck | Size | Drawn from |
 |---|---|---|
 | Jutsu Deck | **maximum 80** (minimum 50) **[Updated]** | normal turn draws |
-| Character Deck | **12–18** | only Character Deck triggers (§11) |
+| Character Deck | **10–15** **[Updated]** | only Character Deck triggers (§11) |
 
 ### 2.2 Character Deck caps
-Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Rank** (each cap independent); no cap on C or D. This applies to the fixed preset deck too.
+Regardless of size, a Character Deck holds at most **3 S-Rank and 4 A-Rank** (each cap independent); no cap on B, C or D. **[Updated]** This applies to the fixed preset deck too.
 
 ### 2.3 Copy limits
 - **Character Deck: no duplicates** — every card unique. **Exception:** **D-Rank** cards are generic and exempt (multiple copies allowed).
@@ -89,7 +89,7 @@ Regardless of size, a Character Deck holds at most **3 S-Rank, 4 A-Rank, 4 B-Ran
 ### 2.4 The preset Akatsuki decks
 **Jutsu Deck (the preset is 50 cards):** 1× each of Unshakable Resolve, Bingo Book S / A / B / C, Squad Formation, Emergency Relief (7 Missions); 1× each of Jutsu Disruption, Chakra Transfer, Deploy Medic Corps, Field Intelligence, Incoming Mission Assignment, Battlefield Selection, Smoke Out, Chakra Suppression, 2× each of Substitution and Reconnaissance, and 3× each of Medical Chakra Infusion and Scroll of Techniques (18 No Style); 1× each of Finishing Blow, Kunai Deflection, Explosive Tag, Senbon Volley (4 Physical: Taijutsu and Bukijutsu); 1× each of Genjutsu: Mind Prison, Genjutsu: Crow Clone (2 Genjutsu); 1× each of Earth Style: Mud Wall, Added Weight Rock Technique, Earth Flow River, Hiding Like a Mole Technique (4 Earth); 1× each of Fireball Jutsu, Searing Migraine, Fire Style: Phoenix Flower, Dragon Fire Technique (4 Fire); 1× each of Water Substitution, Water Dragon Jutsu, Water Style: Water Shark Bullet, Thousand Hungry Sharks (4 Water); 1× each of Pressure Damage, Wind Style: Great Breakthrough, Vacuum Bullets, Air Bullets (4 Wind); 1× False Darkness (1 Lightning); 2× Akatsuki Hideout (2 Terrain). = **50** — exactly the 50-card minimum.
 
-**Character Deck (13):** Kakuzu, Hidan, Deidara, Kisame, Itachi, Konan, Sasori, Zetsu, Juzo Biwa, Yahiko, Pain of the Six Paths, and **2× Amegakure Civilian Rebel**. Rank tally: S×3 (Kisame, Itachi, Pain), A×4 (Kakuzu, Deidara, Konan, Sasori), B×3 (Hidan, Zetsu, Juzo), C×1 (Yahiko), D×2 — all caps satisfied.
+**Character Deck (12):** Kakuzu, Hidan, Deidara, Kisame, Itachi, Konan, Sasori, Zetsu, Juzo Biwa, Yahiko, and **2× Amegakure Civilian Rebel**. Rank tally: S×2 (Kisame, Itachi), A×4 (Kakuzu, Deidara, Konan, Sasori), B×3 (Hidan, Zetsu, Juzo), C×1 (Yahiko), D×2 — all caps satisfied. Pain of the Six Paths is in the Deck Library only.
 
 ---
 
@@ -766,6 +766,10 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 98. ✔ **Fireball Jutsu costs 3:** a flat 3 Chakra (was 4, or 3 if paid from the enabling character's Pool). The Pool discount is removed. (SPEC §13b.)
 99. ✔ **Hiding Like a Mole ends when it attacks:** the hiding ends as soon as the character uses an attack (its own damaging ability or a damaging Jutsu card it enables). It ends on activation, before the attack resolves, so the opponent can target it in response. If that attack is Taijutsu it still deals +2. (SPEC §13b; nuance in CHARACTER_LOG.)
 100. ✔ **Crow Clone opens up; Itachi gets Sharingan and Summoning: Crows; new preset Jutsu Deck:** **Genjutsu: Crow Clone** is no longer Itachi-only. Condition: the enabling character has **Sharingan**, a new Style tag (a kekkei genkai, not an element; Kakuzu can't take it). Itachi has it (Styles: Fire, Sharingan). Itachi gains **Summoning: Crows** (1 Chakra, Style: None, Type: Ninjutsu): search your Jutsu Deck for a Genjutsu: Crow Clone, shuffle, then put it on top. The preset Jutsu Deck is rebuilt at **50** cards: 1 of each No Style, Physical (Taijutsu and Bukijutsu), Genjutsu, Earth, Fire, Water and Wind card (2 Substitution, 2 Reconnaissance, 3 Medical Chakra Infusion, 3 Scroll of Techniques), 1 False Darkness, 1 of each Mission, 2 Akatsuki Hideout. (SPEC §2, §13, §13b.)
+101. ✔ **Cleaving Strike deals 2:** Juzo Biwa's Cleaving Strike now deals 2 damage (was 3). Cost (3 Chakra), the kill bonus (1 damage to another enemy) and twice per turn are unchanged. (SPEC §13 Juzo Biwa.)
+102. ✔ **Hidan's Curse: +2 on self-hits:** while Curse Technique is active, Triple Scythe Sweep aimed at Hidan himself deals the Cursed enemy **2** extra damage (was 1), on top of the mirrored damage. (SPEC §13 Hidan.)
+103. ✔ **Pain leaves the starter deck:** Pain of the Six Paths is removed from the preset Character Deck (now 12; S×2). His card is unchanged and stays in the Deck Library. (SPEC §2.)
+104. ✔ **Character Deck: 10–15 cards; caps 3 S and 4 A:** a Character Deck is now 10–15 cards (was 12–18). Rank caps are at most 3 S-Rank and 4 A-Rank; B-Rank is no longer capped (was 4), and C and D still aren't. Copy limits are unchanged (1 each, D-Rank unlimited). The starter deck (12: 2 S, 4 A, 3 B, 1 C, 2 D) stays legal. (SPEC §2.)
 
 **Engine corrections against the spec**
 11. **Once-per-turn tracking resets every turn for both players** (previously it never reset, then reset only for the owner).
@@ -848,7 +852,7 @@ Ultimate — Curse Technique: Death Controlling Possessed Blood (6 Chakra,
 Style: Ritual, Type: Ninjutsu): Condition: target an enemy Hidan has
 already damaged; it becomes Cursed until Hidan or the Cursed enemy is
 defeated. While active: Triple Scythe Sweep costs 1 Chakra and may
-target Hidan himself, dealing the Cursed enemy 1 extra damage; all
+target Hidan himself, dealing the Cursed enemy 2 extra damage; all
 damage Hidan takes is mirrored onto the Cursed enemy; Hidan can't be
 targeted by friendly attacks; damage he deals himself can't drop him
 below 3 HP. One Cursed enemy at a time.
@@ -1183,7 +1187,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   (min 1).
 
 Abilities:
-- Cleaving Strike — 3 Chakra, Style: None, Type: Taijutsu: Deal 3
+- Cleaving Strike — 3 Chakra, Style: None, Type: Taijutsu: Deal 2
   damage. If this defeats the target, deal 1 damage to another enemy
   character too. Usable twice per turn.
 - Water Style: Hiding Mist — 2 Chakra, Quick Technique, Style: Water,
@@ -1600,13 +1604,13 @@ Cursed target") applies to damage from *any* source while the Curse is
 active, not just Hidan's own attacks — this is what makes self-inflicted
 Triple Scythe Sweep a real combo piece: Hidan hits himself, the mirror
 clause deals that same damage to the Cursed enemy too, on top of the
-ability's own +1 bonus on self-inflicted hits. The 3 HP self-damage floor
+ability's own +2 bonus on self-inflicted hits **[Updated: was +1]**. The 3 HP self-damage floor
 means Hidan can never trigger his own first-defeat safety net (Jashin's
 Blessing) through self-damage under this Ultimate — that path is
 deliberately closed off. **[Updated]** Self-targeting is allowed the
 same turn the Curse is activated, and while the Curse is active Triple
 Scythe Sweep costs 1 Chakra whichever target it hits. Self-damage below
-the 3 HP floor is cut short, but the Cursed enemy still takes the +1.
+the 3 HP floor is cut short, but the Cursed enemy still takes the +2.
 The Curse ends when Hidan or the Cursed enemy leaves play. "Ends when
 that enemy is defeated" just clears the Curse — Hidan may immediately
 activate it again on a new target if he still has Chakra, since nothing
@@ -2358,7 +2362,7 @@ Taijutsu reduction are what's left of that "hard to put down" flavor.
 
 ### Cleaving Strike
 The bonus 1 damage to "another enemy character" only fires if the
-primary 3 damage actually defeats the first target — this is a
+primary 2 damage **[Updated: was 3]** actually defeats the first target — this is a
 condition on the second clause, not two independent effects (contrast
 the usual comma-independence rule, §6.8a; the "if this defeats the
 target" qualifier makes the second hit dependent). If there's no second

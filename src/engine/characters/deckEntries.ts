@@ -108,12 +108,12 @@ export function listCharacterDeckEntries(): CharacterDeckEntry[] {
 }
 
 /**
- * The 13-card Akatsuki Character Deck (SPEC.md §2): 1 copy each of the 11
+ * The 12-card Akatsuki Character Deck (SPEC.md §2): 1 copy each of the 10
  * uniquely-named characters, plus 2 copies of Amegakure Civilian Rebel
- * (D-rank, exempt from the no-duplicates rule). Rank tally: S=3 (Kisame,
- * Itachi, Pain), A=4 (Kakuzu, Deidara, Konan, Sasori), B=3 (Hidan, Zetsu,
- * Juzo Biwa), C=1 (Yahiko), D=2 — every rank cap in §2 (max 3 S, 4 A, 4 B)
- * is met exactly, none exceeded.
+ * (D-rank, exempt from the no-duplicates rule). Rank tally: S=2 (Kisame,
+ * Itachi), A=4 (Kakuzu, Deidara, Konan, Sasori), B=3 (Hidan, Zetsu, Juzo
+ * Biwa), C=1 (Yahiko), D=2 — within every rank cap in §2 (max 3 S, 4 A;
+ * B, C and D uncapped). Pain of the Six Paths is in the Deck Library only.
  */
 export const CHARACTER_DECK_MANIFEST: string[] = [
   'kakuzu',
@@ -126,7 +126,6 @@ export const CHARACTER_DECK_MANIFEST: string[] = [
   'zetsu',
   'juzo',
   'yahiko',
-  'pain',
   'amegakure-civilian-rebel',
   'amegakure-civilian-rebel',
 ];

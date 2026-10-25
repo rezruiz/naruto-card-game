@@ -42,7 +42,7 @@ function setupWithJuzoStarting(): GameState {
 describe('Setup (SPEC.md §3)', () => {
   it('shuffles both decks, reveals 3 Character Deck cards each, and deals a 6-card starting hand', () => {
     const state = createSetupState('p1');
-    expect(state.players.p1.characterDeck).toHaveLength(10); // 13 - 3 revealed
+    expect(state.players.p1.characterDeck).toHaveLength(9); // 12 - 3 revealed
     expect(state.players.p1.pendingCharacterReveal!.revealed).toHaveLength(3);
     expect(state.players.p1.hand.filter((h) => h.kind === 'card')).toHaveLength(6);
     expect(state.players.p1.handDeck).toHaveLength(44); // 50 - 6 drawn

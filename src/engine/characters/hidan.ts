@@ -24,7 +24,7 @@ function cursing(hidan: { extra: Record<string, unknown> }): boolean {
 }
 
 // While Hidan's Curse is active, Triple Scythe Sweep costs 1 and may target
-// Hidan himself (dealing the Cursed enemy 1 extra).
+// Hidan himself (dealing the Cursed enemy 2 extra).
 const tripleScytheSweep: AbilityDef = {
   id: 'triple-scythe-sweep',
   name: 'Triple Scythe Sweep',
@@ -55,8 +55,8 @@ const tripleScytheSweep: AbilityDef = {
       const cursedTarget = hidan.extra.cursedTarget as string | undefined;
       const dmg = Math.min(1, Math.max(0, hidan.currentHP - 3));
       state = dealDamage(state, ctx.sourceInstanceId, dmg, { skipDamageTakenHook: true }).state;
-      // Mirrored onto the Cursed enemy, +1 extra.
-      if (cursedTarget) state = dealDamage(state, cursedTarget, dmg + 1).state;
+      // Mirrored onto the Cursed enemy, +2 extra.
+      if (cursedTarget) state = dealDamage(state, cursedTarget, dmg + 2).state;
       return state;
     }
 

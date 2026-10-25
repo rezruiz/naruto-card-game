@@ -30,7 +30,7 @@ describe('Juzo Biwa', () => {
     // a lethal hit actually removes it instead of reviving/surviving it.
     let state = giveChakra(withJuzo(), 'p1', 3);
     state = setHp(state, 'p1', 0, 5); // Juzo hurt, so the heal is visible (not capped by max HP)
-    state = setHp(state, 'p2', 2, 3); // Deidara at exactly 3 HP — 3 damage kills it
+    state = setHp(state, 'p2', 2, 2); // Deidara at exactly 2 HP — 2 damage kills it
     const hidanHpBefore = state.players.p2.backRow[1]!.currentHP;
 
     state = activateAbility(state, 'p1-juzo', 'cleaving-strike', ['p2-deidara', 'p2-hidan'], 0);

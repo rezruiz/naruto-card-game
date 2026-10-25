@@ -14,7 +14,7 @@ const ABILITY_TEXT: Record<string, string> = {
   'patchwork-threads': 'After Kakuzu defeats a shinobi: regain 1 Heart, heal 3, gain 2 Chakra to his Pool, and take 1 elemental Style from the defeated (duplicates allowed).',
   // Hidan
   'triple-scythe-sweep': 'Deal 1 damage.',
-  'curse-technique': 'Curse an enemy Hidan has damaged: all damage Hidan takes is mirrored onto it, Triple Scythe Sweep costs 1 and can hit Hidan himself (+1 to the Cursed; can’t drop him below 3), and his allies can’t target him. Ends when Hidan or the Cursed enemy falls.',
+  'curse-technique': 'Curse an enemy Hidan has damaged: all damage Hidan takes is mirrored onto it, Triple Scythe Sweep costs 1 and can hit Hidan himself (+2 to the Cursed; can’t drop him below 3), and his allies can’t target him. Ends when Hidan or the Cursed enemy falls.',
   // Deidara
   'c1-shi-wan': 'Create a Clay Spider token and gain 1 Clay Charge. Up to 2×/turn.',
   'detonation-art': 'Deal 1 damage — or spend 1 Clay Charge to deal 3.',
@@ -63,7 +63,7 @@ const ABILITY_TEXT: Record<string, string> = {
   'clone-strike': 'Deal 1, Absorb 1.',
   'golem-strike': 'Deal 3 and plant a Chakra Spore (next Upkeep, drains up to 3 of its pooled Chakra into Zetsu).',
   // Juzo Biwa
-  'cleaving-strike': 'Deal 3 damage; if it defeats the target, deal 1 to another enemy. 2×/turn.',
+  'cleaving-strike': 'Deal 2 damage; if it defeats the target, deal 1 to another enemy. 2×/turn.',
   'hiding-mist': 'Until end of turn, an enemy targeting Juzo flips a coin — on a loss, it misses.',
   'kubikiribouchou-unleashed': 'Deal 5 damage; if it defeats the target, heal Juzo 6.',
   // Yahiko

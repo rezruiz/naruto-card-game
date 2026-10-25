@@ -25,9 +25,9 @@ export interface DeckList {
 // SPEC.md §2's deck-construction rules.
 export const HAND_DECK_MIN = 50;
 export const HAND_DECK_MAX = 80;
-export const CHARACTER_DECK_MIN = 12;
-export const CHARACTER_DECK_MAX = 18;
-export const RANK_CAPS: Partial<Record<CharacterDeckEntry['rank'], number>> = { S: 3, A: 4, B: 4 };
+export const CHARACTER_DECK_MIN = 10;
+export const CHARACTER_DECK_MAX = 15;
+export const RANK_CAPS: Partial<Record<CharacterDeckEntry['rank'], number>> = { S: 3, A: 4 };
 
 /** How many copies of a card a deck may hold (§2/§10b): 3 for a Jutsu Deck card (1 for a Unique Mission); 1 for a character (unlimited for D Rank). */
 export function copyLimit(kind: 'hand' | 'character', id: string): number {

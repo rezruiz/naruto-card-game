@@ -23,7 +23,7 @@ const cleavingStrike: AbilityDef = {
     if (!primary) return ctx.state;
     const primaryFound = findOccupant(ctx.state, primary);
     const primaryWasCharacter = !!primaryFound && isCharacter(primaryFound.occupant);
-    const result = dealDamage(ctx.state, primary, 3);
+    const result = dealDamage(ctx.state, primary, 2);
     let state = result.state;
 
     if (result.defeated) {

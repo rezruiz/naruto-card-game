@@ -61,12 +61,12 @@ mechanically tight, flavor-accurate, and easy to parse standalone.
 ## 2. Decks & Deck Composition
 
 Each player has **two separate decks**: a Jutsu Deck of **up to 80 cards**
-and a Character Deck of 12-18 cards.
+and a Character Deck of 10-15 cards.
 
 | Deck | Size | Contains | Drawn from |
 |---|---|---|---|
 | Jutsu Deck | **Maximum 80 cards** (minimum 50) | Jutsu cards (and, in future, Item/Mission/Terrain) | Normal turn draws |
-| Character Deck | 12-18 cards | Character cards | Only via specific triggers (§8) |
+| Character Deck | 10-15 cards | Character cards | Only via specific triggers (§8) |
 
 The preset Akatsuki Jutsu Deck used in this prototype is 50 cards — 1 of
 each No Style, Physical (Taijutsu and Bukijutsu), Genjutsu, Earth, Fire,
@@ -78,11 +78,11 @@ Character cards are **never** in the Jutsu Deck and are never drawn
 by a normal draw step — they only enter your hand through the Character
 Deck triggers described in §8.
 
-**Character Deck rank caps:** regardless of its size (12-18 cards), a
-Character Deck may contain **at most 3 cards of S Rank, at most 4 of A
-Rank, and at most 4 of B Rank** (each cap independent — e.g. a deck could
-have 3 S, 4 A, 4 B, and however many C or D it wants up to the deck's
-total size). There's no cap on C or D Rank specifically. This applies
+**Character Deck rank caps:** regardless of its size (10-15 cards), a
+Character Deck may contain **at most 3 cards of S Rank and at most 4 of A
+Rank** (each cap independent — e.g. a deck could have 3 S, 4 A, and
+however many B, C or D it wants up to the deck's total size). There's no
+cap on B, C or D Rank. This applies
 even to the current fixed preset Akatsuki deck, not just future built
 decks.
 
@@ -1173,7 +1173,7 @@ Ultimate — Curse Technique: Death Controlling Possessed Blood (6 Chakra,
 Style: Ritual, Type: Ninjutsu): Condition: target an enemy Hidan has
 already damaged; it becomes Cursed until Hidan or the Cursed enemy is
 defeated. While active: Triple Scythe Sweep costs 1 Chakra and may
-target Hidan himself, dealing the Cursed enemy 1 extra damage; all
+target Hidan himself, dealing the Cursed enemy 2 extra damage; all
 damage Hidan takes is mirrored onto the Cursed enemy; Hidan can't be
 targeted by friendly attacks; damage he deals himself can't drop him
 below 3 HP. One Cursed enemy at a time.
@@ -1508,7 +1508,7 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   (min 1).
 
 Abilities:
-- Cleaving Strike — 3 Chakra, Style: None, Type: Taijutsu: Deal 3
+- Cleaving Strike — 3 Chakra, Style: None, Type: Taijutsu: Deal 2
   damage. If this defeats the target, deal 1 damage to another enemy
   character too. Usable twice per turn.
 - Water Style: Hiding Mist — 2 Chakra, Quick Technique, Style: Water,
@@ -1846,7 +1846,7 @@ finalized by design decision — adjust after playtesting:
   open to adjustment after playtesting. Starting player Health (20) is
   finalized, not a placeholder.
 - Hand size cap (currently: none/unlimited).
-- Character Deck composition: needs to total 12-18 unique cards (§2 —
+- Character Deck composition: needs to total 10-15 unique cards (§2 —
   duplicates aren't allowed in this deck); 9 characters are currently
   designed (Kakuzu, Hidan, Deidara, Itachi, Kisame, Konan, Sasori, and
   Zetsu finalized; Pain of the Six Paths still an unconfirmed assistant

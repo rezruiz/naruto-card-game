@@ -86,13 +86,13 @@ Cursed target") applies to damage from *any* source while the Curse is
 active, not just Hidan's own attacks — this is what makes self-inflicted
 Triple Scythe Sweep a real combo piece: Hidan hits himself, the mirror
 clause deals that same damage to the Cursed enemy too, on top of the
-ability's own +1 bonus on self-inflicted hits. The 3 HP self-damage floor
+ability's own +2 bonus on self-inflicted hits **[Updated: was +1]**. The 3 HP self-damage floor
 means Hidan can never trigger his own first-defeat safety net (Jashin's
 Blessing) through self-damage under this Ultimate — that path is
 deliberately closed off. **[Updated]** Self-targeting is allowed the
 same turn the Curse is activated, and while the Curse is active Triple
 Scythe Sweep costs 1 Chakra whichever target it hits. Self-damage below
-the 3 HP floor is cut short, but the Cursed enemy still takes the +1.
+the 3 HP floor is cut short, but the Cursed enemy still takes the +2.
 The Curse ends when Hidan or the Cursed enemy leaves play. "Ends when
 that enemy is defeated" just clears the Curse — Hidan may immediately
 activate it again on a new target if he still has Chakra, since nothing
@@ -844,7 +844,7 @@ Taijutsu reduction are what's left of that "hard to put down" flavor.
 
 ### Cleaving Strike
 The bonus 1 damage to "another enemy character" only fires if the
-primary 3 damage actually defeats the first target — this is a
+primary 2 damage **[Updated: was 3]** actually defeats the first target — this is a
 condition on the second clause, not two independent effects (contrast
 the usual comma-independence rule, §6.8a; the "if this defeats the
 target" qualifier makes the second hit dependent). If there's no second

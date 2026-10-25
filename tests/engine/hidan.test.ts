@@ -41,7 +41,7 @@ describe('Hidan', () => {
     expect(state.players.p1.genericChakraAvailable).toBe(0);
     state = resolveTop(state);
     expect(state.players.p1.backRow[1]!.currentHP).toBe(hidanHpBefore - 1);
-    expect(state.players.p2.backRow[0]!.currentHP).toBe(p2HpBefore - 2); // mirrored 1, +1 extra
+    expect(state.players.p2.backRow[0]!.currentHP).toBe(p2HpBefore - 3); // mirrored 1, +2 extra
   });
 
   it("without a Curse he can't target himself and it costs 3; self-damage never drops him below 3 HP", () => {
@@ -67,11 +67,17 @@ describe('Hidan', () => {
   });
 
   it('regenerates 1 HP at End Phase (2 while the Ultimate is active)', () => {
+    const toEnd = (s: GameState) => {
+      for (let i = 0; i < 3; i++) s = gameReducer(s, { type: 'ADVANCE_PHASE' }); // Combat, Main2, End — regen hook fires at End
+      return s;
+    };
     let state = freshCombat();
     state = dealDamage(state, 'p1-hidan', 5).state; // 9 -> 4
-    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Combat
-    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // Main2
-    state = gameReducer(state, { type: 'ADVANCE_PHASE' }); // End — regen hook fires here
-    expect(state.players.p1.backRow[1]?.currentHP).toBe(5);
+    expect(toEnd(state).players.p1.backRow[1]?.currentHP).toBe(5);
+
+    let cursing = giveChakra(freshCombat(), 'p1', 6);
+    cursing = resolveTop(activateAbility(hidanHasDamaged(cursing, 'p2-kakuzu'), 'p1-hidan', 'curse-technique', ['p2-kakuzu'], 0));
+    cursing = { ...cursing, players: { ...cursing.players, p1: { ...cursing.players.p1, backRow: cursing.players.p1.backRow.map((c) => (c?.defId === 'hidan' ? { ...c, currentHP: 4 } : c)) } } };
+    expect(toEnd(cursing).players.p1.backRow[1]?.currentHP).toBe(6);
   });
 });
