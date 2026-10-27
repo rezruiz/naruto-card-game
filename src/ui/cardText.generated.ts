@@ -64,5 +64,6 @@ export const CARD_TEXT: Record<string, string> = {
   "Rain Village Chunin": "**Rain Village Chunin** — Shinobi\nCost: 3 Supplies.\nDamage 2 · Health 4.",
   "Rain Village Jonin": "**Rain Village Jonin** — Shinobi\nCost: 4 Supplies.\nDamage 3 · Health 5.",
   "Rain Village Elite Guard": "**Rain Village Elite Guard** — Shinobi\nCost: 6 Supplies.\nDamage 4 · Health 7.",
+  "Amegakure Civilian Rebel": "**Amegakure Civilian Rebel** — Shinobi\nCost: 1 Supply.\nDamage 1 · Health 3.\nEffect: +1 Damage while you have Yahiko in play.",
   "Akatsuki Hideout": "**Akatsuki Hideout** — Synergy: Akatsuki, 2 Chakra. *(full nuance:\ndesign/CHARACTER_LOG.md)*\nEffect: Akatsuki-Synergy characters you control have their Upkeep\n(§6.5) reduced by 1 (minimum 1)."
 };

@@ -1848,6 +1848,11 @@ Damage 3 · Health 5.
 Cost: 6 Supplies.
 Damage 4 · Health 7.
 
+**Amegakure Civilian Rebel** — Shinobi
+Cost: 1 Supply.
+Damage 1 · Health 3.
+Effect: +1 Damage while you have Yahiko in play.
+
 ## 13c. Example Terrain Cards
 
 **Akatsuki Hideout** — Synergy: Akatsuki, 2 Chakra. *(full nuance:

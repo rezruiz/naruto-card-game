@@ -20,6 +20,17 @@ export function isPrototype(state: GameState): boolean {
 
 export const SUPPLIES_CAP = 20;
 
+/**
+ * Drawing a new Leader from the Character Deck: a flat 10 Supplies (no
+ * escalating tax), and you search the whole deck and pick exactly the Leader
+ * you want (deck.ts). The deck is never shuffled afterwards: every Leader is
+ * brought out by choice, so its order doesn't matter.
+ */
+export const LEADER_DRAW_COST = 10;
+
+/** Character Deck cards that aren't Leaders in the Prototype — they're Shinobi in the main deck instead (shinobi.ts). */
+export const NOT_LEADERS = new Set(['amegakure-civilian-rebel']);
+
 /** How many turns this player has started this game (their first turn counts as 1). */
 function turnsStarted(state: GameState, player: PlayerId): number {
   return player === state.firstPlayer ? Math.ceil(state.turn / 2) : Math.floor(state.turn / 2);

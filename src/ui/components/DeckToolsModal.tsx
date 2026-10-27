@@ -4,6 +4,7 @@ import type { GameAction, GameState, PlayerId } from '../../engine/types';
 import { DetailsModal } from './DetailsModal';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
 import { getCharacterDeckEntry } from '../../engine/characters';
+import { CHARACTER_DECK_NAME } from '../../variant';
 
 /** Jutsu Deck tools (search, look at the top, discard pile, Consumed pile) and Character Deck tools (search, Character graveyard). */
 export type DeckTool = 'search' | 'top' | 'discard' | 'consumed' | 'char-search' | 'char-graveyard';
@@ -64,9 +65,9 @@ export function DeckToolsModal({
   if (tool === 'char-search') {
     const listed = p.characterDeck.map((entryId, index) => ({ entryId, index })).sort((a, b) => characterName(a.entryId).localeCompare(characterName(b.entryId)));
     return (
-      <DetailsModal hideText title="Search Character Deck" subtitle={`${p.characterDeck.length} cards — taking one shuffles the deck afterward (no tax is paid)`} onClose={onClose}>
+      <DetailsModal hideText title={`Search ${CHARACTER_DECK_NAME}`} subtitle={`${p.characterDeck.length} cards — taking one shuffles the deck afterward (no tax is paid)`} onClose={onClose}>
         <div className="deck-list">
-          {listed.length === 0 && <span className="details-modal__note">The Character Deck is empty.</span>}
+          {listed.length === 0 && <span className="details-modal__note">The {CHARACTER_DECK_NAME} is empty.</span>}
           {listed.map(({ entryId, index }) => {
             const key = `char-${index}`;
             return (

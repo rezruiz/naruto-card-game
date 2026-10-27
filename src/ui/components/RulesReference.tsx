@@ -1,6 +1,8 @@
 import { HEALTH_LOST_ON_DEFEAT, RANK_ORDER, UPKEEP_BY_RANK } from '../../engine/ranks';
 import { SYNERGY_DISCOUNT_CAP, startingCharacterTreatment } from '../../engine/upkeep';
 import { reinforcementTax } from '../../engine/playCharacter';
+import { LEADER_DRAW_COST } from '../../engine/prototype';
+import { VARIANT } from '../../variant';
 
 /** What a rank costs when it's your starting character (SPEC §6.5) — the normal upkeep otherwise. */
 function startingUpkeepLabel(rank: (typeof RANK_ORDER)[number]): string {
@@ -44,14 +46,20 @@ export function RulesReference() {
         <li>
           <strong>Synergy:</strong> −1 Upkeep per extra character sharing a Synergy tag, max −{SYNERGY_DISCOUNT_CAP} for your whole board. Discounts never take a character below 1 (free characters stay free).
         </li>
-        <li>
-          <strong>Character Deck draw:</strong> pay the tax ({TAX_STEPS.join(' → ')}, then stays at 8), look at 2, keep 1. Only paid manual draws raise the tax.
-        </li>
+        {VARIANT === 'prototype' ? (
+          <li>
+            <strong>Leader Deck draw:</strong> pay {LEADER_DRAW_COST} Supplies (always the same), then pick any Leader from your Leader Deck.
+          </li>
+        ) : (
+          <li>
+            <strong>Character Deck draw:</strong> pay the tax ({TAX_STEPS.join(' → ')}, then stays at 8), look at 2, keep 1. Only paid manual draws raise the tax.
+          </li>
+        )}
         <li>
           <strong>Reinforcement:</strong> a C+ character defeated → optional draw at the current tax. Your last C+ falls → play a C+ from hand, or take a free draw. D-ranks trigger nothing.
         </li>
         <li>
-          <strong>Board:</strong> max 5 characters. Missions: max 1 per character you control, played face down.
+          <strong>Board:</strong> {VARIANT === 'prototype' ? 'no limit on Leaders, Shinobi or tokens' : 'max 5 characters'}. Missions: max 1 per character you control, played face down.
         </li>
         <li>
           <strong>Field Orientation:</strong> a character or summoned token can't use damaging abilities the turn it enters (Deidara's Clay Spiders excepted).

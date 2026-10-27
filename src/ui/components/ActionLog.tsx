@@ -1,4 +1,5 @@
 import type { LogEntry } from '../../engine/types';
+import { variantText } from '../../variant';
 
 export function ActionLog({ log }: { log: LogEntry[] }) {
   return (
@@ -11,7 +12,7 @@ export function ActionLog({ log }: { log: LogEntry[] }) {
           .map((entry) => (
             <li key={entry.id} className={entry.warning ? 'action-log__warning' : undefined}>
               {entry.warning ? '⚠ ' : ''}
-              {entry.text}
+              {variantText(entry.text)}
             </li>
           ))}
       </ul>

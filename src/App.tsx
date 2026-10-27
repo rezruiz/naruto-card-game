@@ -40,7 +40,7 @@ import { TurnControls } from './ui/components/TurnControls';
 import { useNetGame } from './net/useNetGame';
 import './App.css';
 import './ui/BoardMat.css';
-import { RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
+import { CHARACTER_DECK_NAME, RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
 import { isPrototype, suppliesAvailable, suppliesMax } from './engine/prototype';
 import { ShinobiCombatPanel } from './ui/components/ShinobiCombatPanel';
 
@@ -587,6 +587,8 @@ function ViewGame({
             player={playerId}
             revealed={player.pendingCharacterReveal.revealed}
             reason={player.pendingCharacterReveal.reason}
+            searchAll={isPrototype(state)}
+            noUpkeep={isPrototype(state)}
             interactive={mine}
             onChoose={(entryId) => dispatch({ type: 'CHOOSE_CHARACTER', player: playerId, entryId })}
             onOpenDetails={(entryId) => {
@@ -706,7 +708,7 @@ function ViewGame({
           const room = entry ? entry.hasRoom(state, playerId) : false;
           return {
             label: 'Play (free)',
-            hint: 'Playing a character from hand is always free — the tax is paid when you draw it from the Character Deck.',
+            hint: `Playing a character from hand is always free — the cost is paid when you draw it from the ${CHARACTER_DECK_NAME}.`,
             disabled: !room,
             reason: room ? undefined : entryId === 'pain'
                   ? 'Needs 6 open front-row slots for the Path tokens.'
@@ -873,7 +875,7 @@ function ViewGame({
       ? lane(
           'leaders',
           'Leaders',
-          `${leaderSlots.length}/${maxCharacters(state)}`,
+          String(leaderSlots.length),
           [...leaderSlots, ...dragSlots.filter((slot) => !player.backRow[slot])].map((slot) => characterCell(slot)),
           'No Leaders in play',
         )
@@ -940,16 +942,21 @@ function ViewGame({
     // ---- Right column (Yu-Gi-Oh style): each deck with its own graveyard above it ----
     // Jutsu graveyard over the Jutsu Deck, Character graveyard over the Character Deck.
     const tax = currentTax(state, playerId);
+    // Prototype: a new Leader costs a flat 10 Supplies, and you pick any one from the whole deck.
+    const drawUnit = proto ? 'Supplies' : 'Chakra';
+    const drawFunds = proto ? suppliesAvailable(state, playerId) : player.genericChakraAvailable;
     const onTime = isActive && MAIN_PHASES.has(state.phase);
     const characterDrawBlocker =
       player.characterDeck.length === 0
-        ? 'Your Character Deck is empty.'
+        ? `Your ${CHARACTER_DECK_NAME} is empty.`
         : player.pendingCharacterReveal
-          ? 'Pick from your current Character Deck reveal first.'
+          ? `Pick from your current ${CHARACTER_DECK_NAME} reveal first.`
           : !onTime && !trust
             ? 'Only during your own Main Phase.'
-            : !trust && player.genericChakraAvailable < tax
-              ? `Needs ${tax} available Chakra — tap Chakra sources first (you have ${player.genericChakraAvailable}).`
+            : !trust && drawFunds < tax
+              ? proto
+                ? `Needs ${tax} Supplies (you have ${drawFunds}).`
+                : `Needs ${tax} available Chakra — tap Chakra sources first (you have ${drawFunds}).`
               : undefined;
     const canUseDecks = mine && !setupBlocked;
     const piles = (
@@ -981,15 +988,15 @@ function ViewGame({
     ];
     const characterMenu: MenuItem[] = [
       {
-        label: `Draw — pay ${tax} Chakra…`,
-        hint: characterDrawBlocker ?? 'Look at the top 2 of your Character Deck and keep 1 — you confirm the cost first',
+        label: `Draw — pay ${tax} ${drawUnit}…`,
+        hint: characterDrawBlocker ?? (proto ? `Search your ${CHARACTER_DECK_NAME} and pick any Leader — you confirm the cost first` : 'Look at the top 2 of your Character Deck and keep 1 — you confirm the cost first'),
         act: () => setConfirmCharacterDraw(playerId),
         disabled: !!characterDrawBlocker,
       },
       ...(trust
         ? [
-            { label: 'Shuffle', hint: 'Shuffle your Character Deck', act: () => dispatch({ type: 'SHUFFLE_CHARACTER_DECK', player: playerId }) },
-            { label: 'Search…', hint: 'Search your Character Deck for a card (no tax paid — a manual tool)', act: () => setDeckTool({ player: playerId, tool: 'char-search' }) },
+            { label: 'Shuffle', hint: `Shuffle your ${CHARACTER_DECK_NAME}`, act: () => dispatch({ type: 'SHUFFLE_CHARACTER_DECK', player: playerId }) },
+            { label: 'Search…', hint: `Search your ${CHARACTER_DECK_NAME} for a card (no cost paid — a manual tool)`, act: () => setDeckTool({ player: playerId, tool: 'char-search' }) },
           ]
         : []),
     ];
@@ -1038,14 +1045,14 @@ function ViewGame({
         {deckWithMenu(
           'character',
           <Pile
-            label="Character Deck"
+            label={CHARACTER_DECK_NAME}
             count={player.characterDeck.length}
             kind="character"
-            sub={`Tax ${tax}`}
+            sub={proto ? `Leader ${tax}` : `Tax ${tax}`}
             title={
               canUseDecks
-                ? `Character Deck — click to draw (${tax} Chakra)${trust ? ', shuffle or search' : ''}${tax < 8 ? `. Next paid draw: ${Math.min(8, tax + 2)}` : ''}${characterDrawBlocker ? `. Can't draw now: ${characterDrawBlocker}` : ''}`
-                : `Character Deck — draws cost ${tax} Chakra`
+                ? `${CHARACTER_DECK_NAME} — click to draw (${tax} ${drawUnit})${trust ? ', shuffle or search' : ''}${tax < 8 ? `. Next paid draw: ${Math.min(8, tax + 2)}` : ''}${characterDrawBlocker ? `. Can't draw now: ${characterDrawBlocker}` : ''}`
+                : `${CHARACTER_DECK_NAME} — draws cost ${tax} ${drawUnit}`
             }
             onClick={canUseDecks ? toggleMenu('character') : undefined}
           />,
@@ -1232,8 +1239,10 @@ function ViewGame({
                     <span>
                       {pid.toUpperCase()}:{' '}
                       {offer === 'free'
-                        ? 'your last C+ character fell — take a free Character Deck draw (look at 2, keep 1)?'
-                        : `a C+ character fell — pay ${currentTax(state, pid)} Chakra for a Character Deck draw (look at 2, keep 1)? Your tax won't go up.`}
+                        ? `your last C+ ${isPrototype(state) ? 'Leader' : 'character'} fell — take a free ${CHARACTER_DECK_NAME} draw (${isPrototype(state) ? 'pick any Leader' : 'look at 2, keep 1'})?`
+                        : isPrototype(state)
+                          ? `a C+ Leader fell — pay ${currentTax(state, pid)} Supplies to draw a new Leader (pick any from your ${CHARACTER_DECK_NAME})?`
+                          : `a C+ character fell — pay ${currentTax(state, pid)} Chakra for a Character Deck draw (look at 2, keep 1)? Your tax won't go up.`}
                       {p.reinforcementOffers.length > 1 && ` (${p.reinforcementOffers.length - 1} more after this)`}
                     </span>
                     {controls && (
@@ -1376,13 +1385,23 @@ function ViewGame({
       )}
       {confirmCharacterDraw && (
         <DetailsModal
-          title={`Draw from your Character Deck for ${currentTax(state, confirmCharacterDraw)} Chakra?`}
-          subtitle="Look at the top 2 and keep 1; the other goes to the bottom. It resolves right away and can't be responded to."
+          title={
+            isPrototype(state)
+              ? `Draw a new Leader for ${currentTax(state, confirmCharacterDraw)} Supplies?`
+              : `Draw from your ${CHARACTER_DECK_NAME} for ${currentTax(state, confirmCharacterDraw)} Chakra?`
+          }
+          subtitle={
+            isPrototype(state)
+              ? `Search your whole ${CHARACTER_DECK_NAME} and pick exactly the Leader you want. It resolves right away and can't be responded to.`
+              : "Look at the top 2 and keep 1; the other goes to the bottom. It resolves right away and can't be responded to."
+          }
           hideText
           onClose={() => setConfirmCharacterDraw(null)}
         >
           <p className="details-modal__note">
-            You have {state.players[confirmCharacterDraw].genericChakraAvailable} Chakra available.
+            {isPrototype(state)
+              ? `You have ${suppliesAvailable(state, confirmCharacterDraw)} Supplies available.`
+              : `You have ${state.players[confirmCharacterDraw].genericChakraAvailable} Chakra available.`}
             {currentTax(state, confirmCharacterDraw) < 8 && ` Your next paid draw will cost ${Math.min(8, currentTax(state, confirmCharacterDraw) + 2)}.`}
           </p>
           <div className="force-prompt__actions">

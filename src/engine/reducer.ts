@@ -48,7 +48,7 @@ import {
   untapChakraSource,
 } from './trust/manual';
 import type { GameAction, GameState, PlayerId, PlayerState, Phase } from './types';
-import { adjustSupplies } from './prototype';
+import { adjustSupplies, isPrototype } from './prototype';
 import { assignShinobiDefender, cancelShinobiAttack, confirmShinobiAttacks, confirmShinobiDefense, declareShinobiAttack, endShinobiCombat } from './shinobi';
 
 /**
@@ -92,7 +92,11 @@ function drainPendingReinforcements(state: GameState): GameState {
       }
       if (!event.lastCPlus) {
         p = { ...p, reinforcementOffers: [...p.reinforcementOffers, 'paid'] };
-        notes.push(`${player} may pay ${currentTax(next, player)} Chakra for a Reinforcement draw (look at 2, keep 1).`);
+        notes.push(
+          isPrototype(next)
+            ? `${player} may pay ${currentTax(next, player)} Supplies to draw a new Leader (pick any from the Character Deck).`
+            : `${player} may pay ${currentTax(next, player)} Chakra for a Reinforcement draw (look at 2, keep 1).`,
+        );
         continue;
       }
       const cPlusInHand = p.hand.some((h) => h.kind === 'character' && (getCharacterDeckEntry(h.entryId)?.rank ?? 'D') !== 'D');

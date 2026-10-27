@@ -1,5 +1,6 @@
 import type { GameState, PlayerId, PlayerState, RulesMode } from './types';
-import { BACK_ROW_SIZE, FRONT_ROW_SIZE, PROTOTYPE_FRONT_ROW_SIZE } from './board';
+import { BACK_ROW_SIZE, FRONT_ROW_SIZE } from './board';
+import { NOT_LEADERS } from './prototype';
 import { createCharacterInstance, CHARACTER_DECK_MANIFEST } from './characters';
 import { buildHandDeck, drawCard, HAND_DECK_MANIFEST, revealCharacters, shuffle } from './deck';
 import { PROTOTYPE_SHINOBI_MANIFEST } from './shinobi';
@@ -71,7 +72,7 @@ function createPlayer(id: PlayerId): PlayerState {
   };
 }
 
-function createEmptyPlayer(id: PlayerId, ruleset?: 'prototype'): PlayerState {
+function createEmptyPlayer(id: PlayerId): PlayerState {
   return {
     id,
     health: STARTING_HEALTH,
@@ -81,7 +82,7 @@ function createEmptyPlayer(id: PlayerId, ruleset?: 'prototype'): PlayerState {
     firstTurnExtraPlacementUsed: false,
     hand: [],
     backRow: new Array(BACK_ROW_SIZE).fill(null),
-    frontRow: new Array(ruleset === 'prototype' ? PROTOTYPE_FRONT_ROW_SIZE : FRONT_ROW_SIZE).fill(null),
+    frontRow: new Array(FRONT_ROW_SIZE).fill(null),
     startingCharacterInstanceId: null,
     retaliationPending: false,
     ...freshReinforcementFields(),
@@ -135,7 +136,7 @@ export function createSetupState(
     firstPlayer: placeholder,
     activePlayer: placeholder,
     phase: 'Untap',
-    players: { p1: createEmptyPlayer('p1', opts.ruleset), p2: createEmptyPlayer('p2', opts.ruleset) },
+    players: { p1: createEmptyPlayer('p1'), p2: createEmptyPlayer('p2') },
     rules,
     extraCombatPending: false,
     resolutionShield: [],
@@ -152,7 +153,8 @@ export function createSetupState(
     // A player's chosen deck from the library — the preset otherwise. A deck with an
     // empty half (nothing usable in it) falls back to the preset's half, so Setup always has cards to deal.
     const chosen = decks[player] ? toManifests(decks[player]) : null;
-    const characters = chosen && chosen.characters.length > 0 ? chosen.characters : CHARACTER_DECK_MANIFEST;
+    const leaders = (ids: string[]) => (opts.ruleset === 'prototype' ? ids.filter((id) => !NOT_LEADERS.has(id)) : ids);
+    const characters = leaders(chosen && chosen.characters.length > 0 ? chosen.characters : CHARACTER_DECK_MANIFEST);
     const hand = chosen && chosen.hand.length > 0 ? chosen.hand : opts.ruleset === 'prototype' ? [...HAND_DECK_MANIFEST, ...PROTOTYPE_SHINOBI_MANIFEST] : undefined;
     state = {
       ...state,

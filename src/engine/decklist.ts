@@ -2,6 +2,7 @@ import { CHARACTER_DECK_MANIFEST, getCharacterDeckEntry, listCharacterDeckEntrie
 import { HAND_DECK_MANIFEST } from './deck';
 import { PROTOTYPE_SHINOBI_MANIFEST } from './shinobi';
 import { VARIANT } from '../variant';
+import { NOT_LEADERS } from './prototype';
 import { getHandCardDef, getMissionDef, listHandCardDefs } from './cards/registry';
 // Side-effect import — every Jutsu Deck card must be registered before the card pool is listed.
 import './cards';
@@ -43,7 +44,8 @@ export function handCardPool(): HandCardDef[] {
 }
 
 export function characterPool(): CharacterDeckEntry[] {
-  return listCharacterDeckEntries();
+  // The Prototype's Leader Deck holds only Leaders — the Rebel is a Shinobi in the main deck there.
+  return VARIANT === 'prototype' ? listCharacterDeckEntries().filter((e) => !NOT_LEADERS.has(e.id)) : listCharacterDeckEntries();
 }
 
 const sum = (counts: Record<string, number>) => Object.values(counts).reduce((a, b) => a + b, 0);
@@ -74,6 +76,10 @@ export function validateDeck(deck: DeckList): string[] {
     const entry = getCharacterDeckEntry(id);
     if (!entry) {
       errors.push(`Unknown character: ${id}.`);
+      continue;
+    }
+    if (VARIANT === 'prototype' && NOT_LEADERS.has(id) && copies > 0) {
+      errors.push(`${entry.name} isn't a Leader — it's a Shinobi in the main deck now.`);
       continue;
     }
     if (copies > copyLimit('character', id)) errors.push(`${entry.name}: only D Rank characters may have more than 1 copy.`);
@@ -107,7 +113,7 @@ export function presetDeck(): DeckList {
     name: 'Akatsuki Starter',
     // The Prototype build's starter deck also carries the placeholder Shinobi (shinobi.ts).
     handDeck: Object.fromEntries([...HAND_DECK_MANIFEST, ...(VARIANT === 'prototype' ? PROTOTYPE_SHINOBI_MANIFEST : [])].map(({ defId, copies }) => [defId, copies])),
-    characterDeck: countsOf(CHARACTER_DECK_MANIFEST),
+    characterDeck: countsOf(VARIANT === 'prototype' ? CHARACTER_DECK_MANIFEST.filter((id) => !NOT_LEADERS.has(id)) : CHARACTER_DECK_MANIFEST),
     preset: true,
   };
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getCharacterDeckEntry } from '../../engine/characters';
 import { upkeepReminderText } from '../../engine/upkeep';
 import type { PlayerId } from '../../engine/types';
+import { CHARACTER_DECK_NAME } from '../../variant';
 
 /**
  * A Character Deck reveal (§3's Setup pick, or a §8 Character Deck draw):
@@ -15,6 +16,8 @@ export function CharacterRevealPanel({
   interactive,
   onChoose,
   onOpenDetails,
+  searchAll = false,
+  noUpkeep = false,
 }: {
   player: PlayerId;
   revealed: string[];
@@ -22,18 +25,26 @@ export function CharacterRevealPanel({
   interactive: boolean;
   onChoose: (entryId: string) => void;
   onOpenDetails: (entryId: string) => void;
+  /** Prototype Leader draw: the whole deck is shown and you get exactly the one you pick (no D-rank bonus). */
+  searchAll?: boolean;
+  /** Prototype: there's no Upkeep, so no upkeep reminder under each card. */
+  noUpkeep?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const selected = selectedIndex !== null ? revealed[selectedIndex] : undefined;
   const selectedEntry = selected ? getCharacterDeckEntry(selected) : undefined;
-  const dRankExtras = revealed.filter((id, i) => i !== selectedIndex && getCharacterDeckEntry(id)?.rank === 'D').length;
+  const dRankExtras = searchAll ? 0 : revealed.filter((id, i) => i !== selectedIndex && getCharacterDeckEntry(id)?.rank === 'D').length;
 
   return (
     <div className="reveal-panel">
       <div className="reveal-panel__title">
-        {player.toUpperCase()}: choose {reason === 'setup' ? 'a starting character' : 'a character to add to your hand'}
+        {player.toUpperCase()}: choose {reason === 'setup' ? 'a starting character' : searchAll ? `any Leader from your ${CHARACTER_DECK_NAME}` : 'a character to add to your hand'}
       </div>
-      {reason === 'reinforcement' && <div className="reveal-panel__note">Already paid for — playing it from your hand later is free.</div>}
+      {reason === 'reinforcement' && (
+        <div className="reveal-panel__note">
+          Already paid for — playing it from your hand later is free.
+        </div>
+      )}
       <div className="reveal-panel__options">
         {revealed.map((entryId, i) => {
           const entry = getCharacterDeckEntry(entryId);
@@ -49,7 +60,7 @@ export function CharacterRevealPanel({
                   Details
                 </button>
               )}
-              {entry && <div className="reveal-panel__upkeep">{upkeepReminderText(entry.rank, reason)}</div>}
+              {entry && !noUpkeep && <div className="reveal-panel__upkeep">{upkeepReminderText(entry.rank, reason)}</div>}
             </div>
           );
         })}

@@ -33,9 +33,13 @@
 
 **Chakra.** Chakra sources are still placed and tapped, but that Chakra can only be **pooled** into a character — it can't be spent directly. Only **Jutsu and Shinobi cards** can be placed as Chakra sources.
 
-**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Missions, Terrain, Assists, Upkeep, Retreat and Character Deck draws** — everything that isn't a Chakra Pool cost.
+**No Upkeep.** Leaders cost nothing to keep in play: there is no Upkeep payment (and no starting-character Upkeep bonus). Abilities that trigger during the Upkeep Phase still happen.
 
-**Board.** There is no board shape — no rows of positions, no columns, no cross pattern. Each player has two open lanes: **Leaders** (up to 10 in play) and **Shinobi & Tokens** (as many as you like). A new Leader, Shinobi or token simply joins the end of its lane; you never pick a position. Where a card refers to units "next to" or "adjacent to" one, that means the units directly beside it in the same lane — nothing is in front of or behind anything.
+**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Missions, Terrain, Assists, Retreat and Leader Deck draws** — everything that isn't a Chakra Pool cost.
+
+**Board.** There is no board shape — no rows of positions, no columns, no cross pattern. Each player has two open lanes: **Leaders** and **Shinobi & Tokens**, with **no limit** on how many units are in either. A new Leader, Shinobi or token simply joins the end of its lane; you never pick a position. Where a card refers to units "next to" or "adjacent to" one, that means the units directly beside it in the same lane — nothing is in front of or behind anything.
+
+**Leader Deck.** The Character Deck is called the **Leader Deck**, and only Leaders go in it — Shinobi and every other unit go in the main deck. Amegakure Civilian Rebel is a Shinobi in the Prototype (1 Supply, Damage 1 · Health 3, +1 Damage while you have Yahiko in play), not a Leader. Drawing a new Leader costs a flat **10 Supplies** every time (no escalating tax): search your whole Leader Deck and pick exactly the Leader you want. The Leader Deck is never shuffled afterwards, since every Leader is chosen. There is no D-rank bonus card. A Reinforcement draw after a C+ Leader falls works the same way, for 10 Supplies (or free when your last C+ Leader falls).
 
 **Shinobi.** Units played into your Shinobi & Tokens lane for Supplies (Main Phase). Each has a base **Damage** and **Health**. A Shinobi:
 - can't attack the turn it comes into play;

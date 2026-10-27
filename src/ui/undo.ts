@@ -1,4 +1,5 @@
 import type { GameAction, GameState } from '../engine/types';
+import { CHARACTER_DECK_NAME } from '../variant';
 
 /**
  * Actions a player can't just fix by hand afterward — they reveal or
@@ -12,7 +13,7 @@ const UNDOABLE: Partial<Record<GameAction['type'], string>> = {
   DRAW_CARDS: 'Draw',
   MULLIGAN: 'Mulligan',
   CHOOSE_CHARACTER: 'Character pick',
-  DRAW_CHARACTER_DECK: 'Character Deck draw',
+  DRAW_CHARACTER_DECK: `${CHARACTER_DECK_NAME} draw`,
   ACCEPT_REINFORCEMENT: 'Reinforcement draw',
   REVEAL_HAND_CARDS: 'Reveal',
   RESOLVE_CHOICE: 'Choice',

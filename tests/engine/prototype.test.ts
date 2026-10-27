@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { makeHandCardInstance } from '../../src/engine/deck';
-import { PROTOTYPE_FRONT_ROW_SIZE, PROTOTYPE_MAX_LEADERS, getAdjacent, legalCharacterSlots, legalTokenSlots, maxCharacters } from '../../src/engine/board';
+import { getAdjacent, legalCharacterSlots, legalTokenSlots, maxCharacters, placeCharacter } from '../../src/engine/board';
+import { previewUpkeep } from '../../src/engine/upkeep';
+import { shinobiDamage } from '../../src/engine/shinobi';
 import { suppliesAvailable, suppliesMax } from '../../src/engine/prototype';
+import { currentTax } from '../../src/engine/playCharacter';
 import { createSetupState } from '../../src/engine/state';
-import { freshMain1, giveChakra, resolveTop } from './testUtils';
+import { freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
 import type { GameState, PlayerId, TokenInstance } from '../../src/engine/types';
 
 // Prototype rules (engine/prototype.ts, engine/shinobi.ts) — only for games created with ruleset 'prototype'.
@@ -104,7 +107,7 @@ describe('Prototype: Supplies', () => {
     const s = createSetupState('p1', 'strict', {}, { ruleset: 'prototype' });
     expect(s.ruleset).toBe('prototype');
     const all = [...s.players.p1.handDeck, ...s.players.p1.hand.filter((h) => h.kind === 'card')].map((c) => c.defId);
-    expect(all.filter((d) => d.startsWith('shinobi-'))).toHaveLength(10);
+    expect(all.filter((d) => d.startsWith('shinobi-'))).toHaveLength(12); // 2 of each of the 6 Shinobi, Rebels included
     expect(createSetupState('p1').ruleset).toBeUndefined();
   });
 });
@@ -177,35 +180,38 @@ describe('Prototype: Shinobi combat', () => {
 });
 
 describe('Prototype: other costs move to Supplies', () => {
-  it('Upkeep is paid with Supplies', () => {
-    // p2 begins turn 2 (their first): Supplies 1. Their non-starting characters owe Upkeep.
+  it('there is no Upkeep: nothing is paid and no Leader is Disabled for it', () => {
     let s = proto(freshMain1());
+    expect(previewUpkeep(s, 'p2')).toEqual([]);
     for (let i = 0; i < 5; i++) s = gameReducer(s, { type: 'ADVANCE_PHASE' }); // Main1 → … → p2 Upkeep
     expect(s.activePlayer).toBe('p2');
     expect(s.phase).toBe('Upkeep');
-    expect(suppliesAvailable(s, 'p2')).toBeLessThanOrEqual(1);
+    expect(suppliesAvailable(s, 'p2')).toBe(suppliesMax(s, 'p2'));
     expect(s.players.p2.chakraSources.every((c) => !c.tapped)).toBe(true);
+    expect(s.players.p2.backRow.filter(Boolean).every((c) => !c!.status.disabled)).toBe(true);
     void resolveTop;
   });
 });
 
 describe('Prototype: open lanes, no board shape', () => {
-  it('a new Prototype game has a 40-unit Shinobi & Tokens lane; the base game keeps 10 slots', () => {
-    expect(createSetupState('p1', 'trust', {}, { ruleset: 'prototype' }).players.p1.frontRow).toHaveLength(PROTOTYPE_FRONT_ROW_SIZE);
-    expect(createSetupState('p1', 'trust').players.p1.frontRow).toHaveLength(10);
-  });
-
-  it('up to 10 Leaders, each joining the end of the lane with no position to pick', () => {
+  it('no limit on Leaders: a full lane grows, and each new Leader joins the end with no position to pick', () => {
     const base = freshMain1();
     const s = proto(base);
-    expect(maxCharacters(s)).toBe(PROTOTYPE_MAX_LEADERS);
+    expect(maxCharacters(s)).toBe(Infinity);
     expect(maxCharacters(base)).toBe(5);
     const row = s.players.p1.backRow;
-    const filled = row.filter(Boolean).length;
     expect(legalCharacterSlots(s, 'p1')).toEqual([row.indexOf(null)]);
-    const full = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: row.map((c, i) => c ?? (i < PROTOTYPE_MAX_LEADERS ? row.find(Boolean)! : null)) } } };
-    expect(filled).toBeLessThan(PROTOTYPE_MAX_LEADERS);
-    expect(legalCharacterSlots(full, 'p1')).toEqual([]);
+    const full = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: row.map((c) => c ?? row.find(Boolean)!) } } };
+    expect(legalCharacterSlots(full, 'p1')).toEqual([row.length]);
+    const placed = placeCharacter(full, 'p1', { ...row.find(Boolean)!, instanceId: 'p1-extra-leader' });
+    expect(placed.players.p1.backRow).toHaveLength(row.length + 1);
+    expect(placed.players.p1.backRow[row.length]?.instanceId).toBe('p1-extra-leader');
+  });
+
+  it('no limit on Shinobi and tokens: a full lane grows', () => {
+    let s = proto(freshMain1());
+    for (let i = 0; i < s.players.p1.frontRow.length; i++) ({ state: s } = placeShinobi(s, 'p1', `S${i}`, 1, 2, i));
+    expect(legalTokenSlots(s, 'p1')).toEqual([s.players.p1.frontRow.length]);
   });
 
   it('a new Shinobi or token goes into the first open spot without asking', () => {
@@ -225,5 +231,61 @@ describe('Prototype: open lanes, no board shape', () => {
     expect(adj.right?.name).toBe('C');
     expect(adj.front).toBeNull();
     expect(adj.back).toBeNull();
+  });
+});
+
+describe('Prototype: drawing a new Leader', () => {
+  /** p1 in Main 1 on their 11th turn (10+ Supplies), with a known Character Deck. */
+  function leaderDrawState(deck: string[]): GameState {
+    const s = proto(freshMain1());
+    return { ...s, turn: 21, players: { ...s.players, p1: { ...s.players.p1, characterDeck: deck, suppliesSpent: 0 } } };
+  }
+
+  it('costs a flat 10 Supplies, every time', () => {
+    let s = leaderDrawState(['konan', 'zetsu', 'juzo', 'yahiko']);
+    expect(currentTax(s, 'p1')).toBe(10);
+    s = gameReducer(s, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
+    expect(suppliesAvailable(s, 'p1')).toBe(suppliesMax(s, 'p1') - 10);
+    s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: 'zetsu' });
+    expect(currentTax(s, 'p1')).toBe(10);
+  });
+
+  it('shows the whole Character Deck and gives exactly the Leader picked — no D-rank bonus — and leaves the rest in order (no shuffle)', () => {
+    const deck = ['konan', 'amegakure-civilian-rebel', 'juzo', 'yahiko', 'amegakure-civilian-rebel'];
+    let s = gameReducer(leaderDrawState(deck), { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
+    expect(s.players.p1.pendingCharacterReveal?.revealed).toEqual(deck);
+    const handBefore = s.players.p1.hand.length;
+    s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: 'yahiko' });
+    const added = s.players.p1.hand.slice(handBefore);
+    expect(added).toEqual([expect.objectContaining({ kind: 'character', entryId: 'yahiko' })]);
+    expect(s.players.p1.characterDeck).toEqual(['konan', 'amegakure-civilian-rebel', 'juzo', 'amegakure-civilian-rebel']);
+    expect(s.players.p1.pendingCharacterReveal).toBeNull();
+  });
+
+  it("can't be drawn without 10 Supplies under the strict rules", () => {
+    const s = { ...leaderDrawState(['konan', 'zetsu']), turn: 5, rules: 'strict' as const };
+    const next = gameReducer(s, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
+    expect(next.players.p1.pendingCharacterReveal).toBeNull();
+    expect(next.players.p1.characterDeck).toEqual(['konan', 'zetsu']);
+  });
+});
+
+describe('Prototype: Amegakure Civilian Rebel is a Shinobi', () => {
+  it('is not dealt into the Leader Deck, and the starter deck has 2 Rebel Shinobi', () => {
+    const s = createSetupState('p1', 'trust', {}, { ruleset: 'prototype' });
+    const p = s.players.p1;
+    const leaders = [...p.characterDeck, ...(p.pendingCharacterReveal?.revealed ?? [])];
+    expect(leaders).not.toContain('amegakure-civilian-rebel');
+    const cards = [...p.handDeck.map((c) => c.defId), ...p.hand.flatMap((h) => (h.kind === 'card' ? [h.defId] : []))];
+    expect(cards.filter((id) => id === 'shinobi-amegakure-civilian-rebel')).toHaveLength(2);
+  });
+
+  it('deals 1 Damage, or 2 while its controller has Yahiko in play', () => {
+    let s = proto(freshMain1());
+    ({ state: s } = placeShinobi(s, 'p1', 'Rebel', 1, 3, 0));
+    const rebel = { ...s.players.p1.frontRow[0]!, extra: { shinobi: true, shinobiDamage: 1, shinobiLeaderBonus: { defId: 'yahiko', amount: 1 } } };
+    const withoutYahiko = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'yahiko' ? null : c)) } } };
+    expect(shinobiDamage(rebel, withoutYahiko)).toBe(1);
+    expect(shinobiDamage(rebel, withCharacterAt(withoutYahiko, 'p1', 4, 'yahiko'))).toBe(2);
   });
 });

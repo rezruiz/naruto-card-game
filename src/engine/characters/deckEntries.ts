@@ -88,7 +88,8 @@ registry['pain'] = {
   id: 'pain',
   name: 'Pain of the Six Paths',
   rank: 'S',
-  hasRoom: (state, player) => state.players[player].frontRow.filter((t) => t === null).length >= 6,
+  // (The Prototype's lanes grow as needed, so there's always room there.)
+  hasRoom: (state, player) => state.ruleset === 'prototype' || state.players[player].frontRow.filter((t) => t === null).length >= 6,
   spawn: (state, player, _turn, hasAmbush) => {
     let next = state;
     for (const token of createSixPaths(player)) {

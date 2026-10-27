@@ -2,7 +2,7 @@ import { painUnitId } from './board';
 import { getCharacterDeckEntry } from './characters';
 import { applyHealthLoss } from './combat';
 import { appendLog, appendWarning } from './phases/phaseMachine';
-import { isPrototype, spendSupplies } from './prototype';
+import { LEADER_DRAW_COST, isPrototype, spendSupplies } from './prototype';
 import { getHandCardDef } from './cards/registry';
 import { currentTax, reinforcementTax } from './playCharacter';
 import { enqueueChoice, registerChoiceResolver } from './choices';
@@ -200,14 +200,15 @@ export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 
 
   const wp = working.players[player];
   const fullCost = mode === 'reinforcement-free' ? 0 : currentTax(working, player);
-  const discountUsed = mode === 'reinforcement-free' ? 0 : Math.min(reinforcementTax(wp.reinforcementsPlayed), wp.nextReinforcementDiscount);
-  // Prototype rules: the Character Deck draw is paid with Supplies, not Chakra.
-  if (isPrototype(working) && fullCost > 0) {
-    const paidState = spendSupplies(working, player, fullCost, 'the Character Deck draw');
-    if (!paidState) return appendLog(working, `${player} doesn't have ${fullCost} Supplies for the Character Deck draw.`);
+  const discountUsed = mode === 'reinforcement-free' ? 0 : Math.min(isPrototype(working) ? LEADER_DRAW_COST : reinforcementTax(wp.reinforcementsPlayed), wp.nextReinforcementDiscount);
+  // Prototype rules: a new Leader costs a flat 10 Supplies (not Chakra), and
+  // the player searches the whole Character Deck and picks exactly the one they want.
+  if (isPrototype(working)) {
+    const paidState = fullCost > 0 ? spendSupplies(working, player, fullCost, 'a new Leader') : appendLog(working, `${player} takes a free Leader draw (their last C+ Leader fell).`);
+    if (!paidState) return appendLog(working, `${player} doesn't have ${fullCost} Supplies to draw a new Leader.`);
     const pp = paidState.players[player];
-    working = { ...paidState, players: { ...paidState.players, [player]: { ...pp, reinforcementsPlayed: mode === 'manual' ? pp.reinforcementsPlayed + 1 : pp.reinforcementsPlayed, nextReinforcementDiscount: pp.nextReinforcementDiscount - discountUsed } } };
-    return revealCharacters(working, player, 2, 'reinforcement');
+    working = { ...paidState, players: { ...paidState.players, [player]: { ...pp, nextReinforcementDiscount: pp.nextReinforcementDiscount - discountUsed } } };
+    return revealCharacters(working, player, pp.characterDeck.length, 'reinforcement');
   }
   if (fullCost > wp.genericChakraAvailable) {
     if (!relaxed) return appendLog(working, `${player} doesn't have ${fullCost} Chakra available for the Character Deck draw.`);
@@ -303,8 +304,10 @@ export function chooseCharacter(state: GameState, player: PlayerId, mainPickId: 
   const mainEntry = getCharacterDeckEntry(mainPickId);
   if (!mainEntry) return appendLog(state, `Unknown Character Deck card: ${mainPickId}.`);
 
+  // Prototype: the Leader draw searches the whole deck, so there's no D-rank bonus — you get exactly the one you picked.
+  const searched = isPrototype(state) && pending.reason === 'reinforcement';
   const dRankBonus: string[] = [];
-  for (const id of pending.revealed) {
+  for (const id of searched ? [] : pending.revealed) {
     if (id === mainPickId) continue;
     if (dRankBonus.length >= 2) break;
     if (getCharacterDeckEntry(id)?.rank === 'D') dRankBonus.push(id);

@@ -1,6 +1,7 @@
 import { getCharacterDeckEntry } from './characters';
 import { patchOccupant } from './board';
 import { appendLog, appendWarning } from './phases/phaseMachine';
+import { LEADER_DRAW_COST, isPrototype } from './prototype';
 import type { GameState, PlayerId } from './types';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -13,7 +14,8 @@ export function reinforcementTax(paidDraws: number): number {
 /** What drawing from the Character Deck costs this player right now (§8): the escalating tax, less Bingo Book: Threat Level A's one-time discount. */
 export function currentTax(state: GameState, player: PlayerId): number {
   const p = state.players[player];
-  const base = reinforcementTax(p.reinforcementsPlayed);
+  // Prototype: a flat cost for a new Leader instead of the escalating tax.
+  const base = isPrototype(state) ? LEADER_DRAW_COST : reinforcementTax(p.reinforcementsPlayed);
   return base - Math.min(base, p.nextReinforcementDiscount);
 }
 

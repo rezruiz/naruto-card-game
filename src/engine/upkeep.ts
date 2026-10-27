@@ -198,6 +198,7 @@ export interface UpkeepPreviewEntry {
  * never mutates state.
  */
 export function previewUpkeep(state: GameState, player: PlayerId): UpkeepPreviewEntry[] {
+  if (isPrototype(state)) return [];
   return upkeepCosts(state, player).map((l) => {
     const common = { instanceId: l.character.instanceId, name: l.character.name, rank: l.character.rank, isStarting: l.isStarting };
     if (l.grant !== undefined) return { ...common, kind: 'grant' as const, amount: l.grant };
@@ -296,6 +297,8 @@ registerChoiceResolver('upkeep-tie', (state, choice, optionIds) => {
  * table entirely, using its own Rank-scaled treatment instead.
  */
 export function payUpkeep(state: GameState, player: PlayerId): GameState {
+  // Prototype rules: there is no Upkeep — Leaders cost nothing to keep in play.
+  if (isPrototype(state)) return state;
   let next = state;
   const payable: { instanceId: string; cost: number }[] = [];
   for (const line of upkeepCosts(state, player)) {

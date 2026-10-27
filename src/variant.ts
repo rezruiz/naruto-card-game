@@ -8,6 +8,14 @@ export type Variant = 'base' | 'prototype';
 export const VARIANT: Variant = import.meta.env.VITE_VARIANT === 'prototype' ? 'prototype' : 'base';
 
 export const VARIANT_LABEL = VARIANT === 'prototype' ? 'Prototype' : 'Base game';
+
+/** The Prototype calls the Character Deck the Leader Deck (its characters are Leaders). */
+export const CHARACTER_DECK_NAME = VARIANT === 'prototype' ? 'Leader Deck' : 'Character Deck';
+
+/** Engine log lines name the Character Deck; the Prototype shows it as the Leader Deck. */
+export function variantText(text: string): string {
+  return VARIANT === 'prototype' ? text.replace(/Character Deck/g, CHARACTER_DECK_NAME) : text;
+}
 export const OTHER_VARIANT_LABEL = VARIANT === 'prototype' ? 'Base game' : 'Prototype';
 
 /** The other version's URL on the same site. */

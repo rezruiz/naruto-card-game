@@ -58,7 +58,12 @@ export interface HandCardDef {
   /** Negates the targeting of an attack aimed at its enabling character (the Substitution family) — refused while that character is under Spore Technique. */
   negatesTargetingOfSelf?: boolean;
   /** Shinobi cards (prototype): the unit's base Damage and Health once it's in play. */
-  shinobi?: { damage: number; health: number };
+  shinobi?: {
+    damage: number;
+    health: number;
+    /** +amount Damage while its controller has this Leader in play (e.g. Amegakure Civilian Rebel with Yahiko). */
+    leaderBonus?: { defId: string; amount: number };
+  };
   /** Synergy tag(s), mainly relevant for Terrain cards (§10a) that other cards check for (e.g. Chidori Interception's cost discount "if an Akatsuki-Synergy Terrain is in play"). */
   synergy?: string[];
 }

@@ -55,7 +55,7 @@ export function ChakraSourceRow({
         )}
       </span>
       {supplies && (
-        <span className="chakra-sources__label supplies-label" title="Supplies refill at the start of each of your turns. Your maximum is the number of turns you've started (up to 20). Shinobi, Missions, Terrain, Assists, Upkeep, Retreat and Character Deck draws cost Supplies.">
+        <span className="chakra-sources__label supplies-label" title="Supplies refill at the start of each of your turns. Your maximum is the number of turns you've started (up to 20). Shinobi, Missions, Terrain, Assists, Retreat and Leader Deck draws cost Supplies.">
           <span aria-hidden>📦</span> Supplies: <strong>{supplies.available}</strong>/{supplies.max}
           {onAdjustSupplies && (
             <span className="stepper">

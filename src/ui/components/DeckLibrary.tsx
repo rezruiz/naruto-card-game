@@ -23,6 +23,7 @@ import { FilterMenu, SortMenu, type Option } from './LibraryControls';
 import { getCharacterDef, type CharacterDeckEntry } from '../../engine/characters';
 import type { ReactNode } from 'react';
 import './DeckLibrary.css';
+import { CHARACTER_DECK_NAME } from '../../variant';
 
 // ---- Collection: sorting, sectioning, filtering ---------------------------------
 
@@ -387,7 +388,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
             onChange((latest) => ({ ...latest, name }));
           }}
         />
-        <CountBar label="Character Deck" count={characterDeckSize(deck)} min={CHARACTER_DECK_MIN} max={CHARACTER_DECK_MAX} />
+        <CountBar label={CHARACTER_DECK_NAME} count={characterDeckSize(deck)} min={CHARACTER_DECK_MIN} max={CHARACTER_DECK_MAX} />
         <div className="deck-panel__ranks">
           {Object.entries(RANK_CAPS).map(([rank, cap]) => (
             <span key={rank} className={(rankCounts[rank] ?? 0) > cap! ? 'deck-count__bad' : ''}>

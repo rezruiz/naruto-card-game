@@ -16,16 +16,19 @@ export const FRONT_ROW_SIZE = 10;
 export const MAX_CHARACTERS = 5;
 
 // Prototype rules: no board shape. Leaders sit in one open lane and Shinobi and
-// tokens share another; a new unit just joins the end of its lane, and the only
-// neighbours that matter are the units beside it in that lane.
-/** Prototype: at most 10 Leaders in play. */
-export const PROTOTYPE_MAX_LEADERS = 10;
-/** Prototype: room for many Shinobi and tokens (effectively no limit in play). */
-export const PROTOTYPE_FRONT_ROW_SIZE = 40;
+// tokens share another, and neither has a limit: a new unit joins the end of
+// its lane (the row grows when it's full), and the only neighbours that matter
+// are the units beside it in that lane.
 
-/** How many characters (Leaders, in the Prototype) a player can have in play. */
+/** How many characters a player can have in play — no limit on Leaders in the Prototype. */
 export function maxCharacters(state: GameState): number {
-  return isPrototype(state) ? PROTOTYPE_MAX_LEADERS : MAX_CHARACTERS;
+  return isPrototype(state) ? Infinity : MAX_CHARACTERS;
+}
+
+/** Prototype: the first open spot in a lane, or a new one at its end. */
+function nextLaneSlot(row: readonly unknown[]): number {
+  const open = row.indexOf(null);
+  return open === -1 ? row.length : open;
 }
 
 /** How many characters this player has in their back row. */
@@ -80,8 +83,8 @@ export function placeToken(state: GameState, player: PlayerId, token: TokenInsta
 export function legalCharacterSlots(state: GameState, player: PlayerId): number[] {
   const row = state.players[player].backRow;
   const filled = row.flatMap((c, i) => (c ? [i] : []));
+  if (isPrototype(state)) return [nextLaneSlot(row)];
   if (filled.length >= maxCharacters(state) || filled.length === row.length) return [];
-  if (isPrototype(state)) return [row.indexOf(null)];
   if (filled.length === 0) return row.map((_, i) => i);
   const besideOne = row.flatMap((c, i) => (c === null && (row[i - 1] || row[i + 1]) ? [i] : []));
   return [...besideOne, ...filled].sort((a, b) => a - b);
@@ -95,7 +98,7 @@ export function legalCharacterSlots(state: GameState, player: PlayerId): number[
 export function legalTokenSlots(state: GameState, player: PlayerId, ignoreId?: string): number[] {
   const row = state.players[player].frontRow.map((t) => (t && t.instanceId === ignoreId ? null : t));
   const empty = row.flatMap((t, i) => (t === null ? [i] : []));
-  if (isPrototype(state)) return empty.slice(0, 1);
+  if (isPrototype(state)) return [nextLaneSlot(row)];
   if (empty.length === row.length) return empty;
   const beside = empty.filter((i) => row[i - 1] || row[i + 1]);
   return beside.length > 0 ? beside : empty;
@@ -104,7 +107,7 @@ export function legalTokenSlots(state: GameState, player: PlayerId, ignoreId?: s
 /** Puts `item` at `index`; if that slot is taken, the occupants between it and the nearest empty slot each shift one step toward that gap. */
 function insertIntoRow<T>(row: (T | null)[], index: number, item: T): (T | null)[] | null {
   const out = row.slice();
-  if (out[index] === null) {
+  if (index >= out.length || out[index] === null) {
     out[index] = item;
     return out;
   }

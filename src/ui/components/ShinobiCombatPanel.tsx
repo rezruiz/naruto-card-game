@@ -8,8 +8,8 @@ import type { BoardOccupant, GameAction, GameState, PlayerId } from '../../engin
 // targets for their Shinobi and confirms; then the defending player chooses
 // which of their Shinobi stand in front of an attacked Leader.
 
-function unitLabel(u: BoardOccupant): string {
-  return isShinobi(u) ? `${u.name} (${shinobiDamage(u)}/${u.currentHP})` : `${u.name} (Leader, ${u.currentHP} HP)`;
+function unitLabel(u: BoardOccupant, state: GameState): string {
+  return isShinobi(u) ? `${u.name} (${shinobiDamage(u, state)}/${u.currentHP})` : `${u.name} (Leader, ${u.currentHP} HP)`;
 }
 
 export function ShinobiCombatPanel({
@@ -41,7 +41,7 @@ export function ShinobiCombatPanel({
           return (
             <div key={a.attackerId} className="shinobi-combat__row">
               <span>
-                {unitLabel(atk)} → {tgt.name}
+                {unitLabel(atk, state)} → {tgt.name}
               </span>
               {canDefend ? (
                 myDefense ? (
@@ -54,7 +54,7 @@ export function ShinobiCombatPanel({
                       .filter((d) => !taken.has(d.instanceId))
                       .map((d) => (
                         <option key={d.instanceId} value={d.instanceId}>
-                          {unitLabel(d)}
+                          {unitLabel(d, state)}
                         </option>
                       ))}
                   </select>
@@ -96,7 +96,7 @@ export function ShinobiCombatPanel({
           return (
             <div key={s.instanceId} className="shinobi-combat__row">
               <span>
-                {unitLabel(s)} → {findOccupant(state, attack.targetId)?.occupant.name}
+                {unitLabel(s, state)} → {findOccupant(state, attack.targetId)?.occupant.name}
               </span>
               <button type="button" onClick={() => dispatch({ type: 'CANCEL_SHINOBI_ATTACK', attackerId: s.instanceId })}>
                 ✕
@@ -108,7 +108,7 @@ export function ShinobiCombatPanel({
         const chosen = targets[s.instanceId] ?? enemyTargets[0]?.instanceId ?? '';
         return (
           <div key={s.instanceId} className="shinobi-combat__row">
-            <span>{unitLabel(s)}</span>
+            <span>{unitLabel(s, state)}</span>
             {blocker ? (
               <em>{blocker}</em>
             ) : enemyTargets.length === 0 ? (
@@ -118,7 +118,7 @@ export function ShinobiCombatPanel({
                 <select value={chosen} onChange={(e) => setTargets({ ...targets, [s.instanceId]: e.target.value })}>
                   {enemyTargets.map((t) => (
                     <option key={t.instanceId} value={t.instanceId}>
-                      {unitLabel(t)}
+                      {unitLabel(t, state)}
                     </option>
                   ))}
                 </select>
