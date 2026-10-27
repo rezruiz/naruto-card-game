@@ -1,5 +1,5 @@
 import type { GameState, PlayerId, PlayerState, RulesMode } from './types';
-import { BACK_ROW_SIZE, FRONT_ROW_SIZE } from './board';
+import { BACK_ROW_SIZE, FRONT_ROW_SIZE, PROTOTYPE_FRONT_ROW_SIZE } from './board';
 import { createCharacterInstance, CHARACTER_DECK_MANIFEST } from './characters';
 import { buildHandDeck, drawCard, HAND_DECK_MANIFEST, revealCharacters, shuffle } from './deck';
 import { PROTOTYPE_SHINOBI_MANIFEST } from './shinobi';
@@ -71,7 +71,7 @@ function createPlayer(id: PlayerId): PlayerState {
   };
 }
 
-function createEmptyPlayer(id: PlayerId): PlayerState {
+function createEmptyPlayer(id: PlayerId, ruleset?: 'prototype'): PlayerState {
   return {
     id,
     health: STARTING_HEALTH,
@@ -81,7 +81,7 @@ function createEmptyPlayer(id: PlayerId): PlayerState {
     firstTurnExtraPlacementUsed: false,
     hand: [],
     backRow: new Array(BACK_ROW_SIZE).fill(null),
-    frontRow: new Array(FRONT_ROW_SIZE).fill(null),
+    frontRow: new Array(ruleset === 'prototype' ? PROTOTYPE_FRONT_ROW_SIZE : FRONT_ROW_SIZE).fill(null),
     startingCharacterInstanceId: null,
     retaliationPending: false,
     ...freshReinforcementFields(),
@@ -135,7 +135,7 @@ export function createSetupState(
     firstPlayer: placeholder,
     activePlayer: placeholder,
     phase: 'Untap',
-    players: { p1: createEmptyPlayer('p1'), p2: createEmptyPlayer('p2') },
+    players: { p1: createEmptyPlayer('p1', opts.ruleset), p2: createEmptyPlayer('p2', opts.ruleset) },
     rules,
     extraCombatPending: false,
     resolutionShield: [],

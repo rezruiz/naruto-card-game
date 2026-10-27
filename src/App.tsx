@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { gameReducer, setupPending } from './engine/reducer';
 import { createSetupState } from './engine/state';
-import { findOccupant, isCharacter, legalCharacterSlots } from './engine/board';
+import { findOccupant, isCharacter, legalCharacterSlots, maxCharacters } from './engine/board';
 import { canPlaceChakraSource } from './engine/chakra';
 import { abilityDeclarationWarnings, cardDeclarationWarnings } from './engine/trust/staging';
 import { findAbility, poolAvailableFor, resolveCost, type ChoiceSpec } from './engine/abilities';
@@ -708,7 +708,9 @@ function ViewGame({
             label: 'Play (free)',
             hint: 'Playing a character from hand is always free — the tax is paid when you draw it from the Character Deck.',
             disabled: !room,
-            reason: room ? undefined : entryId === 'pain' ? 'Needs 6 open front-row slots for the Path tokens.' : 'Your back row is full (5 characters).',
+            reason: room ? undefined : entryId === 'pain'
+                  ? 'Needs 6 open front-row slots for the Path tokens.'
+                  : `You already have ${maxCharacters(state)} ${isPrototype(state) ? 'Leaders' : 'characters'} in play.`,
           };
         }}
         mustPlayCPlus={mine && player.mustPlayCharacter}
@@ -850,6 +852,35 @@ function ViewGame({
         {player.frontRow.map((_, slot) => tokenCell(slot))}
       </div>
     );
+    // ---- Prototype: no board shape ----
+    // Two open lanes that wrap instead of fixed slots: Leaders, and Shinobi and
+    // tokens together. A new unit just joins the end of its lane, so there are no
+    // empty slots to draw — only a "Play here" spot while a Leader is being dragged.
+    const proto = isPrototype(state);
+    const filledSlots = (row: readonly unknown[]) => row.flatMap((o, slot) => (o ? [slot] : []));
+    const leaderSlots = filledSlots(player.backRow);
+    const unitSlots = filledSlots(player.frontRow);
+    const lane = (key: string, title: string, count: string, cards: ReactNode[], empty: string) => (
+      <div className={`lane lane--${key}`} key={key === 'leaders' ? 'back' : 'front'}>
+        <div className="lane__head">
+          <span className="lane__title">{title}</span>
+          <span className="lane__count">{count}</span>
+        </div>
+        <div className="lane__cards">{cards.length > 0 ? cards : <span className="lane__empty">{empty}</span>}</div>
+      </div>
+    );
+    const leaderLane = proto
+      ? lane(
+          'leaders',
+          'Leaders',
+          `${leaderSlots.length}/${maxCharacters(state)}`,
+          [...leaderSlots, ...dragSlots.filter((slot) => !player.backRow[slot])].map((slot) => characterCell(slot)),
+          'No Leaders in play',
+        )
+      : null;
+    const unitLane = proto
+      ? lane('units', 'Shinobi & Tokens', String(unitSlots.length), unitSlots.map((slot) => tokenCell(slot)), 'No Shinobi or tokens in play')
+      : null;
     const terrainZone = (
       <div className={`mat__zone mat__zone--terrain${player.terrainInPlay ? ' mat__zone--filled' : ''}`} key="terrain">
         <span className="mat__zone-title">Terrain</span>
@@ -1035,7 +1066,7 @@ function ViewGame({
     // the exact mirror, so the two token rows meet at the seam.
     const battlefield = (
       <div
-        className={`battlefield-half battlefield-half--${playerId} mat mat--${position}${dropOnBoard || dragSlots.length > 0 ? ' mat--drop-target' : ''}`}
+        className={`battlefield-half battlefield-half--${playerId} mat mat--${position}${proto ? ' mat--lanes' : ''}${dropOnBoard || dragSlots.length > 0 ? ' mat--drop-target' : ''}`}
         key={playerId}
         onDragOver={
           dropOnBoard
@@ -1063,7 +1094,11 @@ function ViewGame({
       >
         {/* Left column: Missions over Terrain, with Health in each player's own bottom-left corner (Yu-Gi-Oh LP-style) — mirrored for the opponent. */}
         <div className="mat__side mat__side--field">{position === 'bottom' ? [missionZone, terrainZone, healthPlate] : [healthPlate, terrainZone, missionZone]}</div>
-        <div className="mat__rows">{position === 'bottom' ? [tokenRow, characterRow] : [characterRow, tokenRow]}</div>
+        {proto ? (
+          <div className="mat__rows mat__rows--lanes">{position === 'bottom' ? [unitLane, leaderLane] : [leaderLane, unitLane]}</div>
+        ) : (
+          <div className="mat__rows">{position === 'bottom' ? [tokenRow, characterRow] : [characterRow, tokenRow]}</div>
+        )}
         {deckColumn}
       </div>
     );

@@ -1,6 +1,9 @@
 import type { GameState, TokenInstance } from '../../engine/types';
 import { trackedResources } from '../../engine/characters/progressText';
+import { getTokenDef } from '../../engine/characters/registry';
 import { hasFieldOrientation } from '../../engine/board';
+import { isPrototype } from '../../engine/prototype';
+import { isShinobi, shinobiDamage } from '../../engine/shinobi';
 
 export function TokenCard({
   token,
@@ -15,11 +18,16 @@ export function TokenCard({
   onClickAsTarget: (instanceId: string) => void;
   onOpenDetails: (instanceId: string) => void;
 }) {
-  const resources = trackedResources(state, token).filter((t) => t.key);
+  const shinobi: boolean = isShinobi(token);
+  // Prototype: Shinobi and tokens are creature cards — effects in the middle,
+  // Health bottom-left and attack (Damage) bottom-right, so Damage isn't repeated as a badge.
+  const creature = isPrototype(state);
+  const resources = trackedResources(state, token).filter((t) => t.key && !(creature && t.label === 'Damage'));
   const orienting = hasFieldOrientation(state, token);
+  const effects = creature ? (getTokenDef(token.defId)?.abilities ?? []).map((a) => a.name) : [];
   return (
     <div
-      className={`compact-card token-card${isTargetable ? ' targetable' : ''}`}
+      className={`compact-card token-card${creature ? ' token-card--creature' : ''}${shinobi ? ' token-card--shinobi' : ''}${isTargetable ? ' targetable' : ''}`}
       onClick={() => (isTargetable ? onClickAsTarget(token.instanceId) : onOpenDetails(token.instanceId))}
     >
       <button
@@ -34,10 +42,24 @@ export function TokenCard({
         ⓘ
       </button>
       <div className="compact-card__name">{token.name}</div>
-      <div className="compact-card__vitals">
-        HP {token.currentHP}/{token.maxHP}
-        {token.chakraPool && ` · Pool ${token.chakraPool.current}/${token.chakraPool.capacity}`}
-      </div>
+      {creature ? (
+        token.chakraPool && <div className="compact-card__vitals">Pool {token.chakraPool.current}/{token.chakraPool.capacity}</div>
+      ) : (
+        <div className="compact-card__vitals">
+          HP {token.currentHP}/{token.maxHP}
+          {token.chakraPool && ` · Pool ${token.chakraPool.current}/${token.chakraPool.capacity}`}
+        </div>
+      )}
+      {creature && (
+        // Room for the card's effects above the stat line (placeholder Shinobi have none yet).
+        <div className="token-card__effects">
+          {effects.map((name) => (
+            <div className="token-card__effect" key={name}>
+              {name}
+            </div>
+          ))}
+        </div>
+      )}
       {(resources.length > 0 || orienting || token.status.disabled) && (
         <div className="compact-card__badges">
           {token.status.disabled && <span className="badge badge--disabled">Disabled</span>}
@@ -51,6 +73,18 @@ export function TokenCard({
               {t.label}: {t.value}
             </span>
           ))}
+        </div>
+      )}
+      {creature && (
+        <div className="token-card__stats" aria-label={`Health ${token.currentHP} of ${token.maxHP}${shinobi ? `, Damage ${shinobiDamage(token)}` : ''}`}>
+          <span className="token-card__stat token-card__stat--health" title="Health">
+            ♥ {token.currentHP}/{token.maxHP}
+          </span>
+          {shinobi && (
+            <span className="token-card__stat token-card__stat--damage" title="Damage">
+              ⚔ {shinobiDamage(token)}
+            </span>
+          )}
         </div>
       )}
       <div className="compact-card__hint">Click for details</div>

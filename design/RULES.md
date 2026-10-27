@@ -35,7 +35,9 @@
 
 **Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Missions, Terrain, Assists, Upkeep, Retreat and Character Deck draws** — everything that isn't a Chakra Pool cost.
 
-**Shinobi.** Units played onto your front row for Supplies (Main Phase). Each has a base **Damage** and **Health**. A Shinobi:
+**Board.** There is no board shape — no rows of positions, no columns, no cross pattern. Each player has two open lanes: **Leaders** (up to 10 in play) and **Shinobi & Tokens** (as many as you like). A new Leader, Shinobi or token simply joins the end of its lane; you never pick a position. Where a card refers to units "next to" or "adjacent to" one, that means the units directly beside it in the same lane — nothing is in front of or behind anything.
+
+**Shinobi.** Units played into your Shinobi & Tokens lane for Supplies (Main Phase). Each has a base **Damage** and **Health**. A Shinobi:
 - can't attack the turn it comes into play;
 - attacks during your Combat Phase — an enemy Leader or an enemy Shinobi. Use the **Shinobi attacks** panel: pick targets, then confirm;
 - after attacks are confirmed, the defending player chooses which of their Shinobi defend. **Only attacks on a Leader can be defended**, and each Shinobi defends one attack;

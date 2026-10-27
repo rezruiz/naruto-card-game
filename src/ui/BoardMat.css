@@ -630,3 +630,169 @@ button.in-play-chip--plain:hover {
 .pile--small .pile__count {
   font-size: 14px;
 }
+
+/* ---- Prototype: open lanes instead of slots ----
+   No board shape: Leaders in one lane, Shinobi and tokens together in the
+   other. Each lane wraps onto more lines as it fills (up to 10 Leaders, and
+   many more Shinobi and tokens), so nothing scrolls sideways. */
+.mat__rows--lanes {
+  overflow-x: visible;
+  gap: 10px;
+}
+
+/* The lanes get the full width: Missions, Terrain, Health and the decks move
+   into one strip along the player's own edge (mirrored for the top player). */
+.mat--lanes,
+.mat--lanes.mat--top {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.mat--lanes {
+  grid-template-areas: 'rows rows' 'field decks';
+}
+
+.mat--lanes.mat--top {
+  grid-template-areas: 'field decks' 'rows rows';
+}
+
+.mat--lanes .mat__side--field {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.mat--lanes .mat__side--field > .mat__zone {
+  flex: 1 1 0;
+  max-width: 220px;
+}
+
+.mat--lanes .mat__side--decks {
+  flex-direction: row;
+  align-items: flex-end;
+}
+
+.mat--lanes.mat--top .mat__side--decks {
+  align-items: flex-start;
+}
+
+.lane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.lane__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.lane__title {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+
+.lane__count {
+  font-size: 11px;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.lane__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 64px;
+  align-items: stretch;
+}
+
+.lane__empty {
+  align-self: center;
+  font-size: 12px;
+  opacity: 0.45;
+}
+
+.lane--leaders .board-cell {
+  width: 118px;
+}
+
+.lane--leaders .board-cell--empty {
+  min-height: 132px;
+}
+
+/* Shinobi and tokens: small tiles, since there can be many of them. */
+.lane--units .board-cell {
+  width: 100px;
+  min-height: 96px;
+}
+
+.lane--units .board-cell--filled > .token-card {
+  gap: 3px;
+  padding: 5px 6px;
+}
+
+.lane--units .compact-card__name {
+  font-size: 12px;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lane--units .badge {
+  font-size: 10px;
+  padding: 0 4px;
+}
+
+.token-card--shinobi {
+  border-style: solid;
+}
+
+/* Creature cards: effects fill the middle, so the stat line stays pinned to the bottom. */
+.token-card--creature {
+  display: flex;
+  flex-direction: column;
+}
+
+.token-card__effects {
+  flex: 1;
+  min-height: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  line-height: 1.25;
+  opacity: 0.8;
+}
+
+.token-card__effect {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Health bottom-left, attack (Damage) bottom-right — big enough to read at a glance across a crowded lane. */
+.token-card__stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: auto;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.token-card__stat--damage {
+  color: #f59e0b;
+}
+
+.token-card__stat--health {
+  color: #22c55e;
+}

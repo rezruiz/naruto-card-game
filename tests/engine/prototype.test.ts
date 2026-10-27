@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { makeHandCardInstance } from '../../src/engine/deck';
+import { PROTOTYPE_FRONT_ROW_SIZE, PROTOTYPE_MAX_LEADERS, getAdjacent, legalCharacterSlots, legalTokenSlots, maxCharacters } from '../../src/engine/board';
 import { suppliesAvailable, suppliesMax } from '../../src/engine/prototype';
 import { createSetupState } from '../../src/engine/state';
 import { freshMain1, giveChakra, resolveTop } from './testUtils';
@@ -185,5 +186,44 @@ describe('Prototype: other costs move to Supplies', () => {
     expect(suppliesAvailable(s, 'p2')).toBeLessThanOrEqual(1);
     expect(s.players.p2.chakraSources.every((c) => !c.tapped)).toBe(true);
     void resolveTop;
+  });
+});
+
+describe('Prototype: open lanes, no board shape', () => {
+  it('a new Prototype game has a 40-unit Shinobi & Tokens lane; the base game keeps 10 slots', () => {
+    expect(createSetupState('p1', 'trust', {}, { ruleset: 'prototype' }).players.p1.frontRow).toHaveLength(PROTOTYPE_FRONT_ROW_SIZE);
+    expect(createSetupState('p1', 'trust').players.p1.frontRow).toHaveLength(10);
+  });
+
+  it('up to 10 Leaders, each joining the end of the lane with no position to pick', () => {
+    const base = freshMain1();
+    const s = proto(base);
+    expect(maxCharacters(s)).toBe(PROTOTYPE_MAX_LEADERS);
+    expect(maxCharacters(base)).toBe(5);
+    const row = s.players.p1.backRow;
+    const filled = row.filter(Boolean).length;
+    expect(legalCharacterSlots(s, 'p1')).toEqual([row.indexOf(null)]);
+    const full = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: row.map((c, i) => c ?? (i < PROTOTYPE_MAX_LEADERS ? row.find(Boolean)! : null)) } } };
+    expect(filled).toBeLessThan(PROTOTYPE_MAX_LEADERS);
+    expect(legalCharacterSlots(full, 'p1')).toEqual([]);
+  });
+
+  it('a new Shinobi or token goes into the first open spot without asking', () => {
+    let s = proto(freshMain1());
+    ({ state: s } = placeShinobi(s, 'p1', 'A', 1, 2, 0));
+    ({ state: s } = placeShinobi(s, 'p1', 'B', 1, 2, 3));
+    expect(legalTokenSlots(s, 'p1')).toEqual([1]);
+  });
+
+  it('neighbours are the nearest units in the same lane, with nothing in front or behind', () => {
+    let s = proto(freshMain1());
+    ({ state: s } = placeShinobi(s, 'p1', 'A', 1, 2, 0));
+    ({ state: s } = placeShinobi(s, 'p1', 'B', 1, 2, 4));
+    ({ state: s } = placeShinobi(s, 'p1', 'C', 1, 2, 7));
+    const adj = getAdjacent(s, 'p1', 'front', 4);
+    expect(adj.left?.name).toBe('A');
+    expect(adj.right?.name).toBe('C');
+    expect(adj.front).toBeNull();
+    expect(adj.back).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { appendLog, otherPlayer } from './phases/phaseMachine';
 import { enqueueChoice, registerChoiceResolver } from './choices';
+import { isPrototype } from './prototype';
 import type {
   BoardOccupant,
   CharacterInstance,
@@ -13,6 +14,19 @@ export const BACK_ROW_SIZE = 10;
 export const FRONT_ROW_SIZE = 10;
 /** SPEC.md §6.5: at most 5 characters in play at once, whatever the number of back-row positions. */
 export const MAX_CHARACTERS = 5;
+
+// Prototype rules: no board shape. Leaders sit in one open lane and Shinobi and
+// tokens share another; a new unit just joins the end of its lane, and the only
+// neighbours that matter are the units beside it in that lane.
+/** Prototype: at most 10 Leaders in play. */
+export const PROTOTYPE_MAX_LEADERS = 10;
+/** Prototype: room for many Shinobi and tokens (effectively no limit in play). */
+export const PROTOTYPE_FRONT_ROW_SIZE = 40;
+
+/** How many characters (Leaders, in the Prototype) a player can have in play. */
+export function maxCharacters(state: GameState): number {
+  return isPrototype(state) ? PROTOTYPE_MAX_LEADERS : MAX_CHARACTERS;
+}
 
 /** How many characters this player has in their back row. */
 export function characterCount(state: GameState, player: PlayerId): number {
@@ -66,7 +80,8 @@ export function placeToken(state: GameState, player: PlayerId, token: TokenInsta
 export function legalCharacterSlots(state: GameState, player: PlayerId): number[] {
   const row = state.players[player].backRow;
   const filled = row.flatMap((c, i) => (c ? [i] : []));
-  if (filled.length >= MAX_CHARACTERS || filled.length === row.length) return [];
+  if (filled.length >= maxCharacters(state) || filled.length === row.length) return [];
+  if (isPrototype(state)) return [row.indexOf(null)];
   if (filled.length === 0) return row.map((_, i) => i);
   const besideOne = row.flatMap((c, i) => (c === null && (row[i - 1] || row[i + 1]) ? [i] : []));
   return [...besideOne, ...filled].sort((a, b) => a - b);
@@ -80,6 +95,7 @@ export function legalCharacterSlots(state: GameState, player: PlayerId): number[
 export function legalTokenSlots(state: GameState, player: PlayerId, ignoreId?: string): number[] {
   const row = state.players[player].frontRow.map((t) => (t && t.instanceId === ignoreId ? null : t));
   const empty = row.flatMap((t, i) => (t === null ? [i] : []));
+  if (isPrototype(state)) return empty.slice(0, 1);
   if (empty.length === row.length) return empty;
   const beside = empty.filter((i) => row[i - 1] || row[i + 1]);
   return beside.length > 0 ? beside : empty;
@@ -264,6 +280,13 @@ export function getAdjacent(
 ): Adjacency {
   const p = state.players[player];
   const row = zone === 'back' ? p.backRow : p.frontRow;
+
+  if (isPrototype(state)) {
+    // No columns: the nearest unit on each side in the same lane, and nothing in front or behind.
+    const before = row.slice(0, index).filter((o) => o !== null);
+    const after = row.slice(index + 1).find((o) => o !== null) ?? null;
+    return { left: before[before.length - 1] ?? null, right: after, front: null, back: null };
+  }
 
   const left = index - 1 >= 0 ? row[index - 1] : null;
   const right = index + 1 < row.length ? row[index + 1] : null;
