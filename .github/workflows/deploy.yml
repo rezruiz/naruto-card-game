@@ -64,12 +64,10 @@ jobs:
       - name: Prototype — install, test, build
         if: steps.proto.outputs.exists == 'true'
         working-directory: proto
-        env:
-          VITE_VARIANT: prototype
         run: |
           npm ci
           npm test
-          npm run build -- --base=/naruto-card-game/prototype/
+          VITE_VARIANT=prototype npm run build -- --base=/naruto-card-game/prototype/
           mkdir -p ../base/dist/prototype
           cp -r dist/. ../base/dist/prototype/
 
