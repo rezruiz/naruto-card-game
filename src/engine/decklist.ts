@@ -1,5 +1,7 @@
 import { CHARACTER_DECK_MANIFEST, getCharacterDeckEntry, listCharacterDeckEntries } from './characters';
 import { HAND_DECK_MANIFEST } from './deck';
+import { PROTOTYPE_SHINOBI_MANIFEST } from './shinobi';
+import { VARIANT } from '../variant';
 import { getHandCardDef, getMissionDef, listHandCardDefs } from './cards/registry';
 // Side-effect import — every Jutsu Deck card must be registered before the card pool is listed.
 import './cards';
@@ -103,7 +105,8 @@ export function presetDeck(): DeckList {
   return {
     id: PRESET_DECK_ID,
     name: 'Akatsuki Starter',
-    handDeck: Object.fromEntries(HAND_DECK_MANIFEST.map(({ defId, copies }) => [defId, copies])),
+    // The Prototype build's starter deck also carries the placeholder Shinobi (shinobi.ts).
+    handDeck: Object.fromEntries([...HAND_DECK_MANIFEST, ...(VARIANT === 'prototype' ? PROTOTYPE_SHINOBI_MANIFEST : [])].map(({ defId, copies }) => [defId, copies])),
     characterDeck: countsOf(CHARACTER_DECK_MANIFEST),
     preset: true,
   };

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { gameReducer } from '../engine/reducer';
 import { createSetupState } from '../engine/state';
+import { RULESET_OPTS } from '../variant';
 import { redactStateFor } from '../engine/redact';
 import { hostGame, joinGame, type Connection, type ConnStatus } from './connection';
 import { pushUndo, undoLabelFor, type UndoEntry } from '../ui/undo';
@@ -74,7 +75,7 @@ export function useNetGame() {
 
   const restartOnHost = useCallback(() => {
     historyRef.current = [];
-    commit(createSetupState(undefined, 'trust', decksRef.current));
+    commit(createSetupState(undefined, 'trust', decksRef.current, RULESET_OPTS));
   }, [commit]);
 
   const host = useCallback((deck: DeckList) => {

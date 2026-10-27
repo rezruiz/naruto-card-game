@@ -1,4 +1,5 @@
 import { appendLog, appendWarning } from './phases/phaseMachine';
+import { isPrototype } from './prototype';
 import { findOccupant, isCharacter, isHidingLikeAMole, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant, surfaceFromMole } from './board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from './stack';
 import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
@@ -325,6 +326,8 @@ export function checkLegality(
   }
 
   const cost = resolveCost(ability, ctx);
+  // Prototype rules: every ability is paid in full from the Chakra Pool — generic Chakra can only be pooled.
+  if (isPrototype(state)) payFromPool = cost;
   const totalPool = payFromPool;
   const totalGeneric = cost - payFromPool;
   const poolAvailable = poolSources(state, source).reduce((sum, s) => sum + s.current, 0); // Tokens default to no Pool of their own (SPEC.md §10)
@@ -355,7 +358,7 @@ function payCost(
   if (soft) {
     const pooled = found ? poolSources(next, found.occupant).reduce((sum, s) => sum + s.current, 0) : 0;
     const fromPool = Math.min(payFromPool, pooled);
-    const fromGeneric = Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
+    const fromGeneric = isPrototype(next) ? 0 : Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
     if (fromPool + fromGeneric < cost) {
       next = appendWarning(next, `${player} is short ${cost - fromPool - fromGeneric} Chakra paying for this action (trust mode — allowed).`);
     }
@@ -424,6 +427,7 @@ export function activateAbility(
 
   const costCtx: AbilityContext = { state, sourceInstanceId, targetInstanceIds, choices };
   const cost = resolveCost(ability, costCtx);
+  if (isPrototype(state)) payFromPool = cost;
   const discount = computeFirstAbilityDiscount(costCtx, ability);
   let next = payCost(state, player, sourceInstanceId, cost, payFromPool, !!opts.trust);
   if (discount.elemental) {

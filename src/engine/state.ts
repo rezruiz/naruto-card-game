@@ -1,7 +1,8 @@
 import type { GameState, PlayerId, PlayerState, RulesMode } from './types';
 import { BACK_ROW_SIZE, FRONT_ROW_SIZE } from './board';
 import { createCharacterInstance, CHARACTER_DECK_MANIFEST } from './characters';
-import { buildHandDeck, drawCard, revealCharacters, shuffle } from './deck';
+import { buildHandDeck, drawCard, HAND_DECK_MANIFEST, revealCharacters, shuffle } from './deck';
+import { PROTOTYPE_SHINOBI_MANIFEST } from './shinobi';
 import { toManifests, type DeckList } from './decklist';
 // Side-effect import — registers every Jutsu Deck card (Jutsu/Assist/
 // Terrain/Mission) before any deck is built.
@@ -118,9 +119,16 @@ function createEmptyPlayer(id: PlayerId): PlayerState {
  * flipped by the reducer once both starting characters are confirmed.
  * Passing one (tests) fixes it up front.
  */
-export function createSetupState(firstPlayer?: PlayerId, rules: RulesMode = 'strict', decks: Partial<Record<PlayerId, DeckList>> = {}): GameState {
+export function createSetupState(
+  firstPlayer?: PlayerId,
+  rules: RulesMode = 'strict',
+  decks: Partial<Record<PlayerId, DeckList>> = {},
+  /** ruleset 'prototype': play the Prototype build's new rules (prototype.ts). */
+  opts: { ruleset?: 'prototype' } = {},
+): GameState {
   const placeholder: PlayerId = firstPlayer ?? 'p1';
   let state: GameState = {
+    ...(opts.ruleset ? { ruleset: opts.ruleset } : {}),
     firstPlayerPending: firstPlayer === undefined,
     pendingChoices: [],
     turn: 1,
@@ -145,7 +153,7 @@ export function createSetupState(firstPlayer?: PlayerId, rules: RulesMode = 'str
     // empty half (nothing usable in it) falls back to the preset's half, so Setup always has cards to deal.
     const chosen = decks[player] ? toManifests(decks[player]) : null;
     const characters = chosen && chosen.characters.length > 0 ? chosen.characters : CHARACTER_DECK_MANIFEST;
-    const hand = chosen && chosen.hand.length > 0 ? chosen.hand : undefined;
+    const hand = chosen && chosen.hand.length > 0 ? chosen.hand : opts.ruleset === 'prototype' ? [...HAND_DECK_MANIFEST, ...PROTOTYPE_SHINOBI_MANIFEST] : undefined;
     state = {
       ...state,
       players: {

@@ -1777,3 +1777,25 @@
   opacity: 0.85;
 }
 
+/* Prototype rules: Shinobi combat panel and Supplies counter */
+.shinobi-combat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shinobi-combat__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.shinobi-combat__row select {
+  max-width: 100%;
+}
+
+.supplies-label {
+  margin-left: 12px;
+}
+

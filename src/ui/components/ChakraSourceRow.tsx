@@ -10,6 +10,8 @@ export function ChakraSourceRow({
   onUntap,
   onAdjustGeneric,
   endSlot,
+  supplies,
+  onAdjustSupplies,
 }: {
   sources: ChakraSource[];
   genericChakraAvailable: number;
@@ -23,6 +25,10 @@ export function ChakraSourceRow({
   onAdjustGeneric?: (delta: number) => void;
   /** Shown at the far right of the row (the Consumed pile — the cards spent to place these sources). */
   endSlot?: ReactNode;
+  /** Prototype rules: this turn's Supplies (refill each turn; max = turns started, up to 20). */
+  supplies?: { available: number; max: number };
+  /** Trust mode: manual correction of this turn's Supplies. */
+  onAdjustSupplies?: (delta: number) => void;
 }) {
   return (
     <div className="chakra-sources">
@@ -30,7 +36,7 @@ export function ChakraSourceRow({
         <span className="chakra-symbol" aria-hidden>
           🌀
         </span>
-        Chakra available: <strong>{genericChakraAvailable}</strong>
+        {supplies ? 'Chakra to pool' : 'Chakra available'}: <strong>{genericChakraAvailable}</strong>
         {fadingChakra > 0 && (
           <span className="chakra-sources__fading" title="Absorbed Chakra is spent first and fades when the phase changes">
             {' '}
@@ -48,6 +54,21 @@ export function ChakraSourceRow({
           </span>
         )}
       </span>
+      {supplies && (
+        <span className="chakra-sources__label supplies-label" title="Supplies refill at the start of each of your turns. Your maximum is the number of turns you've started (up to 20). Shinobi, Missions, Terrain, Assists, Upkeep, Retreat and Character Deck draws cost Supplies.">
+          <span aria-hidden>📦</span> Supplies: <strong>{supplies.available}</strong>/{supplies.max}
+          {onAdjustSupplies && (
+            <span className="stepper">
+              <button type="button" aria-label="Remove 1 Supply" onClick={() => onAdjustSupplies(-1)}>
+                −
+              </button>
+              <button type="button" aria-label="Add 1 Supply" onClick={() => onAdjustSupplies(1)}>
+                +
+              </button>
+            </span>
+          )}
+        </span>
+      )}
       <div className="chakra-sources__boxes">
         {sources.map((source, index) => (
           <button

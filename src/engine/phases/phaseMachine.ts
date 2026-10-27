@@ -147,7 +147,8 @@ function untapPlayer(state: GameState, player: PlayerId): GameState {
       ...state,
       players: {
         ...state.players,
-        [player]: { ...p, chakraSources: p.chakraSources.map(() => ({ tapped: false })), chakraSourcePlacedThisTurn: false },
+        // suppliesSpent: Supplies refill at the start of each of your turns (prototype rules; unused otherwise).
+        [player]: { ...p, chakraSources: p.chakraSources.map(() => ({ tapped: false })), chakraSourcePlacedThisTurn: false, suppliesSpent: 0 },
       },
     },
     player,

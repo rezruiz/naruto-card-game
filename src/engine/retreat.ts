@@ -1,6 +1,7 @@
 import { findOccupant, isCharacter, patchCharacter } from './board';
 import { appendLog, appendWarning } from './phases/phaseMachine';
 import type { CharacterInstance, GameState } from './types';
+import { isPrototype, spendSupplies } from './prototype';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
 
@@ -53,6 +54,13 @@ export function retreat(state: GameState, instanceId: string): GameState {
   }
 
   const fullCost = retreatCost(character.rank);
+  // Prototype rules: Retreating is paid with Supplies, not Chakra.
+  if (isPrototype(working)) {
+    const paid = spendSupplies(working, player, fullCost, `Retreating ${character.name}`);
+    if (!paid) return appendLog(working, `${player} doesn't have ${fullCost} Supplies to Retreat ${character.name}.`);
+    const retreated = patchCharacter(paid, instanceId, (c) => ({ ...c, status: { ...c.status, retreated: true } }));
+    return appendLog(retreated, `${character.name} Retreats.`);
+  }
   const cost = relaxed ? Math.min(fullCost, working.players[player].genericChakraAvailable) : fullCost;
   if (!relaxed && cost > working.players[player].genericChakraAvailable) {
     return appendLog(working, `${player} doesn't have ${cost} Chakra available to Retreat ${character.name}.`);

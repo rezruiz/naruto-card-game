@@ -5,5 +5,7 @@ import './jutsu';
 import './assist';
 import './terrain';
 import './missions';
+// Prototype rules only: placeholder Shinobi cards (shinobi.ts).
+import '../shinobi';
 
 export * from './registry';

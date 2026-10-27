@@ -196,6 +196,23 @@ export interface PlayerState {
   attackJutsuUsedThisTurn: string[];
   /** Bingo Book: Threat Level B's reward — lets this player place 1 extra Chakra source on top of the normal once-per-turn cap, the next time they place one. */
   bonusChakraSourcePlacements: number;
+  /** Prototype rules: Supplies spent since this player's last Untap (prototype.ts derives the per-turn maximum). Missing = 0. */
+  suppliesSpent?: number;
+}
+
+/** Prototype rules: one Shinobi attack declared this Combat (shinobi.ts). */
+export interface ShinobiAttack {
+  attackerId: string;
+  /** An enemy Leader (back-row character) or an enemy Shinobi. */
+  targetId: string;
+  /** The defending player's Shinobi standing in front of the Leader, if they chose one. */
+  defenderId?: string;
+}
+
+/** Prototype rules: Shinobi combat in progress — attacks declared by the active player, then defenders chosen by the other player. */
+export interface ShinobiCombat {
+  step: 'declare' | 'defend';
+  attacks: ShinobiAttack[];
 }
 
 /** A Mission card actually in play (§10b) — distinct from a plain HandCardInstance since it needs its own per-instance bookkeeping (Unshakable Resolve's turn count, Squad Formation's chosen group, ...). */
@@ -300,6 +317,10 @@ export interface PendingChoice {
 }
 
 export interface GameState {
+  /** 'prototype' = the Prototype build's new rules (prototype.ts); missing = the base game. */
+  ruleset?: 'prototype';
+  /** Prototype rules: the Shinobi attacks being declared/defended this Combat. */
+  shinobiCombat?: ShinobiCombat | null;
   /** The first-player coin flip hasn't happened yet — per SPEC.md §3 it comes after both players finish Setup (character pick + mulligans). */
   firstPlayerPending: boolean;
   /** Decisions waiting on a specific player (oldest first) — see PendingChoice. */
@@ -356,6 +377,13 @@ export type GameAction =
   | { type: 'REVEAL_HAND_CARDS'; player: PlayerId; instanceIds: string[] }
   | { type: 'RESOLVE_CHOICE'; choiceId: string; optionIds: string[] }
   | { type: 'SET_SQUAD_REDIRECT'; missionInstanceId: string; redirectTo: string | null }
+  // --- Prototype rules: Shinobi combat (shinobi.ts) ---
+  | { type: 'DECLARE_SHINOBI_ATTACK'; attackerId: string; targetId: string }
+  | { type: 'CANCEL_SHINOBI_ATTACK'; attackerId: string }
+  | { type: 'CONFIRM_SHINOBI_ATTACKS' }
+  | { type: 'ASSIGN_SHINOBI_DEFENDER'; attackerId: string; defenderId: string | null }
+  | { type: 'CONFIRM_SHINOBI_DEFENSE' }
+  | { type: 'ADJUST_SUPPLIES'; player: PlayerId; delta: number }
   // --- Trust mode: staging & resolution ---
   | { type: 'STAGE_ABILITY'; instanceId: string; abilityId: string; targetInstanceIds: string[]; payFromPool: number; choices?: AbilityChoices; /** Declare it even though the strict rules wouldn't allow it. */ force?: boolean }
   | { type: 'STAGE_CARD'; instanceId: string; enablingInstanceId: string; targetInstanceIds: string[]; payFromPool: number; amount?: number; force?: boolean }

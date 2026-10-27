@@ -1,5 +1,9 @@
 import { needsEnablingCharacter, type HandCardContext, type HandCardDef } from '../engine/cards/registry';
 import type { GameState, PlayerId } from '../engine/types';
+import { VARIANT } from '../variant';
+
+/** The Prototype build plays the prototype rules: every Jutsu card needs a Leader, and its cost always comes from that Leader's Pool. */
+const PROTOTYPE = VARIANT === 'prototype';
 
 export type PendingCard = {
   kind: 'card';
@@ -28,12 +32,12 @@ export type CardStage = 'enabler' | 'payFromPool' | 'target' | 'amount' | 'ready
  */
 export function cardStage(p: PendingCard): CardStage {
   // Only a Jutsu with an ability Type is played "through" a character (§5.3/§10c) — everything else skips this stage.
-  if (needsEnablingCharacter(p.def) && !p.enablingInstanceId) return 'enabler';
+  if (needsEnablingCharacter(p.def, PROTOTYPE) && !p.enablingInstanceId) return 'enabler';
   const maxTargets = p.def.maxTargets ?? 1;
   if (!p.targetsConfirmed && maxTargets > 0 && p.targets.length < maxTargets) return 'target';
   const wantsAmount = typeof p.def.needsAmountChoice === 'function' ? p.def.needsAmountChoice(p.targets) : !!p.def.needsAmountChoice;
   if (wantsAmount && p.amount === null) return 'amount';
-  if (p.def.offersPoolDiscount && p.payFromPool === null) return 'payFromPool';
+  if (p.def.offersPoolDiscount && p.payFromPool === null && !PROTOTYPE) return 'payFromPool';
   return 'ready';
 }
 

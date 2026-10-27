@@ -375,7 +375,9 @@ function applyDefeatInner(
   } else {
     const frontRow = p.frontRow.slice();
     frontRow[index] = null;
-    next = { ...state, players: { ...state.players, [player]: { ...p, frontRow } } };
+    // A defeated Shinobi (prototype rules) is a card, not a token: it goes to its owner's discard pile.
+    const discardPile = occupant.extra.shinobi ? [...p.discardPile, { instanceId: `${occupant.instanceId}-card`, defId: occupant.defId }] : p.discardPile;
+    next = { ...state, players: { ...state.players, [player]: { ...p, frontRow, discardPile } } };
     // A token that goes on cooldown when defeated (Pain's Path Beasts) — recorded on whoever summons it.
     const cooldown = occupant.extra.cooldownOnDefeat as { holderId: string; key: string; upkeeps: number } | undefined;
     const holder = cooldown ? findOccupant(next, cooldown.holderId)?.occupant : undefined;

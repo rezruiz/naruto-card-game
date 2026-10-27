@@ -6,7 +6,7 @@ import './cardStyles.css';
 // Shared card-face helpers for anywhere a card is drawn as a card (the deck
 // library's collection, the hand): its cost gem, type line and one-line text.
 
-const STYLE_COLOR: Record<string, string> = { Water: 'water', Earth: 'earth', Fire: 'fire', Lightning: 'lightning', Wind: 'wind', Genjutsu: 'genjutsu', Physical: 'physical' };
+const STYLE_COLOR: Record<string, string> = { Water: 'water', Earth: 'earth', Fire: 'fire', Lightning: 'lightning', Wind: 'wind', Genjutsu: 'genjutsu', Physical: 'physical', Shinobi: 'shinobi' };
 
 /**
  * The Style a card is shown under in the UI (color coding, the Deck Library's Style sections and filter).
@@ -14,7 +14,8 @@ const STYLE_COLOR: Record<string, string> = { Water: 'water', Earth: 'earth', Fi
  * §6.8 Physical umbrella) as "Physical", whatever their printed Style; display only, the rules (e.g. who can
  * enable a card) still use def.style.
  */
-export function displayStyle(def: Pick<HandCardDef, 'style' | 'type'>): string {
+export function displayStyle(def: Pick<HandCardDef, 'style' | 'type'> & { cardType?: HandCardDef['cardType'] }): string {
+  if (def.cardType === 'shinobi') return 'Shinobi';
   if (def.type === 'Genjutsu') return 'Genjutsu';
   if (def.type === 'Taijutsu' || def.type === 'Bukijutsu') return 'Physical';
   return def.style;
@@ -29,7 +30,7 @@ export function styleClass(style: string): string {
 export const CHARACTER_STYLE_CLASS = 'card-style card-style--character';
 
 export const RANK_ORDER = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D'];
-export const TYPE_LABEL: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assist', mission: 'Mission', terrain: 'Terrain' };
+export const TYPE_LABEL: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assist', mission: 'Mission', terrain: 'Terrain', shinobi: 'Shinobi' };
 
 /** The printed Chakra cost, read from the card text (costs can depend on how they're paid, so the def's cost may be a function). */
 export function handCardCost(def: HandCardDef): string {

@@ -1,4 +1,7 @@
 import type { UpkeepPreviewEntry } from '../../engine/upkeep';
+import { VARIANT } from '../../variant';
+
+const PROTOTYPE = VARIANT === 'prototype';
 
 /**
  * A standing preview of what this player's NEXT Upkeep Phase will do to
@@ -38,10 +41,16 @@ export function UpkeepPanel({ entries }: { entries: UpkeepPreviewEntry[] }) {
           </li>
         ))}
       </ul>
-      <div className="upkeep-panel__net" title="Costs are paid from Chakra sources, not your available Chakra. A positive net is pooled into the granted character's own Pool, where it stays until spent — it is not lost at End Phase like unspent generic Chakra.">
-        Net: {net >= 0 ? '+' : ''}
-        {net} Chakra
-      </div>
+      {PROTOTYPE ? (
+        <div className="upkeep-panel__net" title="Prototype rules: Upkeep costs are paid with Supplies; a starting character's grant still goes into its own Chakra Pool.">
+          Costs: {entries.reduce((sum, e) => sum + (e.kind === 'cost' ? e.amount : 0), 0)} Supplies · Pool grants: +{entries.reduce((sum, e) => sum + (e.kind === 'grant' ? e.amount : 0), 0)} Chakra
+        </div>
+      ) : (
+        <div className="upkeep-panel__net" title="Costs are paid from Chakra sources, not your available Chakra. A positive net is pooled into the granted character's own Pool, where it stays until spent — it is not lost at End Phase like unspent generic Chakra.">
+          Net: {net >= 0 ? '+' : ''}
+          {net} Chakra
+        </div>
+      )}
     </div>
   );
 }

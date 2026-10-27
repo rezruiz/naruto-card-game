@@ -59,5 +59,10 @@ export const CARD_TEXT: Record<string, string> = {
   "Smoke Out": "**Smoke Out** — Style: None, no Type\nCost: 4 Chakra.\nEffect: Choose 1 Retreated enemy character (this card may choose a Retreated character despite §6.5b's normal targeting immunity — an explicit exception). It returns from Retreat (§6.5b) and is treated as having just entered play for Field Orientation (§6.6).",
   "Reconnaissance": "**Reconnaissance** — Style: None, no Type\nCost: 1 Chakra.\nEffect: Draw 1 card. You may pay 2 additional Chakra to then draw another card.",
   "Chidori Interception": "**Chidori Interception** — Impact Assist: Sasuke, Akatsuki\nStyle: Lightning (no enabling requirement — informational only, §10c),\nReactive Technique, Type: Ninjutsu. *(full nuance:\ndesign/CHARACTER_LOG.md)*\nCost: 1 Chakra (0 if an Akatsuki-Synergy Terrain card is in play)\nEffect: In response to an enemy character or token activating a\ntargeted damage-dealing ability or Attack-type Jutsu, deal 2 damage to\nit. The original attack still resolves normally — this doesn't negate\nor reduce it.",
+  "Rain Village Genin": "**Rain Village Genin** — Shinobi\nCost: 1 Supply.\nDamage 1 · Health 2.",
+  "Rain Village Scout": "**Rain Village Scout** — Shinobi\nCost: 2 Supplies.\nDamage 2 · Health 2.",
+  "Rain Village Chunin": "**Rain Village Chunin** — Shinobi\nCost: 3 Supplies.\nDamage 2 · Health 4.",
+  "Rain Village Jonin": "**Rain Village Jonin** — Shinobi\nCost: 4 Supplies.\nDamage 3 · Health 5.",
+  "Rain Village Elite Guard": "**Rain Village Elite Guard** — Shinobi\nCost: 6 Supplies.\nDamage 4 · Health 7.",
   "Akatsuki Hideout": "**Akatsuki Hideout** — Synergy: Akatsuki, 2 Chakra. *(full nuance:\ndesign/CHARACTER_LOG.md)*\nEffect: Akatsuki-Synergy characters you control have their Upkeep\n(§6.5) reduced by 1 (minimum 1)."
 };

@@ -40,7 +40,9 @@ import { TurnControls } from './ui/components/TurnControls';
 import { useNetGame } from './net/useNetGame';
 import './App.css';
 import './ui/BoardMat.css';
-import { VARIANT, VARIANT_LABEL } from './variant';
+import { RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
+import { isPrototype, suppliesAvailable, suppliesMax } from './engine/prototype';
+import { ShinobiCombatPanel } from './ui/components/ShinobiCombatPanel';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
 
@@ -659,6 +661,8 @@ function ViewGame({
         onTap={(sourceIndex) => dispatch({ type: 'TAP_CHAKRA_SOURCE', sourceIndex, player: playerId })}
         onUntap={trust ? (sourceIndex) => dispatch({ type: 'UNTAP_CHAKRA_SOURCE', player: playerId, sourceIndex }) : undefined}
         onAdjustGeneric={trust && mine ? (delta) => dispatch({ type: 'ADJUST_GENERIC_CHAKRA', player: playerId, delta }) : undefined}
+        supplies={isPrototype(state) ? { available: suppliesAvailable(state, playerId), max: suppliesMax(state, playerId) } : undefined}
+        onAdjustSupplies={isPrototype(state) && trust && mine ? (delta) => dispatch({ type: 'ADJUST_SUPPLIES', player: playerId, delta }) : undefined}
         endSlot={
           <Pile
             label="Consumed"
@@ -1221,6 +1225,7 @@ function ViewGame({
               )}
             </div>
           )}
+          {isPrototype(state) && !setupBlocked && <ShinobiCombatPanel state={state} isMyBoard={isMyBoard} dispatch={dispatch} />}
           {pending && (
             <div className="pending-banner">
               {pending.kind === 'ability' && pending.choiceQueue?.length ? (
@@ -1407,7 +1412,7 @@ function ViewGame({
  * each undoable action (draws, mulligans, reveal picks — see ui/undo.ts).
  */
 function useLocalGame() {
-  const [state, setState] = useState<GameState>(() => createSetupState(undefined, 'trust'));
+  const [state, setState] = useState<GameState>(() => createSetupState(undefined, 'trust', {}, RULESET_OPTS));
   /** Both seats' decks from the lobby — kept so Restart deals the same decks again. */
   const decksRef = useRef<Partial<Record<PlayerId, DeckList>>>({});
   const [history, setHistory] = useState<UndoEntry[]>([]);
@@ -1434,7 +1439,7 @@ function useLocalGame() {
   }, []);
 
   const restart = useCallback(() => {
-    const fresh = createSetupState(undefined, 'trust', decksRef.current);
+    const fresh = createSetupState(undefined, 'trust', decksRef.current, RULESET_OPTS);
     stateRef.current = fresh;
     setState(fresh);
     setHistory([]);

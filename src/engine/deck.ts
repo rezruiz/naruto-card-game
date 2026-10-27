@@ -2,6 +2,7 @@ import { painUnitId } from './board';
 import { getCharacterDeckEntry } from './characters';
 import { applyHealthLoss } from './combat';
 import { appendLog, appendWarning } from './phases/phaseMachine';
+import { isPrototype, spendSupplies } from './prototype';
 import { getHandCardDef } from './cards/registry';
 import { currentTax, reinforcementTax } from './playCharacter';
 import { enqueueChoice, registerChoiceResolver } from './choices';
@@ -200,6 +201,14 @@ export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 
   const wp = working.players[player];
   const fullCost = mode === 'reinforcement-free' ? 0 : currentTax(working, player);
   const discountUsed = mode === 'reinforcement-free' ? 0 : Math.min(reinforcementTax(wp.reinforcementsPlayed), wp.nextReinforcementDiscount);
+  // Prototype rules: the Character Deck draw is paid with Supplies, not Chakra.
+  if (isPrototype(working) && fullCost > 0) {
+    const paidState = spendSupplies(working, player, fullCost, 'the Character Deck draw');
+    if (!paidState) return appendLog(working, `${player} doesn't have ${fullCost} Supplies for the Character Deck draw.`);
+    const pp = paidState.players[player];
+    working = { ...paidState, players: { ...paidState.players, [player]: { ...pp, reinforcementsPlayed: mode === 'manual' ? pp.reinforcementsPlayed + 1 : pp.reinforcementsPlayed, nextReinforcementDiscount: pp.nextReinforcementDiscount - discountUsed } } };
+    return revealCharacters(working, player, 2, 'reinforcement');
+  }
   if (fullCost > wp.genericChakraAvailable) {
     if (!relaxed) return appendLog(working, `${player} doesn't have ${fullCost} Chakra available for the Character Deck draw.`);
     working = appendWarning(working, `${player} is short ${fullCost - wp.genericChakraAvailable} Chakra for the Character Deck draw (trust mode — allowed).`);

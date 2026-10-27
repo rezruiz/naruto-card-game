@@ -48,6 +48,8 @@ import {
   untapChakraSource,
 } from './trust/manual';
 import type { GameAction, GameState, PlayerId, PlayerState, Phase } from './types';
+import { adjustSupplies } from './prototype';
+import { assignShinobiDefender, cancelShinobiAttack, confirmShinobiAttacks, confirmShinobiDefense, declareShinobiAttack, endShinobiCombat } from './shinobi';
 
 /**
  * SPEC.md §3: initial Setup isn't done until both players have chosen a
@@ -215,7 +217,8 @@ function advanceOnePhase(input: GameState): GameState {
   if (state.phase === 'Combat' && state.extraCombatPending) {
     return appendLog({ ...state, extraCombatPending: false }, `${state.activePlayer} begins a second Combat — attack actions not yet used this turn are still available.`);
   }
-  let next = advancePhase(state);
+  // Prototype rules: leaving Combat drops Shinobi attacks that were never confirmed.
+  let next = advancePhase(state.phase === 'Combat' ? endShinobiCombat(state) : state);
   if (next.phase === 'Untap') {
     next = runMissionTrigger(next, next.activePlayer, { kind: 'untap' });
   }
@@ -362,6 +365,18 @@ function reduce(state: GameState, action: GameAction): GameState {
       return resolveChoice(drained, action.choiceId, action.optionIds);
     case 'SET_SQUAD_REDIRECT':
       return setSquadRedirect(drained, action.missionInstanceId, action.redirectTo);
+    case 'DECLARE_SHINOBI_ATTACK':
+      return declareShinobiAttack(drained, action.attackerId, action.targetId);
+    case 'CANCEL_SHINOBI_ATTACK':
+      return cancelShinobiAttack(drained, action.attackerId);
+    case 'CONFIRM_SHINOBI_ATTACKS':
+      return confirmShinobiAttacks(drained);
+    case 'ASSIGN_SHINOBI_DEFENDER':
+      return assignShinobiDefender(drained, action.attackerId, action.defenderId);
+    case 'CONFIRM_SHINOBI_DEFENSE':
+      return confirmShinobiDefense(drained);
+    case 'ADJUST_SUPPLIES':
+      return adjustSupplies(drained, action.player, action.delta);
     case 'PLACE_CHAKRA_SOURCE':
       return placeChakraSource(drained, action.instanceId);
     case 'TAP_CHAKRA_SOURCE':

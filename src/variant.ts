@@ -21,3 +21,6 @@ export const STORAGE_PREFIX = VARIANT === 'prototype' ? 'ncg-proto.' : 'ncg.';
 
 /** Prefix for online room IDs, so a base-game player can't join a prototype game (or the reverse). */
 export const PEER_PREFIX = VARIANT === 'prototype' ? 'naruto-ccg-proto-' : 'naruto-ccg-';
+
+/** What a new game is created with: the Prototype build plays the prototype rules (engine/prototype.ts). */
+export const RULESET_OPTS: { ruleset?: 'prototype' } = VARIANT === 'prototype' ? { ruleset: 'prototype' } : {};

@@ -98,6 +98,10 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
       ? { label: 'Hiding Like a Mole', value: `Can't be targeted through turn ${v}, or until it attacks (+2 if Taijutsu)`, key: true }
       : undefined,
   moleBonusItem: () => undefined, // internal: the Taijutsu attack it surfaced with
+  // Prototype rules: Shinobi (shinobi.ts).
+  shinobi: () => undefined, // internal: marks the unit as a Shinobi
+  shinobiDamage: (v) => ({ label: 'Damage', value: String(v), key: true }),
+  shinobiAttackedTurn: (v, s) => (v === s.turn ? { label: 'Attacked', value: "This turn — can't pool Chakra" } : undefined),
   damagedEnemies: (v, s) => ({ label: 'Enemies damaged (Curse targets)', value: names(s, v) }),
   revivePending: (v) => (v ? { label: "Kakuzu's revival", value: 'Would be defeated — waiting on your answer', key: true } : undefined),
   reviveResolved: () => undefined, // internal: the revival decision was made

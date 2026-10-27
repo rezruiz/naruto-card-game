@@ -1,6 +1,8 @@
 import { appendLog, appendWarning } from './phases/phaseMachine';
 import { findOccupant, isCharacter, patchOccupant } from './board';
 import { getCharacterDef } from './characters/registry';
+import { getHandCardDef } from './cards/registry';
+import { isPrototype } from './prototype';
 import type { BoardOccupant, GameState, PlayerId } from './types';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -46,6 +48,11 @@ export function placeChakraSource(state: GameState, instanceId: string): GameSta
   // as-yet-unplayed Character card.
   if (entry.kind !== 'card') {
     return appendLog(working, `${player} can't Consume a Character card as a Chakra source.`);
+  }
+  // Prototype rules: only Jutsu and Shinobi cards can be played as Chakra sources.
+  const cardType = getHandCardDef(entry.defId)?.cardType;
+  if (isPrototype(state) && cardType !== 'jutsu' && cardType !== 'shinobi') {
+    return appendLog(working, `Only Jutsu and Shinobi cards can be played as Chakra sources.`);
   }
 
   const hand = p.hand.filter((h) => h.instanceId !== instanceId);
@@ -129,6 +136,8 @@ export function poolChakra(state: GameState, instanceId: string, amount: number)
   // turn can't be pooled into, and pooling into it blocks it from acting for
   // the rest of the turn (checked in abilities.ts's checkLegality).
   if (unit.status.usedAbilitiesThisTurn.length > 0) problems.push(`${unit.name} has already acted this turn and can't be pooled into`);
+  // Prototype rules: a Shinobi that has attacked this turn can't pool Chakra.
+  if (unit.extra.shinobiAttackedTurn === state.turn) problems.push(`${unit.name} has attacked this turn and can't be pooled into`);
   if (problems.length > 0) {
     if (!relaxed) return appendLog(working, `${problems[0]}.`);
     for (const problem of problems) working = appendWarning(working, `${problem} — not legal under the strict rules, allowed anyway (trust mode).`);

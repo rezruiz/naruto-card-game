@@ -25,6 +25,29 @@
 
 ---
 
+# PROTOTYPE RULES
+
+> **You're playing the Prototype.** These rules are being tested and override the rest of this rulebook wherever they disagree. The base game is unchanged — switch back to it from the lobby.
+
+**Leaders.** Character cards are Leaders. A Leader pays for its abilities, and for the Jutsu cards it enables, with Chakra from its own Chakra Pool — never with generic Chakra. Every Jutsu card is played through a Leader (even a Type: None Jutsu), and its cost always counts as paid from the Pool, so a "cheaper from the Pool" discount always applies. Leaders can't attack (they act only through their abilities) and can't defend.
+
+**Chakra.** Chakra sources are still placed and tapped, but that Chakra can only be **pooled** into a character — it can't be spent directly. Only **Jutsu and Shinobi cards** can be placed as Chakra sources.
+
+**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Missions, Terrain, Assists, Upkeep, Retreat and Character Deck draws** — everything that isn't a Chakra Pool cost.
+
+**Shinobi.** Units played onto your front row for Supplies (Main Phase). Each has a base **Damage** and **Health**. A Shinobi:
+- can't attack the turn it comes into play;
+- attacks during your Combat Phase — an enemy Leader or an enemy Shinobi. Use the **Shinobi attacks** panel: pick targets, then confirm;
+- after attacks are confirmed, the defending player chooses which of their Shinobi defend. **Only attacks on a Leader can be defended**, and each Shinobi defends one attack;
+- fighting another Shinobi (attacking, defending or being attacked), both deal their Damage to each other at the same time. An undefended attack on a Leader deals the attacker's Damage to it;
+- that pooled Chakra this turn can't attack (it can still defend); one that attacked can't pool Chakra;
+- can't enable Jutsu cards; its own Chakra Pool pays only for its own abilities;
+- goes to its owner's discard pile when defeated.
+
+The starter deck in the Prototype adds 2 of each placeholder Shinobi (Rain Village Genin, Scout, Chunin, Jonin and Elite Guard).
+
+---
+
 # PART I — FOUNDATIONS
 
 ## 0. Rule precedence & scope

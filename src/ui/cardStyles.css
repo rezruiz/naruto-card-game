@@ -62,6 +62,14 @@
   --tint: rgba(150, 150, 150, 0.18);
 }
 
+/* Shinobi cards (prototype rules): units played for Supplies — teal. */
+.card-style--shinobi {
+  --gem-top: #9fe3d8;
+  --gem-bottom: #2f9d8c;
+  --gem-text: #0b2d28;
+  --tint: rgba(47, 157, 140, 0.16);
+}
+
 /* Explosion, Gravity, Paper, Poison, Ritual, Yang and other kekkei genkai / special Styles. */
 .card-style--unique {
   --gem-top: #ecdcff;

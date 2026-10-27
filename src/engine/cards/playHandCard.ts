@@ -4,6 +4,7 @@ import { findOccupant, isCharacter, patchCharacter, isHidingLikeAMole, isPhasedO
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
+import { isPrototype, spendSupplies, suppliesAvailable } from '../prototype';
 import { getHandCardDef, needsEnablingCharacter, targetedIds } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
 import type { GameState, PlayerId } from '../types';
@@ -55,7 +56,7 @@ export function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool:
  * needsEnablingCharacter) — everything else is exempt.
  */
 function checkEnabler(state: GameState, player: PlayerId, def: HandCardDef, enablingInstanceId: string): Legality {
-  if (!needsEnablingCharacter(def)) return { ok: true };
+  if (!needsEnablingCharacter(def, isPrototype(state))) return { ok: true };
   const found = findOccupant(state, enablingInstanceId);
   if (!found || !isCharacter(found.occupant) || found.player !== player) {
     return { ok: false, reason: `${player} has no such character to enable ${def.name}.` };
@@ -143,6 +144,8 @@ export function checkHandCardLegality(
     return { ok: false, reason: `${def.name}'s condition isn't met.` };
   }
 
+  if (isPrototype(state)) return prototypeCostCheck(state, player, def, ctx);
+
   const cost = resolveCost(def, ctx, payFromPool);
   const enablerPool =
     needsEnablingCharacter(def)
@@ -163,13 +166,36 @@ export function checkHandCardLegality(
   return { ok: true };
 }
 
+/**
+ * Prototype rules (prototype.ts): a Jutsu card is paid entirely from its enabling Leader's Chakra Pool — so a
+ * "cheaper if paid from the Pool" discount always applies — and every other card (Shinobi, Missions, Terrain,
+ * Assists) costs Supplies instead of Chakra.
+ */
+export function prototypeCardCost(state: GameState, def: HandCardDef, ctx: HandCardContext): { cost: number; fromPool: boolean } {
+  const fromPool = needsEnablingCharacter(def, true);
+  return { cost: resolveCost(def, { ...ctx, state }, fromPool ? 1 : 0), fromPool };
+}
+
+function prototypeCostCheck(state: GameState, player: PlayerId, def: HandCardDef, ctx: HandCardContext): Legality {
+  const { cost, fromPool } = prototypeCardCost(state, def, ctx);
+  if (fromPool) {
+    const found = findOccupant(state, ctx.enablingInstanceId);
+    const pool = found && isCharacter(found.occupant) ? found.occupant.chakraPool.current : 0;
+    if (cost > pool) return { ok: false, reason: `Not enough Chakra pooled in the enabling Leader (${cost} needed, ${pool} pooled).` };
+  } else if (cost > suppliesAvailable(state, player)) {
+    return { ok: false, reason: `Not enough Supplies (${cost} needed, ${suppliesAvailable(state, player)} left).` };
+  }
+  return { ok: true };
+}
+
 function payCost(state: GameState, player: PlayerId, enablingInstanceId: string, cost: number, payFromPool: number, soft = false): GameState {
   let next = state;
   if (soft) {
     const enabler = findOccupant(next, enablingInstanceId);
     const poolCurrent = enabler && isCharacter(enabler.occupant) ? enabler.occupant.chakraPool.current : 0;
     const fromPool = Math.min(payFromPool, poolCurrent);
-    const fromGeneric = Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
+    // Prototype rules: generic Chakra can only be pooled, never spent.
+    const fromGeneric = isPrototype(next) ? 0 : Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
     if (fromPool + fromGeneric < cost) {
       next = appendWarning(next, `${player} is short ${cost - fromPool - fromGeneric} Chakra paying for this card (trust mode — allowed).`);
     }
@@ -213,9 +239,26 @@ export function playHandCard(
   const handEntry = state.players[player].hand.find((h) => h.instanceId === cardInstanceId)!;
   const def = getHandCardDef((handEntry as { defId: string }).defId)!;
   const ctx: HandCardContext = { state, player, enablingInstanceId, targetInstanceIds, amount };
-  const cost = resolveCost(def, ctx, payFromPool);
+  let cost = resolveCost(def, ctx, payFromPool);
+  let paidInSupplies = false;
 
-  let next = payCost(state, player, enablingInstanceId, cost, payFromPool, !!opts.trust);
+  let next: GameState;
+  if (isPrototype(state)) {
+    const proto = prototypeCardCost(state, def, ctx);
+    cost = proto.cost;
+    if (proto.fromPool) {
+      payFromPool = cost;
+      next = payCost(state, player, enablingInstanceId, cost, cost, !!opts.trust);
+    } else {
+      payFromPool = 0;
+      paidInSupplies = true;
+      const paid = spendSupplies(state, player, cost, def.name);
+      if (!paid) return appendLog(state, `Can't play ${def.name}: not enough Supplies.`);
+      next = paid;
+    }
+  } else {
+    next = payCost(state, player, enablingInstanceId, cost, payFromPool, !!opts.trust);
+  }
   if (elementalVersatilityApplies(state, def, enablingInstanceId)) {
     next = patchCharacter(next, enablingInstanceId, (c) => ({ ...c, extra: { ...c.extra, elementalVersatilityUsedTurn: state.turn } }));
   }
@@ -241,7 +284,7 @@ export function playHandCard(
       abilityId: def.id,
       abilityName: def.name,
       targets: targetedIds(def, targetInstanceIds),
-      costText: describeCost(cost, payFromPool),
+      costText: paidInSupplies ? `${cost} Supplies` : describeCost(cost, payFromPool),
       // A choosing card's units ride along here, not on the stack item (nothing can retarget or negate a choice).
       resolve: (resolveState, item) => {
         const targets = def.chooses ? targetInstanceIds : (item?.targets ?? targetInstanceIds);
@@ -253,7 +296,7 @@ export function playHandCard(
   }
 
   // Terrain/Mission cards resolve (enter play) immediately, not via the stack.
-  const paid = describeCost(cost, payFromPool);
+  const paid = paidInSupplies ? '' : describeCost(cost, payFromPool);
   if (paid) next = appendLog(next, `${player} pays ${paid} to play ${def.cardType === 'mission' ? 'a Mission' : def.name}.`);
   return def.resolve({ ...ctx, state: next });
 }

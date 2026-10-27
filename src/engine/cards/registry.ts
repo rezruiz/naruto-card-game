@@ -13,7 +13,8 @@ export interface HandCardContext {
 export interface HandCardDef {
   id: string;
   name: string;
-  cardType: 'jutsu' | 'assist' | 'terrain' | 'mission';
+  /** 'shinobi' exists only under the prototype rules (shinobi.ts): a unit that's played onto the board for Supplies. */
+  cardType: 'jutsu' | 'assist' | 'terrain' | 'mission' | 'shinobi';
   /**
    * Chakra cost. May be a function for the "cheaper if paid from the
    * enabling character's own Pool" discount pattern (§10c) — cost functions
@@ -56,6 +57,8 @@ export interface HandCardDef {
   resolve: (ctx: HandCardContext) => GameState;
   /** Negates the targeting of an attack aimed at its enabling character (the Substitution family) — refused while that character is under Spore Technique. */
   negatesTargetingOfSelf?: boolean;
+  /** Shinobi cards (prototype): the unit's base Damage and Health once it's in play. */
+  shinobi?: { damage: number; health: number };
   /** Synergy tag(s), mainly relevant for Terrain cards (§10a) that other cards check for (e.g. Chidori Interception's cost discount "if an Akatsuki-Synergy Terrain is in play"). */
   synergy?: string[];
 }
@@ -68,7 +71,9 @@ export interface HandCardDef {
  * (§10c), Terrain (§10a), Missions (§10b), and Type: None tactical cards
  * (Field Intelligence, Incoming Mission Assignment, Battlefield Selection).
  */
-export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type'>): boolean {
+export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type'>, prototype = false): boolean {
+  // Prototype rules: every Jutsu card is paid from a Leader's Chakra Pool, so even a Type: None Jutsu needs a Leader to play it through.
+  if (prototype) return def.cardType === 'jutsu';
   return def.cardType === 'jutsu' && def.type !== 'None';
 }
 

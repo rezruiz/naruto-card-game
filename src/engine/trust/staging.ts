@@ -7,6 +7,7 @@ import { appendLog, appendPrivateLog, appendWarning } from '../phases/phaseMachi
 import { enqueueChoice, registerChoiceResolver } from '../choices';
 import { resolveTopOfStack } from '../stack';
 import type { AbilityChoices, BoardOccupant, GameState, PlayerId, StackItem, StagedAction } from '../types';
+import { isPrototype } from '../prototype';
 
 /**
  * Trust mode (playtesting): players agree on legality out loud, so the
@@ -294,7 +295,7 @@ export function hasMeaningfulResponse(state: GameState, player: PlayerId): boole
     const def = getHandCardDef(entry.defId);
     if (!def || def.speed === 'Normal') continue;
     const multiTarget = (def.maxTargets ?? 1) > 1;
-    for (const enabler of needsEnablingCharacter(def) ? enablers : ['']) {
+    for (const enabler of needsEnablingCharacter(def, isPrototype(probe)) ? enablers : ['']) {
       for (const targets of targetSets(def.maxTargets)) {
         for (const pay of payOptions) {
           if (checkHandCardLegality(probe, player, entry.instanceId, enabler, targets, pay, undefined, { ignoreCondition: multiTarget }).ok) return true;

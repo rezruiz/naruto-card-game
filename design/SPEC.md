@@ -1826,6 +1826,28 @@ or reduce it.
 
 ---
 
+*Shinobi (Prototype only): placeholder units for testing the prototype rules, with no abilities yet. The Prototype build's starter deck has 2 of each; they aren't part of the base game.*
+
+**Rain Village Genin** — Shinobi
+Cost: 1 Supply.
+Damage 1 · Health 2.
+
+**Rain Village Scout** — Shinobi
+Cost: 2 Supplies.
+Damage 2 · Health 2.
+
+**Rain Village Chunin** — Shinobi
+Cost: 3 Supplies.
+Damage 2 · Health 4.
+
+**Rain Village Jonin** — Shinobi
+Cost: 4 Supplies.
+Damage 3 · Health 5.
+
+**Rain Village Elite Guard** — Shinobi
+Cost: 6 Supplies.
+Damage 4 · Health 7.
+
 ## 13c. Example Terrain Cards
 
 **Akatsuki Hideout** — Synergy: Akatsuki, 2 Chakra. *(full nuance:

@@ -39,8 +39,8 @@ const CHAR_SORTS: Option<CharSort>[] = [
   { id: 'name', label: 'Name (A–Z)' },
   { id: 'hp', label: 'HP (high to low)' },
 ];
-const TYPE_ORDER: HandCardDef['cardType'][] = ['jutsu', 'assist', 'mission', 'terrain'];
-const TYPE_SECTION: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assists', mission: 'Missions', terrain: 'Terrain' };
+const TYPE_ORDER: HandCardDef['cardType'][] = ['shinobi', 'jutsu', 'assist', 'mission', 'terrain'];
+const TYPE_SECTION: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assists', mission: 'Missions', terrain: 'Terrain', shinobi: 'Shinobi' };
 const COST_BUCKETS: Option[] = [
   { id: '0-1', label: '0–1' },
   { id: '2-3', label: '2–3' },

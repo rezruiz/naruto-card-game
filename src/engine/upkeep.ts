@@ -4,6 +4,7 @@ import { getHandCardDef } from './cards/registry';
 import { UPKEEP_BY_RANK } from './ranks';
 import { enqueueChoice, registerChoiceResolver } from './choices';
 import { appendLog } from './phases/phaseMachine';
+import { isPrototype, suppliesAvailable } from './prototype';
 import type { CharacterInstance, GameState, PlayerId } from './types';
 
 /**
@@ -154,6 +155,11 @@ function grantDirectly(state: GameState, instanceId: string, amount: number): Ga
  * Chakra available for the rest of the turn's ordinary spending).
  */
 function tapSourcesForUpkeep(state: GameState, player: PlayerId, amount: number): GameState {
+  // Prototype rules: Upkeep is paid with Supplies, not Chakra (Chakra can only be pooled).
+  if (isPrototype(state)) {
+    const p = state.players[player];
+    return { ...state, players: { ...state.players, [player]: { ...p, suppliesSpent: (p.suppliesSpent ?? 0) + amount } } };
+  }
   const p = state.players[player];
   let remaining = amount;
   const chakraSources = p.chakraSources.map((s) => {
@@ -167,6 +173,7 @@ function tapSourcesForUpkeep(state: GameState, player: PlayerId, amount: number)
 }
 
 function untappedSourceCount(state: GameState, player: PlayerId): number {
+  if (isPrototype(state)) return suppliesAvailable(state, player);
   return state.players[player].chakraSources.filter((s) => !s.tapped).length;
 }
 
