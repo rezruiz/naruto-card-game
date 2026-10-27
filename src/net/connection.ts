@@ -1,6 +1,7 @@
 import { Peer, type DataConnection } from 'peerjs';
 import type { GameAction, GameState } from '../engine/types';
 import type { DeckList } from '../engine/decklist';
+import { PEER_PREFIX } from '../variant';
 
 export type NetMessage =
   | { kind: 'action'; action: GameAction }
@@ -31,7 +32,8 @@ function randomRoomCode(): string {
   return code;
 }
 
-const PEER_ID_PREFIX = 'naruto-ccg-';
+// Base game and prototype use separate room namespaces (variant.ts).
+const PEER_ID_PREFIX = PEER_PREFIX;
 
 /**
  * One player's browser hosts the game session (SPEC.md-external, M6 of the

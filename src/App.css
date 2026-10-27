@@ -1743,3 +1743,37 @@
   font-size: 12px;
   color: var(--accent);
 }
+
+/* Base game / Prototype badge (variant.ts) */
+.variant-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.55em;
+  font-weight: 600;
+  vertical-align: middle;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+
+.variant-badge--prototype {
+  background: #f3e8ff;
+  border-color: #b58ff0;
+  color: #3d1a6e;
+}
+
+@media (prefers-color-scheme: dark) {
+  .variant-badge--prototype {
+    background: #3a2560;
+    border-color: #8f6ad6;
+    color: #f1e6ff;
+  }
+}
+
+.lobby-screen__variant {
+  margin: -4px 0 16px;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+

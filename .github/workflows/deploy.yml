@@ -1,35 +1,82 @@
 name: Deploy to GitHub Pages
 
+# Two versions deploy side by side: the base game (main branch) at the site
+# root and the prototype (prototype branch) under /prototype/. A push to either
+# branch rebuilds and redeploys both. Only main may deploy to Pages, so a push
+# to prototype just starts this workflow on main (the relay job).
 on:
   push:
-    branches: [main]
+    branches: [main, prototype]
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write
 
 concurrency:
-  group: pages
+  group: ${{ github.ref == 'refs/heads/main' && 'pages' || 'pages-relay' }}
   cancel-in-progress: true
 
 jobs:
+  relay:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Redeploy from main (it builds both versions)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main
+
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: base
+      - name: Check out the prototype branch (if it exists)
+        id: proto
+        run: |
+          if git ls-remote --exit-code --heads "https://github.com/${{ github.repository }}.git" prototype > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.proto.outputs.exists == 'true'
+        with:
+          ref: prototype
+          path: proto
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
+
+      - name: Base game — install, test, build
+        working-directory: base
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Prototype — install, test, build
+        if: steps.proto.outputs.exists == 'true'
+        working-directory: proto
+        env:
+          VITE_VARIANT: prototype
+        run: |
+          npm ci
+          npm test
+          npm run build -- --base=/naruto-card-game/prototype/
+          mkdir -p ../base/dist/prototype
+          cp -r dist/. ../base/dist/prototype/
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: base/dist
 
   deploy:
     needs: build

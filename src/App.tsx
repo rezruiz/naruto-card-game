@@ -40,6 +40,7 @@ import { TurnControls } from './ui/components/TurnControls';
 import { useNetGame } from './net/useNetGame';
 import './App.css';
 import './ui/BoardMat.css';
+import { VARIANT, VARIANT_LABEL } from './variant';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
 
@@ -1083,7 +1084,9 @@ function ViewGame({
   return (
     <div className="app">
       <div className="app__header">
-        <h1>Naruto Custom Card Game — Prototype</h1>
+        <h1>
+          Naruto Custom Card Game <span className={`variant-badge variant-badge--${VARIANT}`}>{VARIANT_LABEL}</span>
+        </h1>
         <span className="app__header-actions">
           {onRestart && (
             <button

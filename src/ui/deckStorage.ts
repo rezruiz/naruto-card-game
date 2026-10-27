@@ -1,11 +1,13 @@
 import { PRESET_DECK_ID, presetDeck, type DeckList } from '../engine/decklist';
+import { STORAGE_PREFIX } from '../variant';
 
 // The deck library lives in this browser's localStorage — decks are per
 // device, not synced anywhere. Every read/write is guarded: storage can be
 // unavailable (private windows, blocked site data), and the library then
 // simply starts from the preset each time.
-const DECKS_KEY = 'ncg.decks.v1';
-const SELECTED_KEY = 'ncg.selectedDeck.v1';
+// The prototype keeps its own decks (variant.ts), so its card changes can't break base-game decks.
+const DECKS_KEY = `${STORAGE_PREFIX}decks.v1`;
+const SELECTED_KEY = `${STORAGE_PREFIX}selectedDeck.v1`;
 
 function readJson<T>(key: string): T | null {
   try {

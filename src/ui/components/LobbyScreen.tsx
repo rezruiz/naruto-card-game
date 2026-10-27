@@ -3,6 +3,7 @@ import type { NetMode } from '../../net/useNetGame';
 import type { ConnStatus } from '../../net/connection';
 import { characterDeckSize, handDeckSize, validateDeck, type DeckList } from '../../engine/decklist';
 import { RulesModal } from './RulesModal';
+import { OTHER_VARIANT_LABEL, VARIANT, VARIANT_LABEL, otherVariantUrl } from '../../variant';
 
 /** A deck dropdown, with a note when the chosen deck breaks the deck-building rules (it can still be played — this is a playtest build). */
 function DeckPicker({ label, decks, value, onChange }: { label: string; decks: DeckList[]; value: string; onChange: (id: string) => void }) {
@@ -97,7 +98,13 @@ export function LobbyScreen({
 
   return (
     <div className="lobby-screen">
-      <h1>Naruto Custom Card Game</h1>
+      <h1>
+        Naruto Custom Card Game <span className={`variant-badge variant-badge--${VARIANT}`}>{VARIANT_LABEL}</span>
+      </h1>
+      <p className="lobby-screen__variant">
+        {VARIANT === 'prototype' ? 'Testing new rules — the base game is unaffected.' : 'The current game.'}{' '}
+        <a href={otherVariantUrl()}>Switch to the {OTHER_VARIANT_LABEL} →</a>
+      </p>
       <div className="lobby-screen__decks">
         <DeckPicker label="Your deck" decks={decks} value={deckId} onChange={onSelectDeck} />
         <button type="button" onClick={onOpenLibrary}>
