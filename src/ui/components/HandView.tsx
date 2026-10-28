@@ -130,10 +130,14 @@ export function HandView({
                 <span className="hand-card__gem hand-card__gem--rank">{charEntry.rank}</span>
                 <div className="hand-card__name">{charEntry.name}</div>
                 <div className="hand-card__type">Character · Rank {charEntry.rank}</div>
-                <div className="hand-card__text">
-                  {hp && <>HP {hp}<br /></>}
-                  {styles}
-                </div>
+                <div className="hand-card__text">{styles}</div>
+                {hp && (
+                  <div className="hand-card__stats" aria-label={`Health ${hp}`}>
+                    <span className="hand-card__stat hand-card__stat--health" title="Health">
+                      ♥ {hp}
+                    </span>
+                  </div>
+                )}
                 <div className="hand-card__actions">
                   <button
                     type="button"
@@ -169,6 +173,17 @@ export function HandView({
               <div className="hand-card__name">{def.name}</div>
               <div className="hand-card__type">{handCardSubtitle(def)}</div>
               <div className="hand-card__text">{handCardSummary(def)}</div>
+              {def.shinobi && (
+                // The same stat line as a Shinobi in play: attack bottom-left, Health bottom-right.
+                <div className="hand-card__stats" aria-label={`Damage ${def.shinobi.damage}, Health ${def.shinobi.health}`}>
+                  <span className="hand-card__stat hand-card__stat--damage" title="Damage">
+                    ⚔ {def.shinobi.damage}
+                  </span>
+                  <span className="hand-card__stat hand-card__stat--health" title="Health">
+                    ♥ {def.shinobi.health}
+                  </span>
+                </div>
+              )}
               <div className="hand-card__actions">
                 <button
                   type="button"

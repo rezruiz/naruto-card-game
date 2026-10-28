@@ -158,6 +158,35 @@
   margin-top: auto;
 }
 
+/* Shinobi and character cards: the same stat line they show in play
+   (attack bottom-left, Health bottom-right), just above the corner buttons. */
+.hand-view .hand-card__stats {
+  display: flex;
+  gap: 4px;
+  margin-top: auto;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The next card in hand overlaps this one's right edge (margin-left: -14px), so keep Health clear of it. */
+.hand-view .hand-card:not(:last-child) .hand-card__stats {
+  padding-right: 12px;
+}
+
+.hand-view .hand-card__stats + .hand-card__actions {
+  margin-top: 0;
+}
+
+.hand-view .hand-card__stat--damage {
+  color: #f59e0b;
+}
+
+.hand-view .hand-card__stat--health {
+  margin-left: auto;
+  color: #22c55e;
+}
+
 .hand-view .hand-card__actions button,
 .hand-view .hand-card__move {
   font: inherit;
