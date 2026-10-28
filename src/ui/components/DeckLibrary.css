@@ -237,21 +237,7 @@
   opacity: 0.55;
 }
 
-.lib-card--character {
-  border-left-color: #c0392b;
-}
-.lib-card--jutsu {
-  border-left-color: #2f80ed;
-}
-.lib-card--assist {
-  border-left-color: #8e44ad;
-}
-.lib-card--mission {
-  border-left-color: #d4a017;
-}
-.lib-card--terrain {
-  border-left-color: #2e9e5b;
-}
+/* Card type borders: see cardStyles.css. */
 
 /* The cost gem (rank badge for characters), like Hearthstone's mana crystal. */
 .lib-card__gem {

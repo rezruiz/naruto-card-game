@@ -93,6 +93,41 @@
   }
 }
 
+/* ---- Card type borders ----
+   Every card has a full border in its card type's colour, thicker along the
+   top, so a Jutsu, Shinobi, Mission, Terrain (field), Assist or character card
+   can be told apart at a glance — same in hand and in the deck library. */
+.hand-card--character,
+.lib-card--character {
+  --type-color: #c0392b;
+}
+.hand-card--jutsu,
+.lib-card--jutsu {
+  --type-color: #2f80ed;
+}
+.hand-card--shinobi,
+.lib-card--shinobi {
+  --type-color: #14b8a6;
+}
+.hand-card--mission,
+.lib-card--mission {
+  --type-color: #d4a017;
+}
+.hand-card--terrain,
+.lib-card--terrain {
+  --type-color: #2e9e5b;
+}
+.hand-card--assist,
+.lib-card--assist {
+  --type-color: #8e44ad;
+}
+
+.hand-view .hand-card:not(.hand-card--back),
+.library .lib-card {
+  border: 2px solid var(--type-color, var(--card-border));
+  border-top-width: 5px;
+}
+
 /* The faint tint, kept through hover (which swaps the card's base color). */
 .lib-card.card-style,
 .lib-card.card-style:hover,

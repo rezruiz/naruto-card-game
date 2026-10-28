@@ -73,22 +73,7 @@
   cursor: grabbing;
 }
 
-/* Card type colors along the top edge (same palette as the deck library). */
-.hand-view .hand-card--character {
-  border-top-color: #c0392b;
-}
-.hand-view .hand-card--jutsu {
-  border-top-color: #2f80ed;
-}
-.hand-view .hand-card--assist {
-  border-top-color: #8e44ad;
-}
-.hand-view .hand-card--mission {
-  border-top-color: #d4a017;
-}
-.hand-view .hand-card--terrain {
-  border-top-color: #2e9e5b;
-}
+/* Card type borders: see cardStyles.css. */
 
 .hand-view .hand-card--pending {
   outline: 2px solid var(--accent);
