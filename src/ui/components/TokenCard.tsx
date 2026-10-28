@@ -21,7 +21,7 @@ export function TokenCard({
 }) {
   const shinobi: boolean = isShinobi(token);
   // Prototype: Shinobi and tokens are creature cards — effects in the middle,
-  // Health bottom-left and attack (Damage) bottom-right, so Damage isn't repeated as a badge.
+  // attack (Damage) bottom-left and Health bottom-right, so Damage isn't repeated as a badge.
   const creature = isPrototype(state);
   const resources = trackedResources(state, token).filter((t) => t.key && !(creature && t.label === 'Damage'));
   const orienting = hasFieldOrientation(state, token);
@@ -79,14 +79,14 @@ export function TokenCard({
       )}
       {creature && (
         <div className="token-card__stats" aria-label={`Health ${token.currentHP} of ${token.maxHP}${shinobi ? `, Damage ${shinobiDamage(token, state)}` : ''}`}>
-          <span className="token-card__stat token-card__stat--health" title="Health">
-            ♥ {token.currentHP}/{token.maxHP}
-          </span>
           {shinobi && (
             <span className="token-card__stat token-card__stat--damage" title="Damage">
               ⚔ {shinobiDamage(token, state)}
             </span>
           )}
+          <span className="token-card__stat token-card__stat--health" title="Health">
+            ♥ {token.currentHP}/{token.maxHP}
+          </span>
         </div>
       )}
       <div className="compact-card__hint">Click for details</div>

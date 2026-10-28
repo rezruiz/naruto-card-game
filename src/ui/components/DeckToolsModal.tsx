@@ -4,7 +4,7 @@ import type { GameAction, GameState, PlayerId } from '../../engine/types';
 import { DetailsModal } from './DetailsModal';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
 import { getCharacterDeckEntry } from '../../engine/characters';
-import { CHARACTER_DECK_NAME } from '../../variant';
+import { CHARACTER_DECK_NAME, GRAVEYARD_NAME, LEADER_GRAVEYARD_NAME, MAIN_DECK_NAME } from '../../variant';
 
 /** Jutsu Deck tools (search, look at the top, discard pile, Consumed pile) and Character Deck tools (search, Character graveyard). */
 export type DeckTool = 'search' | 'top' | 'discard' | 'consumed' | 'char-search' | 'char-graveyard';
@@ -98,7 +98,7 @@ export function DeckToolsModal({
 
   if (tool === 'char-graveyard') {
     return (
-      <DetailsModal hideText title="Character graveyard" subtitle={`${p.characterGraveyard.length} defeated character(s)`} onClose={onClose}>
+      <DetailsModal hideText title={LEADER_GRAVEYARD_NAME} subtitle={`${p.characterGraveyard.length} defeated character(s)`} onClose={onClose}>
         <div className="deck-list">
           {p.characterGraveyard.length === 0 && <span className="details-modal__note">No characters have been defeated yet.</span>}
           {p.characterGraveyard.map((entryId, index) => {
@@ -130,7 +130,7 @@ export function DeckToolsModal({
   if (tool === 'search') {
     const sorted = p.handDeck.slice().sort((a, b) => cardName(a.defId).localeCompare(cardName(b.defId)));
     return (
-      <DetailsModal hideText title="Search Jutsu Deck" subtitle={`${p.handDeck.length} cards — taking one shuffles the deck afterward`} onClose={onClose}>
+      <DetailsModal hideText title={`Search ${MAIN_DECK_NAME}`} subtitle={`${p.handDeck.length} cards — taking one shuffles the deck afterward`} onClose={onClose}>
         <div className="deck-list">
           {sorted.length === 0 && <span className="details-modal__note">The deck is empty.</span>}
           {sorted.map((c) => (
@@ -266,9 +266,9 @@ export function DeckToolsModal({
   }
 
   return (
-    <DetailsModal hideText title="Jutsu graveyard" subtitle={`${p.discardPile.length} discarded card(s)`} onClose={onClose}>
+    <DetailsModal hideText title={GRAVEYARD_NAME} subtitle={`${p.discardPile.length} discarded card(s)`} onClose={onClose}>
       <div className="deck-list">
-        {p.discardPile.length === 0 && <span className="details-modal__note">The Jutsu graveyard is empty.</span>}
+        {p.discardPile.length === 0 && <span className="details-modal__note">The {GRAVEYARD_NAME} is empty.</span>}
         {p.discardPile.map((c) => (
           <div key={c.instanceId} className="deck-list__entry">
             <div className="deck-list__row">

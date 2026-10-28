@@ -23,7 +23,7 @@ import { FilterMenu, SortMenu, type Option } from './LibraryControls';
 import { getCharacterDef, type CharacterDeckEntry } from '../../engine/characters';
 import type { ReactNode } from 'react';
 import './DeckLibrary.css';
-import { CHARACTER_DECK_NAME } from '../../variant';
+import { CHARACTER_DECK_NAME, MAIN_DECK_NAME } from '../../variant';
 
 // ---- Collection: sorting, sectioning, filtering ---------------------------------
 
@@ -296,7 +296,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
             Characters
           </button>
           <button type="button" role="tab" aria-selected={tab === 'hand'} className={tab === 'hand' ? 'active' : ''} onClick={() => setTab('hand')}>
-            Jutsu Deck cards
+            {MAIN_DECK_NAME} cards
           </button>
         </div>
         <div className="collection__filters">
@@ -396,7 +396,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
             </span>
           ))}
         </div>
-        <CountBar label="Jutsu Deck" count={handDeckSize(deck)} min={HAND_DECK_MIN} max={HAND_DECK_MAX} />
+        <CountBar label={MAIN_DECK_NAME} count={handDeckSize(deck)} min={HAND_DECK_MIN} max={HAND_DECK_MAX} />
 
         <div className="deck-panel__list">
           <h3>Characters</h3>
@@ -408,7 +408,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
               <span className="deck-row__count">×{deck.characterDeck[c.id]}</span>
             </button>
           ))}
-          <h3>Jutsu Deck</h3>
+          <h3>{MAIN_DECK_NAME}</h3>
           {deckHand.length === 0 && <p className="deck-panel__empty">No cards yet.</p>}
           {sectionHand(deckHand, 'type').map((sec) => (
             <div key={sec.key} className="deck-panel__type">

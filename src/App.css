@@ -1799,3 +1799,8 @@
   margin-left: 12px;
 }
 
+.supplies-count {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+

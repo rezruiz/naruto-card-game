@@ -640,19 +640,51 @@ button.in-play-chip--plain:hover {
   gap: 10px;
 }
 
-/* The lanes get the full width: Missions, Terrain, Health and the decks move
-   into one strip along the player's own edge (mirrored for the top player). */
+/* The lanes get the full width. Along the player's own edge: Missions and
+   Terrain on the left, the player's Health card in the centre, and the
+   graveyards and decks on the right (the strip sits above the lanes for the
+   top player). */
 .mat--lanes,
 .mat--lanes.mat--top {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
 .mat--lanes {
-  grid-template-areas: 'rows rows' 'field decks';
+  grid-template-areas: 'rows rows rows' 'field health decks';
 }
 
 .mat--lanes.mat--top {
-  grid-template-areas: 'field decks' 'rows rows';
+  grid-template-areas: 'field health decks' 'rows rows rows';
+}
+
+/* The Health card is as tall as the Missions and Terrain boxes beside it. */
+.mat__side--health {
+  grid-area: health;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.mat__side--health > .health-plate {
+  justify-content: center;
+  min-width: 96px;
+  box-sizing: border-box;
+}
+
+/* Decks, then graveyards, in one evenly spaced row with their cards lined up along the top. */
+.mat--lanes .mat__side--decks {
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.mat--lanes .deck-col__row {
+  grid-template-columns: repeat(2, 76px);
+  align-items: start;
+}
+
+.mat--lanes.mat--top .mat__side--decks {
+  align-items: flex-start;
 }
 
 .mat--lanes .mat__side--field {
@@ -667,11 +699,6 @@ button.in-play-chip--plain:hover {
 
 .mat--lanes .mat__side--decks {
   flex-direction: row;
-  align-items: flex-end;
-}
-
-.mat--lanes.mat--top .mat__side--decks {
-  align-items: flex-start;
 }
 
 .lane {
@@ -778,7 +805,7 @@ button.in-play-chip--plain:hover {
   white-space: nowrap;
 }
 
-/* Health bottom-left, attack (Damage) bottom-right — big enough to read at a glance across a crowded lane. */
+/* Attack (Damage) bottom-left, Health bottom-right — big enough to read at a glance across a crowded lane. */
 .token-card__stats {
   display: flex;
   justify-content: space-between;
@@ -794,5 +821,6 @@ button.in-play-chip--plain:hover {
 }
 
 .token-card__stat--health {
+  margin-left: auto; /* stays bottom-right even on a token with no attack */
   color: #22c55e;
 }

@@ -40,7 +40,7 @@ import { TurnControls } from './ui/components/TurnControls';
 import { useNetGame } from './net/useNetGame';
 import './App.css';
 import './ui/BoardMat.css';
-import { CHARACTER_DECK_NAME, RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
+import { CHARACTER_DECK_NAME, GRAVEYARD_NAME, LEADER_GRAVEYARD_NAME, MAIN_DECK_NAME, RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
 import { isPrototype, suppliesAvailable, suppliesMax } from './engine/prototype';
 import { ShinobiCombatPanel } from './ui/components/ShinobiCombatPanel';
 
@@ -962,15 +962,15 @@ function ViewGame({
     const piles = (
       <div className="deck-col__row" key="piles">
         <Pile
-          label="Jutsu Graveyard"
+          label={GRAVEYARD_NAME}
           count={player.discardPile.length}
           kind="graveyard"
           faceUp
-          title="Discarded Jutsu Deck cards — click to look through them"
+          title={`Discarded ${MAIN_DECK_NAME} cards — click to look through them`}
           onClick={canUseDecks && trust ? () => setDeckTool({ player: playerId, tool: 'discard' }) : undefined}
         />
         <Pile
-          label="Character Graveyard"
+          label={LEADER_GRAVEYARD_NAME}
           count={player.characterGraveyard.length}
           kind="graveyard"
           faceUp
@@ -982,9 +982,9 @@ function ViewGame({
     type MenuItem = { label: string; hint: string; act: () => void; disabled?: boolean };
     const jutsuMenu: MenuItem[] = [
       { label: 'Draw 1', hint: 'Manual correction: draw 1 extra card (your normal once-per-turn draw is the Draw button in the sidebar during your Draw Phase)', act: () => dispatch({ type: 'DRAW_CARDS', player: playerId, count: 1 }) },
-      { label: 'Shuffle', hint: 'Shuffle your Jutsu Deck', act: () => dispatch({ type: 'SHUFFLE_DECK', player: playerId }) },
-      { label: 'Search…', hint: 'Search your Jutsu Deck for a card', act: () => setDeckTool({ player: playerId, tool: 'search' }) },
-      { label: 'Look at top…', hint: 'Look at the top cards of your Jutsu Deck', act: () => setDeckTool({ player: playerId, tool: 'top' }) },
+      { label: 'Shuffle', hint: `Shuffle your ${MAIN_DECK_NAME}`, act: () => dispatch({ type: 'SHUFFLE_DECK', player: playerId }) },
+      { label: 'Search…', hint: `Search your ${MAIN_DECK_NAME} for a card`, act: () => setDeckTool({ player: playerId, tool: 'search' }) },
+      { label: 'Look at top…', hint: `Look at the top cards of your ${MAIN_DECK_NAME}`, act: () => setDeckTool({ player: playerId, tool: 'top' }) },
     ];
     const characterMenu: MenuItem[] = [
       {
@@ -1034,10 +1034,10 @@ function ViewGame({
         {deckWithMenu(
           'jutsu',
           <Pile
-            label="Jutsu Deck"
+            label={MAIN_DECK_NAME}
             count={player.handDeck.length}
             kind="jutsu"
-            title={canUseDecks && trust ? 'Jutsu Deck — click for Draw, Shuffle, Search, Look at top' : 'Jutsu Deck'}
+            title={canUseDecks && trust ? `${MAIN_DECK_NAME} — click for Draw, Shuffle, Search, Look at top` : MAIN_DECK_NAME}
             onClick={canUseDecks && trust ? toggleMenu('jutsu') : undefined}
           />,
           jutsuMenu,
@@ -1063,7 +1063,7 @@ function ViewGame({
     const deckColumn = (
       <div className="mat__side mat__side--decks" key="decks-col">
         {/* Mirrored like the rest of the board: graveyard toward the middle seam, decks nearest the player. */}
-        {position === 'bottom' ? [piles, decks] : [decks, piles]}
+        {proto ? [decks, piles] : position === 'bottom' ? [piles, decks] : [decks, piles]}
       </div>
     );
 
@@ -1100,7 +1100,14 @@ function ViewGame({
         }
       >
         {/* Left column: Missions over Terrain, with Health in each player's own bottom-left corner (Yu-Gi-Oh LP-style) — mirrored for the opponent. */}
-        <div className="mat__side mat__side--field">{position === 'bottom' ? [missionZone, terrainZone, healthPlate] : [healthPlate, terrainZone, missionZone]}</div>
+        {proto ? (
+          <>
+            <div className="mat__side mat__side--field">{[missionZone, terrainZone]}</div>
+            <div className="mat__side mat__side--health">{healthPlate}</div>
+          </>
+        ) : (
+          <div className="mat__side mat__side--field">{position === 'bottom' ? [missionZone, terrainZone, healthPlate] : [healthPlate, terrainZone, missionZone]}</div>
+        )}
         {proto ? (
           <div className="mat__rows mat__rows--lanes">{position === 'bottom' ? [unitLane, leaderLane] : [leaderLane, unitLane]}</div>
         ) : (
@@ -1264,7 +1271,7 @@ function ViewGame({
             <div className="deck-actions">
               {state.phase === 'Draw' && !state.players[state.activePlayer].drawnThisDrawPhase && (
                 <button type="button" onClick={() => dispatch({ type: 'DRAW_PHASE_CARD' })} title="Your once-per-turn Draw Phase draw">
-                  {`Draw (Jutsu Deck: ${state.players[state.activePlayer].handDeck.length})`}
+                  {`Draw (${MAIN_DECK_NAME}: ${state.players[state.activePlayer].handDeck.length})`}
                 </button>
               )}
             </div>

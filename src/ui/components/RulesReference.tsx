@@ -2,7 +2,7 @@ import { HEALTH_LOST_ON_DEFEAT, RANK_ORDER, UPKEEP_BY_RANK } from '../../engine/
 import { SYNERGY_DISCOUNT_CAP, startingCharacterTreatment } from '../../engine/upkeep';
 import { reinforcementTax } from '../../engine/playCharacter';
 import { LEADER_DRAW_COST } from '../../engine/prototype';
-import { VARIANT } from '../../variant';
+import { MAIN_DECK_NAME, VARIANT } from '../../variant';
 
 /** What a rank costs when it's your starting character (SPEC §6.5) — the normal upkeep otherwise. */
 function startingUpkeepLabel(rank: (typeof RANK_ORDER)[number]): string {
@@ -68,7 +68,7 @@ export function RulesReference() {
           <strong>Timing:</strong> damaging Normal-speed abilities are Combat only; healing/support abilities and Jutsu work in Main or Combat; Terrain, Missions and deck searches are Main only. Quick and Reactive follow their own speed.
         </li>
         <li>
-          <strong>Health:</strong> start at 20; 0 loses. Drawing from an empty Jutsu Deck costs 3 Health.
+          <strong>Health:</strong> start at 20; 0 loses. Drawing from an empty {MAIN_DECK_NAME} costs 3 Health.
         </li>
       </ul>
     </details>

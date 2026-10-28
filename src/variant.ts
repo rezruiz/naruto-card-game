@@ -12,9 +12,14 @@ export const VARIANT_LABEL = VARIANT === 'prototype' ? 'Prototype' : 'Base game'
 /** The Prototype calls the Character Deck the Leader Deck (its characters are Leaders). */
 export const CHARACTER_DECK_NAME = VARIANT === 'prototype' ? 'Leader Deck' : 'Character Deck';
 
-/** Engine log lines name the Character Deck; the Prototype shows it as the Leader Deck. */
+/** The Prototype's names for the Jutsu Deck and the two graveyards. */
+export const MAIN_DECK_NAME = VARIANT === 'prototype' ? 'Main Deck' : 'Jutsu Deck';
+export const GRAVEYARD_NAME = VARIANT === 'prototype' ? 'Graveyard' : 'Jutsu Graveyard';
+export const LEADER_GRAVEYARD_NAME = VARIANT === 'prototype' ? 'Leader Graveyard' : 'Character Graveyard';
+
+/** Engine log lines use the base game's names; the Prototype shows its own (Leader Deck, Main Deck). */
 export function variantText(text: string): string {
-  return VARIANT === 'prototype' ? text.replace(/Character Deck/g, CHARACTER_DECK_NAME) : text;
+  return VARIANT === 'prototype' ? text.replace(/Character Deck/g, CHARACTER_DECK_NAME).replace(/Jutsu Deck/g, MAIN_DECK_NAME) : text;
 }
 export const OTHER_VARIANT_LABEL = VARIANT === 'prototype' ? 'Base game' : 'Prototype';
 
