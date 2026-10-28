@@ -1,5 +1,6 @@
 import { getCharacterDef, type CharacterDeckEntry } from '../engine/characters';
-import type { HandCardDef } from '../engine/cards/registry';
+import { paysInChakra, type HandCardDef } from '../engine/cards/registry';
+import { VARIANT } from '../variant';
 import { getHandCardText } from './cardInfo';
 import './cardStyles.css';
 
@@ -38,6 +39,24 @@ export function handCardCost(def: HandCardDef): string {
   const m = /Cost:\s*(\d+)/.exec(text) ?? /(\d+)\s*Chakra/.exec(text);
   if (m) return m[1];
   return typeof def.cost === 'number' ? String(def.cost) : '?';
+}
+
+/**
+ * What pays this card's cost: Chakra (a round gem in the card's Style colour) or, in the Prototype, Supplies
+ * (an amber square token) — so the two read differently at a glance.
+ */
+export function costResource(def: HandCardDef): 'chakra' | 'supplies' {
+  return VARIANT === 'prototype' && !paysInChakra(def) ? 'supplies' : 'chakra';
+}
+
+/** The cost gem's extra class and tooltip, e.g. for "hand-card__gem": `hand-card__gem--supplies` and "3 Supplies". */
+export function costGem(def: HandCardDef, base: string): { className: string; title: string } {
+  const resource = costResource(def);
+  const cost = handCardCost(def);
+  return {
+    className: resource === 'supplies' ? `${base} ${base}--supplies` : base,
+    title: resource === 'supplies' ? `Costs ${cost} ${cost === '1' ? 'Supply' : 'Supplies'}` : `Costs ${cost} Chakra`,
+  };
 }
 
 /** One line of what the card does: its Effect, or a Mission's Condition. */

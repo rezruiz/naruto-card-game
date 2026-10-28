@@ -4,7 +4,7 @@ import { CHARACTER_DRAG_TYPE, IN_PLAY_CARD_DRAG_TYPE } from './CharacterCard';
 import { canBeChakraSource, getHandCardDef } from '../../engine/cards/registry';
 import { getCharacterDeckEntry } from '../../engine/characters';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
-import { characterInfo, handCardCost, handCardSubtitle, handCardSummary, CHARACTER_STYLE_CLASS, displayStyle, styleClass } from '../cardDisplay';
+import { characterInfo, costGem, handCardCost, handCardSubtitle, handCardSummary, CHARACTER_STYLE_CLASS, displayStyle, styleClass } from '../cardDisplay';
 import { VARIANT } from '../../variant';
 import '../Hand.css';
 
@@ -165,7 +165,7 @@ export function HandView({
               onClick={() => onOpenDetails(def.name, `${def.cardType} card — in hand`, getHandCardText(def.name))}
               {...dragProps(playable ? { instanceId: entry.instanceId, kind: 'card' } : null)}
             >
-              <span className="hand-card__gem">{handCardCost(def)}</span>
+              <span {...costGem(def, 'hand-card__gem')}>{handCardCost(def)}</span>
               <div className="hand-card__name">{def.name}</div>
               <div className="hand-card__type">{handCardSubtitle(def)}</div>
               <div className="hand-card__text">{handCardSummary(def)}</div>

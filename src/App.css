@@ -1799,6 +1799,15 @@
   margin-left: 12px;
 }
 
+/* The same amber square as a Supplies cost on a card (cardStyles.css). */
+.cost-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1px solid;
+  vertical-align: -1px;
+}
+
 .supplies-count {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

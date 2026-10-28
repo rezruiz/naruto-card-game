@@ -109,6 +109,22 @@
   border-color: var(--gem-ring);
 }
 
+/* Prototype: a Supplies cost is an amber square token (a crate), not a round
+   Chakra gem, whatever the card's Style — so you can tell at a glance what
+   pays for it. */
+.lib-card__gem--supplies,
+.hand-card__gem--supplies,
+.card-style .lib-card__gem--supplies,
+.card-style .hand-card__gem--supplies,
+.deck-row__cost--supplies,
+.cost-swatch--supplies {
+  border-radius: 5px;
+  background: linear-gradient(160deg, #fcd34d, #b45309);
+  border-color: #78350f;
+  color: #3b1d05;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
 .card-style--water .lib-card__gem,
 .card-style--water .hand-card__gem,
 .card-style--genjutsu .lib-card__gem,
