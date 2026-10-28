@@ -18,7 +18,7 @@ import type { HandCardDef } from '../../engine/cards/registry';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
 import { newDeckId } from '../deckStorage';
 import { DetailsModal } from './DetailsModal';
-import { CHARACTER_STYLE_CLASS, displayStyle, styleClass, RANK_ORDER, TYPE_LABEL, byCost, byRank, cardSymbol, characterInfo, costGem, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
+import { CHARACTER_STYLE_CLASS, displayStyle, styleClass, RANK_ORDER, TYPE_LABEL, byCost, byRank, characterInfo, costGem, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
 import { FilterMenu, SortMenu, type Option } from './LibraryControls';
 import { getCharacterDef, type CharacterDeckEntry } from '../../engine/characters';
 import type { ReactNode } from 'react';
@@ -360,9 +360,6 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
                 return (
                   <div key={d.id} className={`lib-card lib-card--${d.cardType} ${styleClass(displayStyle(d))}${inDeck >= limit ? ' lib-card--maxed' : ''}${readOnly ? ' lib-card--readonly' : ''}`} {...tileHandlers('hand', d.id)}>
                     <span {...costGem(d, 'lib-card__gem')}>{handCardCost(d)}</span>
-                    <span className="card-symbol" title={cardSymbol(d).label} aria-label={cardSymbol(d).label}>
-                      {cardSymbol(d).icon}
-                    </span>
                     <button type="button" className="lib-card__info" aria-label={`${d.name} details`} onClick={(e) => info(e, d.name, handCardSubtitle(d), getHandCardText(d.name))}>
                       ⓘ
                     </button>
@@ -421,9 +418,6 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
               {sec.groups.flatMap((g) => g.items).map((d) => (
                 <button type="button" key={d.id} className={`deck-row deck-row--${d.cardType}`} disabled={readOnly} title={readOnly ? undefined : 'Remove one'} onClick={() => setCount('hand', d.id, -1)}>
                   <span {...costGem(d, 'deck-row__cost')}>{handCardCost(d)}</span>
-                  <span className="deck-row__symbol" title={cardSymbol(d).label} aria-label={cardSymbol(d).label}>
-                    {cardSymbol(d).icon}
-                  </span>
                   <span className="deck-row__name">{d.name}</span>
                   <span className="deck-row__count">×{deck.handDeck[d.id]}</span>
                 </button>

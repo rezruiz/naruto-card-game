@@ -1,8 +1,7 @@
 /* ---- Style color coding for cards (deck library tiles and cards in hand) ----
-   The card keeps the UI's normal card colors; the Style shows as a symbol in
-   the top-left corner (cardDisplay.ts cardSymbol) and a faint tint across the
-   top of the card. The cost gem is always Chakra blue (or the amber Supplies
-   square), so its colour only ever says what pays for the card. */
+   The card keeps the UI's normal card colors; the Style shows as a faint tint
+   across the top of the card. The cost gem is always Chakra blue (or the amber
+   Supplies square), so its colour only ever says what pays for the card. */
 
 .card-style {
   --gem-top: #c9cfda;
@@ -109,22 +108,6 @@
   background: radial-gradient(circle at 35% 30%, var(--gem-top), var(--gem-bottom));
   color: var(--gem-text);
   border-color: var(--gem-ring);
-}
-
-/* The card's Style (or card type) symbol, top-left. */
-.card-symbol {
-  position: absolute;
-  top: 4px;
-  left: 6px;
-  font-size: 14px;
-  line-height: 1;
-  pointer-events: auto;
-}
-
-.deck-row__symbol {
-  flex: 0 0 auto;
-  font-size: 13px;
-  line-height: 1;
 }
 
 /* Prototype: a Supplies cost is an amber square token (a crate), not a round
