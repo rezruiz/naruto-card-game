@@ -1,7 +1,7 @@
 import { appendLog, appendWarning } from './phases/phaseMachine';
 import { findOccupant, isCharacter, patchOccupant } from './board';
 import { getCharacterDef } from './characters/registry';
-import { getHandCardDef } from './cards/registry';
+import { canBeChakraSource, getHandCardDef } from './cards/registry';
 import { isPrototype } from './prototype';
 import type { BoardOccupant, GameState, PlayerId } from './types';
 
@@ -49,10 +49,10 @@ export function placeChakraSource(state: GameState, instanceId: string): GameSta
   if (entry.kind !== 'card') {
     return appendLog(working, `${player} can't Consume a Character card as a Chakra source.`);
   }
-  // Prototype rules: only Jutsu and Shinobi cards can be played as Chakra sources.
-  const cardType = getHandCardDef(entry.defId)?.cardType;
-  if (isPrototype(state) && cardType !== 'jutsu' && cardType !== 'shinobi') {
-    return appendLog(working, `Only Jutsu and Shinobi cards can be played as Chakra sources.`);
+  // Prototype rules: only Jutsu and Shinobi cards can be discarded as Chakra (unless a card says otherwise).
+  const def = getHandCardDef(entry.defId);
+  if (isPrototype(state) && def && !canBeChakraSource(def)) {
+    return appendLog(working, `${def.name} can't be discarded as Chakra — only Jutsu and Shinobi cards can.`);
   }
 
   const hand = p.hand.filter((h) => h.instanceId !== instanceId);

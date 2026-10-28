@@ -1,10 +1,11 @@
 import { useState, type DragEvent } from 'react';
 import type { HandEntry } from '../../engine/types';
 import { CHARACTER_DRAG_TYPE, IN_PLAY_CARD_DRAG_TYPE } from './CharacterCard';
-import { getHandCardDef } from '../../engine/cards/registry';
+import { canBeChakraSource, getHandCardDef } from '../../engine/cards/registry';
 import { getCharacterDeckEntry } from '../../engine/characters';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
 import { characterInfo, handCardCost, handCardSubtitle, handCardSummary, CHARACTER_STYLE_CLASS, displayStyle, styleClass } from '../cardDisplay';
+import { VARIANT } from '../../variant';
 import '../Hand.css';
 
 /** Drag data type for a card dragged out of hand onto the board (Hearthstone-style play). */
@@ -154,11 +155,13 @@ export function HandView({
           if (!def) return <div className="hand-card hand-card--back" key={entry.instanceId} aria-label="Hidden card" />;
           const isPending = pendingCardInstanceId === entry.instanceId;
           const playable = canAct && !pendingCardInstanceId;
+          // Prototype rules: only Jutsu and Shinobi cards can be discarded as Chakra (unless a card says otherwise).
+          const chakraOk = VARIANT !== 'prototype' || canBeChakraSource(def);
           return (
             <div
               className={`hand-card hand-card--${def.cardType} ${styleClass(displayStyle(def))}${isPending ? ' hand-card--pending' : ''}${playable ? ' hand-card--playable' : ''}`}
               key={entry.instanceId}
-              title={playable ? 'Drag onto the board to play it (or onto your Chakra row to place it as a Chakra source) · click for details' : 'Click for details'}
+              title={playable ? `Drag onto the board to play it${chakraOk ? ' (or onto your Chakra row to place it as a Chakra source)' : ''} · click for details` : 'Click for details'}
               onClick={() => onOpenDetails(def.name, `${def.cardType} card — in hand`, getHandCardText(def.name))}
               {...dragProps(playable ? { instanceId: entry.instanceId, kind: 'card' } : null)}
             >
@@ -179,12 +182,12 @@ export function HandView({
                 </button>
                 <button
                   type="button"
-                  disabled={!canPlace || alreadyPlacedThisTurn || !!pendingCardInstanceId}
+                  disabled={!chakraOk || !canPlace || alreadyPlacedThisTurn || !!pendingCardInstanceId}
                   onClick={(e) => {
                     e.stopPropagation();
                     onPlaceChakraSource(entry.instanceId);
                   }}
-                  title="Discard this card to place a Chakra source (once per turn)"
+                  title={chakraOk ? 'Discard this card to place a Chakra source (once per turn)' : 'Only Jutsu and Shinobi cards can be discarded as Chakra'}
                   aria-label="Discard for Chakra"
                 >
                   🌀

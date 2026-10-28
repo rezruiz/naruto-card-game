@@ -7,7 +7,7 @@ import { abilityDeclarationWarnings, cardDeclarationWarnings } from './engine/tr
 import { findAbility, poolAvailableFor, resolveCost, type ChoiceSpec } from './engine/abilities';
 import { getCharacterDeckEntry } from './engine/characters';
 import { currentTax } from './engine/playCharacter';
-import { getHandCardDef } from './engine/cards/registry';
+import { canBeChakraSource, getHandCardDef } from './engine/cards/registry';
 import { missionProgressText } from './engine/cards/missions';
 import type { AbilityChoices, GameAction, GameState, HandEntry, MissionInstance, PlayerId } from './engine/types';
 import { cardStage, newPendingCard, toHandCardContext, type PendingCard } from './ui/cardFlow';
@@ -563,9 +563,13 @@ function ViewGame({
   const detailsOwner = details?.kind === 'occupant' ? findOccupant(state, details.instanceId)?.player : undefined;
   const detailsCanAct = !!detailsOwner && isMyBoard(detailsOwner) && (trust || state.activePlayer === detailsOwner) && canAct && !setupBlocked;
 
-  /** A non-character card being dragged from this player's hand (it can be dropped on their Chakra row as a Chakra source). */
+  /** A non-character card being dragged from this player's hand that can be dropped on their Chakra row as a Chakra source. */
   function myDragCard(playerId: PlayerId) {
-    return handDrag && handDrag.player === playerId && handDrag.kind === 'card' ? handDrag : null;
+    if (!handDrag || handDrag.player !== playerId || handDrag.kind !== 'card') return null;
+    // Prototype rules: only Jutsu and Shinobi cards can be discarded as Chakra (unless a card says otherwise).
+    const entry = state.players[playerId].hand.find((h) => h.instanceId === handDrag.instanceId);
+    const def = entry?.kind === 'card' ? getHandCardDef(entry.defId) : undefined;
+    return isPrototype(state) && def && !canBeChakraSource(def) ? null : handDrag;
   }
 
   function renderPlayerBoard(playerId: PlayerId, position: 'top' | 'bottom') {

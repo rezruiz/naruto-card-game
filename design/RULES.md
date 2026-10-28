@@ -31,11 +31,13 @@
 
 **Leaders.** Character cards are Leaders. A Leader pays for its abilities, and for the Jutsu cards it enables, with Chakra from its own Chakra Pool — never with generic Chakra. Every Jutsu card is played through a Leader (even a Type: None Jutsu), and its cost always counts as paid from the Pool, so a "cheaper from the Pool" discount always applies. Leaders can't attack (they act only through their abilities) and can't defend.
 
-**Chakra.** Chakra sources are still placed and tapped, but that Chakra can only be **pooled** into a character — it can't be spent directly. Only **Jutsu and Shinobi cards** can be placed as Chakra sources.
+**Chakra.** Chakra sources are still placed and tapped, but that Chakra can only be **pooled** into a character — it can't be spent directly. Only **Jutsu and Shinobi cards** can be discarded as Chakra sources — Missions, Terrain and Assists can't.
 
 **No Upkeep.** Leaders cost nothing to keep in play: there is no Upkeep payment (and no starting-character Upkeep bonus). Abilities that trigger during the Upkeep Phase still happen.
 
-**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Missions, Terrain, Assists, Retreat and Leader Deck draws** — everything that isn't a Chakra Pool cost.
+**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Missions, Terrain, Assists, Retreat and Leader Deck draws** — everything that isn't a Chakra Pool cost. By default Jutsu cards cost Chakra and every other card costs Supplies.
+
+Both of these are general rules, and a card can say otherwise: a card that costs Chakra when it would normally cost Supplies (or the other way round), or one that can (or can't) be discarded as Chakra, says so on the card.
 
 **Board.** There is no board shape — no rows of positions, no columns, no cross pattern. Each player has two open lanes: **Leaders** and **Shinobi & Tokens**, with **no limit** on how many units are in either. A new Leader, Shinobi or token simply joins the end of its lane; you never pick a position. Where a card refers to units "next to" or "adjacent to" one, that means the units directly beside it in the same lane — nothing is in front of or behind anything.
 

@@ -6,8 +6,10 @@
 //   the Jutsu cards a Leader enables — is paid from a Chakra Pool.
 // - Supplies: a second resource that refills each turn. Your maximum is the
 //   number of turns you've started (1 on your first turn), up to 20.
-//   Shinobi cards cost Supplies, and so does every other non-Chakra cost.
-// - Only Jutsu and Shinobi cards can be played as Chakra sources.
+//   Jutsu cards cost Chakra; every other card (Shinobi, Missions, Terrain,
+//   Assists) costs Supplies, and so does every other non-Chakra cost.
+// - Only Jutsu and Shinobi cards can be discarded as Chakra sources.
+//   Both are defaults: a card can say otherwise (HandCardDef.paidWith / chakraSource).
 // - Shinobi: units with Damage and Health that fight on their own (shinobi.ts).
 //
 // Base-game states (no ruleset) never take any of these paths.

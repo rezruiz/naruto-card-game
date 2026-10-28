@@ -64,6 +64,12 @@ export interface HandCardDef {
     /** +amount Damage while its controller has this Leader in play (e.g. Amegakure Civilian Rebel with Yahiko). */
     leaderBonus?: { defId: string; amount: number };
   };
+  /**
+   * Prototype rules, card by card. By default only Jutsu and Shinobi cards can be discarded as a Chakra
+   * source, and Jutsu cost Chakra while every other card costs Supplies. A card that breaks either rule says so here.
+   */
+  chakraSource?: boolean;
+  paidWith?: 'chakra' | 'supplies';
   /** Synergy tag(s), mainly relevant for Terrain cards (§10a) that other cards check for (e.g. Chidori Interception's cost discount "if an Akatsuki-Synergy Terrain is in play"). */
   synergy?: string[];
 }
@@ -76,10 +82,20 @@ export interface HandCardDef {
  * (§10c), Terrain (§10a), Missions (§10b), and Type: None tactical cards
  * (Field Intelligence, Incoming Mission Assignment, Battlefield Selection).
  */
-export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type'>, prototype = false): boolean {
-  // Prototype rules: every Jutsu card is paid from a Leader's Chakra Pool, so even a Type: None Jutsu needs a Leader to play it through.
-  if (prototype) return def.cardType === 'jutsu';
+export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type' | 'paidWith'>, prototype = false): boolean {
+  // Prototype rules: a Chakra cost is paid from a Leader's Chakra Pool, so even a Type: None Jutsu needs a Leader to play it through.
+  if (prototype) return paysInChakra(def);
   return def.cardType === 'jutsu' && def.type !== 'None';
+}
+
+/** Prototype rules: whether this card costs Chakra (from a Leader's Pool) rather than Supplies — Jutsu by default, unless the card says otherwise. */
+export function paysInChakra(def: Pick<HandCardDef, 'cardType' | 'paidWith'>): boolean {
+  return (def.paidWith ?? (def.cardType === 'jutsu' ? 'chakra' : 'supplies')) === 'chakra';
+}
+
+/** Prototype rules: whether this card can be discarded as a Chakra source — Jutsu and Shinobi by default, unless the card says otherwise. */
+export function canBeChakraSource(def: Pick<HandCardDef, 'cardType' | 'chakraSource'>): boolean {
+  return def.chakraSource ?? (def.cardType === 'jutsu' || def.cardType === 'shinobi');
 }
 
 /** The units a played card actually *targets* — none for a card that chooses them instead (HandCardDef.chooses). */

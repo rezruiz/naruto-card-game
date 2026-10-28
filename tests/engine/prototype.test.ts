@@ -7,6 +7,7 @@ import { previewUpkeep } from '../../src/engine/upkeep';
 import { shinobiDamage } from '../../src/engine/shinobi';
 import { suppliesAvailable, suppliesMax } from '../../src/engine/prototype';
 import { currentTax } from '../../src/engine/playCharacter';
+import { canBeChakraSource, getHandCardDef, needsEnablingCharacter, paysInChakra } from '../../src/engine/cards/registry';
 import { createSetupState } from '../../src/engine/state';
 import { freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
 import type { GameState, PlayerId, TokenInstance } from '../../src/engine/types';
@@ -75,6 +76,22 @@ describe('Prototype: Chakra is paid only from Pools', () => {
     expect(gameReducer(mission.state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: mission.instanceId }).players.p1.chakraSources).toHaveLength(0);
     const shinobi = addToHand(s, 'p1', 'shinobi-rain-genin');
     expect(gameReducer(shinobi.state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: shinobi.instanceId }).players.p1.chakraSources).toHaveLength(1);
+  });
+
+  it('by default Jutsu cost Chakra and every other card costs Supplies; a card can override either rule', () => {
+    const def = (cardType: 'jutsu' | 'assist' | 'terrain' | 'mission' | 'shinobi', extra: object = {}) => ({ cardType, type: 'None' as const, ...extra });
+    expect(['jutsu', 'shinobi', 'mission', 'terrain', 'assist'].map((t) => paysInChakra(def(t as 'jutsu')))).toEqual([true, false, false, false, false]);
+    expect(['jutsu', 'shinobi', 'mission', 'terrain', 'assist'].map((t) => canBeChakraSource(def(t as 'jutsu')))).toEqual([true, true, false, false, false]);
+    // Card-dependent exceptions.
+    expect(paysInChakra(def('mission', { paidWith: 'chakra' }))).toBe(true);
+    expect(needsEnablingCharacter(def('mission', { paidWith: 'chakra' }), true)).toBe(true);
+    expect(paysInChakra(def('jutsu', { paidWith: 'supplies' }))).toBe(false);
+    expect(needsEnablingCharacter(def('jutsu', { paidWith: 'supplies' }), true)).toBe(false);
+    expect(canBeChakraSource(def('terrain', { chakraSource: true }))).toBe(true);
+    expect(canBeChakraSource(def('jutsu', { chakraSource: false }))).toBe(false);
+    // The real cards follow the defaults.
+    expect(paysInChakra(getHandCardDef('unshakable-resolve')!)).toBe(false);
+    expect(canBeChakraSource(getHandCardDef('unshakable-resolve')!)).toBe(false);
   });
 });
 

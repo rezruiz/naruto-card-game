@@ -169,7 +169,7 @@ export function checkHandCardLegality(
 /**
  * Prototype rules (prototype.ts): a Jutsu card is paid entirely from its enabling Leader's Chakra Pool — so a
  * "cheaper if paid from the Pool" discount always applies — and every other card (Shinobi, Missions, Terrain,
- * Assists) costs Supplies instead of Chakra.
+ * Assists) costs Supplies instead of Chakra. A card can say otherwise (HandCardDef.paidWith).
  */
 export function prototypeCardCost(state: GameState, def: HandCardDef, ctx: HandCardContext): { cost: number; fromPool: boolean } {
   const fromPool = needsEnablingCharacter(def, true);
