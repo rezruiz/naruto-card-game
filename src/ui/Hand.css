@@ -147,26 +147,34 @@
   -webkit-box-orient: vertical;
 }
 
+/* Cards are played by dragging them onto the board (or onto the Chakra row),
+   so Play and Discard for Chakra are small fallback buttons tucked in the
+   bottom-right corner rather than a full-width bar. */
 .hand-view .hand-card__actions {
   display: flex;
-  gap: 3px;
+  justify-content: flex-end;
+  gap: 2px;
   align-items: center;
+  margin-top: auto;
 }
 
 .hand-view .hand-card__actions button,
 .hand-view .hand-card__move {
   font: inherit;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 5px;
+  font-size: 9px;
+  line-height: 1.2;
+  padding: 1px 4px;
+  border-radius: 4px;
+  opacity: 0.75;
 }
 
-.hand-view .hand-card__actions button:first-child {
-  flex: 1;
+.hand-view .hand-card__actions button:hover:not(:disabled),
+.hand-view .hand-card__move:hover {
+  opacity: 1;
 }
 
 .hand-view .hand-card__move {
-  max-width: 34px;
+  max-width: 26px;
   border: 1px solid var(--border);
   background: var(--panel-bg);
   color: inherit;
