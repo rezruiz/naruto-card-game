@@ -27,6 +27,27 @@ export function styleClass(style: string): string {
   return `card-style card-style--${style === 'None' ? 'none' : (STYLE_COLOR[style] ?? 'unique')}`;
 }
 
+/** Each Style's symbol, shown in the card's top-left corner (the cost gem stays Chakra blue). */
+const STYLE_SYMBOL: Record<string, { icon: string; label: string }> = {
+  Fire: { icon: '🔥', label: 'Fire Style' },
+  Water: { icon: '💧', label: 'Water Style' },
+  Earth: { icon: '⛰️', label: 'Earth Style' },
+  Lightning: { icon: '⚡', label: 'Lightning Style' },
+  Wind: { icon: '🌪️', label: 'Wind Style' },
+  Genjutsu: { icon: '👁️', label: 'Genjutsu' },
+  Physical: { icon: '👊', label: 'Physical (Taijutsu / Bukijutsu)' },
+  Shinobi: { icon: '🥷', label: 'Shinobi' },
+};
+
+/** A card with no Style shows its card type's symbol instead. */
+const TYPE_SYMBOL: Record<HandCardDef['cardType'], string> = { jutsu: '📜', assist: '🤝', mission: '🎯', terrain: '🏞️', shinobi: '🥷' };
+
+/** The symbol for a card's Style (or, with no Style, its card type) and what it means. */
+export function cardSymbol(def: HandCardDef): { icon: string; label: string } {
+  const style = displayStyle(def);
+  return STYLE_SYMBOL[style] ?? (style !== 'None' ? { icon: '✴️', label: `${style} Style` } : { icon: TYPE_SYMBOL[def.cardType], label: `${TYPE_LABEL[def.cardType]} · No Style` });
+}
+
 /** Character cards are white. */
 export const CHARACTER_STYLE_CLASS = 'card-style card-style--character';
 
