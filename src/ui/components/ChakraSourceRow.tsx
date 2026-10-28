@@ -59,7 +59,9 @@ export function ChakraSourceRow({
           <span className="cost-swatch cost-swatch--supplies" aria-hidden /> Supplies:
           {/* One span, so the label's flex gap doesn't space out "3 / 5". */}
           <span className="supplies-count">
-            <strong>{supplies.available}</strong>/{supplies.max}
+            <strong>
+              {supplies.available}/{supplies.max}
+            </strong>
           </span>
           {onAdjustSupplies && (
             <span className="stepper">
