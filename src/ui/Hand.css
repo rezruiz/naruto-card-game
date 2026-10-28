@@ -1,5 +1,5 @@
 /* ---- The hand: cards held like a real hand (Hearthstone / Yu-Gi-Oh style) ----
-   Portrait cards that overlap slightly, lift and come to the front on hover,
+   Portrait cards side by side (no overlap), that lift on hover,
    and can be dragged onto the board to play them. Selectors are scoped under
    .hand-view so they win over the older generic .hand-card rules in App.css. */
 
@@ -13,8 +13,8 @@
 .hand-view .hand-view__cards {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0;
-  padding: 22px 12px 10px 24px; /* room for the hover lift and the cost gems */
+  gap: 8px;
+  padding: 22px 12px 10px; /* room for the hover lift and the cost gems */
   overflow-x: auto;
   overflow-y: visible;
   scrollbar-width: thin;
@@ -27,12 +27,11 @@
   width: var(--card-w);
   min-width: 0;
   height: 182px;
-  margin-left: -14px; /* cards overlap like a held hand */
-  padding: 22px 9px 8px;
+  padding: 20px 10px 8px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   border: 1px solid var(--card-border);
   border-top: 5px solid var(--card-border);
   border-radius: 10px;
@@ -133,14 +132,16 @@
 
 .hand-card__type {
   font-size: 10px;
+  line-height: 1.25;
   opacity: 0.7;
 }
 
 .hand-card__text {
   flex: 1;
   min-height: 0;
+  margin-top: 2px;
   font-size: 10.5px;
-  line-height: 1.3;
+  line-height: 1.35;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 5;
@@ -162,16 +163,22 @@
    (attack bottom-left, Health bottom-right), just above the corner buttons. */
 .hand-view .hand-card__stats {
   display: flex;
+  align-items: center;
   gap: 4px;
   margin-top: auto;
+  padding: 4px 2px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
-/* The next card in hand overlaps this one's right edge (margin-left: -14px), so keep Health clear of it. */
-.hand-view .hand-card:not(:last-child) .hand-card__stats {
-  padding-right: 12px;
+.hand-view .hand-card__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
 }
 
 .hand-view .hand-card__stats + .hand-card__actions {

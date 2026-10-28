@@ -646,7 +646,8 @@ button.in-play-chip--plain:hover {
    top player). */
 .mat--lanes,
 .mat--lanes.mat--top {
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* The decks never shrink below their own width, so on a narrow board they push the Health card left instead of sliding under it. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
 }
 
 .mat--lanes {

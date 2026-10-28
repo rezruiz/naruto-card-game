@@ -134,7 +134,8 @@ export function HandView({
                 {hp && (
                   <div className="hand-card__stats" aria-label={`Health ${hp}`}>
                     <span className="hand-card__stat hand-card__stat--health" title="Health">
-                      ♥ {hp}
+                      <span aria-hidden>♥</span>
+                      {hp}
                     </span>
                   </div>
                 )}
@@ -177,10 +178,12 @@ export function HandView({
                 // The same stat line as a Shinobi in play: attack bottom-left, Health bottom-right.
                 <div className="hand-card__stats" aria-label={`Damage ${def.shinobi.damage}, Health ${def.shinobi.health}`}>
                   <span className="hand-card__stat hand-card__stat--damage" title="Damage">
-                    ⚔ {def.shinobi.damage}
+                    <span aria-hidden>⚔</span>
+                    {def.shinobi.damage}
                   </span>
                   <span className="hand-card__stat hand-card__stat--health" title="Health">
-                    ♥ {def.shinobi.health}
+                    <span aria-hidden>♥</span>
+                    {def.shinobi.health}
                   </span>
                 </div>
               )}
