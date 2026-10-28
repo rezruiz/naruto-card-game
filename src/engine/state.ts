@@ -4,6 +4,7 @@ import { NOT_LEADERS } from './prototype';
 import { createCharacterInstance, CHARACTER_DECK_MANIFEST } from './characters';
 import { buildHandDeck, drawCard, HAND_DECK_MANIFEST, revealCharacters, shuffle } from './deck';
 import { PROTOTYPE_SHINOBI_MANIFEST } from './shinobi';
+import { PROTOTYPE_EQUIPMENT_MANIFEST } from './equipment';
 import { toManifests, type DeckList } from './decklist';
 // Side-effect import — registers every Jutsu Deck card (Jutsu/Assist/
 // Terrain/Mission) before any deck is built.
@@ -155,7 +156,7 @@ export function createSetupState(
     const chosen = decks[player] ? toManifests(decks[player]) : null;
     const leaders = (ids: string[]) => (opts.ruleset === 'prototype' ? ids.filter((id) => !NOT_LEADERS.has(id)) : ids);
     const characters = leaders(chosen && chosen.characters.length > 0 ? chosen.characters : CHARACTER_DECK_MANIFEST);
-    const hand = chosen && chosen.hand.length > 0 ? chosen.hand : opts.ruleset === 'prototype' ? [...HAND_DECK_MANIFEST, ...PROTOTYPE_SHINOBI_MANIFEST] : undefined;
+    const hand = chosen && chosen.hand.length > 0 ? chosen.hand : opts.ruleset === 'prototype' ? [...HAND_DECK_MANIFEST, ...PROTOTYPE_SHINOBI_MANIFEST, ...PROTOTYPE_EQUIPMENT_MANIFEST] : undefined;
     state = {
       ...state,
       players: {

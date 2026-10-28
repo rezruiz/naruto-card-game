@@ -35,7 +35,7 @@
 
 **No Upkeep.** Leaders cost nothing to keep in play: there is no Upkeep payment (and no starting-character Upkeep bonus). Abilities that trigger during the Upkeep Phase still happen.
 
-**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Missions, Terrain, Assists, Retreat and Leader Deck draws** — everything that isn't a Chakra Pool cost. By default Jutsu cards cost Chakra and every other card costs Supplies.
+**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Equipment, Missions, Terrain, Assists, Retreat and Leader Deck draws** — everything that isn't a Chakra Pool cost. By default Jutsu cards cost Chakra and every other card costs Supplies.
 
 Both of these are general rules, and a card can say otherwise: a card that costs Chakra when it would normally cost Supplies (or the other way round), or one that can (or can't) be discarded as Chakra, says so on the card.
 
@@ -53,6 +53,27 @@ Both of these are general rules, and a card can say otherwise: a card that costs
 - goes to its owner's discard pile when defeated.
 
 The starter deck in the Prototype adds 2 of each placeholder Shinobi (Rain Village Genin, Scout, Chunin, Jonin and Elite Guard).
+
+**Equipment.** Gear from the main deck. Each Equipment shows two Supply costs: its **Cost** to play it, and its **Re-equip** cost to move it later.
+- **Playing:** in your Main Phase, pay its Cost and attach it straight away to a Leader or Shinobi you control — never a token, never an enemy. It can only be played onto a holder; it never enters play unattached.
+- **No limit:** a unit can hold any number of Equipment, and their buffs add up. A buff only counts while the Equipment is attached.
+- **Damage buffs:** on a Shinobi they add to its Damage. On a Leader they add to each hit of its damage-dealing abilities and the Jutsu cards it enables.
+- **When the holder leaves play:** its Equipment stays in play, unattached and doing nothing, in your Equipment area.
+- **Re-equip:** in your Main Phase, pay the Re-equip cost to move an Equipment (attached or unattached) to another Leader or Shinobi you control. Moving it off a unit takes its buff with it (a unit never drops below 1 HP from losing a Health buff).
+- Equipment can't be discarded as Chakra.
+
+| Equipment | Cost | Re-equip | Effect |
+|---|---|---|---|
+| Forehead Protector | 1 | 1 | +2 Health. |
+| Kunai & Shuriken Pouch | 2 | 1 | +1 Damage. |
+| Chakra Storage Scroll | 2 | 1 | +2 Chakra Pool capacity (Leaders only). |
+| Medical Pouch | 2 | 1 | At the start of your turn (Upkeep), heal the holder 1. |
+| Explosive Tag Vest | 2 | 1 | When the holder is defeated by an attack, deal 2 damage to the attacker. |
+| Flak Vest | 3 | 2 | Each time the holder takes damage, reduce it by 1 (to a minimum of 1). |
+| Chakra Trench Knives | 3 | 2 | +1 Damage, or +2 if the holder has Wind Style. |
+| Akatsuki Cloak (Unique) | 3 | 2 | +3 Health; an Akatsuki holder also gets +1 Damage. |
+
+The starter deck in the Prototype adds 2 of each Equipment (1 Akatsuki Cloak).
 
 ---
 

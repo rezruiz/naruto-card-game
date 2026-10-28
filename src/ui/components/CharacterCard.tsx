@@ -1,6 +1,7 @@
 import type { CharacterInstance, GameState } from '../../engine/types';
 import { hasFieldOrientation } from '../../engine/board';
 import { trackedResources } from '../../engine/characters/progressText';
+import { EquipmentChips } from './EquipmentChips';
 
 /** The drag payload type for a character being dragged back to hand. */
 export const CHARACTER_DRAG_TYPE = 'application/x-naruto-character';
@@ -79,6 +80,7 @@ export function CharacterCard({
           ))}
         </div>
       )}
+      <EquipmentChips state={state} holderId={character.instanceId} />
       <div className="compact-card__badges">
         {character.status.retreated && <span className="badge badge--retreated">Retreated</span>}
         {character.status.disabled && <span className="badge badge--disabled">Disabled</span>}

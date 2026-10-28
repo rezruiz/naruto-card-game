@@ -1,5 +1,6 @@
 import { CARD_TEXT, CHARACTER_TEXT } from './cardText.generated';
 import { getTokenDef } from '../engine/characters/registry';
+import { listHandCardDefs } from '../engine/cards/registry';
 
 // Character/token defId -> the SPEC.md heading its printed text lives under.
 const CHARACTER_HEADINGS: [test: (defId: string) => boolean, heading: string][] = [
@@ -74,5 +75,7 @@ export function getTokenCardText(defId: string, tokenName: string): string | und
 
 export function getHandCardText(cardName: string): string | undefined {
   const text = CARD_TEXT[cardName];
-  return text ? clean(text) : undefined;
+  if (text) return clean(text);
+  // Cards whose text isn't in SPEC.md carry it themselves (the Prototype's Equipment).
+  return listHandCardDefs().find((d) => d.name === cardName)?.text;
 }

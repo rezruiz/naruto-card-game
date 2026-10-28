@@ -1,7 +1,7 @@
 import { findOccupant, isCharacter } from '../board';
 import { activateAbility, checkLegality, findAbility, poolAvailableFor, resolveCost as abilityCost, type AbilityDef } from '../abilities';
 import { checkHandCardLegality, playHandCard, resolveCost as cardCost } from '../cards/playHandCard';
-import { getHandCardDef, needsEnablingCharacter, targetedIds } from '../cards/registry';
+import { getHandCardDef, needsEnablingCharacter, paysInChakra, targetedIds } from '../cards/registry';
 import { getCharacterDef, getTokenDef } from '../characters/registry';
 import { appendLog, appendPrivateLog, appendWarning } from '../phases/phaseMachine';
 import { enqueueChoice, registerChoiceResolver } from '../choices';
@@ -367,6 +367,8 @@ function stagedCost(state: GameState, a: StagedAction): { cost: number; poolOnly
   }
   const def = a.cardDefId ? getHandCardDef(a.cardDefId) : undefined;
   if (!def) return { cost: 0, poolOnly: 0, poolUnit: a.sourceInstanceId };
+  // Prototype rules: a Supplies cost (Shinobi, Equipment, Missions, …) isn't Chakra — it's paid when the card resolves.
+  if (isPrototype(state) && !paysInChakra(def)) return { cost: 0, poolOnly: 0, poolUnit: a.sourceInstanceId };
   const cost = cardCost(def, { state, player: a.owner, enablingInstanceId: a.sourceInstanceId, targetInstanceIds: a.targets, amount: a.amount }, a.payFromPool);
   return { cost, poolOnly: 0, poolUnit: a.sourceInstanceId };
 }

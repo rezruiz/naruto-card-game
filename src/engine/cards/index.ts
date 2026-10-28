@@ -7,5 +7,6 @@ import './terrain';
 import './missions';
 // Prototype rules only: placeholder Shinobi cards (shinobi.ts).
 import '../shinobi';
+import '../equipment';
 
 export * from './registry';

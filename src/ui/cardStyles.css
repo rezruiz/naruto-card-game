@@ -121,6 +121,10 @@
 .lib-card--assist {
   --type-color: #8e44ad;
 }
+.hand-card--equipment,
+.lib-card--equipment {
+  --type-color: #94a3b8;
+}
 
 .hand-view .hand-card:not(.hand-card--back),
 .library .lib-card {

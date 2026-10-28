@@ -4,6 +4,7 @@ import type { AbilitySpeed, AbilityType, BoardOccupant, CharacterInstance, GameS
 import { HEALTH_LOST_ON_DEFEAT } from './ranks';
 import { getCharacterDef, getTokenDef } from './characters/registry';
 import { getHandCardDef } from './cards/registry';
+import { equipmentDamageBonus, equipmentDamageReduction, onHolderDefeated } from './equipment';
 
 /** Who is dealing this damage, with what — derived from the stack item currently resolving (state.resolving). */
 export interface DamageSource {
@@ -82,6 +83,12 @@ function applyDamageModifiers(
     if (attacker && attacker.extra.moleBonusItem === src.itemId) {
       dmg += 2;
       notes.push('+2 Hiding Like a Mole');
+    }
+    // Prototype Equipment: a Leader's Damage buffs add to each hit of its damage-dealing abilities and the Jutsu it enables (a Shinobi's apply to its attacks — shinobi.ts).
+    const gear = attacker && isCharacter(attacker) && dmg > 0 ? equipmentDamageBonus(state, attacker) : 0;
+    if (gear > 0) {
+      dmg += gear;
+      notes.push(`+${gear} Equipment`);
     }
   }
 
@@ -196,6 +203,8 @@ export function dealDamage(
     ongoing?: boolean;
     /** Not dealt by the resolving attack itself (e.g. Hidan's mirrored Curse damage) — no attacker modifiers, no kill credit. */
     unattributed?: boolean;
+    /** Who made this attack when it isn't a stack item (a Shinobi's combat attack) — credited with the kill. */
+    attackerInstanceId?: string;
   } = {},
 ): DamageResult {
   if (amount <= 0) return { state, dealt: 0, defeated: false };
@@ -246,6 +255,13 @@ export function dealDamage(
   // (Amaterasu, Poison — an explicit, stronger override per SPEC.md), or
   // Banshō Ten'in made it unprotectable this turn.
   let effectiveAmount = modified.amount;
+  // Prototype Equipment (Flak Vest): each hit the holder takes is reduced, to a minimum of 1.
+  const armor = !opts.cannotBeReduced && !opts.ongoing && !modified.unprotectable ? equipmentDamageReduction(state, targetInstanceId) : 0;
+  if (armor > 0 && effectiveAmount > 1) {
+    const reduced = Math.max(1, effectiveAmount - armor);
+    next = appendLog(next, `${occupant.name}'s Equipment reduces the hit by ${effectiveAmount - reduced}.`);
+    effectiveAmount = reduced;
+  }
   if (!opts.cannotBeReduced && !opts.ongoing && !modified.unprotectable) {
     const remaining = (occupant.extra.damagePreventionRemaining as number) ?? 0;
     const activeTurn = occupant.extra.damagePreventionUntilTurn as number | undefined;
@@ -293,7 +309,7 @@ export function dealDamage(
     }
   }
 
-  next = applyDefeat(next, player, zone, index, src && src.controller !== player ? src.instanceId : undefined);
+  next = applyDefeat(next, player, zone, index, src && src.controller !== player ? src.instanceId : opts.attackerInstanceId);
   return { state: next, dealt: amount, defeated: true };
 }
 
@@ -341,7 +357,9 @@ function setCurrentHP(
 /** applyDefeatInner, then forget everything other units were tracking about the units that just left play (the defeated one and any tokens that fizzled with it). */
 function applyDefeat(state: GameState, player: PlayerId, zone: 'back' | 'front', index: number, killerInstanceId?: string): GameState {
   const before = occupantIds(state);
-  const next = applyDefeatInner(state, player, zone, index, killerInstanceId);
+  const holderId = (zone === 'back' ? state.players[player].backRow[index] : state.players[player].frontRow[index])?.instanceId;
+  // Prototype Equipment: the defeated unit's Equipment stays in play, unattached (and an Explosive Tag Vest goes off).
+  const next = onHolderDefeated(applyDefeatInner(state, player, zone, index, killerInstanceId), holderId ?? '', killerInstanceId);
   const after = occupantIds(next);
   return purgeReferencesTo(next, [...before].filter((id) => !after.has(id)));
 }

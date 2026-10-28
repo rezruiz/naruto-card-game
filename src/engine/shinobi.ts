@@ -18,18 +18,20 @@ import { findOccupant, isCharacter, legalTokenSlots, hasFieldOrientation, patchO
 import { dealDamage } from './combat';
 import { appendLog, appendWarning, otherPlayer } from './phases/phaseMachine';
 import { registerHandCard, type HandCardDef } from './cards/registry';
+import { equipmentDamageBonus } from './equipment';
 import type { BoardOccupant, GameState, PlayerId, ShinobiAttack, TokenInstance } from './types';
 
 export function isShinobi(occ: BoardOccupant | null | undefined): occ is TokenInstance {
   return !!occ && !isCharacter(occ) && occ.extra.shinobi === true;
 }
 
-/** A Shinobi's Damage right now: its base Damage, plus any bonus for a Leader its controller has in play. */
+/** A Shinobi's Damage right now: its base Damage, plus any bonus for a Leader its controller has in play, plus its Equipment. */
 export function shinobiDamage(occ: BoardOccupant, state?: GameState): number {
   const base = (occ.extra.shinobiDamage as number | undefined) ?? 0;
+  if (!state) return base;
   const bonus = occ.extra.shinobiLeaderBonus as { defId: string; amount: number } | undefined;
-  if (!state || !bonus) return base;
-  return base + (state.players[occ.owner].backRow.some((c) => c?.defId === bonus.defId) ? bonus.amount : 0);
+  const leader = bonus && state.players[occ.owner].backRow.some((c) => c?.defId === bonus.defId) ? bonus.amount : 0;
+  return base + leader + equipmentDamageBonus(state, occ);
 }
 
 /** A unit a Shinobi may attack: a Leader (back-row character, or one of Pain's Path tokens) or a Shinobi. */
@@ -180,8 +182,8 @@ function trade(state: GameState, a: string, b: string): GameState {
   const toB = shinobiDamage(ua, state);
   const toA = isShinobi(ub) ? shinobiDamage(ub, state) : 0;
   let next = appendLog(state, `${ua.name} and ${ub.name} clash (${toB} / ${toA}).`);
-  if (toB > 0) next = dealDamage(next, b, toB).state;
-  if (toA > 0 && findOccupant(next, a)) next = dealDamage(next, a, toA).state;
+  if (toB > 0) next = dealDamage(next, b, toB, { attackerInstanceId: a }).state;
+  if (toA > 0 && findOccupant(next, a)) next = dealDamage(next, a, toA, { attackerInstanceId: b }).state;
   return next;
 }
 
@@ -208,7 +210,7 @@ export function resolveShinobiCombat(state: GameState): GameState {
     } else {
       const damage = shinobiDamage(attacker, next);
       next = appendLog(next, `${attacker.name} attacks ${target.name} for ${damage}.`);
-      next = dealDamage(next, attack.targetId, damage).state;
+      next = dealDamage(next, attack.targetId, damage, { attackerInstanceId: attack.attackerId }).state;
     }
   }
   return next;

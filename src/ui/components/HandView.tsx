@@ -187,6 +187,24 @@ export function HandView({
                   </span>
                 </div>
               )}
+              {def.equipment && (
+                // Equipment: its buffs bottom-left, the Supplies to move it bottom-right.
+                <div className="hand-card__stats">
+                  {!!def.equipment.damage && (
+                    <span className="hand-card__stat hand-card__stat--damage" title="Damage while attached">
+                      <span aria-hidden>⚔</span>+{def.equipment.damage}
+                    </span>
+                  )}
+                  {!!def.equipment.health && (
+                    <span className="hand-card__stat hand-card__stat--buff-health" title="Health while attached">
+                      <span aria-hidden>♥</span>+{def.equipment.health}
+                    </span>
+                  )}
+                  <span className="hand-card__stat hand-card__stat--reequip" title={`Re-equip: ${def.equipment.reequipCost} Supplies to move it to another Leader or Shinobi`}>
+                    Re-equip {def.equipment.reequipCost}
+                  </span>
+                </div>
+              )}
               <div className="hand-card__actions">
                 <button
                   type="button"

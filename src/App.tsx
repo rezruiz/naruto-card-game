@@ -42,6 +42,7 @@ import './App.css';
 import './ui/BoardMat.css';
 import { CHARACTER_DECK_NAME, GRAVEYARD_NAME, LEADER_GRAVEYARD_NAME, MAIN_DECK_NAME, RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
 import { isPrototype, suppliesAvailable, suppliesMax } from './engine/prototype';
+import { holderBlocker } from './engine/equipment';
 import { ShinobiCombatPanel } from './ui/components/ShinobiCombatPanel';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -943,6 +944,48 @@ function ViewGame({
       </div>
     );
 
+    // Prototype: every Equipment this player has in play — on whom, or unattached — with Re-equip in their Main Phase.
+    const equipment = player.equipment ?? [];
+    const canReequip = mine && !setupBlocked && (trust || (isActive && MAIN_PHASES.has(state.phase) && state.stack.length === 0));
+    const holders = [...player.backRow, ...player.frontRow].filter((o): o is NonNullable<typeof o> => !!o && holderBlocker(state, playerId, o.instanceId) === null);
+    const equipmentZone = (
+      <div className={`mat__zone mat__zone--equipment${equipment.length > 0 ? ' mat__zone--filled' : ''}`} key="equipment">
+        <span className="mat__zone-title">Equipment</span>
+        {equipment.length === 0 && <span className="mat__zone-empty">None</span>}
+        {equipment.map((e) => {
+          const def = getHandCardDef(e.defId);
+          const holder = e.holderId ? findOccupant(state, e.holderId)?.occupant : undefined;
+          const cost = def?.equipment?.reequipCost ?? 0;
+          const targets = holders.filter((h) => h.instanceId !== e.holderId);
+          const short = !trust && suppliesAvailable(state, playerId) < cost;
+          return (
+            <div className="equip-zone__item" key={e.instanceId}>
+              <InPlayChip plain label="Equipment" name={def?.name} onOpen={(name) => setDetails({ kind: 'card', name, subtitle: holder ? `Equipment on ${holder.name}` : 'Equipment — unattached', text: getHandCardText(name) })} />
+              <span className="equip-zone__holder">{holder ? `on ${holder.name}` : 'Unattached'}</span>
+              {canReequip && targets.length > 0 && (
+                <select
+                  value=""
+                  disabled={short}
+                  aria-label={`Re-equip ${def?.name}`}
+                  title={short ? `Re-equip costs ${cost} Supplies — not enough left this turn` : `Pay ${cost} Supplies to move it to another Leader or Shinobi`}
+                  onChange={(ev) => {
+                    if (ev.target.value) dispatch({ type: 'REEQUIP', equipmentInstanceId: e.instanceId, holderId: ev.target.value });
+                  }}
+                >
+                  <option value="">Re-equip ({cost})…</option>
+                  {targets.map((h) => (
+                    <option key={h.instanceId} value={h.instanceId}>
+                      {h.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+
     // ---- Right column (Yu-Gi-Oh style): each deck with its own graveyard above it ----
     // Jutsu graveyard over the Jutsu Deck, Character graveyard over the Character Deck.
     const tax = currentTax(state, playerId);
@@ -1106,7 +1149,7 @@ function ViewGame({
         {/* Left column: Missions over Terrain, with Health in each player's own bottom-left corner (Yu-Gi-Oh LP-style) — mirrored for the opponent. */}
         {proto ? (
           <>
-            <div className="mat__side mat__side--field">{[missionZone, terrainZone]}</div>
+            <div className="mat__side mat__side--field">{[missionZone, terrainZone, equipmentZone]}</div>
             <div className="mat__side mat__side--health">{healthPlate}</div>
           </>
         ) : (

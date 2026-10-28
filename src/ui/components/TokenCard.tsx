@@ -5,6 +5,7 @@ import { getHandCardDef } from '../../engine/cards/registry';
 import { hasFieldOrientation } from '../../engine/board';
 import { isPrototype } from '../../engine/prototype';
 import { isShinobi, shinobiDamage } from '../../engine/shinobi';
+import { EquipmentChips } from './EquipmentChips';
 
 export function TokenCard({
   token,
@@ -62,6 +63,7 @@ export function TokenCard({
           ))}
         </div>
       )}
+      {shinobi && <EquipmentChips state={state} holderId={token.instanceId} />}
       {(resources.length > 0 || orienting || token.status.disabled) && (
         <div className="compact-card__badges">
           {token.status.disabled && <span className="badge badge--disabled">Disabled</span>}

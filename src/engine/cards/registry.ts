@@ -13,8 +13,8 @@ export interface HandCardContext {
 export interface HandCardDef {
   id: string;
   name: string;
-  /** 'shinobi' exists only under the prototype rules (shinobi.ts): a unit that's played onto the board for Supplies. */
-  cardType: 'jutsu' | 'assist' | 'terrain' | 'mission' | 'shinobi';
+  /** 'shinobi' and 'equipment' exist only under the prototype rules (shinobi.ts, equipment.ts): a unit played onto the board, and gear attached to one, both for Supplies. */
+  cardType: 'jutsu' | 'assist' | 'terrain' | 'mission' | 'shinobi' | 'equipment';
   /**
    * Chakra cost. May be a function for the "cheaper if paid from the
    * enabling character's own Pool" discount pattern (§10c) — cost functions
@@ -64,6 +64,12 @@ export interface HandCardDef {
     /** +amount Damage while its controller has this Leader in play (e.g. Amegakure Civilian Rebel with Yahiko). */
     leaderBonus?: { defId: string; amount: number };
   };
+  /** Equipment cards (prototype): the Re-equip cost and the buffs it gives its holder (equipment.ts). */
+  equipment?: EquipmentStats;
+  /** The card's printed text, for cards whose text isn't in SPEC.md (the Prototype's Equipment). */
+  text?: string;
+  /** At most 1 copy per deck (the Jutsu Deck's normal limit is 3). */
+  unique?: boolean;
   /**
    * Prototype rules, card by card. By default only Jutsu and Shinobi cards can be discarded as a Chakra
    * source, and Jutsu cost Chakra while every other card costs Supplies. A card that breaks either rule says so here.
@@ -72,6 +78,24 @@ export interface HandCardDef {
   paidWith?: 'chakra' | 'supplies';
   /** Synergy tag(s), mainly relevant for Terrain cards (§10a) that other cards check for (e.g. Chidori Interception's cost discount "if an Akatsuki-Synergy Terrain is in play"). */
   synergy?: string[];
+}
+
+/** Prototype rules: what an Equipment card gives the Leader or Shinobi holding it — each buff counts only while it's attached, and several Equipment on one holder add up. */
+export interface EquipmentStats {
+  /** Supplies to move it to another holder (equipment.ts reequip). */
+  reequipCost: number;
+  health?: number;
+  damage?: number;
+  /** Extra Chakra Pool capacity (Leaders only — Shinobi have no Pool). */
+  poolCapacity?: number;
+  /** Each damage instance the holder takes is reduced by this much, to a minimum of 1. */
+  damageReduction?: number;
+  /** Heals the holder this much in its controller's Upkeep Phase. */
+  healEachTurn?: number;
+  /** When the holder is defeated by an attack, deals this much damage to the attacker. */
+  defeatRetaliation?: number;
+  /** Extra Damage while the holder has this Style or this Synergy. */
+  conditionalDamage?: { style?: Style; synergy?: string; amount: number };
 }
 
 /**

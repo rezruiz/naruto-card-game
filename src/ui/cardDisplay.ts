@@ -31,7 +31,7 @@ export function styleClass(style: string): string {
 export const CHARACTER_STYLE_CLASS = 'card-style card-style--character';
 
 export const RANK_ORDER = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D'];
-export const TYPE_LABEL: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assist', mission: 'Mission', terrain: 'Terrain', shinobi: 'Shinobi' };
+export const TYPE_LABEL: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assist', mission: 'Mission', terrain: 'Terrain', shinobi: 'Shinobi', equipment: 'Equipment' };
 
 /** The printed Chakra cost, read from the card text (costs can depend on how they're paid, so the def's cost may be a function). */
 export function handCardCost(def: HandCardDef): string {

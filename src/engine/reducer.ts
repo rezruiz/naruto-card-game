@@ -49,6 +49,7 @@ import {
 } from './trust/manual';
 import type { GameAction, GameState, PlayerId, PlayerState, Phase } from './types';
 import { adjustSupplies, isPrototype } from './prototype';
+import { reequip, sweepEquipment, tickEquipmentHeals } from './equipment';
 import { assignShinobiDefender, cancelShinobiAttack, confirmShinobiAttacks, confirmShinobiDefense, declareShinobiAttack, endShinobiCombat } from './shinobi';
 
 /**
@@ -231,6 +232,7 @@ function advanceOnePhase(input: GameState): GameState {
     next = tickAllPoison(next);
     next = tickChakraSpores(next, next.activePlayer);
     next = tickScheduledHeals(next, next.activePlayer);
+    next = tickEquipmentHeals(next, next.activePlayer);
   }
   // The Draw Phase draw itself is a manual click (DRAW_PHASE_CARD), never automatic.
   return next;
@@ -320,7 +322,7 @@ function checkMissions(state: GameState): GameState {
 }
 
 function drainAll(state: GameState): GameState {
-  return checkMissions(drainPendingMissionDefeatEvents(drainPendingReinforcements(state)));
+  return sweepEquipment(checkMissions(drainPendingMissionDefeatEvents(drainPendingReinforcements(state))));
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -381,6 +383,8 @@ function reduce(state: GameState, action: GameAction): GameState {
       return confirmShinobiDefense(drained);
     case 'ADJUST_SUPPLIES':
       return adjustSupplies(drained, action.player, action.delta);
+    case 'REEQUIP':
+      return reequip(drained, action.equipmentInstanceId, action.holderId);
     case 'PLACE_CHAKRA_SOURCE':
       return placeChakraSource(drained, action.instanceId);
     case 'TAP_CHAKRA_SOURCE':
