@@ -20,6 +20,7 @@ import { findOccupant, isCharacter, occupantIds, patchOccupant } from './board';
 import { dealDamage, healOccupant } from './combat';
 import { appendLog, appendWarning } from './phases/phaseMachine';
 import { spendSupplies } from './prototype';
+import { TERRAIN, hasTerrain } from './terrainEffects';
 import { getCharacterDef } from './characters/registry';
 import { getHandCardDef, registerHandCard, type EquipmentStats, type HandCardDef } from './cards/registry';
 import type { BoardOccupant, EquipmentInstance, GameState, PlayerId } from './types';
@@ -158,6 +159,12 @@ export function sweepEquipment(state: GameState): GameState {
 
 // --- Re-equip ------------------------------------------------------------------
 
+/** What it costs this player to re-equip this Equipment right now: its Re-equip cost, 1 less with Blacksmith Village (to a minimum of 1). */
+export function reequipCost(state: GameState, player: PlayerId, defId: string): number {
+  const base = equipmentStats(defId)?.reequipCost ?? 0;
+  return hasTerrain(state, player, TERRAIN.blacksmithVillage) ? Math.max(1, base - 1) : base;
+}
+
 /** Moves an Equipment to another Leader or Shinobi its owner controls, for its Re-equip cost in Supplies — in the owner's Main Phase, on an empty stack. */
 export function reequip(state: GameState, equipmentInstanceId: string, holderId: string): GameState {
   const equip = allEquipment(state).find((e) => e.instanceId === equipmentInstanceId);
@@ -175,8 +182,9 @@ export function reequip(state: GameState, equipmentInstanceId: string, holderId:
   const blocker = holderBlocker(working, equip.owner, holderId);
   if (blocker) return appendLog(state, `Can't re-equip ${def.name}: ${blocker}`);
   if (equip.holderId === holderId) return appendLog(state, `${def.name} is already on that unit.`);
-  const paid = spendSupplies(working, equip.owner, stats.reequipCost, `re-equipping ${def.name}`);
-  if (!paid) return appendLog(state, `Can't re-equip ${def.name}: not enough Supplies (${stats.reequipCost} needed).`);
+  const cost = reequipCost(working, equip.owner, equip.defId);
+  const paid = spendSupplies(working, equip.owner, cost, `re-equipping ${def.name}`);
+  if (!paid) return appendLog(state, `Can't re-equip ${def.name}: not enough Supplies (${cost} needed).`);
   const holder = findOccupant(paid, holderId)!.occupant;
   return appendLog(attach(detach(paid, equip), { ...equip, holderId: null }, holderId), `${equip.owner} re-equips ${def.name} onto ${holder.name}.`);
 }

@@ -66,8 +66,10 @@ export interface HandCardDef {
   };
   /** Equipment cards (prototype): the Re-equip cost and the buffs it gives its holder (equipment.ts). */
   equipment?: EquipmentStats;
-  /** The card's printed text, for cards whose text isn't in SPEC.md (the Prototype's Equipment). */
+  /** The card's printed text, for cards whose text isn't in SPEC.md (the Prototype's Equipment and Terrain). */
   text?: string;
+  /** The card's text in the Prototype build, for a base-game card that works differently there (Akatsuki Hideout). */
+  prototypeText?: string;
   /** At most 1 copy per deck (the Jutsu Deck's normal limit is 3). */
   unique?: boolean;
   /**

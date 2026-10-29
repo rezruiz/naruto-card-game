@@ -5,6 +5,7 @@ import { HEALTH_LOST_ON_DEFEAT } from './ranks';
 import { getCharacterDef, getTokenDef } from './characters/registry';
 import { getHandCardDef } from './cards/registry';
 import { equipmentDamageBonus, equipmentDamageReduction, onHolderDefeated } from './equipment';
+import { TERRAIN, hasTerrain, terrainOnEitherSide } from './terrainEffects';
 
 /** Who is dealing this damage, with what — derived from the stack item currently resolving (state.resolving). */
 export interface DamageSource {
@@ -89,6 +90,11 @@ function applyDamageModifiers(
     if (gear > 0) {
       dmg += gear;
       notes.push(`+${gear} Equipment`);
+    }
+    // Prototype Terrain, Valley of the End (both sides): every Leader's damage-dealing Jutsu and abilities deal +1.
+    if (attacker && (isCharacter(attacker) || attacker.extra.painPath === true) && dmg > 0 && terrainOnEitherSide(state, TERRAIN.valleyOfTheEnd)) {
+      dmg += 1;
+      notes.push('+1 Valley of the End');
     }
   }
 
@@ -357,9 +363,15 @@ function setCurrentHP(
 /** applyDefeatInner, then forget everything other units were tracking about the units that just left play (the defeated one and any tokens that fizzled with it). */
 function applyDefeat(state: GameState, player: PlayerId, zone: 'back' | 'front', index: number, killerInstanceId?: string): GameState {
   const before = occupantIds(state);
-  const holderId = (zone === 'back' ? state.players[player].backRow[index] : state.players[player].frontRow[index])?.instanceId;
+  const defeated = zone === 'back' ? state.players[player].backRow[index] : state.players[player].frontRow[index];
+  const holderId = defeated?.instanceId;
   // Prototype Equipment: the defeated unit's Equipment stays in play, unattached (and an Explosive Tag Vest goes off).
-  const next = onHolderDefeated(applyDefeatInner(state, player, zone, index, killerInstanceId), holderId ?? '', killerInstanceId);
+  let next = onHolderDefeated(applyDefeatInner(state, player, zone, index, killerInstanceId), holderId ?? '', killerInstanceId);
+  // Prototype Terrain, Shinobi Graveyard: when one of your Shinobi is defeated, gain 1 Supply this turn.
+  if (defeated?.extra.shinobi === true && hasTerrain(next, player, TERRAIN.shinobiGraveyard)) {
+    const p = next.players[player];
+    next = appendLog({ ...next, players: { ...next.players, [player]: { ...p, suppliesSpent: (p.suppliesSpent ?? 0) - 1 } } }, `Shinobi Graveyard: ${player} gains 1 Supply this turn.`);
+  }
   const after = occupantIds(next);
   return purgeReferencesTo(next, [...before].filter((id) => !after.has(id)));
 }

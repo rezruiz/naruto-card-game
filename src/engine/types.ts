@@ -200,6 +200,8 @@ export interface PlayerState {
   suppliesSpent?: number;
   /** Prototype rules: this player's Equipment in play, attached or not (equipment.ts). Missing = none. */
   equipment?: EquipmentInstance[];
+  /** Prototype rules: the turn each once-per-turn Terrain effect was last used, by Terrain card id (cards/terrain.ts). Missing = never. */
+  terrainUsedTurn?: Record<string, number>;
 }
 
 /** Prototype rules: an Equipment card in play — on one of its owner's Leaders or Shinobi, or unattached (holderId null) once its holder left play. */
@@ -396,6 +398,8 @@ export type GameAction =
   | { type: 'ADJUST_SUPPLIES'; player: PlayerId; delta: number }
   /** Prototype rules: move an Equipment to another of its owner's Leaders or Shinobi, paying its Re-equip cost (equipment.ts). */
   | { type: 'REEQUIP'; equipmentInstanceId: string; holderId: string }
+  /** Prototype rules: Training Grounds — pay 1 Supply to pool 1 Chakra into one of your Leaders (cards/terrain.ts). */
+  | { type: 'USE_TRAINING_GROUNDS'; leaderId: string }
   // --- Trust mode: staging & resolution ---
   | { type: 'STAGE_ABILITY'; instanceId: string; abilityId: string; targetInstanceIds: string[]; payFromPool: number; choices?: AbilityChoices; /** Declare it even though the strict rules wouldn't allow it. */ force?: boolean }
   | { type: 'STAGE_CARD'; instanceId: string; enablingInstanceId: string; targetInstanceIds: string[]; payFromPool: number; amount?: number; force?: boolean }

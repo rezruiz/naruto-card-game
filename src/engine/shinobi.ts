@@ -19,6 +19,7 @@ import { dealDamage } from './combat';
 import { appendLog, appendWarning, otherPlayer } from './phases/phaseMachine';
 import { registerHandCard, type HandCardDef } from './cards/registry';
 import { equipmentDamageBonus } from './equipment';
+import { TERRAIN, hasTerrain, markTerrainUsed, terrainUsedThisTurn } from './terrainEffects';
 import type { BoardOccupant, GameState, PlayerId, ShinobiAttack, TokenInstance } from './types';
 
 export function isShinobi(occ: BoardOccupant | null | undefined): occ is TokenInstance {
@@ -74,7 +75,13 @@ function shinobiCard(id: string, name: string, cost: number, damage: number, hea
         extra: { shinobi: true, shinobiDamage: damage, ...(leaderBonus ? { shinobiLeaderBonus: leaderBonus } : {}) },
       };
       if (legalTokenSlots(ctx.state, ctx.player).length === 0) return appendLog(ctx.state, `${ctx.player}'s front row is full — ${name} can't come into play.`);
-      return appendLog(placeToken(ctx.state, ctx.player, token, { askPosition: true }), `${ctx.player} plays ${name} (${damage} Damage, ${health} Health).`);
+      let state = ctx.state;
+      // Forest of Death: the first Shinobi you play each turn can attack that turn.
+      const rushes = hasTerrain(state, ctx.player, TERRAIN.forestOfDeath) && !terrainUsedThisTurn(state, ctx.player, TERRAIN.forestOfDeath);
+      if (rushes) state = markTerrainUsed(state, ctx.player, TERRAIN.forestOfDeath);
+      const placed = rushes ? { ...token, extra: { ...token.extra, forestOfDeathTurn: state.turn } } : token;
+      state = appendLog(placeToken(state, ctx.player, placed, { askPosition: true }), `${ctx.player} plays ${name} (${damage} Damage, ${health} Health).`);
+      return rushes ? appendLog(state, `Forest of Death: ${name} can attack this turn.`) : state;
     },
   };
 }
@@ -208,7 +215,12 @@ export function resolveShinobiCombat(state: GameState): GameState {
     if (isShinobi(target)) {
       next = trade(next, attack.attackerId, attack.targetId);
     } else {
-      const damage = shinobiDamage(attacker, next);
+      let damage = shinobiDamage(attacker, next);
+      // Hidden Mist: enemy Shinobi attacking your Leaders deal 1 less (to a minimum of 1).
+      if (damage > 1 && hasTerrain(next, findOccupant(next, attack.targetId)!.player, TERRAIN.hiddenMist)) {
+        damage -= 1;
+        next = appendLog(next, `Hidden Mist: ${attacker.name}'s attack is reduced by 1.`);
+      }
       next = appendLog(next, `${attacker.name} attacks ${target.name} for ${damage}.`);
       next = dealDamage(next, attack.targetId, damage, { attackerInstanceId: attack.attackerId }).state;
     }

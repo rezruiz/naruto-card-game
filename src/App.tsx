@@ -42,7 +42,9 @@ import './App.css';
 import './ui/BoardMat.css';
 import { CHARACTER_DECK_NAME, GRAVEYARD_NAME, LEADER_GRAVEYARD_NAME, MAIN_DECK_NAME, RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
 import { isPrototype, suppliesAvailable, suppliesMax } from './engine/prototype';
-import { holderBlocker } from './engine/equipment';
+import { holderBlocker, reequipCost } from './engine/equipment';
+import { trainingGroundsBlocker } from './engine/cards/terrain';
+import { TERRAIN } from './engine/terrainEffects';
 import { ShinobiCombatPanel } from './ui/components/ShinobiCombatPanel';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -888,19 +890,43 @@ function ViewGame({
     const unitLane = proto
       ? lane('units', 'Shinobi & Tokens', String(unitSlots.length), unitSlots.map((slot) => tokenCell(slot)), 'No Shinobi or tokens in play')
       : null;
+    // Prototype Terrain, Training Grounds: once per turn, pay 1 Supply to pool 1 Chakra into a Leader.
+    const training = proto && mine && !setupBlocked && player.terrainInPlay?.defId === TERRAIN.trainingGrounds;
+    const trainingBlocker = training ? (trainingGroundsBlocker(state, playerId) ?? (!trust && suppliesAvailable(state, playerId) < 1 ? 'Not enough Supplies (1 needed).' : null)) : null;
+    const trainees = training ? player.backRow.filter((c): c is NonNullable<typeof c> => !!c && trainingGroundsBlocker(state, playerId, c.instanceId) === null) : [];
     const terrainZone = (
       <div className={`mat__zone mat__zone--terrain${player.terrainInPlay ? ' mat__zone--filled' : ''}`} key="terrain">
         <span className="mat__zone-title">Terrain</span>
         {player.terrainInPlay ? (
-          <InPlayChip
-            plain
-            label="Terrain"
-            name={getHandCardDef(player.terrainInPlay.defId)?.name}
-            dragInstanceId={trust && mine ? player.terrainInPlay.instanceId : undefined}
-            onOpen={(name) =>
-              setDetails({ kind: 'card', name, subtitle: 'Terrain in play', text: getHandCardText(name), returnInstanceId: trust && mine ? player.terrainInPlay!.instanceId : undefined })
-            }
-          />
+          <span className="equip-zone__item">
+            <InPlayChip
+              plain
+              label="Terrain"
+              name={getHandCardDef(player.terrainInPlay.defId)?.name}
+              dragInstanceId={trust && mine ? player.terrainInPlay.instanceId : undefined}
+              onOpen={(name) =>
+                setDetails({ kind: 'card', name, subtitle: 'Terrain in play', text: getHandCardText(name), returnInstanceId: trust && mine ? player.terrainInPlay!.instanceId : undefined })
+              }
+            />
+            {training && (
+              <select
+                value=""
+                disabled={!!trainingBlocker || trainees.length === 0}
+                aria-label="Training Grounds"
+                title={trainingBlocker ?? (trainees.length === 0 ? 'No Leader has room in its Chakra Pool.' : 'Pay 1 Supply to pool 1 Chakra into a Leader (once per turn)')}
+                onChange={(ev) => {
+                  if (ev.target.value) dispatch({ type: 'USE_TRAINING_GROUNDS', leaderId: ev.target.value });
+                }}
+              >
+                <option value="">Train (1)…</option>
+                {trainees.map((c) => (
+                  <option key={c.instanceId} value={c.instanceId}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </span>
         ) : (
           <span className="mat__zone-empty">None</span>
         )}
@@ -955,7 +981,7 @@ function ViewGame({
         {equipment.map((e) => {
           const def = getHandCardDef(e.defId);
           const holder = e.holderId ? findOccupant(state, e.holderId)?.occupant : undefined;
-          const cost = def?.equipment?.reequipCost ?? 0;
+          const cost = reequipCost(state, playerId, e.defId);
           const targets = holders.filter((h) => h.instanceId !== e.holderId);
           const short = !trust && suppliesAvailable(state, playerId) < cost;
           return (

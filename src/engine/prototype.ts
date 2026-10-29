@@ -14,6 +14,7 @@
 //
 // Base-game states (no ruleset) never take any of these paths.
 import { appendLog, appendWarning } from './phases/phaseMachine';
+import { TERRAIN, hasTerrain } from './terrainEffects';
 import type { GameState, PlayerId } from './types';
 
 export function isPrototype(state: GameState): boolean {
@@ -38,9 +39,10 @@ function turnsStarted(state: GameState, player: PlayerId): number {
   return player === state.firstPlayer ? Math.ceil(state.turn / 2) : Math.floor(state.turn / 2);
 }
 
-/** This player's Supplies maximum right now: 1 on their first turn, +1 each turn after, capped at 20. */
+/** This player's Supplies maximum right now: 1 on their first turn, +1 each turn after, capped at 20 (+1 with Supply Depot). */
 export function suppliesMax(state: GameState, player: PlayerId): number {
-  return Math.min(SUPPLIES_CAP, Math.max(0, turnsStarted(state, player)));
+  const depot = hasTerrain(state, player, TERRAIN.supplyDepot) ? 1 : 0;
+  return Math.min(SUPPLIES_CAP, Math.max(0, turnsStarted(state, player))) + depot;
 }
 
 export function suppliesAvailable(state: GameState, player: PlayerId): number {

@@ -320,6 +320,8 @@ export function getCrossPatternTargets(
 
 export function hasFieldOrientation(state: GameState, occ: BoardOccupant): boolean {
   if (occ.status.hasAmbush) return false;
+  // Prototype Terrain, Forest of Death: the first Shinobi its controller plays each turn can attack that turn.
+  if (occ.extra.forestOfDeathTurn === state.turn) return false;
   return occ.status.enteredTurn === state.turn;
 }
 

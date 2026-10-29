@@ -50,6 +50,7 @@ import {
 import type { GameAction, GameState, PlayerId, PlayerState, Phase } from './types';
 import { adjustSupplies, isPrototype } from './prototype';
 import { reequip, sweepEquipment, tickEquipmentHeals } from './equipment';
+import { sweepTerrain, activateTrainingGrounds } from './cards/terrain';
 import { assignShinobiDefender, cancelShinobiAttack, confirmShinobiAttacks, confirmShinobiDefense, declareShinobiAttack, endShinobiCombat } from './shinobi';
 
 /**
@@ -322,7 +323,7 @@ function checkMissions(state: GameState): GameState {
 }
 
 function drainAll(state: GameState): GameState {
-  return sweepEquipment(checkMissions(drainPendingMissionDefeatEvents(drainPendingReinforcements(state))));
+  return sweepTerrain(sweepEquipment(checkMissions(drainPendingMissionDefeatEvents(drainPendingReinforcements(state)))));
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -385,6 +386,8 @@ function reduce(state: GameState, action: GameAction): GameState {
       return adjustSupplies(drained, action.player, action.delta);
     case 'REEQUIP':
       return reequip(drained, action.equipmentInstanceId, action.holderId);
+    case 'USE_TRAINING_GROUNDS':
+      return activateTrainingGrounds(drained, action.leaderId);
     case 'PLACE_CHAKRA_SOURCE':
       return placeChakraSource(drained, action.instanceId);
     case 'TAP_CHAKRA_SOURCE':

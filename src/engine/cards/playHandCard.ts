@@ -7,6 +7,7 @@ import { appendLog, appendWarning } from '../phases/phaseMachine';
 import { isPrototype, spendSupplies, suppliesAvailable } from '../prototype';
 import { getHandCardDef, needsEnablingCharacter, targetedIds } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
+import { TERRAIN, hasTerrain } from '../terrainEffects';
 import type { GameState, PlayerId } from '../types';
 
 export interface Legality {
@@ -173,7 +174,10 @@ export function checkHandCardLegality(
  */
 export function prototypeCardCost(state: GameState, def: HandCardDef, ctx: HandCardContext): { cost: number; fromPool: boolean } {
   const fromPool = needsEnablingCharacter(def, true);
-  return { cost: resolveCost(def, { ...ctx, state }, fromPool ? 1 : 0), fromPool };
+  const cost = resolveCost(def, { ...ctx, state }, fromPool ? 1 : 0);
+  // Blacksmith Village: your Equipment costs 1 less Supply (to a minimum of 1).
+  if (def.cardType === 'equipment' && hasTerrain(state, ctx.player, TERRAIN.blacksmithVillage)) return { cost: Math.max(1, cost - 1), fromPool };
+  return { cost, fromPool };
 }
 
 function prototypeCostCheck(state: GameState, player: PlayerId, def: HandCardDef, ctx: HandCardContext): Legality {

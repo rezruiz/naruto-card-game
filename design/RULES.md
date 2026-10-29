@@ -75,6 +75,22 @@ The starter deck in the Prototype adds 2 of each placeholder Shinobi (Rain Villa
 
 The starter deck in the Prototype adds 2 of each Equipment (1 Akatsuki Cloak).
 
+**Terrain.** Played in your Main Phase for Supplies. You have at most one Terrain in play: playing another replaces it (the old one goes to your discard pile). A Terrain affects only your side unless it says **both sides**. **Every Terrain is Unique** (1 per deck) in the Prototype.
+
+| Terrain | Cost | Effect |
+|---|---|---|
+| Akatsuki Hideout (Akatsuki) | 2 | Your Akatsuki Leaders' Chakra Pools hold 1 more. *(Replaces its base-game Upkeep discount — there is no Upkeep in the Prototype.)* |
+| Amegakure, Village Hidden in the Rain (Akatsuki) | 3 | Your Rain Village Shinobi and Amegakure Civilian Rebels get +1 Health. |
+| Supply Depot | 1 | Your Supplies maximum is 1 higher. |
+| Blacksmith Village | 2 | Your Equipment costs 1 less Supply to play and to Re-equip (to a minimum of 1). |
+| Training Grounds | 2 | Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your Leaders (the **Train** menu on the Terrain). |
+| Forest of Death | 3 | The first Shinobi you play each turn can attack that turn. |
+| Hidden Mist (Water) | 3 | Enemy Shinobi attacking your Leaders deal 1 less damage (to a minimum of 1). |
+| Shinobi Graveyard | 2 | When one of your Shinobi is defeated, gain 1 Supply this turn. |
+| Valley of the End | 4 | **Both sides:** every Leader's damage-dealing Jutsu and abilities deal +1 damage (each hit). |
+
+Health and Pool buffs from a Terrain come off when it leaves play (a unit never drops below 1 HP from losing one). The starter deck in the Prototype carries Akatsuki Hideout, Amegakure, Supply Depot, Blacksmith Village and Training Grounds (1 each); the others are in the Deck Library.
+
 ---
 
 # PART I — FOUNDATIONS

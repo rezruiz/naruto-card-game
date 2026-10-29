@@ -2,6 +2,7 @@ import { CHARACTER_DECK_MANIFEST, getCharacterDeckEntry, listCharacterDeckEntrie
 import { HAND_DECK_MANIFEST } from './deck';
 import { PROTOTYPE_SHINOBI_MANIFEST } from './shinobi';
 import { PROTOTYPE_EQUIPMENT_MANIFEST } from './equipment';
+import { PROTOTYPE_TERRAIN_MANIFEST } from './cards/terrain';
 import { VARIANT } from '../variant';
 import { NOT_LEADERS } from './prototype';
 import { getHandCardDef, getMissionDef, listHandCardDefs } from './cards/registry';
@@ -35,9 +36,18 @@ export const RANK_CAPS: Partial<Record<CharacterDeckEntry['rank'], number>> = { 
 
 /** How many copies of a card a deck may hold (§2/§10b): 3 for a Jutsu Deck card (1 for a Unique Mission); 1 for a character (unlimited for D Rank). */
 export function copyLimit(kind: 'hand' | 'character', id: string): number {
-  if (kind === 'hand') return getMissionDef(id)?.unique || getHandCardDef(id)?.unique ? 1 : 3;
+  // Prototype: every Terrain is Unique.
+  if (kind === 'hand') return getMissionDef(id)?.unique || getHandCardDef(id)?.unique || (VARIANT === 'prototype' && getHandCardDef(id)?.cardType === 'terrain') ? 1 : 3;
   return getCharacterDeckEntry(id)?.rank === 'D' ? Infinity : 1;
 }
+
+/** The Prototype's starter Main Deck: the base preset (minus its Terrain), plus Shinobi, Equipment and 1 each of five Terrain. */
+export const PROTOTYPE_HAND_MANIFEST: { defId: string; copies: number }[] = [
+  ...HAND_DECK_MANIFEST.filter((e) => getHandCardDef(e.defId)?.cardType !== 'terrain'),
+  ...PROTOTYPE_SHINOBI_MANIFEST,
+  ...PROTOTYPE_EQUIPMENT_MANIFEST,
+  ...PROTOTYPE_TERRAIN_MANIFEST,
+];
 
 /** The deck builder's card pool. */
 export function handCardPool(): HandCardDef[] {
@@ -113,7 +123,7 @@ export function presetDeck(): DeckList {
     id: PRESET_DECK_ID,
     name: 'Akatsuki Starter',
     // The Prototype build's starter deck also carries the placeholder Shinobi (shinobi.ts).
-    handDeck: Object.fromEntries([...HAND_DECK_MANIFEST, ...(VARIANT === 'prototype' ? [...PROTOTYPE_SHINOBI_MANIFEST, ...PROTOTYPE_EQUIPMENT_MANIFEST] : [])].map(({ defId, copies }) => [defId, copies])),
+    handDeck: Object.fromEntries((VARIANT === 'prototype' ? PROTOTYPE_HAND_MANIFEST : HAND_DECK_MANIFEST).map(({ defId, copies }) => [defId, copies])),
     characterDeck: countsOf(VARIANT === 'prototype' ? CHARACTER_DECK_MANIFEST.filter((id) => !NOT_LEADERS.has(id)) : CHARACTER_DECK_MANIFEST),
     preset: true,
   };
