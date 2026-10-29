@@ -18,12 +18,12 @@ import type { HandCardDef } from '../../engine/cards/registry';
 import { getCharacterCardText, getHandCardText } from '../cardInfo';
 import { newDeckId } from '../deckStorage';
 import { DetailsModal } from './DetailsModal';
-import { CHARACTER_STYLE_CLASS, displayStyle, styleClass, RANK_ORDER, TYPE_LABEL, byCost, byRank, characterInfo, costGem, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
+import { CHARACTER_STYLE_CLASS, displayStyle, styleClass, RANK_ORDER, TYPE_LABEL, byCost, byRank, characterInfo, costGem, costResource, handCardCost, handCardSubtitle, handCardSummary } from '../cardDisplay';
 import { FilterMenu, SortMenu, type Option } from './LibraryControls';
 import { getCharacterDef, type CharacterDeckEntry } from '../../engine/characters';
 import type { ReactNode } from 'react';
 import './DeckLibrary.css';
-import { CHARACTER_DECK_NAME, MAIN_DECK_NAME } from '../../variant';
+import { CHARACTER_DECK_NAME, MAIN_DECK_NAME, VARIANT } from '../../variant';
 
 // ---- Collection: sorting, sectioning, filtering ---------------------------------
 
@@ -42,6 +42,9 @@ const CHAR_SORTS: Option<CharSort>[] = [
 ];
 const TYPE_ORDER: HandCardDef['cardType'][] = ['shinobi', 'equipment', 'jutsu', 'assist', 'mission', 'terrain'];
 const TYPE_SECTION: Record<HandCardDef['cardType'], string> = { jutsu: 'Jutsu', assist: 'Assists', mission: 'Missions', terrain: 'Terrain', shinobi: 'Shinobi', equipment: 'Equipment' };
+const RESOURCE_HEADING = { chakra: 'Chakra cards', supplies: 'Supplies cards' } as const;
+/** The heading to draw above this section: only where it changes from the section before. */
+const headingAt = <T,>(sections: Section<T>[], i: number) => (sections[i].heading && sections[i].heading !== sections[i - 1]?.heading ? sections[i].heading : undefined);
 const COST_BUCKETS: Option[] = [
   { id: '0-1', label: '0–1' },
   { id: '2-3', label: '2–3' },
@@ -69,6 +72,8 @@ interface Group<T> {
 }
 interface Section<T> {
   key: string;
+  /** Prototype: "Chakra cards" / "Supplies cards" — shown above the first section of each. */
+  heading?: string;
   title?: string;
   groups: Group<T>[];
 }
@@ -80,7 +85,16 @@ function sectionHand(cards: HandCardDef[], sort: HandSort): Section<HandCardDef>
     return keys.map((k) => ({ key: k, title: keys.length > 1 ? styleLabel(k) : undefined, items: list.filter((d) => displayStyle(d) === k) }));
   };
   if (sort === 'type') {
-    return TYPE_ORDER.map((t) => ({ key: t, title: TYPE_SECTION[t], groups: byStyle(sorted.filter((d) => d.cardType === t)) })).filter((sec) => sec.groups.length > 0);
+    // Prototype: Chakra cards first, then Supplies cards, each split by card type (a card can pay differently from its type's default).
+    const resources = VARIANT === 'prototype' ? (['chakra', 'supplies'] as const) : ([null] as const);
+    return resources.flatMap((res) =>
+      TYPE_ORDER.map((t) => ({
+        key: `${res ?? 'all'}-${t}`,
+        heading: res ? RESOURCE_HEADING[res] : undefined,
+        title: TYPE_SECTION[t],
+        groups: byStyle(sorted.filter((d) => d.cardType === t && (!res || costResource(d) === res))),
+      })).filter((sec) => sec.groups.length > 0),
+    );
   }
   if (sort === 'style') {
     return byStyle(sorted).map((g) => ({ key: g.key, title: styleLabel(g.key), groups: [{ key: g.key, items: g.items }] }));
@@ -99,8 +113,9 @@ function sectionCharacters(chars: CharacterDeckEntry[], sort: CharSort): Section
 }
 
 function renderSections<T>(sections: Section<T>[], tile: (item: T) => ReactNode) {
-  return sections.map((sec) => (
+  return sections.map((sec, i) => (
     <section key={sec.key} className="lib-section">
+      {headingAt(sections, i) && <h2 className="lib-resource-heading">{headingAt(sections, i)}</h2>}
       {sec.title && (
         <h3 className="lib-section__title">
           {sec.title} <span>({sec.groups.reduce((n, g) => n + g.items.length, 0)})</span>
@@ -410,8 +425,9 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
           ))}
           <h3>{MAIN_DECK_NAME}</h3>
           {deckHand.length === 0 && <p className="deck-panel__empty">No cards yet.</p>}
-          {sectionHand(deckHand, 'type').map((sec) => (
+          {sectionHand(deckHand, 'type').map((sec, i, all) => (
             <div key={sec.key} className="deck-panel__type">
+              {headingAt(all, i) && <div className="deck-panel__resource">{headingAt(all, i)}</div>}
               <h4 className="deck-panel__type-title">
                 {sec.title} <span>({sec.groups.reduce((n, g) => n + g.items.reduce((m, d) => m + (deck.handDeck[d.id] ?? 0), 0), 0)})</span>
               </h4>

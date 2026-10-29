@@ -662,3 +662,21 @@
     width: auto;
   }
 }
+
+/* Prototype: the Main Deck split into what pays for it — Chakra cards, then Supplies cards. */
+.lib-resource-heading {
+  margin: 18px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--card-border, rgba(255, 255, 255, 0.15));
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.deck-panel__resource {
+  margin: 10px 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
