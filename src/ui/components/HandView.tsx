@@ -7,6 +7,7 @@ import { getCharacterCardText, getHandCardText } from '../cardInfo';
 import { characterInfo, costGem, handCardCost, handCardSubtitle, handCardSummary, CHARACTER_STYLE_CLASS, displayStyle, styleClass } from '../cardDisplay';
 import { VARIANT } from '../../variant';
 import '../Hand.css';
+import { StatIcon } from './StatIcon';
 
 /** Drag data type for a card dragged out of hand onto the board (Hearthstone-style play). */
 export const HAND_CARD_DRAG_TYPE = 'application/x-naruto-hand-card';
@@ -177,32 +178,21 @@ export function HandView({
               {def.shinobi && (
                 // The same stat line as a Shinobi in play: attack bottom-left, Health bottom-right.
                 <div className="hand-card__stats" aria-label={`Damage ${def.shinobi.damage}, Health ${def.shinobi.health}`}>
-                  <span className="hand-card__stat hand-card__stat--damage" title="Damage">
-                    <span aria-hidden>⚔</span>
-                    {def.shinobi.damage}
-                  </span>
-                  <span className="hand-card__stat hand-card__stat--health" title="Health">
-                    <span aria-hidden>♥</span>
-                    {def.shinobi.health}
+                  <StatIcon kind="attack" value={def.shinobi.damage} title={`Damage ${def.shinobi.damage}`} />
+                  <span className="hand-card__stat--health">
+                    <StatIcon kind="defense" value={def.shinobi.health} title={`Health ${def.shinobi.health}`} />
                   </span>
                 </div>
               )}
               {def.equipment && (
-                // Equipment: its buffs bottom-left, the Supplies to move it bottom-right.
+                // Equipment: its buffs, Damage bottom-left and Health bottom-right.
                 <div className="hand-card__stats">
                   {!!def.equipment.damage && (
-                    <span className="hand-card__stat hand-card__stat--damage" title="Damage while attached">
-                      <span aria-hidden>⚔</span>+{def.equipment.damage}
-                    </span>
+                    <StatIcon kind="attack" value={`+${def.equipment.damage}`} title={`+${def.equipment.damage} Damage while attached`} />
                   )}
                   {!!def.equipment.health && (
-                    <span className="hand-card__stat hand-card__stat--buff-health" title="Health while attached">
-                      <span aria-hidden>♥</span>+{def.equipment.health}
-                    </span>
+                    <StatIcon kind="defense" value={`+${def.equipment.health}`} title={`+${def.equipment.health} Health while attached`} />
                   )}
-                  <span className="hand-card__stat hand-card__stat--reequip" title={`Re-equip: ${def.equipment.reequipCost} Supplies to move it to another Leader or Shinobi`}>
-                    Re-equip {def.equipment.reequipCost}
-                  </span>
                 </div>
               )}
               <div className="hand-card__actions">

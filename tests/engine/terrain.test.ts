@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { gameReducer } from '../../src/engine/reducer';
 import { makeHandCardInstance } from '../../src/engine/deck';
 import { dealDamage } from '../../src/engine/combat';
-import { equipmentOn, reequipCost } from '../../src/engine/equipment';
+import { equipmentOn } from '../../src/engine/equipment';
 import { suppliesAvailable, suppliesMax } from '../../src/engine/prototype';
 import { createSetupState } from '../../src/engine/state';
 import { copyLimit } from '../../src/engine/decklist';
 import { TERRAIN } from '../../src/engine/terrainEffects';
+import { shinobiDamage } from '../../src/engine/shinobi';
+import { prototypeCardCost } from '../../src/engine/cards/playHandCard';
+import { getHandCardDef } from '../../src/engine/cards/registry';
 import { freshMain1 } from './testUtils';
 import type { GameAction, GameState, PlayerId, TokenInstance } from '../../src/engine/types';
 
@@ -43,26 +46,39 @@ const unit = (s: GameState, id: string) => [...s.players.p1.backRow, ...s.player
 const act = (s: GameState, ...actions: GameAction[]) => actions.reduce(gameReducer, s);
 
 describe('Prototype: Terrain', () => {
-  it("Akatsuki Hideout: Akatsuki Leaders' Pools hold 1 more — until another Terrain replaces it", () => {
+  it("Akatsuki Hideout: at your Upkeep, each of your Akatsuki Leaders gains 1 Chakra in its Pool (up to capacity) — until another Terrain replaces it", () => {
     const s = proto(freshMain1());
     const cap = unit(s, 'p1-hidan')!.chakraPool!.capacity;
     const hideout = play(s, 'p1', TERRAIN.akatsukiHideout);
     expect(hideout.players.p1.terrainInPlay?.defId).toBe(TERRAIN.akatsukiHideout);
-    expect(unit(hideout, 'p1-hidan')!.chakraPool!.capacity).toBe(cap + 1);
-    expect(unit(hideout, 'p2-hidan')!.chakraPool!.capacity).toBe(cap); // one-way
+    expect(unit(hideout, 'p1-hidan')!.chakraPool!.capacity).toBe(cap); // no bigger Pool any more
+    const atUpkeep = gameReducer({ ...hideout, phase: 'Untap' }, { type: 'ADVANCE_PHASE' });
+    expect(atUpkeep.phase).toBe('Upkeep');
+    expect(unit(atUpkeep, 'p1-hidan')!.chakraPool!.current).toBe(unit(hideout, 'p1-hidan')!.chakraPool!.current + 1);
+    expect(unit(atUpkeep, 'p1-hidan')!.status.pooledThisTurn).toBe(false); // not pooling: it can still act
+    expect(unit(atUpkeep, 'p2-hidan')!.chakraPool!.current).toBe(unit(hideout, 'p2-hidan')!.chakraPool!.current); // one-way
+    const full = { ...hideout, phase: 'Untap' as const, players: { ...hideout.players, p1: { ...hideout.players.p1, backRow: hideout.players.p1.backRow.map((c) => (c?.instanceId === 'p1-hidan' ? { ...c, chakraPool: { ...c.chakraPool, current: cap } } : c)) } } };
+    expect(unit(gameReducer(full, { type: 'ADVANCE_PHASE' }), 'p1-hidan')!.chakraPool!.current).toBe(cap); // never past capacity
     const replaced = play(hideout, 'p1', TERRAIN.supplyDepot);
     expect(replaced.players.p1.terrainInPlay?.defId).toBe(TERRAIN.supplyDepot);
     expect(replaced.players.p1.discardPile.some((c) => c.defId === TERRAIN.akatsukiHideout)).toBe(true);
-    expect(unit(replaced, 'p1-hidan')!.chakraPool!.capacity).toBe(cap);
+    const later = gameReducer({ ...replaced, phase: 'Untap' }, { type: 'ADVANCE_PHASE' });
+    expect(unit(later, 'p1-hidan')!.chakraPool!.current).toBe(unit(replaced, 'p1-hidan')!.chakraPool!.current);
   });
 
-  it('Amegakure: Rain Village Shinobi get +1 Health, others don’t', () => {
+  it('Amegakure: Rain Village Shinobi get +1 Damage and +1 Health and cost 1 less Supply (min 1), others don’t', () => {
     const a = placeShinobi(proto(freshMain1()), 'p1', 'shinobi-rain-chunin', 2, 4, 0);
     const b = placeShinobi(a.state, 'p1', 'shinobi-other', 2, 4, 1);
     const s = play(b.state, 'p1', TERRAIN.amegakure);
     expect(unit(s, a.id)!.maxHP).toBe(5);
     expect(unit(s, a.id)!.currentHP).toBe(5);
     expect(unit(s, b.id)!.maxHP).toBe(4);
+    expect(shinobiDamage(unit(s, a.id)!, s)).toBe(3);
+    expect(shinobiDamage(unit(s, b.id)!, s)).toBe(2);
+    const ctx = { state: s, player: 'p1' as const, enablingInstanceId: '', targetInstanceIds: [] };
+    expect(prototypeCardCost(s, getHandCardDef('shinobi-rain-jonin')!, ctx).cost).toBe(3); // 4 - 1
+    expect(prototypeCardCost(s, getHandCardDef('shinobi-rain-genin')!, ctx).cost).toBe(1); // minimum 1
+    expect(prototypeCardCost(s, getHandCardDef('shinobi-yahiko')!, ctx).cost).toBe(6); // not a Rain Village Shinobi
     // Played again (no change) — the buff isn't applied twice.
     expect(unit(act(s, { type: 'ADJUST_SUPPLIES', player: 'p1', delta: 0 }), a.id)!.maxHP).toBe(5);
   });
@@ -73,16 +89,15 @@ describe('Prototype: Terrain', () => {
     expect(suppliesMax(play(s, 'p1', TERRAIN.supplyDepot), 'p1')).toBe(max + 1);
   });
 
-  it('Blacksmith Village: Equipment costs 1 less to play and to re-equip, never below 1', () => {
-    const s = play(proto(freshMain1()), 'p1', TERRAIN.blacksmithVillage);
+  it('Blacksmith Village: Equipment costs 1 less, never below 1', () => {
+    const holder = placeShinobi(proto(freshMain1()), 'p1', 'shinobi-rain-jonin', 3, 5, 0);
+    const s = play(holder.state, 'p1', TERRAIN.blacksmithVillage);
     const before = suppliesAvailable(s, 'p1');
-    const knives = play(s, 'p1', 'equip-trench-knives', ['p1-hidan']); // 3 → 2
-    expect(suppliesAvailable(knives, 'p1')).toBe(before - 2);
-    const protector = play(knives, 'p1', 'equip-forehead-protector', ['p1-hidan']); // 1 → still 1
-    expect(suppliesAvailable(protector, 'p1')).toBe(before - 3);
-    expect(reequipCost(protector, 'p1', 'equip-trench-knives')).toBe(1);
-    expect(reequipCost(protector, 'p1', 'equip-forehead-protector')).toBe(1);
-    expect(equipmentOn(protector, 'p1-hidan')).toHaveLength(2);
+    const knives = play(s, 'p1', 'equip-trench-knives', [holder.id]); // 5 → 4
+    expect(suppliesAvailable(knives, 'p1')).toBe(before - 4);
+    const protector = play(knives, 'p1', 'equip-forehead-protector', [holder.id]); // 2 → 1
+    expect(suppliesAvailable(protector, 'p1')).toBe(before - 5);
+    expect(equipmentOn(protector, holder.id)).toHaveLength(2);
   });
 
   it('Training Grounds: once per turn, 1 Supply pools 1 Chakra into a Leader', () => {

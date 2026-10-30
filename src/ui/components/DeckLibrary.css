@@ -680,3 +680,18 @@
   letter-spacing: 0.06em;
   opacity: 0.85;
 }
+
+/* Prototype: which deck clicked cards go into (Main Deck / Extra Deck). */
+.deck-panel__target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+  font-size: 0.85rem;
+}
+
+.deck-panel__target button[aria-pressed='true'] {
+  font-weight: 700;
+  outline: 2px solid currentColor;
+}

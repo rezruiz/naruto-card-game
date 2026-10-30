@@ -1,11 +1,12 @@
 import type { GameState, TokenInstance } from '../../engine/types';
 import { trackedResources } from '../../engine/characters/progressText';
-import { getCharacterDef, getTokenDef } from '../../engine/characters/registry';
+import { getTokenDef } from '../../engine/characters/registry';
 import { getHandCardDef } from '../../engine/cards/registry';
 import { hasFieldOrientation } from '../../engine/board';
 import { isPrototype } from '../../engine/prototype';
 import { isShinobi, shinobiDamage } from '../../engine/shinobi';
 import { EquipmentChips } from './EquipmentChips';
+import { StatIcon } from './StatIcon';
 
 export function TokenCard({
   token,
@@ -27,7 +28,8 @@ export function TokenCard({
   const resources = trackedResources(state, token).filter((t) => t.key && !(creature && t.label === 'Damage'));
   const orienting = hasFieldOrientation(state, token);
   const leaderBonus = shinobi ? getHandCardDef(token.defId)?.shinobi?.leaderBonus : undefined;
-  const effects = !creature ? [] : leaderBonus ? [`+${leaderBonus.amount} Damage with ${getCharacterDef(leaderBonus.defId)?.name ?? leaderBonus.defId}`] : (getTokenDef(token.defId)?.abilities ?? []).map((a) => a.name);
+  const tokenDef = getTokenDef(token.defId);
+  const effects = !creature ? [] : leaderBonus ? [`+${leaderBonus.amount} Damage with ${leaderBonus.name}`] : [...(tokenDef?.traits ?? []), ...(tokenDef?.abilities ?? []).map((a) => a.name.replace(/^\w+ Release: /, ''))];
   return (
     <div
       className={`compact-card token-card${creature ? ' token-card--creature' : ''}${shinobi ? ' token-card--shinobi' : ''}${isTargetable ? ' targetable' : ''}`}
@@ -81,13 +83,9 @@ export function TokenCard({
       )}
       {creature && (
         <div className="token-card__stats" aria-label={`Health ${token.currentHP} of ${token.maxHP}${shinobi ? `, Damage ${shinobiDamage(token, state)}` : ''}`}>
-          {shinobi && (
-            <span className="token-card__stat token-card__stat--damage" title="Damage">
-              ⚔ {shinobiDamage(token, state)}
-            </span>
-          )}
-          <span className="token-card__stat token-card__stat--health" title="Health">
-            ♥ {token.currentHP}/{token.maxHP}
+          {shinobi && <StatIcon kind="attack" value={shinobiDamage(token, state)} title={`Damage ${shinobiDamage(token, state)}`} />}
+          <span className="token-card__stat--health">
+            <StatIcon kind="defense" value={token.currentHP} hurt={token.currentHP < token.maxHP} title={`Health ${token.currentHP} of ${token.maxHP}`} />
           </span>
         </div>
       )}

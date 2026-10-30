@@ -4,6 +4,7 @@ import { appendLog } from '../phases/phaseMachine';
 import type { AbilityDef } from '../abilities';
 import { registerCharacter } from './registry';
 import { shuffle } from '../deck';
+import { isPrototype } from '../prototype';
 import type { GameState, PlayerId, Style } from '../types';
 
 const DEF_ID = 'kakuzu';
@@ -126,12 +127,23 @@ registerCharacter({
 });
 
 // Heart Masks: when Kakuzu enters play (any way, the starting pick included),
-// search the Jutsu Deck for 1 copy each of his three mask techniques, add them
-// to hand, then shuffle.
+// add 1 copy each of his three mask techniques to hand — from the Extra Deck in
+// the Prototype, otherwise by searching the Jutsu Deck (then shuffling).
 const HEART_MASK_CARDS = ['jutsu-pressure-damage', 'jutsu-searing-migraine', 'jutsu-false-darkness'];
 
 function heartMasks(state: GameState, player: PlayerId): GameState {
   const p = state.players[player];
+  if (isPrototype(state)) {
+    const pile = (p.extraDeck ?? []).slice();
+    const pulled: typeof pile = [];
+    for (const defId of HEART_MASK_CARDS) {
+      const i = pile.findIndex((c) => c.defId === defId);
+      if (i >= 0) pulled.push(...pile.splice(i, 1));
+    }
+    const withMasks = [...p.hand, ...pulled.map((c) => ({ kind: 'card' as const, instanceId: c.instanceId, defId: c.defId }))];
+    const pulledState = { ...state, players: { ...state.players, [player]: { ...p, extraDeck: pile, hand: withMasks } } };
+    return appendLog(pulledState, `Heart Masks: ${player} adds ${pulled.length} mask card${pulled.length === 1 ? '' : 's'} from their Extra Deck to hand.`);
+  }
   const deck = p.handDeck.slice();
   const found: typeof deck = [];
   for (const defId of HEART_MASK_CARDS) {

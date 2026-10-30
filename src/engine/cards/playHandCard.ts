@@ -1,13 +1,14 @@
 import { samehadaFusionAbsorb } from '../characters/kisame';
-import { getCharacterDef } from '../characters/registry';
-import { findOccupant, isCharacter, patchCharacter, isHidingLikeAMole, isPhasedOut, surfaceFromMole } from '../board';
+import { getCharacterDef, sharedVersatilitySource } from '../characters/registry';
+import { findOccupant, isCharacter, patchCharacter, patchOccupant, isHidingLikeAMole, isPhasedOut, surfaceFromMole } from '../board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
 import { isPrototype, spendSupplies, suppliesAvailable } from '../prototype';
 import { getHandCardDef, needsEnablingCharacter, targetedIds } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
-import { TERRAIN, hasTerrain } from '../terrainEffects';
+import { TERRAIN, amegakureBuffs, hasTerrain } from '../terrainEffects';
+import { equipCostFor } from '../equipment';
 import type { GameState, PlayerId } from '../types';
 
 export interface Legality {
@@ -39,10 +40,18 @@ function elementalVersatilityApplies(state: GameState, def: HandCardDef, enablin
   return !!enabler && isCharacter(enabler) && !!getCharacterDef(enabler.defId)?.elementalVersatility && enabler.extra.elementalVersatilityUsedTurn !== state.turn;
 }
 
+/** Yahiko as a Shinobi: your first elemental Jutsu or ability each turn costs 1 less — the elemental Jutsu cards your Leaders enable included. The unit to mark used, if it applies. */
+function sharedVersatilityFor(state: GameState, def: HandCardDef, player: PlayerId, enablingInstanceId: string): string | undefined {
+  if (def.cardType !== 'jutsu' || def.type !== 'Ninjutsu' || def.style === 'None' || !enablingInstanceId) return undefined;
+  return sharedVersatilitySource(state, player);
+}
+
 export function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool: number): number {
   let cost = typeof def.cost === 'function' ? def.cost(ctx, payFromPool) : def.cost;
   if (genjutsuMasterApplies(ctx.state, def, ctx.enablingInstanceId) && cost > 1) cost -= 1;
-  if (elementalVersatilityApplies(ctx.state, def, ctx.enablingInstanceId) && cost > 1) cost -= 1;
+  // At most one Elemental Versatility discount per play, whichever sources apply.
+  const versatile = elementalVersatilityApplies(ctx.state, def, ctx.enablingInstanceId) || !!sharedVersatilityFor(ctx.state, def, ctx.player, ctx.enablingInstanceId);
+  if (versatile && cost > 1) cost -= 1;
   // Earth Style: Added Weight Rock Technique on the enabling character — +1 while it lasts.
   const enabler = ctx.enablingInstanceId ? findOccupant(ctx.state, ctx.enablingInstanceId)?.occupant : undefined;
   if (enabler && ((enabler.extra.addedWeightUntilTurn as number | undefined) ?? -1) >= ctx.state.turn) cost += 1;
@@ -175,8 +184,14 @@ export function checkHandCardLegality(
 export function prototypeCardCost(state: GameState, def: HandCardDef, ctx: HandCardContext): { cost: number; fromPool: boolean } {
   const fromPool = needsEnablingCharacter(def, true);
   const cost = resolveCost(def, { ...ctx, state }, fromPool ? 1 : 0);
-  // Blacksmith Village: your Equipment costs 1 less Supply (to a minimum of 1).
-  if (def.cardType === 'equipment' && hasTerrain(state, ctx.player, TERRAIN.blacksmithVillage)) return { cost: Math.max(1, cost - 1), fromPool };
+  if (def.cardType === 'equipment') {
+    // An Equipment with a Leader cost (Medical Pouch) costs that much to attach to a Leader.
+    const equipCost = equipCostFor(state, def.id, ctx.targetInstanceIds[0], cost);
+    // Blacksmith Village: your Equipment costs 1 less Supply (to a minimum of 1).
+    return { cost: hasTerrain(state, ctx.player, TERRAIN.blacksmithVillage) ? Math.max(1, equipCost - 1) : equipCost, fromPool };
+  }
+  // Amegakure: your Rain Village Shinobi and Rebels cost 1 less Supply (to a minimum of 1).
+  if (def.cardType === 'shinobi' && amegakureBuffs(state, ctx.player, def.id)) return { cost: Math.max(1, cost - 1), fromPool };
   return { cost, fromPool };
 }
 
@@ -265,6 +280,10 @@ export function playHandCard(
   }
   if (elementalVersatilityApplies(state, def, enablingInstanceId)) {
     next = patchCharacter(next, enablingInstanceId, (c) => ({ ...c, extra: { ...c.extra, elementalVersatilityUsedTurn: state.turn } }));
+  }
+  const sharedFrom = sharedVersatilityFor(state, def, player, enablingInstanceId);
+  if (sharedFrom) {
+    next = patchOccupant(next, sharedFrom, (o) => ({ ...o, extra: { ...o.extra, elementalVersatilityUsedTurn: state.turn } }));
   }
   next = {
     ...next,

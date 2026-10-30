@@ -93,6 +93,7 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
   rallyingWordsBonusTurn: (v, s, occ) =>
     v === s.turn && !occ.extra.rallyingSpentOn ? { label: 'Rallying Words', value: '+1 damage on next attack this turn', key: true } : undefined,
   rallyingSpentOn: () => undefined, // shown via rallyingWordsBonusTurn
+  pillarEncirclementUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: 'Pillar Encirclement', value: 'Each hit reduced by 2 until your next turn', key: true } : undefined),
   moleHiddenUntilTurn: (v, s) =>
     v !== undefined && (v as number) >= s.turn
       ? { label: 'Hiding Like a Mole', value: `Can't be targeted through turn ${v}, or until it attacks (+2 if Taijutsu)`, key: true }

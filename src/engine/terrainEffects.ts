@@ -22,6 +22,16 @@ export function hasTerrain(state: GameState, player: PlayerId, defId: string): b
   return state.ruleset === 'prototype' && state.players[player].terrainInPlay?.defId === defId;
 }
 
+/** The Shinobi Amegakure, Village Hidden in the Rain buffs: the Rain Village Shinobi and Amegakure Civilian Rebels. */
+export function isRainShinobi(defId: string): boolean {
+  return /^shinobi-(rain-|amegakure-civilian-rebel$)/.test(defId);
+}
+
+/** Amegakure: +1 Damage, +1 Health and 1 Supply cheaper to play (to a minimum of 1), for this player's Rain Village Shinobi and Rebels. */
+export function amegakureBuffs(state: GameState, player: PlayerId, defId: string): boolean {
+  return hasTerrain(state, player, TERRAIN.amegakure) && isRainShinobi(defId);
+}
+
 /** A Terrain that works for both sides: in play on either. */
 export function terrainOnEitherSide(state: GameState, defId: string): boolean {
   return hasTerrain(state, 'p1', defId) || hasTerrain(state, 'p2', defId);

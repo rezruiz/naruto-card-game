@@ -65,6 +65,7 @@ export function redactStateFor(state: GameState, viewerId: PlayerId): GameState 
         // Setup: their starting character stays hidden until both players have confirmed (§3).
         ...(state.firstPlayerPending ? { backRow: opponent.backRow.map(() => null), frontRow: opponent.frontRow.map(() => null) } : {}),
         handDeck: opponent.handDeck.map((c) => ({ instanceId: c.instanceId, defId: '__hidden__' })),
+        ...(opponent.extraDeck ? { extraDeck: opponent.extraDeck.map((c) => ({ instanceId: c.instanceId, defId: '__hidden__' })) } : {}),
       },
     },
   };

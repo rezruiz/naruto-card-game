@@ -35,7 +35,8 @@ export function redirectAttack(
   stackItemId: string,
   fromInstanceId: string,
   toInstanceId: string,
-  adjust: { reduceBy?: number; toZero?: boolean },
+  /** ownReductionsOff: the unit taking the hit can't reduce it with its own abilities (Yahiko's Selfless Resolve). */
+  adjust: { reduceBy?: number; toZero?: boolean; ownReductionsOff?: boolean },
   guardName: string,
 ): GameState {
   const idx = state.stack.findIndex((item) => item.id === stackItemId);

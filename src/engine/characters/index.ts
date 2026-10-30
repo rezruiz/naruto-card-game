@@ -9,6 +9,7 @@ import './itachi';
 import './konan';
 import './juzo';
 import './yahiko';
+import './yahikoShinobi';
 import './amegakureCivilianRebel';
 import './sasori';
 import './zetsu';

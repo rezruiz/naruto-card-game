@@ -49,8 +49,8 @@ import {
 } from './trust/manual';
 import type { GameAction, GameState, PlayerId, PlayerState, Phase } from './types';
 import { adjustSupplies, isPrototype } from './prototype';
-import { reequip, sweepEquipment, tickEquipmentHeals } from './equipment';
-import { sweepTerrain, activateTrainingGrounds } from './cards/terrain';
+import { sweepEquipment, tickEquipmentHeals } from './equipment';
+import { sweepTerrain, activateTrainingGrounds, tickHideout } from './cards/terrain';
 import { assignShinobiDefender, cancelShinobiAttack, confirmShinobiAttacks, confirmShinobiDefense, declareShinobiAttack, endShinobiCombat } from './shinobi';
 
 /**
@@ -92,13 +92,16 @@ function drainPendingReinforcements(state: GameState): GameState {
         notes.push(`${player}'s D-rank character doesn't trigger a Reinforcement.`);
         continue;
       }
+      // Prototype: whenever one of your Leaders is defeated, you may bring out any Leader from your Leader Deck, free.
+      if (isPrototype(next)) {
+        if (p.characterDeck.length === 0) continue;
+        p = { ...p, reinforcementOffers: [...p.reinforcementOffers, 'free'] };
+        notes.push(`${player}'s Leader fell — they may bring out any Leader from their Leader Deck (free).`);
+        continue;
+      }
       if (!event.lastCPlus) {
         p = { ...p, reinforcementOffers: [...p.reinforcementOffers, 'paid'] };
-        notes.push(
-          isPrototype(next)
-            ? `${player} may pay ${currentTax(next, player)} Supplies to draw a new Leader (pick any from the Character Deck).`
-            : `${player} may pay ${currentTax(next, player)} Chakra for a Reinforcement draw (look at 2, keep 1).`,
-        );
+        notes.push(`${player} may pay ${currentTax(next, player)} Chakra for a Reinforcement draw (look at 2, keep 1).`);
         continue;
       }
       const cPlusInHand = p.hand.some((h) => h.kind === 'character' && (getCharacterDeckEntry(h.entryId)?.rank ?? 'D') !== 'D');
@@ -234,6 +237,7 @@ function advanceOnePhase(input: GameState): GameState {
     next = tickChakraSpores(next, next.activePlayer);
     next = tickScheduledHeals(next, next.activePlayer);
     next = tickEquipmentHeals(next, next.activePlayer);
+    next = tickHideout(next, next.activePlayer);
   }
   // The Draw Phase draw itself is a manual click (DRAW_PHASE_CARD), never automatic.
   return next;
@@ -384,8 +388,6 @@ function reduce(state: GameState, action: GameAction): GameState {
       return confirmShinobiDefense(drained);
     case 'ADJUST_SUPPLIES':
       return adjustSupplies(drained, action.player, action.delta);
-    case 'REEQUIP':
-      return reequip(drained, action.equipmentInstanceId, action.holderId);
     case 'USE_TRAINING_GROUNDS':
       return activateTrainingGrounds(drained, action.leaderId);
     case 'PLACE_CHAKRA_SOURCE':

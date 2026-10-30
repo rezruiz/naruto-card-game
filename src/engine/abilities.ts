@@ -3,7 +3,8 @@ import { isPrototype } from './prototype';
 import { findOccupant, isCharacter, isHidingLikeAMole, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant, surfaceFromMole } from './board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from './stack';
 import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
-import { getCharacterDef, getTokenDef } from './characters/registry';
+import { getCharacterDef, getTokenDef, sharedVersatilitySource } from './characters/registry';
+import { getHandCardDef } from './cards/registry';
 
 export interface AbilityContext {
   state: GameState;
@@ -98,11 +99,16 @@ interface FirstAbilityDiscount {
   eligible: boolean;
   elemental: boolean;
   leader: boolean;
+  /** The unit whose shared Elemental Versatility applies (Yahiko as a Shinobi) — marked used. */
+  sharedFrom?: string;
 }
 
 function computeFirstAbilityDiscount(ctx: AbilityContext, ability: AbilityDef): FirstAbilityDiscount {
   const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-  if (!found || !isCharacter(found.occupant)) return { eligible: false, elemental: false, leader: false };
+  if (!found) return { eligible: false, elemental: false, leader: false };
+  // Yahiko (Shinobi): your first elemental Jutsu or ability each turn costs 1 less — any of your units' abilities.
+  const sharedFrom = isElementalJutsu(ability) ? sharedVersatilitySource(ctx.state, found.player) : undefined;
+  if (!isCharacter(found.occupant)) return { eligible: !!sharedFrom, elemental: false, leader: false, sharedFrom };
   const source = found.occupant;
   const ownDef = getCharacterDef(source.defId);
 
@@ -117,7 +123,7 @@ function computeFirstAbilityDiscount(ctx: AbilityContext, ability: AbilityDef): 
   });
   const leader = hasLeaderAlly && source.extra.inspiringLeaderUsedTurn !== ctx.state.turn;
 
-  return { eligible: elemental || leader, elemental, leader };
+  return { eligible: elemental || leader || !!sharedFrom, elemental, leader, sharedFrom };
 }
 
 export function resolveCost(ability: AbilityDef, ctx: AbilityContext): number {
@@ -252,7 +258,9 @@ export function checkLegality(
   if (ability.speed !== 'Normal' && state.priorityPlayer !== found.player) {
     return { ok: false, reason: `${found.player} doesn't currently have priority.` };
   }
-  if (ability.style !== 'None' && !(isCharacter(source) && source.styles.includes(ability.style))) {
+  // A Shinobi with abilities has its card's Styles (Yahiko).
+  const unitStyles = isCharacter(source) ? source.styles : (getHandCardDef(source.defId)?.shinobi?.styles ?? []);
+  if (ability.style !== 'None' && !unitStyles.includes(ability.style)) {
     return { ok: false, reason: `${source.name} doesn't have Style: ${ability.style}.` };
   }
   // Generic "can't use abilities that target a character" stun (e.g. Kisame's
@@ -435,6 +443,9 @@ export function activateAbility(
   }
   if (discount.leader) {
     next = patchCharacter(next, sourceInstanceId, (c) => ({ ...c, extra: { ...c.extra, inspiringLeaderUsedTurn: state.turn } }));
+  }
+  if (discount.sharedFrom) {
+    next = patchOccupant(next, discount.sharedFrom, (o) => ({ ...o, extra: { ...o.extra, elementalVersatilityUsedTurn: state.turn } }));
   }
   next = markUsed(next, player, sourceInstanceId, ability.id);
   if (source.extra.nextAbilityDiscount) {

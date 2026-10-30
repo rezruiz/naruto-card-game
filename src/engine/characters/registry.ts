@@ -71,6 +71,13 @@ export interface TokenDef {
   onUpkeep?: (state: GameState, instanceId: string) => GameState;
   /** Fires at this Token's own controller's End Phase (e.g. Deva Path's Almighty Push). */
   onEndPhase?: (state: GameState, instanceId: string) => GameState;
+  /** Passive traits, by name, shown on the card ahead of its abilities. */
+  traits?: string[];
+  /**
+   * Elemental Versatility for its whole side (Yahiko as a Shinobi): its controller's first elemental Jutsu or
+   * ability each turn costs 1 less Chakra — any of their units' abilities, and the Jutsu cards their Leaders enable.
+   */
+  sharedElementalVersatility?: boolean;
 }
 
 const tokenRegistry: Record<string, TokenDef> = {};
@@ -81,6 +88,13 @@ export function registerTokenDef(def: TokenDef): void {
 
 export function getTokenDef(id: string): TokenDef | undefined {
   return tokenRegistry[id];
+}
+
+/** The unit whose shared Elemental Versatility (TokenDef.sharedElementalVersatility) is still unused this turn for `player`, if any. Off while it's Disabled or Retreated. */
+export function sharedVersatilitySource(state: GameState, player: PlayerId): string | undefined {
+  return state.players[player].frontRow.find(
+    (t) => !!t && !!getTokenDef(t.defId)?.sharedElementalVersatility && !t.status.disabled && !t.status.retreated && t.extra.elementalVersatilityUsedTurn !== state.turn,
+  )?.instanceId;
 }
 
 export function createCharacterInstance(defId: string, owner: PlayerId, instanceId: string, turn: number): CharacterInstance {

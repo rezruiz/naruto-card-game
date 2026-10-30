@@ -1826,7 +1826,7 @@ or reduce it.
 
 ---
 
-*Shinobi (Prototype only): placeholder units for testing the prototype rules, with no abilities yet. The Prototype build's starter deck has 2 of each; they aren't part of the base game.*
+*Shinobi (Prototype only): units for testing the prototype rules — the Rain Village Shinobi are vanilla placeholders. The Prototype build's starter deck has 3 Rebels, 2 Yahiko, 2 Mercenaries and 1 each of the Genin, Chunin, Jonin and Elite Guard (the Scout is in the Deck Library only); they aren't part of the base game.*
 
 **Rain Village Genin** — Shinobi
 Cost: 1 Supply.
@@ -1848,10 +1848,23 @@ Damage 3 · Health 5.
 Cost: 6 Supplies.
 Damage 4 · Health 7.
 
-**Amegakure Civilian Rebel** — Shinobi
+**Mercenary** — Shinobi
+Cost: 3 Supplies.
+Damage 2 · Health 2.
+
+**Amegakure Civilian Rebel** — Shinobi · D Rank
 Cost: 1 Supply.
-Damage 1 · Health 3.
+Damage 1 · Health 2.
 Effect: +1 Damage while you have Yahiko in play.
+
+**Yahiko** — Shinobi · B Rank · Named
+Cost: 6 Supplies.
+Damage 2 · Health 3 · Pool Capacity 8.
+Styles: Water, Fire, Wind · Synergy: Akatsuki, Pain, Konan.
+Elemental Versatility: Your first elemental Jutsu or ability each turn costs 1 less Chakra.
+Water Release: Pillar Encirclement — 3 Chakra, Style: Water, Type: Ninjutsu: Until your next turn, each instance of damage dealt to Yahiko is reduced by 2.
+Rallying Words — 3 Chakra, Style: None, Type: Ninjutsu: Each ally's next attack this turn deals 1 additional damage.
+Ultimate — Selfless Resolve (Reactive Technique, 5 Chakra): Condition: Your opponent controls at least 2 more characters (Leaders and Shinobi) than you. In response to a targeted attack on one of your other characters that would defeat it, redirect all of that damage, after the original target's reductions, to Yahiko instead. The original target takes none. Yahiko's own abilities can't reduce this damage. Untargeted effects can't trigger this.
 
 ## 13c. Example Terrain Cards
 

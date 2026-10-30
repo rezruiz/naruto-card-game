@@ -38,11 +38,11 @@ export function CharacterRevealPanel({
   return (
     <div className="reveal-panel">
       <div className="reveal-panel__title">
-        {player.toUpperCase()}: choose {reason === 'setup' ? 'a starting character' : searchAll ? `any Leader from your ${CHARACTER_DECK_NAME}` : 'a character to add to your hand'}
+        {player.toUpperCase()}: choose {reason === 'setup' ? 'a starting character' : searchAll ? 'a Leader to deploy' : 'a character to add to your hand'}
       </div>
       {reason === 'reinforcement' && (
         <div className="reveal-panel__note">
-          Already paid for — playing it from your hand later is free.
+          {searchAll ? `It goes straight into play; the rest stay in your ${CHARACTER_DECK_NAME}.` : 'Already paid for — playing it from your hand later is free.'}
         </div>
       )}
       <div className="reveal-panel__options">

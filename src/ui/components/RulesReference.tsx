@@ -1,7 +1,7 @@
 import { HEALTH_LOST_ON_DEFEAT, RANK_ORDER, UPKEEP_BY_RANK } from '../../engine/ranks';
 import { SYNERGY_DISCOUNT_CAP, startingCharacterTreatment } from '../../engine/upkeep';
 import { reinforcementTax } from '../../engine/playCharacter';
-import { LEADER_DRAW_COST } from '../../engine/prototype';
+import { EARLY_DEPLOY_COSTS } from '../../engine/prototype';
 import { MAIN_DECK_NAME, VARIANT } from '../../variant';
 
 /** What a rank costs when it's your starting character (SPEC §6.5) — the normal upkeep otherwise. */
@@ -48,7 +48,7 @@ export function RulesReference() {
         </li>
         {VARIANT === 'prototype' ? (
           <li>
-            <strong>Leader Deck draw:</strong> pay {LEADER_DRAW_COST} Supplies (always the same), then pick any Leader from your Leader Deck.
+            <strong>New Leaders:</strong> when one of your Leaders is defeated, bring out any Leader from your Leader Deck for free. Deploying early costs {EARLY_DEPLOY_COSTS.join(' → ')} Supplies (then stays at {EARLY_DEPLOY_COSTS[EARLY_DEPLOY_COSTS.length - 1]}): reveal 2 random Leaders and deploy 1.
           </li>
         ) : (
           <li>

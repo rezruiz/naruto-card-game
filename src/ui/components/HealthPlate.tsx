@@ -13,14 +13,18 @@ export function HealthPlate({
   isActive,
   isYou,
   onAdjust,
+  characters,
 }: {
   player: PlayerState;
   isActive: boolean;
   isYou?: boolean;
   /** Trust mode: manual Health correction (shown on hover). */
   onAdjust?: (delta: number) => void;
+  /** Prototype rules: no Health — show how many characters this player has left (in play, in hand and in the Character Deck) out of all they started with. */
+  characters?: { left: number; total: number };
 }) {
-  const health = player.health;
+  const health = characters ? characters.left : player.health;
+  const maxValue = characters ? Math.max(1, characters.total) : STARTING_HEALTH;
   const previous = useRef(health);
   const [change, setChange] = useState<{ delta: number; key: number } | null>(null);
 
@@ -33,13 +37,14 @@ export function HealthPlate({
     return () => window.clearTimeout(timer);
   }, [health]);
 
-  const level = health <= 5 ? 'danger' : health <= 10 ? 'warn' : 'ok';
-  const pct = Math.max(0, Math.min(100, (health / STARTING_HEALTH) * 100));
+  const level = characters ? (health <= 1 ? 'danger' : health <= 3 ? 'warn' : 'ok') : health <= 5 ? 'danger' : health <= 10 ? 'warn' : 'ok';
+  const pct = Math.max(0, Math.min(100, (health / maxValue) * 100));
 
   return (
     <div
       className={`health-plate health-plate--${level}${isActive ? ' health-plate--active' : ''}${change && change.delta < 0 ? ' health-plate--hit' : ''}`}
-      aria-label={`${player.id.toUpperCase()} Health ${health} of ${STARTING_HEALTH}`}
+      aria-label={characters ? `${player.id.toUpperCase()} has ${health} of ${maxValue} characters left` : `${player.id.toUpperCase()} Health ${health} of ${STARTING_HEALTH}`}
+      title={characters ? 'Characters left — in play, in hand and in the Character Deck. Lose them all and you lose the game.' : undefined}
     >
       <div className="health-plate__who">
         {player.id.toUpperCase()}
@@ -47,7 +52,7 @@ export function HealthPlate({
         {isActive && <span className="health-plate__turn">Turn</span>}
       </div>
       <div className="health-plate__value">
-        <span className="health-plate__label">HP</span>
+        <span className="health-plate__label">{characters ? 'Characters' : 'HP'}</span>
         <span className="health-plate__number">{health}</span>
         {change && (
           <span key={change.key} className={`health-plate__change${change.delta > 0 ? ' health-plate__change--gain' : ''}`}>
@@ -58,7 +63,7 @@ export function HealthPlate({
       <div className="health-plate__bar" aria-hidden>
         <div className="health-plate__fill" style={{ width: `${pct}%` }} />
       </div>
-      {onAdjust && (
+      {onAdjust && !characters && (
         <div className="health-plate__adjust">
           <button type="button" aria-label="Lose 1 Health" onClick={() => onAdjust(-1)}>
             −

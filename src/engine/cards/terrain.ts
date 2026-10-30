@@ -2,7 +2,7 @@ import { findOccupant, isCharacter, patchOccupant } from '../board';
 import { getCharacterDef } from '../characters/registry';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
 import { spendSupplies } from '../prototype';
-import { TERRAIN, hasTerrain, markTerrainUsed, terrainUsedThisTurn } from '../terrainEffects';
+import { TERRAIN, amegakureBuffs, hasTerrain, markTerrainUsed, terrainUsedThisTurn } from '../terrainEffects';
 import { registerHandCard } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
 import type { BoardOccupant, GameState, PlayerId } from '../types';
@@ -33,9 +33,10 @@ const akatsukiHideout: HandCardDef = {
   maxTargets: 0,
   synergy: ['Akatsuki'],
   // Base game: Akatsuki-Synergy characters' Upkeep -1 (min 0), read live by
-  // upkeep.ts's payUpkeep. Prototype (no Upkeep): Akatsuki Leaders' Pools
-  // hold 1 more (sweepTerrain below). This resolve only handles entering play.
-  prototypeText: "Cost: 2 Supplies · Synergy: Akatsuki\nEffect: Your Akatsuki Leaders' Chakra Pools hold 1 more.",
+  // upkeep.ts's payUpkeep. Prototype (no Upkeep): at your Upkeep, each of your
+  // Akatsuki Leaders gains 1 Chakra in its Pool (tickHideout below). This
+  // resolve only handles entering play.
+  prototypeText: "Cost: 2 Supplies · Synergy: Akatsuki\nEffect: At your Upkeep, add 1 Chakra to each of your Akatsuki Leaders' Pools.",
   resolve: (ctx) => enterPlay(ctx, akatsukiHideout),
 };
 
@@ -66,9 +67,9 @@ function terrainCard(id: string, name: string, cost: number, effect: string, ext
 }
 
 export const PROTOTYPE_TERRAIN_CARDS: HandCardDef[] = [
-  terrainCard(TERRAIN.amegakure, 'Amegakure, Village Hidden in the Rain', 3, 'Your Rain Village Shinobi and Amegakure Civilian Rebels get +1 Health.', { synergy: ['Akatsuki'] }),
+  terrainCard(TERRAIN.amegakure, 'Amegakure, Village Hidden in the Rain', 3, 'Your Rain Village Shinobi and Amegakure Civilian Rebels get +1 Damage and +1 Health, and cost 1 less Supply to play (to a minimum of 1).', { synergy: ['Akatsuki'] }),
   terrainCard(TERRAIN.supplyDepot, 'Supply Depot', 1, 'Your Supplies maximum is 1 higher.'),
-  terrainCard(TERRAIN.blacksmithVillage, 'Blacksmith Village', 2, 'Your Equipment costs 1 less Supply to play and to Re-equip (to a minimum of 1).'),
+  terrainCard(TERRAIN.blacksmithVillage, 'Blacksmith Village', 2, 'Your Equipment costs 1 less Supply (to a minimum of 1).'),
   terrainCard(TERRAIN.trainingGrounds, 'Training Grounds', 2, 'Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your Leaders.'),
   terrainCard(TERRAIN.forestOfDeath, 'Forest of Death', 3, 'The first Shinobi you play each turn can attack that turn.'),
   terrainCard(TERRAIN.hiddenMist, 'Hidden Mist', 3, 'Enemy Shinobi attacking your Leaders deal 1 less damage (to a minimum of 1).', { style: 'Water' }),
@@ -80,9 +81,7 @@ for (const def of PROTOTYPE_TERRAIN_CARDS) registerHandCard(def);
 /** The Prototype build's starter deck carries 1 each of the Terrain that suit it (with Akatsuki Hideout, 5 in all — the deck stays within 80 cards); the rest are in the deck builder. */
 export const PROTOTYPE_TERRAIN_MANIFEST: { defId: string; copies: number }[] = [TERRAIN.akatsukiHideout, TERRAIN.amegakure, TERRAIN.supplyDepot, TERRAIN.blacksmithVillage, TERRAIN.trainingGrounds].map((defId) => ({ defId, copies: 1 }));
 
-// --- Stat buffs: Akatsuki Hideout (Pool) and Amegakure (Health) ----------------
-
-const RAIN_SHINOBI = /^shinobi-(rain-|amegakure-civilian-rebel$)/;
+// --- Akatsuki Hideout: Chakra at your Upkeep ------------------------------------
 
 /** A Leader: a character in play, or one of Pain's Path tokens (they count as Pain). */
 function isLeader(o: BoardOccupant): boolean {
@@ -95,10 +94,34 @@ function isAkatsukiLeader(o: BoardOccupant): boolean {
 }
 
 /**
- * Run after every action (Prototype only): puts the Hideout's and Amegakure's buffs on the units that
- * should have them and takes them off the ones that shouldn't any more — the Terrain was replaced, a
- * new unit came into play, … Each unit remembers what it was given, so nothing is applied twice.
- * Taking Health away never defeats a unit: it keeps at least 1 HP.
+ * Upkeep Phase (Prototype only): with Akatsuki Hideout in play, each of your Akatsuki Leaders gains 1 Chakra in
+ * its Pool, up to the Pool's capacity. It isn't pooling, so the Leader can still act this turn. Pain counts as
+ * one Leader: the Chakra goes to the first of his Paths with room.
+ */
+export function tickHideout(state: GameState, player: PlayerId): GameState {
+  if (state.ruleset !== 'prototype' || !hasTerrain(state, player, TERRAIN.akatsukiHideout)) return state;
+  let next = state;
+  let painFed = false;
+  const p = state.players[player];
+  for (const o of [...p.backRow, ...p.frontRow]) {
+    if (!o || !isAkatsukiLeader(o) || !o.chakraPool || o.chakraPool.current >= o.chakraPool.capacity) continue;
+    if (o.extra.painPath === true) {
+      if (painFed) continue;
+      painFed = true;
+    }
+    next = patchOccupant(next, o.instanceId, (u) => ({ ...u, chakraPool: { ...u.chakraPool!, current: u.chakraPool!.current + 1 } }));
+    next = appendLog(next, `Akatsuki Hideout: ${o.name} gains 1 Chakra in its Pool.`);
+  }
+  return next;
+}
+
+// --- Stat buff: Amegakure (Health) ----------------------------------------------
+
+/**
+ * Run after every action (Prototype only): puts Amegakure's buff on the units that should have it and takes it
+ * off the ones that shouldn't any more — the Terrain was replaced, a new unit came into play, … Each unit
+ * remembers what it was given, so nothing is applied twice. Taking Health away never defeats a unit: it keeps
+ * at least 1 HP. (It also takes off the Pool bonus the Hideout used to give, from older saves.)
  */
 export function sweepTerrain(state: GameState): GameState {
   if (state.ruleset !== 'prototype') return state;
@@ -107,8 +130,8 @@ export function sweepTerrain(state: GameState): GameState {
     const p = state.players[player];
     for (const o of [...p.backRow, ...p.frontRow]) {
       if (!o) continue;
-      const pool = hasTerrain(state, player, TERRAIN.akatsukiHideout) && isAkatsukiLeader(o) && !!o.chakraPool && Number.isFinite(o.chakraPool.capacity) ? 1 : 0;
-      const health = hasTerrain(state, player, TERRAIN.amegakure) && o.extra.shinobi === true && RAIN_SHINOBI.test(o.defId) ? 1 : 0;
+      const pool = 0;
+      const health = o.extra.shinobi === true && amegakureBuffs(state, player, o.defId) ? 1 : 0;
       const poolDelta = pool - ((o.extra.terrainPoolBonus as number | undefined) ?? 0);
       const healthDelta = health - ((o.extra.terrainHealthBonus as number | undefined) ?? 0);
       if (!poolDelta && !healthDelta) continue;

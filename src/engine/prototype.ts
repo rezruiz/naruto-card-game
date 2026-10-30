@@ -15,6 +15,7 @@
 // Base-game states (no ruleset) never take any of these paths.
 import { appendLog, appendWarning } from './phases/phaseMachine';
 import { TERRAIN, hasTerrain } from './terrainEffects';
+import { painPaths } from './board';
 import type { GameState, PlayerId } from './types';
 
 export function isPrototype(state: GameState): boolean {
@@ -24,15 +25,19 @@ export function isPrototype(state: GameState): boolean {
 export const SUPPLIES_CAP = 20;
 
 /**
- * Drawing a new Leader from the Character Deck: a flat 10 Supplies (no
- * escalating tax), and you search the whole deck and pick exactly the Leader
- * you want (deck.ts). The deck is never shuffled afterwards: every Leader is
- * brought out by choice, so its order doesn't matter.
+ * Bringing out a new Leader (deck.ts). After one of your Leaders is defeated it's free: pick any Leader from your
+ * Leader Deck. Deploying one early, while your Leaders still stand, costs 8 Supplies, then 10, then 12 from then on
+ * (only early deploys count): reveal 2 random Leaders and deploy 1.
  */
-export const LEADER_DRAW_COST = 10;
+export const EARLY_DEPLOY_COSTS = [8, 10, 12];
+
+/** What this player's next early Leader deploy costs, given how many they've made so far. */
+export function earlyDeployCost(deploysSoFar: number): number {
+  return EARLY_DEPLOY_COSTS[Math.min(deploysSoFar, EARLY_DEPLOY_COSTS.length - 1)];
+}
 
 /** Character Deck cards that aren't Leaders in the Prototype — they're Shinobi in the main deck instead (shinobi.ts). */
-export const NOT_LEADERS = new Set(['amegakure-civilian-rebel']);
+export const NOT_LEADERS = new Set(['amegakure-civilian-rebel', 'yahiko']);
 
 /** How many turns this player has started this game (their first turn counts as 1). */
 function turnsStarted(state: GameState, player: PlayerId): number {
@@ -73,3 +78,17 @@ export function adjustSupplies(state: GameState, player: PlayerId, delta: number
   const spent = (p.suppliesSpent ?? 0) - delta;
   return appendLog({ ...state, players: { ...state.players, [player]: { ...p, suppliesSpent: spent } } }, `${player}'s Supplies adjusted by ${delta > 0 ? '+' : ''}${delta} (manual).`);
 }
+
+/**
+ * Prototype rules: there's no player Health. A player loses when every one of their characters has been
+ * defeated — none left in play (Pain counts while any Path stands), in hand, being revealed, or in the
+ * Character Deck. This counts what's left.
+ */
+export function charactersRemaining(state: GameState, player: PlayerId): number {
+  const p = state.players[player];
+  const inPlay = p.backRow.filter((c) => c !== null).length + (painPaths(state, player).length > 0 ? 1 : 0);
+  const inHand = p.hand.filter((h) => h.kind === 'character').length;
+  const revealed = p.pendingCharacterReveal?.revealed.length ?? 0;
+  return inPlay + inHand + revealed + p.characterDeck.length;
+}
+

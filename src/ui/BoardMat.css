@@ -825,3 +825,101 @@ button.in-play-chip--plain:hover {
   margin-left: auto; /* stays bottom-right even on a token with no attack */
   color: #22c55e;
 }
+
+/* Attack and defense: the number laid over a dark grey kunai / a shield. StatIcon.tsx. */
+.stat-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-icon svg {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.stat-icon__value {
+  grid-area: 1 / 1;
+  position: relative;
+  top: -1px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+  /* A dark outline all the way round keeps the digits readable on the icon. */
+  text-shadow:
+    -1px -1px 0 #111418, 1px -1px 0 #111418, -1px 1px 0 #111418, 1px 1px 0 #111418,
+    0 -1.5px 0 #111418, 0 1.5px 0 #111418, -1.5px 0 0 #111418, 1.5px 0 0 #111418;
+}
+
+.stat-icon--attack {
+  /* A small kunai behind the number — the digit runs across it rather than fitting inside. */
+  width: 26px;
+  height: 26px;
+}
+
+.stat-icon--attack .stat-icon__value {
+  top: 0;
+}
+
+.stat-icon__blade {
+  fill: #4a4f57;
+  stroke: #2b2f35;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.stat-icon__grip {
+  fill: #3a3e44;
+  stroke: #2b2f35;
+  stroke-width: 0.8;
+}
+
+.stat-icon__wrap {
+  stroke: #5d636c;
+  stroke-width: 0.9;
+}
+
+.stat-icon__ring {
+  fill: none;
+  stroke: #3a3e44;
+  stroke-width: 1.8;
+}
+
+.stat-icon__shield {
+  fill: #2f8f5b;
+  stroke: #14532d;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+.stat-icon--hurt .stat-icon__value {
+  color: #fecaca;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Still dark grey, with a faint light outline so it doesn't vanish on the dark card. */
+  .stat-icon__blade {
+    fill: #555b64;
+    stroke: #9aa1ab;
+  }
+
+  .stat-icon__grip {
+    fill: #474c54;
+    stroke: #9aa1ab;
+  }
+
+  .stat-icon__ring {
+    stroke: #9aa1ab;
+  }
+
+  .stat-icon__shield {
+    stroke: #86efac;
+  }
+}

@@ -3,7 +3,7 @@ import { BACK_ROW_SIZE, FRONT_ROW_SIZE } from './board';
 import { NOT_LEADERS } from './prototype';
 import { createCharacterInstance, CHARACTER_DECK_MANIFEST } from './characters';
 import { buildHandDeck, drawCard, revealCharacters, shuffle } from './deck';
-import { PROTOTYPE_HAND_MANIFEST, toManifests, type DeckList } from './decklist';
+import { PROTOTYPE_EXTRA_MANIFEST, PROTOTYPE_HAND_MANIFEST, toManifests, type DeckList } from './decklist';
 // Side-effect import — registers every Jutsu Deck card (Jutsu/Assist/
 // Terrain/Mission) before any deck is built.
 import './cards';
@@ -155,11 +155,13 @@ export function createSetupState(
     const leaders = (ids: string[]) => (opts.ruleset === 'prototype' ? ids.filter((id) => !NOT_LEADERS.has(id)) : ids);
     const characters = leaders(chosen && chosen.characters.length > 0 ? chosen.characters : CHARACTER_DECK_MANIFEST);
     const hand = chosen && chosen.hand.length > 0 ? chosen.hand : opts.ruleset === 'prototype' ? PROTOTYPE_HAND_MANIFEST : undefined;
+    // Prototype: the Extra Deck (an empty one is fine — only the preset falls back to the starter's).
+    const extra = opts.ruleset === 'prototype' ? (chosen ? chosen.extra : PROTOTYPE_EXTRA_MANIFEST) : [];
     state = {
       ...state,
       players: {
         ...state.players,
-        [player]: { ...state.players[player], characterDeck: shuffle(characters), handDeck: buildHandDeck(hand) },
+        [player]: { ...state.players[player], characterDeck: shuffle(characters), handDeck: buildHandDeck(hand), ...(opts.ruleset === 'prototype' ? { extraDeck: buildHandDeck(extra) } : {}) },
       },
     };
     state = revealCharacters(state, player, 3, 'setup');

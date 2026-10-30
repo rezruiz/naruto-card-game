@@ -19,20 +19,30 @@ import { dealDamage } from './combat';
 import { appendLog, appendWarning, otherPlayer } from './phases/phaseMachine';
 import { registerHandCard, type HandCardDef } from './cards/registry';
 import { equipmentDamageBonus } from './equipment';
-import { TERRAIN, hasTerrain, markTerrainUsed, terrainUsedThisTurn } from './terrainEffects';
-import type { BoardOccupant, GameState, PlayerId, ShinobiAttack, TokenInstance } from './types';
+import { TERRAIN, amegakureBuffs, hasTerrain, markTerrainUsed, terrainUsedThisTurn } from './terrainEffects';
+import type { BoardOccupant, GameState, PlayerId, ShinobiAttack, Style, TokenInstance } from './types';
 
 export function isShinobi(occ: BoardOccupant | null | undefined): occ is TokenInstance {
   return !!occ && !isCharacter(occ) && occ.extra.shinobi === true;
 }
 
-/** A Shinobi's Damage right now: its base Damage, plus any bonus for a Leader its controller has in play, plus its Equipment. */
+/** A Shinobi's Damage right now: its base Damage, plus any bonus for a named unit its controller has in play (Leader or Shinobi), its Terrain (Amegakure) and its Equipment. */
 export function shinobiDamage(occ: BoardOccupant, state?: GameState): number {
   const base = (occ.extra.shinobiDamage as number | undefined) ?? 0;
   if (!state) return base;
-  const bonus = occ.extra.shinobiLeaderBonus as { defId: string; amount: number } | undefined;
-  const leader = bonus && state.players[occ.owner].backRow.some((c) => c?.defId === bonus.defId) ? bonus.amount : 0;
-  return base + leader + equipmentDamageBonus(state, occ);
+  const bonus = occ.extra.shinobiLeaderBonus as { name: string; amount: number } | undefined;
+  const p = state.players[occ.owner];
+  const ally = bonus && [...p.backRow, ...p.frontRow].some((u) => u?.name === bonus.name) ? bonus.amount : 0;
+  const amegakure = amegakureBuffs(state, occ.owner, occ.defId) ? 1 : 0;
+  return base + ally + amegakure + equipmentDamageBonus(state, occ);
+}
+
+/** Rallying Words: a unit's next attack this turn deals +1. A Shinobi's attack spends it (its Leaders spend it on their abilities' attacks — combat.ts). */
+function spendRally(state: GameState, attackerId: string): { state: GameState; bonus: number } {
+  const attacker = findOccupant(state, attackerId)?.occupant;
+  if (!attacker || attacker.extra.rallyingWordsBonusTurn !== state.turn || attacker.extra.rallyingSpentOn) return { state, bonus: 0 };
+  const spent = patchOccupant(state, attackerId, (o) => ({ ...o, extra: { ...o.extra, rallyingSpentOn: `shinobi-attack-${state.turn}` } }));
+  return { state: appendLog(spent, `Rallying Words: ${attacker.name}'s attack deals 1 additional damage.`), bonus: 1 };
 }
 
 /** A unit a Shinobi may attack: a Leader (back-row character, or one of Pain's Path tokens) or a Shinobi. */
@@ -48,8 +58,25 @@ export function targetsLeader(state: GameState, attack: ShinobiAttack): boolean 
 
 // --- Cards --------------------------------------------------------------------
 
-/** Placeholder Shinobi for testing the prototype rules — vanilla units, no abilities yet. */
-function shinobiCard(id: string, name: string, cost: number, damage: number, health: number, leaderBonus?: { defId: string; amount: number }): HandCardDef {
+/**
+ * The legendary rule (prototype): named characters are one of a kind — a player can't have two units
+ * with the same name in play (Leaders and Shinobi alike). Generic units (Rain Village Genin…) aren't named.
+ */
+export function namedUnitInPlay(state: GameState, player: PlayerId, name: string): boolean {
+  const p = state.players[player];
+  return [...p.backRow, ...p.frontRow].some((u) => u?.name === name);
+}
+
+/** A Shinobi card. Placeholder Shinobi are vanilla; one with abilities (Yahiko) has a Pool and a TokenDef with the card's id (characters/yahikoShinobi.ts). */
+function shinobiCard(
+  id: string,
+  name: string,
+  cost: number,
+  damage: number,
+  health: number,
+  leaderBonus?: { name: string; amount: number },
+  opts: { named?: boolean; rank?: string; pool?: number; styles?: Style[]; synergy?: string[] } = {},
+): HandCardDef {
   return {
     id,
     name,
@@ -60,8 +87,8 @@ function shinobiCard(id: string, name: string, cost: number, damage: number, hea
     type: 'None',
     maxTargets: 0,
     timing: 'main',
-    shinobi: { damage, health, leaderBonus },
-    legalityCheck: (ctx) => legalTokenSlots(ctx.state, ctx.player).length > 0,
+    shinobi: { damage, health, leaderBonus, ...opts },
+    legalityCheck: (ctx) => legalTokenSlots(ctx.state, ctx.player).length > 0 && !(opts.named && namedUnitInPlay(ctx.state, ctx.player, name)),
     resolve: (ctx) => {
       const token: TokenInstance = {
         instanceId: `${ctx.player}-${id}-${ctx.state.log.length}`,
@@ -73,6 +100,7 @@ function shinobiCard(id: string, name: string, cost: number, damage: number, hea
         ownerCharacterInstanceId: '',
         status: { disabled: false, retreated: false, enteredTurn: -1, hasAmbush: false, usedAbilitiesThisTurn: [], pooledThisTurn: false },
         extra: { shinobi: true, shinobiDamage: damage, ...(leaderBonus ? { shinobiLeaderBonus: leaderBonus } : {}) },
+        ...(opts.pool ? { chakraPool: { current: 0, capacity: opts.pool } } : {}),
       };
       if (legalTokenSlots(ctx.state, ctx.player).length === 0) return appendLog(ctx.state, `${ctx.player}'s front row is full — ${name} can't come into play.`);
       let state = ctx.state;
@@ -92,13 +120,24 @@ export const SHINOBI_CARDS: HandCardDef[] = [
   shinobiCard('shinobi-rain-chunin', 'Rain Village Chunin', 3, 2, 4),
   shinobiCard('shinobi-rain-jonin', 'Rain Village Jonin', 4, 3, 5),
   shinobiCard('shinobi-rain-elite-guard', 'Rain Village Elite Guard', 6, 4, 7),
-  // The base game's D-rank character, as a Shinobi: Shinobi Strike's "2 if Yahiko is in play" becomes +1 Damage with Yahiko.
-  shinobiCard('shinobi-amegakure-civilian-rebel', 'Amegakure Civilian Rebel', 1, 1, 3, { defId: 'yahiko', amount: 1 }),
+  shinobiCard('shinobi-mercenary', 'Mercenary', 3, 2, 2),
+  // The base game's D-rank character, as a 1/2 Shinobi (it keeps its D Rank for flavor): +1 Damage while Yahiko is in play.
+  shinobiCard('shinobi-amegakure-civilian-rebel', 'Amegakure Civilian Rebel', 1, 1, 2, { name: 'Yahiko', amount: 1 }, { rank: 'D' }),
+  // A Leader in the base game; a named B-rank Shinobi here, with its own Pool and abilities (characters/yahikoShinobi.ts).
+  shinobiCard('shinobi-yahiko', 'Yahiko', 6, 2, 3, undefined, { named: true, rank: 'B', pool: 8, styles: ['Water', 'Fire', 'Wind'], synergy: ['Akatsuki', 'Pain', 'Konan'] }),
 ];
 for (const def of SHINOBI_CARDS) registerHandCard(def);
 
-/** The Prototype build's starter deck adds 2 of each Shinobi to the base preset Jutsu Deck (the Rebels replace the 2 in the Character Deck). */
-export const PROTOTYPE_SHINOBI_MANIFEST: { defId: string; copies: number }[] = SHINOBI_CARDS.map((d) => ({ defId: d.id, copies: 2 }));
+/** The Shinobi in the Prototype build's starter deck (the Rebels and Yahiko were characters in the base game's Character Deck). The Scout is in the Deck Library only. */
+export const PROTOTYPE_SHINOBI_MANIFEST: { defId: string; copies: number }[] = [
+  { defId: 'shinobi-amegakure-civilian-rebel', copies: 3 },
+  { defId: 'shinobi-rain-genin', copies: 1 },
+  { defId: 'shinobi-rain-chunin', copies: 1 },
+  { defId: 'shinobi-rain-jonin', copies: 1 },
+  { defId: 'shinobi-rain-elite-guard', copies: 1 },
+  { defId: 'shinobi-mercenary', copies: 2 },
+  { defId: 'shinobi-yahiko', copies: 2 },
+];
 
 // --- Combat -------------------------------------------------------------------
 
@@ -181,12 +220,12 @@ export function confirmShinobiDefense(state: GameState): GameState {
   return resolveShinobiCombat(state);
 }
 
-/** Two units deal their Damage to each other at the same time. */
-function trade(state: GameState, a: string, b: string): GameState {
+/** Two units deal their Damage to each other at the same time (`bonusA`: extra Damage on a's side, e.g. Rallying Words). */
+function trade(state: GameState, a: string, b: string, bonusA = 0): GameState {
   const ua = findOccupant(state, a)?.occupant;
   const ub = findOccupant(state, b)?.occupant;
   if (!ua || !ub) return state;
-  const toB = shinobiDamage(ua, state);
+  const toB = shinobiDamage(ua, state) + bonusA;
   const toA = isShinobi(ub) ? shinobiDamage(ub, state) : 0;
   let next = appendLog(state, `${ua.name} and ${ub.name} clash (${toB} / ${toA}).`);
   if (toB > 0) next = dealDamage(next, b, toB, { attackerInstanceId: a }).state;
@@ -201,10 +240,12 @@ export function resolveShinobiCombat(state: GameState): GameState {
     const attacker = findOccupant(next, attack.attackerId)?.occupant;
     if (!attacker) continue;
     next = patchOccupant(next, attack.attackerId, (o) => ({ ...o, extra: { ...o.extra, shinobiAttackedTurn: next.turn } }));
+    const rally = spendRally(next, attack.attackerId);
+    next = rally.state;
     if (attack.defenderId && findOccupant(next, attack.defenderId)) {
       const defender = findOccupant(next, attack.defenderId)!.occupant;
       next = appendLog(next, `${defender.name} defends against ${attacker.name}.`);
-      next = trade(next, attack.attackerId, attack.defenderId);
+      next = trade(next, attack.attackerId, attack.defenderId, rally.bonus);
       continue;
     }
     const target = findOccupant(next, attack.targetId)?.occupant;
@@ -213,9 +254,9 @@ export function resolveShinobiCombat(state: GameState): GameState {
       continue;
     }
     if (isShinobi(target)) {
-      next = trade(next, attack.attackerId, attack.targetId);
+      next = trade(next, attack.attackerId, attack.targetId, rally.bonus);
     } else {
-      let damage = shinobiDamage(attacker, next);
+      let damage = shinobiDamage(attacker, next) + rally.bonus;
       // Hidden Mist: enemy Shinobi attacking your Leaders deal 1 less (to a minimum of 1).
       if (damage > 1 && hasTerrain(next, findOccupant(next, attack.targetId)!.player, TERRAIN.hiddenMist)) {
         damage -= 1;

@@ -40,9 +40,8 @@ import { TurnControls } from './ui/components/TurnControls';
 import { useNetGame } from './net/useNetGame';
 import './App.css';
 import './ui/BoardMat.css';
-import { CHARACTER_DECK_NAME, GRAVEYARD_NAME, LEADER_GRAVEYARD_NAME, MAIN_DECK_NAME, RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
-import { isPrototype, suppliesAvailable, suppliesMax } from './engine/prototype';
-import { holderBlocker, reequipCost } from './engine/equipment';
+import { CHARACTER_DECK_NAME, GRAVEYARD_NAME, LEADER_GRAVEYARD_NAME, EXTRA_DECK_NAME, MAIN_DECK_NAME, RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
+import { charactersRemaining, isPrototype, suppliesAvailable, suppliesMax } from './engine/prototype';
 import { trainingGroundsBlocker } from './engine/cards/terrain';
 import { TERRAIN } from './engine/terrainEffects';
 import { ShinobiCombatPanel } from './ui/components/ShinobiCombatPanel';
@@ -939,6 +938,7 @@ function ViewGame({
         isActive={isActive}
         isYou={myPlayerId !== null && myPlayerId === playerId}
         onAdjust={trust && mine ? (delta) => dispatch({ type: 'ADJUST_PLAYER_HEALTH', player: playerId, delta }) : undefined}
+        characters={isPrototype(state) ? { left: charactersRemaining(state, playerId), total: charactersRemaining(state, playerId) + player.characterGraveyard.length } : undefined}
       />
     );
     const missionZone = (
@@ -970,10 +970,8 @@ function ViewGame({
       </div>
     );
 
-    // Prototype: every Equipment this player has in play — on whom, or unattached — with Re-equip in their Main Phase.
+    // Prototype: every Equipment this player has in play, and the unit it's on.
     const equipment = player.equipment ?? [];
-    const canReequip = mine && !setupBlocked && (trust || (isActive && MAIN_PHASES.has(state.phase) && state.stack.length === 0));
-    const holders = [...player.backRow, ...player.frontRow].filter((o): o is NonNullable<typeof o> => !!o && holderBlocker(state, playerId, o.instanceId) === null);
     const equipmentZone = (
       <div className={`mat__zone mat__zone--equipment${equipment.length > 0 ? ' mat__zone--filled' : ''}`} key="equipment">
         <span className="mat__zone-title">Equipment</span>
@@ -981,31 +979,10 @@ function ViewGame({
         {equipment.map((e) => {
           const def = getHandCardDef(e.defId);
           const holder = e.holderId ? findOccupant(state, e.holderId)?.occupant : undefined;
-          const cost = reequipCost(state, playerId, e.defId);
-          const targets = holders.filter((h) => h.instanceId !== e.holderId);
-          const short = !trust && suppliesAvailable(state, playerId) < cost;
           return (
             <div className="equip-zone__item" key={e.instanceId}>
-              <InPlayChip plain label="Equipment" name={def?.name} onOpen={(name) => setDetails({ kind: 'card', name, subtitle: holder ? `Equipment on ${holder.name}` : 'Equipment — unattached', text: getHandCardText(name) })} />
-              <span className="equip-zone__holder">{holder ? `on ${holder.name}` : 'Unattached'}</span>
-              {canReequip && targets.length > 0 && (
-                <select
-                  value=""
-                  disabled={short}
-                  aria-label={`Re-equip ${def?.name}`}
-                  title={short ? `Re-equip costs ${cost} Supplies — not enough left this turn` : `Pay ${cost} Supplies to move it to another Leader or Shinobi`}
-                  onChange={(ev) => {
-                    if (ev.target.value) dispatch({ type: 'REEQUIP', equipmentInstanceId: e.instanceId, holderId: ev.target.value });
-                  }}
-                >
-                  <option value="">Re-equip ({cost})…</option>
-                  {targets.map((h) => (
-                    <option key={h.instanceId} value={h.instanceId}>
-                      {h.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <InPlayChip plain label="Equipment" name={def?.name} onOpen={(name) => setDetails({ kind: 'card', name, subtitle: holder ? `Equipment on ${holder.name}` : 'Equipment', text: getHandCardText(name) })} />
+              <span className="equip-zone__holder">{holder ? `on ${holder.name}` : ''}</span>
             </div>
           );
         })}
@@ -1015,7 +992,7 @@ function ViewGame({
     // ---- Right column (Yu-Gi-Oh style): each deck with its own graveyard above it ----
     // Jutsu graveyard over the Jutsu Deck, Character graveyard over the Character Deck.
     const tax = currentTax(state, playerId);
-    // Prototype: a new Leader costs a flat 10 Supplies, and you pick any one from the whole deck.
+    // Prototype: an early Leader deploy costs 8, then 10, then 12 Supplies — reveal 2 random Leaders, deploy 1.
     const drawUnit = proto ? 'Supplies' : 'Chakra';
     const drawFunds = proto ? suppliesAvailable(state, playerId) : player.genericChakraAvailable;
     const onTime = isActive && MAIN_PHASES.has(state.phase);
@@ -1061,8 +1038,8 @@ function ViewGame({
     ];
     const characterMenu: MenuItem[] = [
       {
-        label: `Draw — pay ${tax} ${drawUnit}…`,
-        hint: characterDrawBlocker ?? (proto ? `Search your ${CHARACTER_DECK_NAME} and pick any Leader — you confirm the cost first` : 'Look at the top 2 of your Character Deck and keep 1 — you confirm the cost first'),
+        label: proto ? `Deploy early — pay ${tax} ${drawUnit}…` : `Draw — pay ${tax} ${drawUnit}…`,
+        hint: characterDrawBlocker ?? (proto ? `Reveal 2 random Leaders from your ${CHARACTER_DECK_NAME} and deploy 1 — you confirm the cost first` : 'Look at the top 2 of your Character Deck and keep 1 — you confirm the cost first'),
         act: () => setConfirmCharacterDraw(playerId),
         disabled: !!characterDrawBlocker,
       },
@@ -1124,13 +1101,18 @@ function ViewGame({
             sub={proto ? `Leader ${tax}` : `Tax ${tax}`}
             title={
               canUseDecks
-                ? `${CHARACTER_DECK_NAME} — click to draw (${tax} ${drawUnit})${trust ? ', shuffle or search' : ''}${tax < 8 ? `. Next paid draw: ${Math.min(8, tax + 2)}` : ''}${characterDrawBlocker ? `. Can't draw now: ${characterDrawBlocker}` : ''}`
-                : `${CHARACTER_DECK_NAME} — draws cost ${tax} ${drawUnit}`
+                ? proto
+                  ? `${CHARACTER_DECK_NAME} — click to deploy a Leader early (${tax} Supplies)${trust ? ', shuffle or search' : ''}${characterDrawBlocker ? `. Can't now: ${characterDrawBlocker}` : ''}`
+                  : `${CHARACTER_DECK_NAME} — click to draw (${tax} ${drawUnit})${trust ? ', shuffle or search' : ''}${tax < 8 ? `. Next paid draw: ${Math.min(8, tax + 2)}` : ''}${characterDrawBlocker ? `. Can't draw now: ${characterDrawBlocker}` : ''}`
+                : proto
+                  ? `${CHARACTER_DECK_NAME} — early deploys cost ${tax} Supplies`
+                  : `${CHARACTER_DECK_NAME} — draws cost ${tax} ${drawUnit}`
             }
             onClick={canUseDecks ? toggleMenu('character') : undefined}
           />,
           characterMenu,
         )}
+        {proto && <Pile label={EXTRA_DECK_NAME} count={player.extraDeck?.length ?? 0} kind="jutsu" title={`${EXTRA_DECK_NAME} — never drawn; cards leave it only through effects that say so (e.g. Kakuzu's Heart Masks)`} />}
       </div>
     );
     const deckColumn = (
@@ -1318,17 +1300,17 @@ function ViewGame({
                   <div className="decision-panel">
                     <span>
                       {pid.toUpperCase()}:{' '}
-                      {offer === 'free'
-                        ? `your last C+ ${isPrototype(state) ? 'Leader' : 'character'} fell — take a free ${CHARACTER_DECK_NAME} draw (${isPrototype(state) ? 'pick any Leader' : 'look at 2, keep 1'})?`
-                        : isPrototype(state)
-                          ? `a C+ Leader fell — pay ${currentTax(state, pid)} Supplies to draw a new Leader (pick any from your ${CHARACTER_DECK_NAME})?`
+                      {isPrototype(state)
+                        ? `a Leader fell — bring out any Leader from your ${CHARACTER_DECK_NAME} (free)?`
+                        : offer === 'free'
+                          ? `your last C+ character fell — take a free ${CHARACTER_DECK_NAME} draw (look at 2, keep 1)?`
                           : `a C+ character fell — pay ${currentTax(state, pid)} Chakra for a Character Deck draw (look at 2, keep 1)? Your tax won't go up.`}
                       {p.reinforcementOffers.length > 1 && ` (${p.reinforcementOffers.length - 1} more after this)`}
                     </span>
                     {controls && (
                       <span>
                         <button type="button" onClick={() => dispatch({ type: 'ACCEPT_REINFORCEMENT', player: pid })}>
-                          {offer === 'free' ? 'Draw (free)' : `Pay ${currentTax(state, pid)} & draw`}
+                          {isPrototype(state) ? 'Choose a Leader (free)' : offer === 'free' ? 'Draw (free)' : `Pay ${currentTax(state, pid)} & draw`}
                         </button>
                         <button type="button" onClick={() => dispatch({ type: 'DECLINE_REINFORCEMENT', player: pid })}>
                           Decline
@@ -1467,12 +1449,12 @@ function ViewGame({
         <DetailsModal
           title={
             isPrototype(state)
-              ? `Draw a new Leader for ${currentTax(state, confirmCharacterDraw)} Supplies?`
+              ? `Deploy a Leader early for ${currentTax(state, confirmCharacterDraw)} Supplies?`
               : `Draw from your ${CHARACTER_DECK_NAME} for ${currentTax(state, confirmCharacterDraw)} Chakra?`
           }
           subtitle={
             isPrototype(state)
-              ? `Search your whole ${CHARACTER_DECK_NAME} and pick exactly the Leader you want. It resolves right away and can't be responded to.`
+              ? `Reveal 2 random Leaders from your ${CHARACTER_DECK_NAME} and deploy 1 straight into play; the other goes back. It resolves right away and can't be responded to.`
               : "Look at the top 2 and keep 1; the other goes to the bottom. It resolves right away and can't be responded to."
           }
           hideText
@@ -1482,7 +1464,9 @@ function ViewGame({
             {isPrototype(state)
               ? `You have ${suppliesAvailable(state, confirmCharacterDraw)} Supplies available.`
               : `You have ${state.players[confirmCharacterDraw].genericChakraAvailable} Chakra available.`}
-            {currentTax(state, confirmCharacterDraw) < 8 && ` Your next paid draw will cost ${Math.min(8, currentTax(state, confirmCharacterDraw) + 2)}.`}
+            {isPrototype(state)
+              ? currentTax(state, confirmCharacterDraw) < 12 && ` Your next early deploy will cost ${Math.min(12, currentTax(state, confirmCharacterDraw) + 2)}.`
+              : currentTax(state, confirmCharacterDraw) < 8 && ` Your next paid draw will cost ${Math.min(8, currentTax(state, confirmCharacterDraw) + 2)}.`}
           </p>
           <div className="force-prompt__actions">
             <button type="button" onClick={() => setConfirmCharacterDraw(null)}>

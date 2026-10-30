@@ -1,6 +1,8 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import {
   CHARACTER_DECK_MAX,
+  PT_CHARACTER_BUDGET,
+  characterDeckCost,
   CHARACTER_DECK_MIN,
   HAND_DECK_MAX,
   HAND_DECK_MIN,
@@ -9,6 +11,7 @@ import {
   characterPool,
   copyLimit,
   handCardPool,
+  extraDeckSize,
   handDeckSize,
   presetDeck,
   validateDeck,
@@ -23,7 +26,7 @@ import { FilterMenu, SortMenu, type Option } from './LibraryControls';
 import { getCharacterDef, type CharacterDeckEntry } from '../../engine/characters';
 import type { ReactNode } from 'react';
 import './DeckLibrary.css';
-import { CHARACTER_DECK_NAME, MAIN_DECK_NAME, VARIANT } from '../../variant';
+import { CHARACTER_DECK_NAME, EXTRA_DECK_NAME, MAIN_DECK_NAME, VARIANT } from '../../variant';
 
 // ---- Collection: sorting, sectioning, filtering ---------------------------------
 
@@ -238,7 +241,12 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
   const [handInDeck, setHandInDeck] = useState(false);
   const [charInDeck, setCharInDeck] = useState(false);
   const [details, setDetails] = useState<{ title: string; subtitle: string; text?: string } | null>(null);
+  // Prototype: which deck a clicked card goes into — the Main Deck or the Extra Deck.
+  const [handTarget, setHandTarget] = useState<'handDeck' | 'extraDeck'>('handDeck');
   const readOnly = !!deck.preset;
+  const extra = deck.extraDeck ?? {};
+  /** A card's copies across the Main Deck and the Extra Deck (the copy limit counts both). */
+  const copiesOf = (id: string) => (deck.handDeck[id] ?? 0) + (extra[id] ?? 0);
 
   const hand = useMemo(() => handCardPool().sort(byCost), []);
   const characters = useMemo(() => characterPool().sort(byRank), []);
@@ -257,7 +265,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
       pass(handFilters, 'style', displayStyle(d)) &&
       pass(handFilters, 'speed', d.speed) &&
       pass(handFilters, 'cost', costBucket(d)) &&
-      (!handInDeck || (deck.handDeck[d.id] ?? 0) > 0) &&
+      (!handInDeck || copiesOf(d.id) > 0) &&
       (!query || `${d.name} ${handCardSummary(d)}`.toLowerCase().includes(query)),
   );
   const shownCharacters = characters.filter(
@@ -270,15 +278,17 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
   const handSections = sectionHand(shownHand, handSort);
   const charSections = sectionCharacters(shownCharacters, charSort);
 
-  const setCount = (kind: Tab, id: string, delta: number) => {
+  const setCount = (kind: Tab, id: string, delta: number, target: 'handDeck' | 'extraDeck' = handTarget) => {
     if (readOnly) return;
-    const key = kind === 'hand' ? 'handDeck' : 'characterDeck';
+    const key = kind === 'hand' ? target : 'characterDeck';
     const limit = copyLimit(kind === 'hand' ? 'hand' : 'character', id);
     onChange((latest) => {
-      const current = latest[key][id] ?? 0;
-      const next = Math.max(0, Math.min(limit, current + delta));
+      const counts = { ...(latest[key] ?? {}) };
+      const current = counts[id] ?? 0;
+      // The limit is shared: copies in the other of the Main/Extra Decks count too.
+      const other = kind === 'hand' ? ((key === 'handDeck' ? latest.extraDeck?.[id] : latest.handDeck[id]) ?? 0) : 0;
+      const next = Math.max(0, Math.min(limit - other, current + delta));
       if (next === current) return latest;
-      const counts = { ...latest[key] };
       if (next === 0) delete counts[id];
       else counts[id] = next;
       return { ...latest, [key]: counts };
@@ -370,7 +380,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
                 );
           })
           : renderSections(handSections, (d) => {
-                const inDeck = deck.handDeck[d.id] ?? 0;
+                const inDeck = copiesOf(d.id);
                 const limit = copyLimit('hand', d.id);
                 return (
                   <div key={d.id} className={`lib-card lib-card--${d.cardType} ${styleClass(displayStyle(d))}${inDeck >= limit ? ' lib-card--maxed' : ''}${readOnly ? ' lib-card--readonly' : ''}`} {...tileHandlers('hand', d.id)}>
@@ -403,6 +413,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
             onChange((latest) => ({ ...latest, name }));
           }}
         />
+        {VARIANT === 'prototype' && <CountBar label="Leader budget (S 10 · A 8 · B 6 · C 4)" count={characterDeckCost(deck)} min={0} max={PT_CHARACTER_BUDGET} />}
         <CountBar label={CHARACTER_DECK_NAME} count={characterDeckSize(deck)} min={CHARACTER_DECK_MIN} max={CHARACTER_DECK_MAX} />
         <div className="deck-panel__ranks">
           {Object.entries(RANK_CAPS).map(([rank, cap]) => (
@@ -412,6 +423,17 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
           ))}
         </div>
         <CountBar label={MAIN_DECK_NAME} count={handDeckSize(deck)} min={HAND_DECK_MIN} max={HAND_DECK_MAX} />
+        {VARIANT === 'prototype' && !readOnly && (
+          <div className="deck-panel__target" role="group" aria-label="Clicked cards go into">
+            <span>Add cards to:</span>
+            <button type="button" aria-pressed={handTarget === 'handDeck'} onClick={() => setHandTarget('handDeck')}>
+              {MAIN_DECK_NAME}
+            </button>
+            <button type="button" aria-pressed={handTarget === 'extraDeck'} onClick={() => setHandTarget('extraDeck')}>
+              {EXTRA_DECK_NAME}
+            </button>
+          </div>
+        )}
 
         <div className="deck-panel__list">
           <h3>Characters</h3>
@@ -432,7 +454,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
                 {sec.title} <span>({sec.groups.reduce((n, g) => n + g.items.reduce((m, d) => m + (deck.handDeck[d.id] ?? 0), 0), 0)})</span>
               </h4>
               {sec.groups.flatMap((g) => g.items).map((d) => (
-                <button type="button" key={d.id} className={`deck-row deck-row--${d.cardType}`} disabled={readOnly} title={readOnly ? undefined : 'Remove one'} onClick={() => setCount('hand', d.id, -1)}>
+                <button type="button" key={d.id} className={`deck-row deck-row--${d.cardType}`} disabled={readOnly} title={readOnly ? undefined : 'Remove one'} onClick={() => setCount('hand', d.id, -1, 'handDeck')}>
                   <span {...costGem(d, 'deck-row__cost')}>{handCardCost(d)}</span>
                   <span className="deck-row__name">{d.name}</span>
                   <span className="deck-row__count">×{deck.handDeck[d.id]}</span>
@@ -440,6 +462,23 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
               ))}
             </div>
           ))}
+          {VARIANT === 'prototype' && (
+            <>
+              <h3>
+                {EXTRA_DECK_NAME} <span>({extraDeckSize(deck)})</span>
+              </h3>
+              {extraDeckSize(deck) === 0 && <p className="deck-panel__empty">Empty — cards here are only pulled out by effects (e.g. Kakuzu's Heart Masks).</p>}
+              {hand
+                .filter((d) => (extra[d.id] ?? 0) > 0)
+                .map((d) => (
+                  <button type="button" key={d.id} className={`deck-row deck-row--${d.cardType}`} disabled={readOnly} title={readOnly ? undefined : 'Remove one'} onClick={() => setCount('hand', d.id, -1, 'extraDeck')}>
+                    <span {...costGem(d, 'deck-row__cost')}>{handCardCost(d)}</span>
+                    <span className="deck-row__name">{d.name}</span>
+                    <span className="deck-row__count">×{extra[d.id]}</span>
+                  </button>
+                ))}
+            </>
+          )}
         </div>
 
         {errors.length > 0 && (
@@ -455,7 +494,7 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
               Copy this deck
             </button>
           ) : (
-            <button type="button" onClick={() => onChange((latest) => ({ ...latest, handDeck: {}, characterDeck: {} }))} disabled={handDeckSize(deck) + characterDeckSize(deck) === 0}>
+            <button type="button" onClick={() => onChange((latest) => ({ ...latest, handDeck: {}, characterDeck: {}, extraDeck: {} }))} disabled={handDeckSize(deck) + characterDeckSize(deck) + extraDeckSize(deck) === 0}>
               Clear
             </button>
           )}
@@ -495,7 +534,7 @@ export function DeckLibrary({
   const editing = decks.find((d) => d.id === editingId) ?? null;
 
   const copyDeck = (deck: DeckList) => {
-    const copy: DeckList = { ...deck, id: newDeckId(), name: `${deck.name} (copy)`, preset: false, handDeck: { ...deck.handDeck }, characterDeck: { ...deck.characterDeck } };
+    const copy: DeckList = { ...deck, id: newDeckId(), name: `${deck.name} (copy)`, preset: false, handDeck: { ...deck.handDeck }, characterDeck: { ...deck.characterDeck }, extraDeck: { ...(deck.extraDeck ?? {}) } };
     onDecksChange((all) => [...all, copy]);
     setEditingId(copy.id);
   };

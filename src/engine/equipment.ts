@@ -1,26 +1,24 @@
 // Prototype rules: Equipment (Design Draft — "Equipment"). An Equipment card
 // from the Jutsu Deck is gear for a unit:
 //
-// - It costs Supplies, and is attached the moment it's played to a Leader or
-//   Shinobi its controller has in play — never a token. It's never played
+// - It costs Supplies, and is attached the moment it's played to a Shinobi its
+//   controller has in play — never a Leader or a token. It's never played
 //   unattached.
 // - A unit can hold any number of Equipment; their buffs add up, and each one
 //   only counts while it's attached.
-// - When its holder leaves play, the Equipment stays in play, unattached and
-//   doing nothing, in its controller's Equipment area.
-// - In its controller's Main Phase it can be moved to another of their Leaders
-//   or Shinobi by paying its Re-equip cost in Supplies (REEQUIP).
+// - It has one cost, paid as it enters play onto its holder. It never moves.
+// - When its holder is defeated (or leaves play any other way), the Equipment
+//   goes to its owner's discard pile.
 // - It can't be discarded as Chakra (not a Jutsu or Shinobi).
 //
 // Health and Chakra Pool capacity buffs are written onto the holder when the
-// Equipment attaches and taken off again if it moves away; Damage, damage
-// reduction, healing and the defeat trigger are read live (shinobi.ts,
-// combat.ts, the Upkeep Phase).
+// Equipment attaches; Damage, damage reduction, healing and the defeat trigger
+// are read live (shinobi.ts, combat.ts, the Upkeep Phase).
 import { findOccupant, isCharacter, occupantIds, patchOccupant } from './board';
 import { dealDamage, healOccupant } from './combat';
-import { appendLog, appendWarning } from './phases/phaseMachine';
-import { spendSupplies } from './prototype';
-import { TERRAIN, hasTerrain } from './terrainEffects';
+import { appendLog } from './phases/phaseMachine';
+import { spendSupplies, suppliesAvailable } from './prototype';
+import { enqueueChoice, registerChoiceResolver } from './choices';
 import { getCharacterDef } from './characters/registry';
 import { getHandCardDef, registerHandCard, type EquipmentStats, type HandCardDef } from './cards/registry';
 import type { BoardOccupant, EquipmentInstance, GameState, PlayerId } from './types';
@@ -41,14 +39,32 @@ export function equipmentOn(state: GameState, holderId: string): EquipmentInstan
   return allEquipment(state).filter((e) => e.holderId === holderId);
 }
 
-/** Why this unit can't hold `player`'s Equipment (null = it can): it must be a Leader or Shinobi they control, not a token. */
-export function holderBlocker(state: GameState, player: PlayerId, holderId: string | undefined): string | null {
+/**
+ * Why this unit can't hold `player`'s Equipment `defId` (null = it can): it must be a Shinobi they control — not a
+ * token, and not a Leader unless the card says so (EquipmentStats.leaderHolder, e.g. Chakra Storage Scroll).
+ */
+export function holderBlocker(state: GameState, player: PlayerId, holderId: string | undefined, defId?: string): string | null {
+  const leaders = !!(defId && equipmentStats(defId)?.leaderHolder);
+  const allowed = leaders ? 'a Leader or Shinobi' : 'a Shinobi';
   const found = holderId ? findOccupant(state, holderId) : null;
-  if (!found) return 'Choose a Leader or Shinobi to attach it to.';
-  if (found.player !== player) return 'Equipment can only go on your own Leaders and Shinobi.';
+  if (!found) return `Choose ${allowed} to attach it to.`;
+  if (found.player !== player) return `Equipment can only go on your own ${leaders ? 'Leaders and Shinobi' : 'Shinobi'}.`;
   const o = found.occupant;
-  if (!isCharacter(o) && o.extra.shinobi !== true) return `${o.name} is a token — Equipment can only go on a Leader or a Shinobi.`;
+  const isLeader = isCharacter(o) || o.extra.painPath === true;
+  if (o.extra.shinobi !== true && !(leaders && isLeader)) return `${o.name} is ${isLeader ? 'a Leader' : 'a token'} — this Equipment can only go on ${allowed}.`;
   return null;
+}
+
+/** A Leader in play: a character, or one of Pain's Path tokens. */
+function isLeaderUnit(o: BoardOccupant): boolean {
+  return isCharacter(o) || o.extra.painPath === true;
+}
+
+/** Supplies to put this Equipment onto this holder: its printed cost, or its Leader cost when the holder is a Leader. Before Blacksmith Village. */
+export function equipCostFor(state: GameState, defId: string, holderId: string | undefined, base: number): number {
+  const stats = equipmentStats(defId);
+  const holder = holderId ? findOccupant(state, holderId)?.occupant : undefined;
+  return stats?.leaderCost !== undefined && holder && isLeaderUnit(holder) ? stats.leaderCost : base;
 }
 
 function patchEquipment(state: GameState, owner: PlayerId, instanceId: string, patch: (e: EquipmentInstance) => EquipmentInstance): GameState {
@@ -83,7 +99,7 @@ function attach(state: GameState, equip: EquipmentInstance, holderId: string): G
   return next;
 }
 
-/** Takes an Equipment off its holder (if it still has one in play), leaving it unattached. */
+/** Takes an Equipment off its holder (if it still has one in play), before it goes to the discard pile. */
 function detach(state: GameState, equip: EquipmentInstance): GameState {
   const stats = equipmentStats(equip.defId);
   let next = patchEquipment(state, equip.owner, equip.instanceId, (e) => ({ ...e, holderId: null }));
@@ -94,7 +110,8 @@ function detach(state: GameState, equip: EquipmentInstance): GameState {
 // --- Buffs read live -----------------------------------------------------------
 
 function holderHasSynergy(holder: BoardOccupant, synergy: string): boolean {
-  return isCharacter(holder) && !!getCharacterDef(holder.defId)?.synergy?.includes(synergy);
+  const synergies = isCharacter(holder) ? getCharacterDef(holder.defId)?.synergy : getHandCardDef(holder.defId)?.shinobi?.synergy;
+  return !!synergies?.includes(synergy);
 }
 
 /** The extra Damage this unit's Equipment gives it right now — a Shinobi's attacks, and a Leader's damage-dealing abilities and the Jutsu cards it enables. */
@@ -105,7 +122,8 @@ export function equipmentDamageBonus(state: GameState, holder: BoardOccupant): n
     if (!stats) continue;
     bonus += stats.damage ?? 0;
     const cond = stats.conditionalDamage;
-    if (cond && ((cond.style && isCharacter(holder) && holder.styles.includes(cond.style)) || (cond.synergy && holderHasSynergy(holder, cond.synergy)))) bonus += cond.amount;
+    const styles = isCharacter(holder) ? holder.styles : (getHandCardDef(holder.defId)?.shinobi?.styles ?? []);
+    if (cond && ((cond.style && styles.includes(cond.style)) || (cond.synergy && holderHasSynergy(holder, cond.synergy)))) bonus += cond.amount;
   }
   return bonus;
 }
@@ -115,26 +133,78 @@ export function equipmentDamageReduction(state: GameState, holderId: string): nu
   return equipmentOn(state, holderId).reduce((sum, e) => sum + (equipmentStats(e.defId)?.damageReduction ?? 0), 0);
 }
 
-/** Upkeep Phase: Equipment that heals its holder each turn (Medical Pouch). */
+const EQUIPMENT_HEAL_CHOICE = 'equipment-upkeep-heal';
+
+/**
+ * Upkeep Phase: Equipment that heals its holder each turn (Medical Pouch). One with a Supply cost is optional,
+ * so its controller is asked each time — only while the holder is hurt, and (strict rules) can pay.
+ */
 export function tickEquipmentHeals(state: GameState, player: PlayerId): GameState {
   let next = state;
   for (const e of state.players[player].equipment ?? []) {
-    const heal = equipmentStats(e.defId)?.healEachTurn ?? 0;
-    if (!heal || !e.holderId || !findOccupant(next, e.holderId)) continue;
-    next = appendLog(next, `${getHandCardDef(e.defId)?.name}: ${findOccupant(next, e.holderId)!.occupant.name} heals ${heal}.`);
-    next = healOccupant(next, e.holderId, heal);
+    const stats = equipmentStats(e.defId);
+    const heal = stats?.healEachTurn ?? 0;
+    const holder = e.holderId ? findOccupant(next, e.holderId)?.occupant : undefined;
+    if (!heal || !holder) continue;
+    const name = getHandCardDef(e.defId)?.name ?? 'Equipment';
+    const cost = (isLeaderUnit(holder) ? stats?.leaderHealCost : undefined) ?? stats?.healCost ?? 0;
+    if (cost > 0) {
+      if (holder.currentHP >= holder.maxHP) continue;
+      if (state.rules !== 'trust' && suppliesAvailable(next, player) < cost) continue;
+      next = enqueueChoice(next, {
+        player,
+        prompt: `${name}: pay ${cost} ${cost === 1 ? 'Supply' : 'Supplies'} to heal ${holder.name} ${heal}?`,
+        options: [
+          { id: 'heal', label: `Heal ${heal} (${cost} ${cost === 1 ? 'Supply' : 'Supplies'})` },
+          { id: 'skip', label: 'Skip' },
+        ],
+        min: 1,
+        max: 1,
+        resolverId: EQUIPMENT_HEAL_CHOICE,
+        data: { holderId: holder.instanceId, heal, cost, name },
+      });
+      continue;
+    }
+    next = appendLog(next, `${name}: ${holder.name} heals ${heal}.`);
+    next = healOccupant(next, holder.instanceId, heal);
   }
   return next;
 }
 
+registerChoiceResolver(EQUIPMENT_HEAL_CHOICE, (state, choice, optionIds) => {
+  const { holderId, heal, cost, name } = choice.data as { holderId: string; heal: number; cost: number; name: string };
+  const holder = findOccupant(state, holderId)?.occupant;
+  if (optionIds[0] !== 'heal' || !holder) return appendLog(state, `${choice.player} skips ${name}.`);
+  const paid = spendSupplies(state, choice.player, cost, name);
+  if (!paid) return appendLog(state, `Not enough Supplies for ${name}.`);
+  return healOccupant(appendLog(paid, `${name}: ${holder.name} heals ${heal}.`), holderId, heal);
+});
+
+/** Takes an Equipment out of play into its owner's discard pile (its holder's buffs come off first if the holder is still in play). */
+function discardEquipment(state: GameState, equip: EquipmentInstance): GameState {
+  const next = detach(state, equip);
+  const p = next.players[equip.owner];
+  return {
+    ...next,
+    players: {
+      ...next.players,
+      [equip.owner]: {
+        ...p,
+        equipment: (p.equipment ?? []).filter((e) => e.instanceId !== equip.instanceId),
+        discardPile: [...p.discardPile, { instanceId: equip.instanceId, defId: equip.defId }],
+      },
+    },
+  };
+}
+
 /**
- * The holder was just defeated (combat.ts): its Equipment stays in play, unattached — and Equipment that
+ * The holder was just defeated (combat.ts): its Equipment goes to the discard pile — and Equipment that
  * strikes back (Explosive Tag Vest) deals its damage to the unit whose attack made the kill.
  */
 export function onHolderDefeated(state: GameState, holderId: string, killerInstanceId?: string): GameState {
   let next = state;
   for (const e of equipmentOn(state, holderId)) {
-    next = detach(next, e);
+    next = discardEquipment(next, e);
     const name = getHandCardDef(e.defId)?.name ?? 'Equipment';
     const retaliation = equipmentStats(e.defId)?.defeatRetaliation ?? 0;
     const killer = killerInstanceId ? findOccupant(next, killerInstanceId)?.occupant : undefined;
@@ -142,51 +212,19 @@ export function onHolderDefeated(state: GameState, holderId: string, killerInsta
       next = appendLog(next, `${name} goes off — ${retaliation} damage to ${killer.name}.`);
       next = dealDamage(next, killer.instanceId, retaliation, { unattributed: true }).state;
     }
-    next = appendLog(next, `${name} is left unattached.`);
+    next = appendLog(next, `${name} goes to the discard pile.`);
   }
   return next;
 }
 
-/** Run after every action: Equipment whose holder has left play some other way (returned to hand, …) is left unattached. */
+/** Run after every action: Equipment whose holder has left play some other way (returned to hand, …) goes to the discard pile too. */
 export function sweepEquipment(state: GameState): GameState {
   const inPlay = occupantIds(state);
   let next = state;
   for (const e of allEquipment(state)) {
-    if (e.holderId && !inPlay.has(e.holderId)) next = appendLog(detach(next, e), `${getHandCardDef(e.defId)?.name ?? 'Equipment'} is left unattached.`);
+    if (!e.holderId || !inPlay.has(e.holderId)) next = appendLog(discardEquipment(next, e), `${getHandCardDef(e.defId)?.name ?? 'Equipment'} goes to the discard pile.`);
   }
   return next;
-}
-
-// --- Re-equip ------------------------------------------------------------------
-
-/** What it costs this player to re-equip this Equipment right now: its Re-equip cost, 1 less with Blacksmith Village (to a minimum of 1). */
-export function reequipCost(state: GameState, player: PlayerId, defId: string): number {
-  const base = equipmentStats(defId)?.reequipCost ?? 0;
-  return hasTerrain(state, player, TERRAIN.blacksmithVillage) ? Math.max(1, base - 1) : base;
-}
-
-/** Moves an Equipment to another Leader or Shinobi its owner controls, for its Re-equip cost in Supplies — in the owner's Main Phase, on an empty stack. */
-export function reequip(state: GameState, equipmentInstanceId: string, holderId: string): GameState {
-  const equip = allEquipment(state).find((e) => e.instanceId === equipmentInstanceId);
-  if (!equip) return appendLog(state, 'No such Equipment in play.');
-  const def = getHandCardDef(equip.defId);
-  const stats = def?.equipment;
-  if (!def || !stats) return state;
-  const relaxed = state.rules === 'trust';
-  let working = state;
-  const timing = state.phase !== 'Main1' && state.phase !== 'Main2' ? 'only in your Main Phase' : state.activePlayer !== equip.owner || state.stack.length > 0 ? 'only on your own turn, with nothing on the stack' : null;
-  if (timing) {
-    if (!relaxed) return appendLog(state, `Can't re-equip ${def.name}: ${timing}.`);
-    working = appendWarning(working, `${def.name} is re-equipped outside its timing (${timing}) — allowed (trust mode).`);
-  }
-  const blocker = holderBlocker(working, equip.owner, holderId);
-  if (blocker) return appendLog(state, `Can't re-equip ${def.name}: ${blocker}`);
-  if (equip.holderId === holderId) return appendLog(state, `${def.name} is already on that unit.`);
-  const cost = reequipCost(working, equip.owner, equip.defId);
-  const paid = spendSupplies(working, equip.owner, cost, `re-equipping ${def.name}`);
-  if (!paid) return appendLog(state, `Can't re-equip ${def.name}: not enough Supplies (${cost} needed).`);
-  const holder = findOccupant(paid, holderId)!.occupant;
-  return appendLog(attach(detach(paid, equip), { ...equip, holderId: null }, holderId), `${equip.owner} re-equips ${def.name} onto ${holder.name}.`);
 }
 
 // --- Cards ---------------------------------------------------------------------
@@ -206,15 +244,15 @@ function equipmentCard(id: string, name: string, cost: number, stats: EquipmentS
     chooses: true,
     timing: 'main',
     equipment: stats,
-    text: `Cost: ${cost} ${cost === 1 ? 'Supply' : 'Supplies'} · Re-equip: ${stats.reequipCost}\nEffect: Attach to a Leader or Shinobi you control. ${effect}`,
-    legalityCheck: (ctx) => holderBlocker(ctx.state, ctx.player, ctx.targetInstanceIds[0]) === null,
+    text: `Cost: ${cost} ${cost === 1 ? 'Supply' : 'Supplies'}${stats.leaderCost !== undefined ? ` (${stats.leaderCost} on a Leader)` : ''}\nEffect: Attach to ${stats.leaderHolder ? 'a Leader or Shinobi' : 'a Shinobi'} you control. ${effect}`,
+    legalityCheck: (ctx) => holderBlocker(ctx.state, ctx.player, ctx.targetInstanceIds[0], id) === null,
     resolve: (ctx) => {
       const equip: EquipmentInstance = { instanceId: `${ctx.player}-${id}-${ctx.state.log.length}`, defId: id, owner: ctx.player, holderId: null };
       const p = ctx.state.players[ctx.player];
       let next: GameState = { ...ctx.state, players: { ...ctx.state.players, [ctx.player]: { ...p, equipment: [...(p.equipment ?? []), equip] } } };
       const holderId = ctx.targetInstanceIds[0];
-      const blocker = holderBlocker(next, ctx.player, holderId);
-      if (blocker) return appendLog(next, `${name} comes into play unattached — ${blocker}`);
+      const blocker = holderBlocker(next, ctx.player, holderId, id);
+      if (blocker) return appendLog(discardEquipment(next, equip), `${name} goes to the discard pile — ${blocker}`);
       next = attach(next, equip, holderId);
       return appendLog(next, `${ctx.player} equips ${findOccupant(next, holderId)!.occupant.name} with ${name}.`);
     },
@@ -223,19 +261,25 @@ function equipmentCard(id: string, name: string, cost: number, stats: EquipmentS
 }
 
 export const EQUIPMENT_CARDS: HandCardDef[] = [
-  equipmentCard('equip-forehead-protector', 'Forehead Protector', 1, { reequipCost: 1, health: 2 }, 'The holder gets +2 Health.'),
-  equipmentCard('equip-kunai-pouch', 'Kunai & Shuriken Pouch', 2, { reequipCost: 1, damage: 1 }, 'The holder gets +1 Damage.'),
-  equipmentCard('equip-chakra-scroll', 'Chakra Storage Scroll', 2, { reequipCost: 1, poolCapacity: 2 }, "The holder's Chakra Pool holds 2 more (Leaders only)."),
-  equipmentCard('equip-medical-pouch', 'Medical Pouch', 2, { reequipCost: 1, healEachTurn: 1 }, 'At the start of your turn (Upkeep), heal the holder 1.'),
-  equipmentCard('equip-explosive-tag-vest', 'Explosive Tag Vest', 2, { reequipCost: 1, defeatRetaliation: 2 }, 'When the holder is defeated by an attack, deal 2 damage to the attacker.'),
-  equipmentCard('equip-flak-vest', 'Flak Vest', 3, { reequipCost: 2, damageReduction: 1 }, 'Each time the holder takes damage, reduce it by 1 (to a minimum of 1).'),
-  equipmentCard('equip-trench-knives', 'Chakra Trench Knives', 3, { reequipCost: 2, damage: 1, conditionalDamage: { style: 'Wind', amount: 1 } }, 'The holder gets +1 Damage, or +2 if it has Wind Style.'),
-  equipmentCard('equip-akatsuki-cloak', 'Akatsuki Cloak', 3, { reequipCost: 2, health: 3, conditionalDamage: { synergy: 'Akatsuki', amount: 1 } }, 'Unique. The holder gets +3 Health; an Akatsuki holder also gets +1 Damage.', {
+  equipmentCard('equip-forehead-protector', 'Forehead Protector', 2, { health: 2 }, 'The holder gets +2 Health.'),
+  equipmentCard('equip-kunai-pouch', 'Kunai & Shuriken Pouch', 3, { damage: 1 }, 'The holder gets +1 Damage.'),
+  equipmentCard('equip-chakra-scroll', 'Chakra Storage Scroll', 3, { poolCapacity: 2, leaderHolder: true }, "The holder's Chakra Pool holds 2 more."),
+  equipmentCard(
+    'equip-medical-pouch',
+    'Medical Pouch',
+    2,
+    { healEachTurn: 1, healCost: 1, leaderHolder: true, leaderCost: 8, leaderHealCost: 4 },
+    'At your Upkeep, you may pay 1 Supply to heal the holder 1 — 4 Supplies if it’s a Leader.',
+  ),
+  equipmentCard('equip-explosive-tag-vest', 'Explosive Tag Vest', 3, { defeatRetaliation: 2 }, 'When the holder is defeated by an attack, deal 2 damage to the attacker.'),
+  equipmentCard('equip-flak-vest', 'Flak Vest', 5, { damageReduction: 1 }, 'Each time the holder takes damage, reduce it by 1 (to a minimum of 1).'),
+  equipmentCard('equip-trench-knives', 'Chakra Trench Knives', 5, { damage: 1, conditionalDamage: { style: 'Wind', amount: 1 } }, 'The holder gets +1 Damage, or +2 if it has Wind Style.'),
+  equipmentCard('equip-akatsuki-cloak', 'Akatsuki Cloak', 5, { health: 3, conditionalDamage: { synergy: 'Akatsuki', amount: 1 } }, 'Unique. The holder gets +3 Health; an Akatsuki holder also gets +1 Damage.', {
     unique: true,
     synergy: ['Akatsuki'],
   }),
 ];
 for (const def of EQUIPMENT_CARDS) registerHandCard(def);
 
-/** The Prototype build's starter deck carries 2 of each Equipment (1 of a Unique one). */
+/** 2 of each Equipment (1 of a Unique one) — the Prototype's starter deck used to carry these; Equipment is now in the Deck Library only. */
 export const PROTOTYPE_EQUIPMENT_MANIFEST: { defId: string; copies: number }[] = EQUIPMENT_CARDS.map((d) => ({ defId: d.id, copies: d.unique ? 1 : 2 }));

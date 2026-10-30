@@ -6,6 +6,7 @@ import { getCharacterDef, getTokenDef } from './characters/registry';
 import { getHandCardDef } from './cards/registry';
 import { equipmentDamageBonus, equipmentDamageReduction, onHolderDefeated } from './equipment';
 import { TERRAIN, hasTerrain, terrainOnEitherSide } from './terrainEffects';
+import { charactersRemaining, isPrototype } from './prototype';
 
 /** Who is dealing this damage, with what — derived from the stack item currently resolving (state.resolving). */
 export interface DamageSource {
@@ -268,6 +269,15 @@ export function dealDamage(
     next = appendLog(next, `${occupant.name}'s Equipment reduces the hit by ${effectiveAmount - reduced}.`);
     effectiveAmount = reduced;
   }
+  // Pillar Encirclement (Yahiko as a Shinobi): each hit he takes until his controller's next turn is reduced by 2 —
+  // except damage he takes through his own Selfless Resolve, which his abilities can't reduce.
+  const pillarUntil = occupant.extra.pillarEncirclementUntilTurn as number | undefined;
+  const ownReductionsOff = !!state.resolving?.damageAdjust?.[targetInstanceId]?.ownReductionsOff;
+  if (pillarUntil !== undefined && pillarUntil >= state.turn && !opts.cannotBeReduced && !opts.ongoing && !modified.unprotectable && !ownReductionsOff) {
+    const reduced = Math.min(2, effectiveAmount);
+    effectiveAmount -= reduced;
+    next = appendLog(next, `Pillar Encirclement reduces the hit on ${occupant.name} by ${reduced}.`);
+  }
   if (!opts.cannotBeReduced && !opts.ongoing && !modified.unprotectable) {
     const remaining = (occupant.extra.damagePreventionRemaining as number) ?? 0;
     const activeTurn = occupant.extra.damagePreventionUntilTurn as number | undefined;
@@ -365,7 +375,7 @@ function applyDefeat(state: GameState, player: PlayerId, zone: 'back' | 'front',
   const before = occupantIds(state);
   const defeated = zone === 'back' ? state.players[player].backRow[index] : state.players[player].frontRow[index];
   const holderId = defeated?.instanceId;
-  // Prototype Equipment: the defeated unit's Equipment stays in play, unattached (and an Explosive Tag Vest goes off).
+  // Prototype Equipment: the defeated unit's Equipment goes to the discard pile (and an Explosive Tag Vest goes off).
   let next = onHolderDefeated(applyDefeatInner(state, player, zone, index, killerInstanceId), holderId ?? '', killerInstanceId);
   // Prototype Terrain, Shinobi Graveyard: when one of your Shinobi is defeated, gain 1 Supply this turn.
   if (defeated?.extra.shinobi === true && hasTerrain(next, player, TERRAIN.shinobiGraveyard)) {
@@ -520,6 +530,8 @@ export function fizzleOwnedTokens(
 }
 
 function loseHealth(state: GameState, player: PlayerId, amount: number): GameState {
+  // Prototype rules: there's no player Health — losing your characters is what ends the game (checkWinner).
+  if (isPrototype(state)) return state;
   const p = state.players[player];
   const health = p.health - amount;
   const next = { ...state, players: { ...state.players, [player]: { ...p, health } } };
@@ -532,8 +544,9 @@ export function applyHealthLoss(state: GameState, player: PlayerId, amount: numb
 }
 
 function checkWinner(state: GameState): GameState {
-  const p1Dead = state.players.p1.health <= 0;
-  const p2Dead = state.players.p2.health <= 0;
+  const out = (player: PlayerId) => (isPrototype(state) ? charactersRemaining(state, player) === 0 : state.players[player].health <= 0);
+  const p1Dead = out('p1');
+  const p2Dead = out('p2');
   if (p1Dead && p2Dead) return { ...state, winner: 'draw' };
   if (p1Dead) return { ...state, winner: 'p2' };
   if (p2Dead) return { ...state, winner: 'p1' };

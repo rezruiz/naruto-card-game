@@ -2,9 +2,9 @@ import { painUnitId } from './board';
 import { getCharacterDeckEntry } from './characters';
 import { applyHealthLoss } from './combat';
 import { appendLog, appendWarning } from './phases/phaseMachine';
-import { LEADER_DRAW_COST, isPrototype, spendSupplies } from './prototype';
+import { earlyDeployCost, isPrototype, spendSupplies } from './prototype';
 import { getHandCardDef } from './cards/registry';
-import { currentTax, reinforcementTax } from './playCharacter';
+import { currentTax, playCharacter, reinforcementTax } from './playCharacter';
 import { enqueueChoice, registerChoiceResolver } from './choices';
 import type { GameState, HandCardInstance, PlayerId } from './types';
 
@@ -198,18 +198,26 @@ export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 
     working = appendWarning(working, `${player} draws from the Character Deck outside their own Main Phase — not legal under the strict rules, allowed anyway (trust mode).`);
   }
 
+  // Prototype rules: after a defeat, a free pick of any Leader from the whole Leader Deck; an early deploy
+  // ('manual') costs 8/10/12 Supplies and reveals 2 random Leaders to choose from. Either way the pick goes
+  // straight into play (chooseCharacter).
+  if (isPrototype(working)) {
+    if (mode !== 'manual') return revealCharacters(appendLog(working, `${player} may bring out any Leader from their Leader Deck (free).`), player, working.players[player].characterDeck.length, 'reinforcement');
+    const base = currentTax(working, player);
+    const pp0 = working.players[player];
+    const discountUsed = Math.min(earlyDeployCost(pp0.reinforcementsPlayed), pp0.nextReinforcementDiscount);
+    const paidState = spendSupplies(working, player, base, 'an early Leader deploy');
+    if (!paidState) return appendLog(working, `${player} doesn't have ${base} Supplies to deploy a Leader early.`);
+    const pp = paidState.players[player];
+    working = {
+      ...paidState,
+      players: { ...paidState.players, [player]: { ...pp, characterDeck: shuffle(pp.characterDeck), reinforcementsPlayed: pp.reinforcementsPlayed + 1, nextReinforcementDiscount: pp.nextReinforcementDiscount - discountUsed } },
+    };
+    return revealCharacters(working, player, 2, 'reinforcement');
+  }
   const wp = working.players[player];
   const fullCost = mode === 'reinforcement-free' ? 0 : currentTax(working, player);
-  const discountUsed = mode === 'reinforcement-free' ? 0 : Math.min(isPrototype(working) ? LEADER_DRAW_COST : reinforcementTax(wp.reinforcementsPlayed), wp.nextReinforcementDiscount);
-  // Prototype rules: a new Leader costs a flat 10 Supplies (not Chakra), and
-  // the player searches the whole Character Deck and picks exactly the one they want.
-  if (isPrototype(working)) {
-    const paidState = fullCost > 0 ? spendSupplies(working, player, fullCost, 'a new Leader') : appendLog(working, `${player} takes a free Leader draw (their last C+ Leader fell).`);
-    if (!paidState) return appendLog(working, `${player} doesn't have ${fullCost} Supplies to draw a new Leader.`);
-    const pp = paidState.players[player];
-    working = { ...paidState, players: { ...paidState.players, [player]: { ...pp, nextReinforcementDiscount: pp.nextReinforcementDiscount - discountUsed } } };
-    return revealCharacters(working, player, pp.characterDeck.length, 'reinforcement');
-  }
+  const discountUsed = mode === 'reinforcement-free' ? 0 : Math.min(reinforcementTax(wp.reinforcementsPlayed), wp.nextReinforcementDiscount);
   if (fullCost > wp.genericChakraAvailable) {
     if (!relaxed) return appendLog(working, `${player} doesn't have ${fullCost} Chakra available for the Character Deck draw.`);
     working = appendWarning(working, `${player} is short ${fullCost - wp.genericChakraAvailable} Chakra for the Character Deck draw (trust mode — allowed).`);
@@ -247,6 +255,8 @@ export function drawFromCharacterDeck(state: GameState, player: PlayerId, mode: 
 export function drawCard(state: GameState, player: PlayerId): GameState {
   const p = state.players[player];
   if (p.handDeck.length === 0) {
+    // Prototype rules: no Health to lose — an empty deck just means no draw.
+    if (isPrototype(state)) return appendLog(state, `${player}'s Jutsu Deck is empty — no card to draw.`);
     let next = appendLog(state, `${player}'s Jutsu Deck is empty — takes 3 Health damage instead of drawing.`);
     return applyHealthLoss(next, player, 3);
   }
@@ -304,7 +314,7 @@ export function chooseCharacter(state: GameState, player: PlayerId, mainPickId: 
   const mainEntry = getCharacterDeckEntry(mainPickId);
   if (!mainEntry) return appendLog(state, `Unknown Character Deck card: ${mainPickId}.`);
 
-  // Prototype: the Leader draw searches the whole deck, so there's no D-rank bonus — you get exactly the one you picked.
+  // Prototype: a Leader deploy has no D-rank bonus (there are no D-rank Leaders) — you get exactly the one you picked.
   const searched = isPrototype(state) && pending.reason === 'reinforcement';
   const dRankBonus: string[] = [];
   for (const id of searched ? [] : pending.revealed) {
@@ -347,6 +357,8 @@ export function chooseCharacter(state: GameState, player: PlayerId, mainPickId: 
     };
     // Kept secret until both players have confirmed (revealed together when Setup completes, §3).
     next = appendLog(next, `${player} has chosen their starting character.`);
+  } else if (searched) {
+    next = deployLeader(next, player, mainPickId);
   } else {
     characterHandEntryCounter += 1;
     const mainEntryHandItem = { kind: 'character' as const, instanceId: `${player}-char-hand-${characterHandEntryCounter}`, entryId: mainPickId };
@@ -358,6 +370,15 @@ export function chooseCharacter(state: GameState, player: PlayerId, mainPickId: 
   }
 
   return dRankBonus.length > 0 ? appendLog(next, `${player} also keeps ${dRankBonus.length} D-rank card(s) from the same reveal.`) : next;
+}
+
+/** Prototype: the chosen Leader goes straight into play, whenever the deploy happens (it enters with Field Orientation). */
+function deployLeader(state: GameState, player: PlayerId, entryId: string): GameState {
+  characterHandEntryCounter += 1;
+  const instanceId = `${player}-char-hand-${characterHandEntryCounter}`;
+  const p = state.players[player];
+  const withCard = { ...state, players: { ...state.players, [player]: { ...p, hand: [...p.hand, { kind: 'character' as const, instanceId, entryId }] } } };
+  return playCharacter(withCard, instanceId, undefined, { anyTime: true });
 }
 
 /** The instanceId of whichever character/token this player's spawn() call just placed — used to capture it as the Setup starting character. Assumes spawn() only ever adds new occupants, never removes any. */

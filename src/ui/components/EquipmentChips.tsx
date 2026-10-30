@@ -2,7 +2,7 @@ import type { GameState } from '../../engine/types';
 import { getHandCardDef } from '../../engine/cards/registry';
 import { equipmentOn } from '../../engine/equipment';
 
-/** Prototype: the Equipment attached to a Leader or Shinobi, one small tag each (hover for its text). */
+/** Prototype: the Equipment attached to a Shinobi, one small tag each (hover for its text). */
 export function EquipmentChips({ state, holderId }: { state: GameState; holderId: string }) {
   const gear = equipmentOn(state, holderId);
   if (gear.length === 0) return null;

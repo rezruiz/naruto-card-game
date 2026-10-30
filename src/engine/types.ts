@@ -158,6 +158,8 @@ export interface PlayerState {
   revealedHandCards: string[];
   /** Remaining shuffled Jutsu Deck (Jutsu/Mission/Terrain/Assist cards), §2. */
   handDeck: HandCardInstance[];
+  /** Prototype: the Extra Deck — never drawn or shuffled into the Main Deck; cards leave it only through effects that say so (e.g. Kakuzu's Heart Masks). */
+  extraDeck?: HandCardInstance[];
   /** Remaining shuffled Character Deck, as entry ids (§2, §8) — see characters/deckEntries.ts. */
   characterDeck: string[];
   /** Cards spent to place Chakra sources (§5.2) — separate from, and far more permanent than, the discard pile. */
@@ -204,7 +206,7 @@ export interface PlayerState {
   terrainUsedTurn?: Record<string, number>;
 }
 
-/** Prototype rules: an Equipment card in play — on one of its owner's Leaders or Shinobi, or unattached (holderId null) once its holder left play. */
+/** Prototype rules: an Equipment card in play, on the unit it entered play with (holderId null only for a moment, as it goes to the discard pile). */
 export interface EquipmentInstance {
   instanceId: string;
   defId: string;
@@ -253,7 +255,7 @@ export interface StackItem {
    */
   resolve: (state: GameState, item: StackItem) => GameState;
   /** Per-target damage adjustments a redirect attached while this item waited on the stack (e.g. "onto Hiruko instead, reduced by 2"). */
-  damageAdjust?: Record<string, { reduceBy?: number; toZero?: boolean }>;
+  damageAdjust?: Record<string, { reduceBy?: number; toZero?: boolean; ownReductionsOff?: boolean }>;
 }
 
 /** The stack item currently resolving — lets the damage pipeline see who is attacking with what (Type/Style/speed), for damage modifiers, kill credit and redirects. Plain data. */
@@ -396,8 +398,6 @@ export type GameAction =
   | { type: 'ASSIGN_SHINOBI_DEFENDER'; attackerId: string; defenderId: string | null }
   | { type: 'CONFIRM_SHINOBI_DEFENSE' }
   | { type: 'ADJUST_SUPPLIES'; player: PlayerId; delta: number }
-  /** Prototype rules: move an Equipment to another of its owner's Leaders or Shinobi, paying its Re-equip cost (equipment.ts). */
-  | { type: 'REEQUIP'; equipmentInstanceId: string; holderId: string }
   /** Prototype rules: Training Grounds — pay 1 Supply to pool 1 Chakra into one of your Leaders (cards/terrain.ts). */
   | { type: 'USE_TRAINING_GROUNDS'; leaderId: string }
   // --- Trust mode: staging & resolution ---

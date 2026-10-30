@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
-import { makeHandCardInstance } from '../../src/engine/deck';
+import { drawCard, makeHandCardInstance } from '../../src/engine/deck';
+import { dealDamage } from '../../src/engine/combat';
 import { getAdjacent, legalCharacterSlots, legalTokenSlots, maxCharacters, placeCharacter } from '../../src/engine/board';
 import { previewUpkeep } from '../../src/engine/upkeep';
 import { shinobiDamage } from '../../src/engine/shinobi';
-import { suppliesAvailable, suppliesMax } from '../../src/engine/prototype';
+import { charactersRemaining, suppliesAvailable, suppliesMax } from '../../src/engine/prototype';
 import { currentTax } from '../../src/engine/playCharacter';
 import { canBeChakraSource, getHandCardDef, needsEnablingCharacter, paysInChakra } from '../../src/engine/cards/registry';
 import { createSetupState } from '../../src/engine/state';
-import { freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
+import { freshCombat, freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
 import type { GameState, PlayerId, TokenInstance } from '../../src/engine/types';
 
 // Prototype rules (engine/prototype.ts, engine/shinobi.ts) — only for games created with ruleset 'prototype'.
@@ -124,7 +125,7 @@ describe('Prototype: Supplies', () => {
     const s = createSetupState('p1', 'strict', {}, { ruleset: 'prototype' });
     expect(s.ruleset).toBe('prototype');
     const all = [...s.players.p1.handDeck, ...s.players.p1.hand.filter((h) => h.kind === 'card')].map((c) => c.defId);
-    expect(all.filter((d) => d.startsWith('shinobi-'))).toHaveLength(12); // 2 of each of the 6 Shinobi, Rebels included
+    expect(all.filter((d) => d.startsWith('shinobi-'))).toHaveLength(11); // 3 Rebels, 2 Yahiko, 2 Mercenaries, 1 each of the Genin, Chunin, Jonin and Elite Guard
     expect(createSetupState('p1').ruleset).toBeUndefined();
   });
 });
@@ -251,58 +252,273 @@ describe('Prototype: open lanes, no board shape', () => {
   });
 });
 
-describe('Prototype: drawing a new Leader', () => {
-  /** p1 in Main 1 on their 11th turn (10+ Supplies), with a known Character Deck. */
+describe('Prototype: bringing out new Leaders', () => {
+  /** p1 in Main 1 on their 11th turn (plenty of Supplies), with a known Leader Deck. */
   function leaderDrawState(deck: string[]): GameState {
     const s = proto(freshMain1());
     return { ...s, turn: 21, players: { ...s.players, p1: { ...s.players.p1, characterDeck: deck, suppliesSpent: 0 } } };
   }
+  const leaders = (s: GameState) => s.players.p1.backRow.filter(Boolean).map((c) => c!.defId);
 
-  it('costs a flat 10 Supplies, every time', () => {
-    let s = leaderDrawState(['konan', 'zetsu', 'juzo', 'yahiko']);
-    expect(currentTax(s, 'p1')).toBe(10);
-    s = gameReducer(s, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
-    expect(suppliesAvailable(s, 'p1')).toBe(suppliesMax(s, 'p1') - 10);
-    s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: 'zetsu' });
-    expect(currentTax(s, 'p1')).toBe(10);
+  it('an early deploy costs 8 Supplies, then 10, then 12 from then on', () => {
+    let s = { ...leaderDrawState(['konan', 'zetsu', 'juzo', 'sasori-hiruko']), turn: 41 }; // 20 Supplies a turn
+    const costs: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      costs.push(currentTax(s, 'p1'));
+      s = gameReducer({ ...s, players: { ...s.players, p1: { ...s.players.p1, suppliesSpent: 0 } } }, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
+      expect(suppliesMax(s, 'p1') - suppliesAvailable(s, 'p1')).toBe(costs[i]);
+      const count = leaders(s).length;
+      s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: s.players.p1.pendingCharacterReveal!.revealed[0] });
+      expect(leaders(s)).toHaveLength(count + 1);
+    }
+    expect(costs).toEqual([8, 10, 12, 12]);
   });
 
-  it('shows the whole Character Deck and gives exactly the Leader picked — no D-rank bonus — and leaves the rest in order (no shuffle)', () => {
-    const deck = ['konan', 'amegakure-civilian-rebel', 'juzo', 'yahiko', 'amegakure-civilian-rebel'];
+  it('an early deploy reveals 2 random Leaders; the one picked goes straight into play and the other goes back', () => {
+    const deck = ['konan', 'zetsu', 'juzo', 'sasori-hiruko'];
     let s = gameReducer(leaderDrawState(deck), { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
-    expect(s.players.p1.pendingCharacterReveal?.revealed).toEqual(deck);
+    const revealed = s.players.p1.pendingCharacterReveal!.revealed;
+    expect(revealed).toHaveLength(2);
+    expect(deck).toEqual(expect.arrayContaining(revealed));
     const handBefore = s.players.p1.hand.length;
-    s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: 'yahiko' });
-    const added = s.players.p1.hand.slice(handBefore);
-    expect(added).toEqual([expect.objectContaining({ kind: 'character', entryId: 'yahiko' })]);
-    expect(s.players.p1.characterDeck).toEqual(['konan', 'amegakure-civilian-rebel', 'juzo', 'amegakure-civilian-rebel']);
+    const count = leaders(s).length;
+    s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: revealed[1] });
+    expect(leaders(s)).toHaveLength(count + 1);
+    expect(s.players.p1.hand).toHaveLength(handBefore); // not to hand
+    expect(s.players.p1.characterDeck.slice().sort()).toEqual(deck.filter((id) => id !== revealed[1]).sort());
     expect(s.players.p1.pendingCharacterReveal).toBeNull();
   });
 
-  it("can't be drawn without 10 Supplies under the strict rules", () => {
+  it("can't deploy early without the Supplies under the strict rules", () => {
     const s = { ...leaderDrawState(['konan', 'zetsu']), turn: 5, rules: 'strict' as const };
     const next = gameReducer(s, { type: 'DRAW_CHARACTER_DECK', player: 'p1' });
     expect(next.players.p1.pendingCharacterReveal).toBeNull();
     expect(next.players.p1.characterDeck).toEqual(['konan', 'zetsu']);
   });
+
+  it('when a Leader is defeated, you may bring out any Leader from your Leader Deck, free, straight into play', () => {
+    let s = { ...leaderDrawState(['konan', 'zetsu', 'juzo']), rules: 'trust' as const };
+    const supplies = suppliesAvailable(s, 'p1');
+    s = gameReducer(s, { type: 'DEAL_DAMAGE', instanceId: 'p1-kisame', amount: 99 });
+    expect(leaders(s)).not.toContain('kisame');
+    expect(s.players.p1.reinforcementOffers).toEqual(['free']);
+    s = gameReducer(s, { type: 'ACCEPT_REINFORCEMENT', player: 'p1' });
+    expect(s.players.p1.pendingCharacterReveal?.revealed).toEqual(['konan', 'zetsu', 'juzo']); // the whole Leader Deck
+    s = gameReducer(s, { type: 'CHOOSE_CHARACTER', player: 'p1', entryId: 'juzo' });
+    expect(leaders(s)).toContain('juzo');
+    expect(s.players.p1.characterDeck).toEqual(['konan', 'zetsu']);
+    expect(suppliesAvailable(s, 'p1')).toBe(supplies); // free
+    expect(currentTax(s, 'p1')).toBe(8); // doesn't count as an early deploy
+  });
 });
 
 describe('Prototype: Amegakure Civilian Rebel is a Shinobi', () => {
-  it('is not dealt into the Leader Deck, and the starter deck has 2 Rebel Shinobi', () => {
+  it('is not dealt into the Leader Deck, and the starter deck has 3 Rebel Shinobi', () => {
     const s = createSetupState('p1', 'trust', {}, { ruleset: 'prototype' });
     const p = s.players.p1;
     const leaders = [...p.characterDeck, ...(p.pendingCharacterReveal?.revealed ?? [])];
     expect(leaders).not.toContain('amegakure-civilian-rebel');
     const cards = [...p.handDeck.map((c) => c.defId), ...p.hand.flatMap((h) => (h.kind === 'card' ? [h.defId] : []))];
-    expect(cards.filter((id) => id === 'shinobi-amegakure-civilian-rebel')).toHaveLength(2);
+    expect(cards.filter((id) => id === 'shinobi-amegakure-civilian-rebel')).toHaveLength(3);
   });
 
   it('deals 1 Damage, or 2 while its controller has Yahiko in play', () => {
     let s = proto(freshMain1());
     ({ state: s } = placeShinobi(s, 'p1', 'Rebel', 1, 3, 0));
-    const rebel = { ...s.players.p1.frontRow[0]!, extra: { shinobi: true, shinobiDamage: 1, shinobiLeaderBonus: { defId: 'yahiko', amount: 1 } } };
+    const rebel = { ...s.players.p1.frontRow[0]!, extra: { shinobi: true, shinobiDamage: 1, shinobiLeaderBonus: { name: 'Yahiko', amount: 1 } } };
     const withoutYahiko = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'yahiko' ? null : c)) } } };
     expect(shinobiDamage(rebel, withoutYahiko)).toBe(1);
     expect(shinobiDamage(rebel, withCharacterAt(withoutYahiko, 'p1', 4, 'yahiko'))).toBe(2);
+    expect(shinobiDamage(rebel, placeYahiko(withoutYahiko, 'p1', 1, 0).state)).toBe(2); // Yahiko as a Shinobi counts too
+  });
+});
+
+describe('Prototype: no Health — you lose when all your characters are defeated', () => {
+  it("defeats don't cost Health, and the game goes on while any character is left anywhere", () => {
+    let s = proto(freshMain1());
+    const health = s.players.p2.health;
+    s = dealDamage(s, 'p2-deidara', 99).state;
+    expect(s.players.p2.backRow.some((c) => c?.defId === 'deidara')).toBe(false);
+    expect(s.players.p2.health).toBe(health);
+    expect(s.winner).toBeNull();
+  });
+
+  it('the last character falling — none in play, in hand or in the Character Deck — loses the game', () => {
+    let s = proto(freshMain1());
+    const p2 = s.players.p2;
+    s = { ...s, players: { ...s.players, p2: { ...p2, backRow: p2.backRow.map((c) => (c?.defId === 'deidara' ? c : null)), characterDeck: [], hand: p2.hand.filter((h) => h.kind !== 'character') } } };
+    expect(charactersRemaining(s, 'p2')).toBe(1);
+    s = dealDamage(s, 'p2-deidara', 99).state;
+    expect(s.winner).toBe('p1');
+  });
+
+  it('a character still in the Character Deck keeps you in the game', () => {
+    let s = proto(freshMain1());
+    const p2 = s.players.p2;
+    s = { ...s, players: { ...s.players, p2: { ...p2, backRow: p2.backRow.map((c) => (c?.defId === 'deidara' ? c : null)), characterDeck: ['konan'], hand: [] } } };
+    s = dealDamage(s, 'p2-deidara', 99).state;
+    expect(s.winner).toBeNull();
+  });
+
+  it('an empty Jutsu Deck just means no draw', () => {
+    let s = proto(freshMain1());
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, handDeck: [] } } };
+    const after = drawCard(s, 'p1');
+    expect(after.players.p1.health).toBe(s.players.p1.health);
+  });
+});
+
+
+describe('Prototype: Shinobi copies and the legendary rule', () => {
+  it('a deck holds at most 3 of each Shinobi', async () => {
+    const { copyLimit } = await import('../../src/engine/decklist');
+    expect(copyLimit('hand', 'shinobi-rain-genin')).toBe(3);
+  });
+
+  it("you can't have two named units with the same name in play; generic Shinobi can repeat", async () => {
+    const { namedUnitInPlay } = await import('../../src/engine/shinobi');
+    let s = proto(freshMain1());
+    ({ state: s } = placeShinobi(s, 'p1', 'Rain Village Genin', 1, 2, 0));
+    expect(namedUnitInPlay(s, 'p1', 'Rain Village Genin')).toBe(true);
+    const genin = addToHand(s, 'p1', 'shinobi-rain-genin');
+    expect(shinobiOf(gameReducer(genin.state, { type: 'PLAY_HAND_CARD', instanceId: genin.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 }), 'p1')).toHaveLength(2); // generic: allowed
+    expect(namedUnitInPlay(s, 'p1', 'Kakuzu')).toBe(true); // a Leader counts too
+    expect(namedUnitInPlay(s, 'p2', 'Rain Village Genin')).toBe(false); // per player
+  });
+
+  it('the Rebel is a 1/2', () => {
+    expect(getHandCardDef('shinobi-amegakure-civilian-rebel')?.shinobi).toMatchObject({ damage: 1, health: 2, rank: 'D' });
+  });
+});
+
+/** Puts Yahiko (the Shinobi) straight onto `player`'s front row with `pool` Chakra in his Pool. */
+function placeYahiko(state: GameState, player: PlayerId, slot: number, pool: number): { state: GameState; id: string } {
+  const id = `${player}-yahiko-shinobi`;
+  const token: TokenInstance = {
+    instanceId: id,
+    defId: 'shinobi-yahiko',
+    owner: player,
+    name: 'Yahiko',
+    maxHP: 3,
+    currentHP: 3,
+    ownerCharacterInstanceId: '',
+    status: { disabled: false, retreated: false, enteredTurn: 0, hasAmbush: false, usedAbilitiesThisTurn: [], pooledThisTurn: false },
+    extra: { shinobi: true, shinobiDamage: 2 },
+    chakraPool: { current: pool, capacity: 8 },
+  };
+  const frontRow = state.players[player].frontRow.slice();
+  frontRow[slot] = token;
+  return { state: { ...state, players: { ...state.players, [player]: { ...state.players[player], frontRow } } }, id };
+}
+
+describe('Prototype: Yahiko is a B-rank Shinobi', () => {
+  it('is a named 6-Supply 2/3 Shinobi with a Pool of 8: 2 in the starter deck, none in the Leader Deck', () => {
+    expect(getHandCardDef('shinobi-yahiko')).toMatchObject({ cost: 6, shinobi: { damage: 2, health: 3, named: true, rank: 'B', pool: 8 } });
+    const p = createSetupState('p1', 'trust', {}, { ruleset: 'prototype' }).players.p1;
+    expect([...p.characterDeck, ...(p.pendingCharacterReveal?.revealed ?? [])]).not.toContain('yahiko');
+    const cards = [...p.handDeck.map((c) => c.defId), ...p.hand.flatMap((h) => (h.kind === 'card' ? [h.defId] : []))];
+    expect(cards.filter((id) => id === 'shinobi-yahiko')).toHaveLength(2);
+  });
+
+  it("comes into play with an empty Pool of 8, and a second Yahiko can't join him", () => {
+    let s = { ...proto(freshMain1()), turn: 14 };
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'yahiko' ? null : c)) } } };
+    const first = addToHand(s, 'p1', 'shinobi-yahiko');
+    s = gameReducer(first.state, { type: 'PLAY_HAND_CARD', instanceId: first.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
+    expect(shinobiOf(s, 'p1').map((t) => [t.name, t.chakraPool])).toEqual([['Yahiko', { current: 0, capacity: 8 }]]);
+    const second = addToHand(s, 'p1', 'shinobi-yahiko');
+    expect(shinobiOf(gameReducer(second.state, { type: 'PLAY_HAND_CARD', instanceId: second.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 }), 'p1')).toHaveLength(1);
+  });
+
+  it('Pillar Encirclement: each hit he takes is reduced by 2 until his next turn, and Elemental Versatility makes it cost 2', () => {
+    const y = placeYahiko(proto(freshMain1()), 'p1', 0, 3);
+    let s = activateAbility(y.state, y.id, 'pillar-encirclement', [], 0);
+    expect(unit(s, y.id)!.chakraPool!.current).toBe(1); // first elemental ability this turn: 3 - 1
+    s = resolveTop(s);
+    s = dealDamage(s, y.id, 3).state;
+    expect(unit(s, y.id)!.currentHP).toBe(2); // 3 - 2 = 1 damage
+    s = dealDamage({ ...s, turn: s.turn + 1 }, y.id, 1).state;
+    expect(unit(s, y.id)!.currentHP).toBe(2); // still on during the opponent's turn
+    s = dealDamage({ ...s, turn: s.turn + 1 }, y.id, 1).state;
+    expect(unit(s, y.id)!.currentHP).toBe(1); // gone on his controller's next turn
+  });
+
+  it("Rallying Words: a Shinobi's next attack this turn deals 1 more", () => {
+    const y = placeYahiko(proto(freshMain1()), 'p1', 0, 3);
+    const a = placeShinobi(y.state, 'p1', 'Jonin', 3, 5, 1);
+    let s = resolveTop(activateAbility(a.state, y.id, 'rallying-words', [], 0));
+    const hp = unit(s, 'p2-deidara')!.currentHP;
+    s = gameReducer({ ...s, phase: 'Combat' }, { type: 'DECLARE_SHINOBI_ATTACK', attackerId: a.id, targetId: 'p2-deidara' });
+    s = gameReducer(s, { type: 'CONFIRM_SHINOBI_ATTACKS' });
+    expect(unit(s, 'p2-deidara')!.currentHP).toBe(hp - 4);
+  });
+
+  /** p1's Leaders cut down to `keepLeaders` (Hidan at 1 HP, survival spent), plus Yahiko with 5 Chakra under Pillar Encirclement; p2's Earth Grudge Fear (1 damage) aimed at Hidan. */
+  function lethalOnHidan(keepLeaders: string[]) {
+    let s = proto(freshCombat());
+    s = {
+      ...s,
+      players: {
+        ...s.players,
+        p1: {
+          ...s.players.p1,
+          backRow: s.players.p1.backRow.map((c) => (!c || !keepLeaders.includes(c.defId) ? null : c.defId === 'hidan' ? { ...c, currentHP: 1, extra: { ...c.extra, usedSafetyNet: true } } : c)),
+        },
+      },
+    };
+    const y = placeYahiko(s, 'p1', 0, 5);
+    const turn = s.turn;
+    s = { ...y.state, players: { ...y.state.players, p1: { ...y.state.players.p1, frontRow: y.state.players.p1.frontRow.map((t) => (t?.instanceId === y.id ? { ...t, extra: { ...t.extra, pillarEncirclementUntilTurn: turn } } : t)) } } };
+    s = { ...withPool(s, 'p2-kakuzu', 3), activePlayer: 'p2', priorityPlayer: 'p2' };
+    s = activateAbility(s, 'p2-kakuzu', 'earth-grudge-fear', ['p1-hidan'], 0);
+    expect(s.stack).toHaveLength(1);
+    return { state: s, yahiko: y.id };
+  }
+
+  it("Selfless Resolve takes a lethal hit for an ally, and Pillar Encirclement can't reduce it", () => {
+    const { state, yahiko } = lethalOnHidan(['hidan']);
+    let s = activateAbility(state, yahiko, 'selfless-resolve', ['p1-hidan'], 0);
+    expect(s.stack).toHaveLength(2);
+    expect(unit(s, yahiko)!.chakraPool!.current).toBe(0); // 5 Chakra from his own Pool
+    for (let i = 0; i < 4; i++) s = gameReducer(s, { type: 'PASS_PRIORITY' });
+    expect(s.stack).toHaveLength(0);
+    expect(unit(s, 'p1-hidan')!.currentHP).toBe(1); // untouched
+    expect(unit(s, yahiko)!.currentHP).toBe(2); // took the full 1
+  });
+
+  it('needs the opponent to control at least 2 more characters (Leaders and Shinobi)', () => {
+    const { state, yahiko } = lethalOnHidan(['hidan', 'kakuzu', 'deidara']);
+    const count = (p: GameState['players']['p1']) => [...p.backRow, ...p.frontRow].filter(Boolean).length;
+    expect(count(state.players.p2)).toBeLessThan(count(state.players.p1) + 2);
+    expect(activateAbility(state, yahiko, 'selfless-resolve', ['p1-hidan'], 0).stack).toHaveLength(1);
+  });
+});
+
+describe('Prototype: the Extra Deck', () => {
+  it("starts with Kakuzu's three mask techniques, which are out of the Main Deck", () => {
+    const p = createSetupState('p1', 'trust', {}, { ruleset: 'prototype' }).players.p1;
+    expect((p.extraDeck ?? []).map((c) => c.defId).sort()).toEqual(['jutsu-false-darkness', 'jutsu-pressure-damage', 'jutsu-searing-migraine']);
+    const main = [...p.handDeck.map((c) => c.defId), ...p.hand.flatMap((h) => (h.kind === 'card' ? [h.defId] : []))];
+    expect(main.filter((id) => ['jutsu-false-darkness', 'jutsu-pressure-damage', 'jutsu-searing-migraine'].includes(id))).toEqual([]);
+    expect(createSetupState('p1').players.p1.extraDeck).toBeUndefined(); // base game: no Extra Deck
+  });
+
+  it("Kakuzu's Heart Masks pulls his mask techniques from the Extra Deck into hand", async () => {
+    const { getCharacterDef } = await import('../../src/engine/characters/registry');
+    let s = proto(freshMain1());
+    const extraDeck = ['jutsu-pressure-damage', 'jutsu-searing-migraine', 'jutsu-false-darkness', 'fireball-jutsu'].map((defId) => makeHandCardInstance(defId));
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, extraDeck } } };
+    const mainBefore = s.players.p1.handDeck.length;
+    s = getCharacterDef('kakuzu')!.onEnterPlay!(s, 'p1-kakuzu', 'p1');
+    const handIds = s.players.p1.hand.flatMap((h) => (h.kind === 'card' ? [h.defId] : []));
+    expect(handIds).toEqual(expect.arrayContaining(['jutsu-pressure-damage', 'jutsu-searing-migraine', 'jutsu-false-darkness']));
+    expect(s.players.p1.extraDeck!.map((c) => c.defId)).toEqual(['fireball-jutsu']);
+    expect(s.players.p1.handDeck).toHaveLength(mainBefore); // the Main Deck is untouched
+  });
+
+  it("a card's copy limit counts its copies in the Main Deck and the Extra Deck together", async () => {
+    const { validateDeck, presetDeck } = await import('../../src/engine/decklist');
+    const deck = { ...presetDeck(), handDeck: { ...presetDeck().handDeck, 'fireball-jutsu': 2 }, extraDeck: { 'fireball-jutsu': 2 } };
+    expect(validateDeck(deck).some((e) => e.startsWith('Fireball Jutsu'))).toBe(true);
   });
 });

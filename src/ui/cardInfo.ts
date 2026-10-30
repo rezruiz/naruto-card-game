@@ -24,11 +24,21 @@ const clean = (text: string) =>
     .replace(/\*\*?/g, '')
     .replace(/\s*\(full nuance:\s*design\/CHARACTER_LOG\.md\)\.?/g, '');
 
+/** Prototype wording for character text that differs from SPEC.md's base-game card (applied to the cleaned text). */
+const PROTOTYPE_CHARACTER_TEXT: [pattern: RegExp, replacement: string][] = [
+  [
+    /When Kakuzu enters play, search your Jutsu Deck for\s+Pressure Damage, Searing Migraine and False Darkness and add them to\s+your hand\./,
+    'When Kakuzu enters play, add Pressure Damage, Searing Migraine and False Darkness from your Extra Deck to your hand.',
+  ],
+];
+
 export function getCharacterCardText(defId: string): string | undefined {
   const heading = CHARACTER_HEADINGS.find(([test]) => test(defId))?.[1];
   if (!heading) return undefined;
   const key = Object.keys(CHARACTER_TEXT).find((k) => k.startsWith(heading));
-  return key ? clean(CHARACTER_TEXT[key]) : undefined;
+  if (!key) return undefined;
+  const text = clean(CHARACTER_TEXT[key]);
+  return VARIANT === 'prototype' ? PROTOTYPE_CHARACTER_TEXT.reduce((t, [pattern, replacement]) => t.replace(pattern, replacement), text) : text;
 }
 
 /** Splits card text into blocks: each bullet ("- …"), table row ("| …") or paragraph, with its wrapped continuation lines. */
@@ -55,6 +65,10 @@ function textBlocks(text: string): string[] {
  * doesn't name it.
  */
 export function getTokenCardText(defId: string, tokenName: string): string | undefined {
+  // A Shinobi in play shows its card's printed text.
+  const card = listHandCardDefs().find((d) => d.id === defId);
+  const cardText = card?.shinobi ? getHandCardText(card.name) : undefined;
+  if (cardText) return cardText;
   const parent = getCharacterCardText(defId);
   const short = tokenName.replace(/ Path$/, '');
   const matches = parent

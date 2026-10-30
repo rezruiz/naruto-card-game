@@ -41,7 +41,9 @@ Both of these are general rules, and a card can say otherwise: a card that costs
 
 **Board.** There is no board shape — no rows of positions, no columns, no cross pattern. Each player has two open lanes: **Leaders** and **Shinobi & Tokens**, with **no limit** on how many units are in either. A new Leader, Shinobi or token simply joins the end of its lane; you never pick a position. Where a card refers to units "next to" or "adjacent to" one, that means the units directly beside it in the same lane — nothing is in front of or behind anything.
 
-**Leader Deck.** The Character Deck is called the **Leader Deck**, and only Leaders go in it — Shinobi and every other unit go in the main deck. Amegakure Civilian Rebel is a Shinobi in the Prototype (1 Supply, Damage 1 · Health 3, +1 Damage while you have Yahiko in play), not a Leader. Drawing a new Leader costs a flat **10 Supplies** every time (no escalating tax): search your whole Leader Deck and pick exactly the Leader you want. The Leader Deck is never shuffled afterwards, since every Leader is chosen. There is no D-rank bonus card. A Reinforcement draw after a C+ Leader falls works the same way, for 10 Supplies (or free when your last C+ Leader falls).
+**Leader Deck.** The Character Deck is called the **Leader Deck**, and only Leaders go in it — Shinobi and every other unit go in the main deck. Amegakure Civilian Rebel (1 Supply, Damage 1 · Health 2, +1 Damage while you have Yahiko in play; it keeps its D Rank for flavor) and **Yahiko** (a named B-rank Shinobi — see his card) are Shinobi in the Prototype, not Leaders. New Leaders go **straight into play** (with Field Orientation):
+- **After a defeat:** whenever one of your Leaders is defeated, you may bring out **any** Leader from your Leader Deck, **free**, right away.
+- **Early deploy:** in your Main Phase, while your Leaders still stand, pay **8 Supplies**, then **10**, then **12** from then on (only early deploys count). Reveal **2 random** Leaders from your Leader Deck and deploy 1; the other goes back.
 
 **Shinobi.** Units played into your Shinobi & Tokens lane for Supplies (Main Phase). Each has a base **Damage** and **Health**. A Shinobi:
 - can't attack the turn it comes into play;
@@ -52,44 +54,51 @@ Both of these are general rules, and a card can say otherwise: a card that costs
 - can't enable Jutsu cards; its own Chakra Pool pays only for its own abilities;
 - goes to its owner's discard pile when defeated.
 
-The starter deck in the Prototype adds 2 of each placeholder Shinobi (Rain Village Genin, Scout, Chunin, Jonin and Elite Guard).
+A deck holds at most **3 copies of each Shinobi**. **Legendary rule:** a named character is one of a kind — you can't have two units with the same name in play (Leaders and Shinobi alike). Generic units like Rain Village Genin aren't named.
 
-**Equipment.** Gear from the main deck. Each Equipment shows two Supply costs: its **Cost** to play it, and its **Re-equip** cost to move it later.
-- **Playing:** in your Main Phase, pay its Cost and attach it straight away to a Leader or Shinobi you control — never a token, never an enemy. It can only be played onto a holder; it never enters play unattached.
-- **No limit:** a unit can hold any number of Equipment, and their buffs add up. A buff only counts while the Equipment is attached.
-- **Damage buffs:** on a Shinobi they add to its Damage. On a Leader they add to each hit of its damage-dealing abilities and the Jutsu cards it enables.
-- **When the holder leaves play:** its Equipment stays in play, unattached and doing nothing, in your Equipment area.
-- **Re-equip:** in your Main Phase, pay the Re-equip cost to move an Equipment (attached or unattached) to another Leader or Shinobi you control. Moving it off a unit takes its buff with it (a unit never drops below 1 HP from losing a Health buff).
+**Main deck size.** The main deck needs at least **60 cards** (up to 80).
+
+**Extra Deck.** A separate deck of main-deck cards (it doesn't count toward the 60–80). It's never drawn from or shuffled into the main deck: cards leave it only through effects that say "from your Extra Deck". A card's copy limit counts its copies in both decks together. In the Prototype, **Kakuzu's Heart Masks** adds Pressure Damage, Searing Migraine and False Darkness from your Extra Deck to your hand when he enters play; the starter Extra Deck holds those three.
+
+**Leader Deck budget.** A Leader Deck is built within a **budget of 50**: S-Rank Leaders cost 10, A 8, B 6, C 4. It holds at most **8 Leaders** and at most **3 S-Rank**; the budget replaces the 10–15 size range and the A-Rank cap. No Leader is below C Rank.
+
+**Winning and losing.** There is **no player Health**. You lose when all of your Leaders have been defeated — none left in play, in hand or in your Leader Deck. Drawing from an empty main deck does nothing.
+
+**Equipment.** Gear from the main deck.
+- **Playing:** in your Main Phase, pay its Cost; it enters play attached to a **Shinobi** you control — never a Leader (unless the card says it can), never a token, never an enemy. It stays on that unit; it never moves.
+- **No limit:** a unit can hold any number of Equipment, and their buffs add up.
+- **Damage buffs** add to the Shinobi's Damage.
+- **When the holder is defeated** (or leaves play any other way), its Equipment goes to your discard pile.
 - Equipment can't be discarded as Chakra.
 
-| Equipment | Cost | Re-equip | Effect |
-|---|---|---|---|
-| Forehead Protector | 1 | 1 | +2 Health. |
-| Kunai & Shuriken Pouch | 2 | 1 | +1 Damage. |
-| Chakra Storage Scroll | 2 | 1 | +2 Chakra Pool capacity (Leaders only). |
-| Medical Pouch | 2 | 1 | At the start of your turn (Upkeep), heal the holder 1. |
-| Explosive Tag Vest | 2 | 1 | When the holder is defeated by an attack, deal 2 damage to the attacker. |
-| Flak Vest | 3 | 2 | Each time the holder takes damage, reduce it by 1 (to a minimum of 1). |
-| Chakra Trench Knives | 3 | 2 | +1 Damage, or +2 if the holder has Wind Style. |
-| Akatsuki Cloak (Unique) | 3 | 2 | +3 Health; an Akatsuki holder also gets +1 Damage. |
+| Equipment | Cost | Effect |
+|---|---|---|
+| Forehead Protector | 2 | +2 Health. |
+| Kunai & Shuriken Pouch | 3 | +1 Damage. |
+| Chakra Storage Scroll | 3 | Can also go on a Leader. +2 Chakra Pool capacity (for a holder with a Pool). |
+| Medical Pouch | 2 (8 on a Leader) | Can also go on a Leader. At your Upkeep, you may pay 1 Supply to heal the holder 1 — 4 Supplies if it's a Leader. |
+| Explosive Tag Vest | 3 | When the holder is defeated by an attack, deal 2 damage to the attacker. |
+| Flak Vest | 5 | Each time the holder takes damage, reduce it by 1 (to a minimum of 1). |
+| Chakra Trench Knives | 5 | +1 Damage, or +2 if the holder has Wind Style. |
+| Akatsuki Cloak (Unique) | 5 | +3 Health; an Akatsuki holder also gets +1 Damage. |
 
-The starter deck in the Prototype adds 2 of each Equipment (1 Akatsuki Cloak).
+The Prototype's starter deck carries 2 Medical Pouches and 2 Chakra Storage Scrolls; the other Equipment is in the Deck Library only.
 
 **Terrain.** Played in your Main Phase for Supplies. You have at most one Terrain in play: playing another replaces it (the old one goes to your discard pile). A Terrain affects only your side unless it says **both sides**. **Every Terrain is Unique** (1 per deck) in the Prototype.
 
 | Terrain | Cost | Effect |
 |---|---|---|
-| Akatsuki Hideout (Akatsuki) | 2 | Your Akatsuki Leaders' Chakra Pools hold 1 more. *(Replaces its base-game Upkeep discount — there is no Upkeep in the Prototype.)* |
-| Amegakure, Village Hidden in the Rain (Akatsuki) | 3 | Your Rain Village Shinobi and Amegakure Civilian Rebels get +1 Health. |
+| Akatsuki Hideout (Akatsuki) | 2 | At your Upkeep, add 1 Chakra to each of your Akatsuki Leaders' Pools. *(Replaces its base-game Upkeep discount — there is no Upkeep cost in the Prototype.)* |
+| Amegakure, Village Hidden in the Rain (Akatsuki) | 3 | Your Rain Village Shinobi and Amegakure Civilian Rebels get +1 Damage and +1 Health, and cost 1 less Supply to play (to a minimum of 1). |
 | Supply Depot | 1 | Your Supplies maximum is 1 higher. |
-| Blacksmith Village | 2 | Your Equipment costs 1 less Supply to play and to Re-equip (to a minimum of 1). |
+| Blacksmith Village | 2 | Your Equipment costs 1 less Supply (to a minimum of 1). |
 | Training Grounds | 2 | Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your Leaders (the **Train** menu on the Terrain). |
 | Forest of Death | 3 | The first Shinobi you play each turn can attack that turn. |
 | Hidden Mist (Water) | 3 | Enemy Shinobi attacking your Leaders deal 1 less damage (to a minimum of 1). |
 | Shinobi Graveyard | 2 | When one of your Shinobi is defeated, gain 1 Supply this turn. |
 | Valley of the End | 4 | **Both sides:** every Leader's damage-dealing Jutsu and abilities deal +1 damage (each hit). |
 
-Health and Pool buffs from a Terrain come off when it leaves play (a unit never drops below 1 HP from losing one). The starter deck in the Prototype carries Akatsuki Hideout, Amegakure, Supply Depot, Blacksmith Village and Training Grounds (1 each); the others are in the Deck Library.
+Health buffs from a Terrain come off when it leaves play (a unit never drops below 1 HP from losing one). The starter deck in the Prototype carries Akatsuki Hideout, Amegakure, Supply Depot, Blacksmith Village and Training Grounds (1 each); the others are in the Deck Library.
 
 ---
 

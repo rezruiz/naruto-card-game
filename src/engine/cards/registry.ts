@@ -61,10 +61,20 @@ export interface HandCardDef {
   shinobi?: {
     damage: number;
     health: number;
-    /** +amount Damage while its controller has this Leader in play (e.g. Amegakure Civilian Rebel with Yahiko). */
-    leaderBonus?: { defId: string; amount: number };
+    /** +amount Damage while its controller has a unit with this name in play, Leader or Shinobi (e.g. Amegakure Civilian Rebel with Yahiko). */
+    leaderBonus?: { name: string; amount: number };
+    /** A named character (e.g. Yahiko), not a generic unit: the legendary rule applies — a player can't have two units with this name in play. */
+    named?: boolean;
+    /** Rank shown on the card, for flavor only (e.g. the Rebel keeps its D Rank). */
+    rank?: string;
+    /** Its own Chakra Pool's capacity, for a Shinobi with abilities (its abilities live on a TokenDef with the card's id). */
+    pool?: number;
+    /** Styles, for a Shinobi whose abilities have one (an ability's Style must be one of its unit's). */
+    styles?: Style[];
+    /** Synergy, for a named Shinobi (e.g. Yahiko: Akatsuki) — read by Equipment like the Akatsuki Cloak. */
+    synergy?: string[];
   };
-  /** Equipment cards (prototype): the Re-equip cost and the buffs it gives its holder (equipment.ts). */
+  /** Equipment cards (prototype): the buffs it gives its holder (equipment.ts). */
   equipment?: EquipmentStats;
   /** The card's printed text, for cards whose text isn't in SPEC.md (the Prototype's Equipment and Terrain). */
   text?: string;
@@ -82,18 +92,24 @@ export interface HandCardDef {
   synergy?: string[];
 }
 
-/** Prototype rules: what an Equipment card gives the Leader or Shinobi holding it — each buff counts only while it's attached, and several Equipment on one holder add up. */
+/** Prototype rules: what an Equipment card gives the Shinobi holding it — each buff counts only while it's attached, and several Equipment on one holder add up. */
 export interface EquipmentStats {
-  /** Supplies to move it to another holder (equipment.ts reequip). */
-  reequipCost: number;
   health?: number;
   damage?: number;
-  /** Extra Chakra Pool capacity (Leaders only — Shinobi have no Pool). */
+  /** Can also go on a Leader — an exception to Equipment being Shinobi-only (Chakra Storage Scroll, Medical Pouch). */
+  leaderHolder?: boolean;
+  /** Supplies to play it onto a Leader, when that differs from its normal cost (Medical Pouch: 8). */
+  leaderCost?: number;
+  /** The heal's Supply cost while it's on a Leader, when that differs from healCost (Medical Pouch: 4). */
+  leaderHealCost?: number;
+  /** Extra Chakra Pool capacity (for a holder with a Pool: a Leader, or a Shinobi like Yahiko). */
   poolCapacity?: number;
   /** Each damage instance the holder takes is reduced by this much, to a minimum of 1. */
   damageReduction?: number;
   /** Heals the holder this much in its controller's Upkeep Phase. */
   healEachTurn?: number;
+  /** Supplies to pay for that heal — it's optional, so the controller is asked each Upkeep. */
+  healCost?: number;
   /** When the holder is defeated by an attack, deals this much damage to the attacker. */
   defeatRetaliation?: number;
   /** Extra Damage while the holder has this Style or this Synergy. */

@@ -14,6 +14,8 @@ export const CHARACTER_DECK_NAME = VARIANT === 'prototype' ? 'Leader Deck' : 'Ch
 
 /** The Prototype's names for the Jutsu Deck and the two graveyards. */
 export const MAIN_DECK_NAME = VARIANT === 'prototype' ? 'Main Deck' : 'Jutsu Deck';
+/** Prototype only: the deck cards are pulled from by effects, never drawn. */
+export const EXTRA_DECK_NAME = 'Extra Deck';
 export const GRAVEYARD_NAME = VARIANT === 'prototype' ? 'Graveyard' : 'Jutsu Graveyard';
 export const LEADER_GRAVEYARD_NAME = VARIANT === 'prototype' ? 'Leader Graveyard' : 'Character Graveyard';
 

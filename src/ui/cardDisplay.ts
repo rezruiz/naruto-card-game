@@ -1,4 +1,4 @@
-import { getCharacterDef, type CharacterDeckEntry } from '../engine/characters';
+import { getCharacterDef, getTokenDef, type CharacterDeckEntry } from '../engine/characters';
 import { paysInChakra, type HandCardDef } from '../engine/cards/registry';
 import { VARIANT } from '../variant';
 import { getHandCardText } from './cardInfo';
@@ -59,8 +59,11 @@ export function costGem(def: HandCardDef, base: string): { className: string; ti
   };
 }
 
-/** One line of what the card does: its Effect, or a Mission's Condition. */
+/** One line of what the card does on its face: its Effect, or a Mission's Condition — never its cost, which the cost gem already shows. */
 export function handCardSummary(def: HandCardDef): string {
+  // A Shinobi with abilities lists them by short name (no "Water Release:"), to fit the face; the details view has the full text.
+  const unit = def.shinobi ? getTokenDef(def.id) : undefined;
+  if (unit) return unit.abilities.map((a) => a.name.replace(/^\w+ Release: /, '')).join(' · ');
   const lines = (getHandCardText(def.name) ?? '').split('\n').map((l) => l.trim());
   const pick = (prefix: string) => {
     const i = lines.findIndex((l) => l.startsWith(prefix));
@@ -69,11 +72,15 @@ export function handCardSummary(def: HandCardDef): string {
     for (let j = i + 1; j < lines.length && lines[j] && !/^[A-Z][a-z]+:/.test(lines[j]); j++) rest.push(lines[j]);
     return rest.join(' ');
   };
-  return pick('Effect:') ?? pick('Condition:') ?? lines.slice(1).join(' ');
+  // The card face leaves out what it already shows: the cost (the gem at the top) and a Shinobi's
+  // Damage and Health (the stat icons). The full text in the details view still has them.
+  const face = lines.slice(1).filter((l) => l && !/^Cost:/.test(l) && !(def.shinobi && /^Damage \d+ · Health \d+\.?$/.test(l)));
+  return pick('Effect:') ?? pick('Condition:') ?? face.join(' ');
 }
 
 export function handCardSubtitle(def: HandCardDef): string {
   const parts = [TYPE_LABEL[def.cardType]];
+  if (def.shinobi?.rank) parts.push(`${def.shinobi.rank} Rank`);
   if (def.style !== 'None') parts.push(def.style);
   if (def.type !== 'None') parts.push(def.type);
   if (def.speed !== 'Normal') parts.push(def.speed);

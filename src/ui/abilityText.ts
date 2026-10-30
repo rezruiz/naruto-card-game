@@ -1,5 +1,6 @@
 import { resolveCost, type AbilityDef } from '../engine/abilities';
 import type { GameState } from '../engine/types';
+import { VARIANT } from '../variant';
 
 /**
  * Condensed, in-game ability text — what each ability does in as few words
@@ -71,6 +72,8 @@ const ABILITY_TEXT: Record<string, string> = {
   'water-pillar-wall': 'Prevent the next 2 damage to Yahiko this turn.',
   'rallying-words': 'Each ally’s next attack this turn deals +1 damage.',
   'yahiko-sacrifices-himself': 'While the opponent has 2+ more characters: when an attack would defeat another of yours, Yahiko takes it instead.',
+  'pillar-encirclement': 'Until your next turn, each hit Yahiko takes is reduced by 2.',
+  'selfless-resolve': 'While the opponent has 2+ more characters (Leaders and Shinobi): when a targeted attack would defeat another of yours, Yahiko takes all of it instead — his own abilities can’t reduce it.',
   // Amegakure Civilian Rebel
   'shinobi-strike': 'Deal 1 damage (2 if Yahiko is in play).',
   // Pain's Paths & Path Beasts
@@ -111,7 +114,7 @@ const COST_TEXT: Record<string, string> = {
 
 /** Short trait lines per character/token (defId) — the passives that matter at a glance. */
 const TRAIT_TEXT: Record<string, string[]> = {
-  kakuzu: ['Five Hearts — when defeated with 2+ Hearts, lose a Heart and a Style and revive instead. Pool = (Hearts − 1) × 2.', 'Elemental Versatility — first elemental jutsu each turn costs 1 less (Jutsu cards he enables too).', 'Heart Masks — on entering play, search your Jutsu Deck for Pressure Damage, Searing Migraine and False Darkness.'],
+  kakuzu: ['Five Hearts — when defeated with 2+ Hearts, lose a Heart and a Style and revive instead. Pool = (Hearts − 1) × 2.', 'Elemental Versatility — first elemental jutsu each turn costs 1 less (Jutsu cards he enables too).', VARIANT === 'prototype' ? 'Heart Masks — on entering play, add Pressure Damage, Searing Migraine and False Darkness from your Extra Deck to your hand.' : 'Heart Masks — on entering play, search your Jutsu Deck for Pressure Damage, Searing Migraine and False Darkness.'],
   hidan: ["Jashin's Blessing — the first time he'd be defeated, he survives at 1 HP. Heals 1 each End Phase (2 while Cursing)."],
   deidara: [],
   kisame: ['Samehada — absorbed Chakra goes into his Pool; overflow becomes generic.', 'Samehada Fusion — at 10 absorbed he can transform: +6 Pool and HP, Water attacks +1 damage, his Ninjutsu attacks Absorb 1, and enemy Ninjutsu attacks on him Absorb 1 from their user.'],
@@ -123,6 +126,7 @@ const TRAIT_TEXT: Record<string, string[]> = {
   juzo: ['Heals 3 whenever he defeats an enemy character.', 'Iron-Forged Body — −1 damage from Taijutsu (min 1).'],
   yahiko: ['Inspiring Leader — your other Akatsuki’s first ability each turn costs 1 less (min 1).', 'Elemental Versatility — first elemental jutsu each turn costs 1 less (Jutsu cards he enables too).'],
   'amegakure-civilian-rebel': [],
+  'shinobi-yahiko': ['Elemental Versatility — your first elemental Jutsu or ability each turn costs 1 less (any of your units, and Jutsu your Leaders enable).'],
   'deva-path': ['Max 2 of its abilities per turn.', 'Rinnegan Reservoir — may spend any Path’s Pool.'],
   'asura-path': ['Rinnegan Reservoir — may spend any Path’s Pool.'],
   'human-path': ['Rinnegan Reservoir — may spend any Path’s Pool.'],

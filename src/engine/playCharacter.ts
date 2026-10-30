@@ -1,7 +1,7 @@
 import { getCharacterDeckEntry } from './characters';
 import { patchOccupant } from './board';
 import { appendLog, appendWarning } from './phases/phaseMachine';
-import { LEADER_DRAW_COST, isPrototype } from './prototype';
+import { earlyDeployCost, isPrototype } from './prototype';
 import type { GameState, PlayerId } from './types';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -14,8 +14,8 @@ export function reinforcementTax(paidDraws: number): number {
 /** What drawing from the Character Deck costs this player right now (§8): the escalating tax, less Bingo Book: Threat Level A's one-time discount. */
 export function currentTax(state: GameState, player: PlayerId): number {
   const p = state.players[player];
-  // Prototype: a flat cost for a new Leader instead of the escalating tax.
-  const base = isPrototype(state) ? LEADER_DRAW_COST : reinforcementTax(p.reinforcementsPlayed);
+  // Prototype: an early Leader deploy costs 8, then 10, then 12 Supplies (reinforcementsPlayed counts early deploys).
+  const base = isPrototype(state) ? earlyDeployCost(p.reinforcementsPlayed) : reinforcementTax(p.reinforcementsPlayed);
   return base - Math.min(base, p.nextReinforcementDiscount);
 }
 
@@ -26,12 +26,13 @@ export function currentTax(state: GameState, player: PlayerId): number {
  * (mustPlayCharacter — your last C+ character fell while you held a C+
  * character card) ignores timing entirely, and playing a C+ card satisfies it.
  */
-export function playCharacter(state: GameState, instanceId: string, slot?: number): GameState {
+export function playCharacter(state: GameState, instanceId: string, slot?: number, opts: { anyTime?: boolean } = {}): GameState {
   const relaxed = state.rules === 'trust';
   const player =
     (['p1', 'p2'] as const).find((id) => state.players[id].hand.some((h) => h.instanceId === instanceId && h.kind === 'character')) ?? state.activePlayer;
   const p = state.players[player];
-  const forced = p.mustPlayCharacter;
+  // anyTime: a Prototype Leader deploy, which goes straight into play whenever it happens (deck.ts deployLeader).
+  const forced = p.mustPlayCharacter || !!opts.anyTime;
 
   let working = state;
   const onTime = MAIN_PHASES.has(state.phase) && state.activePlayer === player;
@@ -48,7 +49,7 @@ export function playCharacter(state: GameState, instanceId: string, slot?: numbe
   if (!entry.hasRoom(working, player)) {
     return appendLog(working, `${player} doesn't have room in play for ${entry.name}.`);
   }
-  const satisfiesForced = forced && entry.rank !== 'D';
+  const satisfiesForced = p.mustPlayCharacter && entry.rank !== 'D';
 
   const beforeBackRow = working.players[player].backRow;
   // Retaliation (§6.6) or Bingo Book: Threat Level A's Ambush reward — either grants Ambush to this entry.
