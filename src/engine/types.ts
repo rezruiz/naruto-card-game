@@ -118,6 +118,19 @@ export type HandEntry =
   | ({ kind: 'card' } & HandCardInstance)
   | { kind: 'character'; instanceId: string; entryId: string };
 
+/** A look at a player's hand (e.g. Amegakure Elite Guard: Sensor) — a snapshot taken at that moment, never updated. */
+export interface HandPeek {
+  id: string;
+  /** Who looked. */
+  viewer: PlayerId;
+  /** Whose hand it was. */
+  owner: PlayerId;
+  turn: number;
+  /** What let them look (shown on the window). */
+  source: string;
+  cards: HandEntry[];
+}
+
 /**
  * SPEC.md §9: 5-column back row (Characters), 10-slot front row (Tokens),
  * front slots 2*col/2*col+1 pair with backRow[col].
@@ -200,6 +213,8 @@ export interface PlayerState {
   bonusChakraSourcePlacements: number;
   /** Prototype rules: Supplies spent since this player's last Untap (prototype.ts derives the per-turn maximum). Missing = 0. */
   suppliesSpent?: number;
+  /** Prototype: extra Supplies maximum gained from Supply Depot (+1 at the start of each of your turns while it's in play). Kept if the Depot leaves. */
+  supplyGrowthBonus?: number;
   /** Prototype rules: this player's Equipment in play, attached or not (equipment.ts). Missing = none. */
   equipment?: EquipmentInstance[];
   /** Prototype rules: the turn each once-per-turn Terrain effect was last used, by Terrain card id (cards/terrain.ts). Missing = never. */
@@ -339,6 +354,8 @@ export interface GameState {
   firstPlayerPending: boolean;
   /** Decisions waiting on a specific player (oldest first) — see PendingChoice. */
   pendingChoices: PendingChoice[];
+  /** Hand snapshots players have looked at (HandPeek) — the viewer's UI shows each one until they close it. */
+  handPeeks?: HandPeek[];
   /** Set only while a stack item is resolving (see ResolvingContext). */
   resolving?: ResolvingContext | null;
   /** Set when a combat step clears a player's board and forces their Retreated characters out (retreatCollapse.ts): the next advance out of Combat is replaced by a second Combat. */

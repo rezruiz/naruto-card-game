@@ -18,6 +18,7 @@ import { findOccupant, isCharacter, legalTokenSlots, hasFieldOrientation, patchO
 import { dealDamage } from './combat';
 import { appendLog, appendWarning, otherPlayer } from './phases/phaseMachine';
 import { registerHandCard, type HandCardDef } from './cards/registry';
+import { getTokenDef } from './characters/registry';
 import { equipmentDamageBonus } from './equipment';
 import { TERRAIN, amegakureBuffs, hasTerrain, markTerrainUsed, terrainUsedThisTurn } from './terrainEffects';
 import type { BoardOccupant, GameState, PlayerId, ShinobiAttack, Style, TokenInstance } from './types';
@@ -60,7 +61,7 @@ export function targetsLeader(state: GameState, attack: ShinobiAttack): boolean 
 
 /**
  * The legendary rule (prototype): named characters are one of a kind — a player can't have two units
- * with the same name in play (Leaders and Shinobi alike). Generic units (Rain Village Genin…) aren't named.
+ * with the same name in play (Leaders and Shinobi alike). Generic units (Amegakure Genin…) aren't named.
  */
 export function namedUnitInPlay(state: GameState, player: PlayerId, name: string): boolean {
   const p = state.players[player];
@@ -109,18 +110,27 @@ function shinobiCard(
       if (rushes) state = markTerrainUsed(state, ctx.player, TERRAIN.forestOfDeath);
       const placed = rushes ? { ...token, extra: { ...token.extra, forestOfDeathTurn: state.turn } } : token;
       state = appendLog(placeToken(state, ctx.player, placed, { askPosition: true }), `${ctx.player} plays ${name} (${damage} Damage, ${health} Health).`);
-      return rushes ? appendLog(state, `Forest of Death: ${name} can attack this turn.`) : state;
+      if (rushes) state = appendLog(state, `Forest of Death: ${name} can attack this turn.`);
+      const onEnter = getTokenDef(id)?.onEnterPlay;
+      return onEnter && findOccupant(state, token.instanceId) ? onEnter(state, token.instanceId, ctx.player) : state;
     },
   };
 }
 
 export const SHINOBI_CARDS: HandCardDef[] = [
-  shinobiCard('shinobi-rain-genin', 'Rain Village Genin', 1, 1, 2),
-  shinobiCard('shinobi-rain-scout', 'Rain Village Scout', 2, 2, 2),
-  shinobiCard('shinobi-rain-chunin', 'Rain Village Chunin', 3, 2, 4),
-  shinobiCard('shinobi-rain-jonin', 'Rain Village Jonin', 4, 3, 5),
-  shinobiCard('shinobi-rain-elite-guard', 'Rain Village Elite Guard', 6, 4, 7),
+  shinobiCard('shinobi-rain-genin', 'Amegakure Genin', 1, 1, 2),
+  shinobiCard('shinobi-rain-scout', 'Amegakure Scout', 2, 2, 2),
+  shinobiCard('shinobi-rain-chunin', 'Amegakure Chunin', 3, 2, 4),
+  shinobiCard('shinobi-rain-jonin', 'Amegakure Jonin', 4, 3, 5),
+  shinobiCard('shinobi-rain-elite-guard', 'Amegakure Elite Guard', 6, 4, 7),
   shinobiCard('shinobi-mercenary', 'Mercenary', 3, 2, 2),
+  // Amegakure Jonin specialists: one jutsu each, from a Pool of 4 (characters/amegakureSpecialists.ts).
+  shinobiCard('shinobi-rain-jonin-water', 'Amegakure Jonin: Water Specialist', 5, 2, 6, undefined, { pool: 4, styles: ['Water'] }),
+  shinobiCard('shinobi-rain-jonin-wind', 'Amegakure Jonin: Wind Specialist', 5, 2, 6, undefined, { pool: 4, styles: ['Wind'] }),
+  shinobiCard('shinobi-rain-jonin-poison', 'Amegakure Jonin: Poison Specialist', 5, 2, 6, undefined, { pool: 4, styles: ['Poison'] }),
+  // Amegakure Elite Guards (characters/amegakureSpecialists.ts): a Sensor with an enter-play effect, a Bodyguard with Rain Shield.
+  shinobiCard('shinobi-rain-elite-sensor', 'Amegakure Elite Guard: Sensor', 7, 4, 7),
+  shinobiCard('shinobi-rain-elite-bodyguard', 'Amegakure Elite Guard: Bodyguard', 6, 4, 7, undefined, { pool: 4, styles: ['Water'] }),
   // The base game's D-rank character, as a 1/2 Shinobi (it keeps its D Rank for flavor): +1 Damage while Yahiko is in play.
   shinobiCard('shinobi-amegakure-civilian-rebel', 'Amegakure Civilian Rebel', 1, 1, 2, { name: 'Yahiko', amount: 1 }, { rank: 'D' }),
   // A Leader in the base game; a named B-rank Shinobi here, with its own Pool and abilities (characters/yahikoShinobi.ts).
@@ -128,13 +138,15 @@ export const SHINOBI_CARDS: HandCardDef[] = [
 ];
 for (const def of SHINOBI_CARDS) registerHandCard(def);
 
-/** The Shinobi in the Prototype build's starter deck (the Rebels and Yahiko were characters in the base game's Character Deck). The Scout is in the Deck Library only. */
+/** The Shinobi in the Prototype build's starter deck (the Rebels and Yahiko were characters in the base game's Character Deck). The plain Amegakure Genin, Scout, Chunin and Elite Guard are in the Deck Library only. */
 export const PROTOTYPE_SHINOBI_MANIFEST: { defId: string; copies: number }[] = [
   { defId: 'shinobi-amegakure-civilian-rebel', copies: 3 },
-  { defId: 'shinobi-rain-genin', copies: 1 },
-  { defId: 'shinobi-rain-chunin', copies: 1 },
   { defId: 'shinobi-rain-jonin', copies: 1 },
-  { defId: 'shinobi-rain-elite-guard', copies: 1 },
+  { defId: 'shinobi-rain-jonin-water', copies: 1 },
+  { defId: 'shinobi-rain-jonin-wind', copies: 1 },
+  { defId: 'shinobi-rain-jonin-poison', copies: 1 },
+  { defId: 'shinobi-rain-elite-sensor', copies: 1 },
+  { defId: 'shinobi-rain-elite-bodyguard', copies: 1 },
   { defId: 'shinobi-mercenary', copies: 2 },
   { defId: 'shinobi-yahiko', copies: 2 },
 ];

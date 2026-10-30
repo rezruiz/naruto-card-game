@@ -67,10 +67,10 @@ function terrainCard(id: string, name: string, cost: number, effect: string, ext
 }
 
 export const PROTOTYPE_TERRAIN_CARDS: HandCardDef[] = [
-  terrainCard(TERRAIN.amegakure, 'Amegakure, Village Hidden in the Rain', 3, 'Your Rain Village Shinobi and Amegakure Civilian Rebels get +1 Damage and +1 Health, and cost 1 less Supply to play (to a minimum of 1).', { synergy: ['Akatsuki'] }),
-  terrainCard(TERRAIN.supplyDepot, 'Supply Depot', 1, 'Your Supplies maximum is 1 higher.'),
+  terrainCard(TERRAIN.amegakure, 'Amegakure, Village Hidden in the Rain', 3, 'Your Amegakure Shinobi get +1 Damage and +1 Health, and cost 1 less Supply to play (to a minimum of 1).', { synergy: ['Akatsuki'] }),
+  terrainCard(TERRAIN.supplyDepot, 'Supply Depot', 7, 'At the start of each of your turns, your Supplies maximum goes up by 2 instead of 1 (still up to 20).'),
   terrainCard(TERRAIN.blacksmithVillage, 'Blacksmith Village', 2, 'Your Equipment costs 1 less Supply (to a minimum of 1).'),
-  terrainCard(TERRAIN.trainingGrounds, 'Training Grounds', 2, 'Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your Leaders.'),
+  terrainCard(TERRAIN.trainingGrounds, 'Training Grounds', 4, 'Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your units.'),
   terrainCard(TERRAIN.forestOfDeath, 'Forest of Death', 3, 'The first Shinobi you play each turn can attack that turn.'),
   terrainCard(TERRAIN.hiddenMist, 'Hidden Mist', 3, 'Enemy Shinobi attacking your Leaders deal 1 less damage (to a minimum of 1).', { style: 'Water' }),
   terrainCard(TERRAIN.shinobiGraveyard, 'Shinobi Graveyard', 2, 'When one of your Shinobi is defeated, gain 1 Supply this turn.'),
@@ -78,15 +78,11 @@ export const PROTOTYPE_TERRAIN_CARDS: HandCardDef[] = [
 ];
 for (const def of PROTOTYPE_TERRAIN_CARDS) registerHandCard(def);
 
-/** The Prototype build's starter deck carries 1 each of the Terrain that suit it (with Akatsuki Hideout, 5 in all — the deck stays within 80 cards); the rest are in the deck builder. */
-export const PROTOTYPE_TERRAIN_MANIFEST: { defId: string; copies: number }[] = [TERRAIN.akatsukiHideout, TERRAIN.amegakure, TERRAIN.supplyDepot, TERRAIN.blacksmithVillage, TERRAIN.trainingGrounds].map((defId) => ({ defId, copies: 1 }));
+/** The Prototype build's starter deck carries 1 each of the Terrain that suit it (4 in all); the rest are in the deck builder. */
+export const PROTOTYPE_TERRAIN_MANIFEST: { defId: string; copies: number }[] = [TERRAIN.akatsukiHideout, TERRAIN.amegakure, TERRAIN.blacksmithVillage, TERRAIN.trainingGrounds].map((defId) => ({ defId, copies: 1 }));
 
 // --- Akatsuki Hideout: Chakra at your Upkeep ------------------------------------
 
-/** A Leader: a character in play, or one of Pain's Path tokens (they count as Pain). */
-function isLeader(o: BoardOccupant): boolean {
-  return isCharacter(o) || o.extra.painPath === true;
-}
 
 function isAkatsukiLeader(o: BoardOccupant): boolean {
   if (o.extra.painPath === true) return true;
@@ -154,7 +150,7 @@ export function sweepTerrain(state: GameState): GameState {
 
 // --- Training Grounds ----------------------------------------------------------
 
-/** Why this player can't use Training Grounds on this Leader right now (null = they can). Trust mode only checks that the Terrain and the Leader are there. */
+/** Why this player can't use Training Grounds on this unit right now (null = they can) — any unit of theirs with a Chakra Pool (a Leader, or a Shinobi like Yahiko). Trust mode only checks that the Terrain and the unit are there. */
 export function trainingGroundsBlocker(state: GameState, player: PlayerId, leaderId?: string): string | null {
   if (!hasTerrain(state, player, TERRAIN.trainingGrounds)) return 'You need Training Grounds in play.';
   const trust = state.rules === 'trust';
@@ -165,13 +161,13 @@ export function trainingGroundsBlocker(state: GameState, player: PlayerId, leade
   }
   if (leaderId === undefined) return null;
   const found = findOccupant(state, leaderId);
-  if (!found || found.player !== player || !isLeader(found.occupant) || !found.occupant.chakraPool) return 'Choose one of your Leaders.';
+  if (!found || found.player !== player || !found.occupant.chakraPool) return 'Choose one of your units with a Chakra Pool.';
   const pool = found.occupant.chakraPool;
   if (pool.current >= pool.capacity) return `${found.occupant.name}'s Chakra Pool is full.`;
   return null;
 }
 
-/** Training Grounds, for the Leader's controller. */
+/** Training Grounds, for the unit's controller (`leaderId` is the unit pooled into — any unit with a Pool). */
 export function activateTrainingGrounds(state: GameState, leaderId: string): GameState {
   const player = findOccupant(state, leaderId)?.player ?? state.activePlayer;
   const blocker = trainingGroundsBlocker(state, player, leaderId);

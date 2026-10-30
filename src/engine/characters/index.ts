@@ -10,6 +10,7 @@ import './konan';
 import './juzo';
 import './yahiko';
 import './yahikoShinobi';
+import './amegakureSpecialists';
 import './amegakureCivilianRebel';
 import './sasori';
 import './zetsu';

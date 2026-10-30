@@ -73,6 +73,8 @@ export interface TokenDef {
   onEndPhase?: (state: GameState, instanceId: string) => GameState;
   /** Passive traits, by name, shown on the card ahead of its abilities. */
   traits?: string[];
+  /** Fires when a Shinobi with this id comes into play (e.g. Amegakure Elite Guard: Sensor). */
+  onEnterPlay?: (state: GameState, instanceId: string, player: PlayerId) => GameState;
   /**
    * Elemental Versatility for its whole side (Yahiko as a Shinobi): its controller's first elemental Jutsu or
    * ability each turn costs 1 less Chakra — any of their units' abilities, and the Jutsu cards their Leaders enable.

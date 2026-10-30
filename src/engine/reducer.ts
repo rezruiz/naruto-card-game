@@ -48,7 +48,7 @@ import {
   untapChakraSource,
 } from './trust/manual';
 import type { GameAction, GameState, PlayerId, PlayerState, Phase } from './types';
-import { adjustSupplies, isPrototype } from './prototype';
+import { adjustSupplies, isPrototype, tickSupplyDepot } from './prototype';
 import { sweepEquipment, tickEquipmentHeals } from './equipment';
 import { sweepTerrain, activateTrainingGrounds, tickHideout } from './cards/terrain';
 import { assignShinobiDefender, cancelShinobiAttack, confirmShinobiAttacks, confirmShinobiDefense, declareShinobiAttack, endShinobiCombat } from './shinobi';
@@ -230,6 +230,7 @@ function advanceOnePhase(input: GameState): GameState {
   let next = advancePhase(state.phase === 'Combat' ? endShinobiCombat(state) : state);
   if (next.phase === 'Untap') {
     next = runMissionTrigger(next, next.activePlayer, { kind: 'untap' });
+    next = tickSupplyDepot(next, next.activePlayer);
   }
   if (next.phase === 'Upkeep') {
     next = payUpkeep(next, next.activePlayer);

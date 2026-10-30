@@ -125,7 +125,7 @@ describe('Prototype: Supplies', () => {
     const s = createSetupState('p1', 'strict', {}, { ruleset: 'prototype' });
     expect(s.ruleset).toBe('prototype');
     const all = [...s.players.p1.handDeck, ...s.players.p1.hand.filter((h) => h.kind === 'card')].map((c) => c.defId);
-    expect(all.filter((d) => d.startsWith('shinobi-'))).toHaveLength(11); // 3 Rebels, 2 Yahiko, 2 Mercenaries, 1 each of the Genin, Chunin, Jonin and Elite Guard
+    expect(all.filter((d) => d.startsWith('shinobi-'))).toHaveLength(13); // 3 Rebels, 2 Yahiko, 2 Mercenaries, a plain Amegakure Jonin, 1 of each Jonin specialist and Elite Guard
     expect(createSetupState('p1').ruleset).toBeUndefined();
   });
 });
@@ -378,12 +378,12 @@ describe('Prototype: Shinobi copies and the legendary rule', () => {
   it("you can't have two named units with the same name in play; generic Shinobi can repeat", async () => {
     const { namedUnitInPlay } = await import('../../src/engine/shinobi');
     let s = proto(freshMain1());
-    ({ state: s } = placeShinobi(s, 'p1', 'Rain Village Genin', 1, 2, 0));
-    expect(namedUnitInPlay(s, 'p1', 'Rain Village Genin')).toBe(true);
+    ({ state: s } = placeShinobi(s, 'p1', 'Amegakure Genin', 1, 2, 0));
+    expect(namedUnitInPlay(s, 'p1', 'Amegakure Genin')).toBe(true);
     const genin = addToHand(s, 'p1', 'shinobi-rain-genin');
     expect(shinobiOf(gameReducer(genin.state, { type: 'PLAY_HAND_CARD', instanceId: genin.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 }), 'p1')).toHaveLength(2); // generic: allowed
     expect(namedUnitInPlay(s, 'p1', 'Kakuzu')).toBe(true); // a Leader counts too
-    expect(namedUnitInPlay(s, 'p2', 'Rain Village Genin')).toBe(false); // per player
+    expect(namedUnitInPlay(s, 'p2', 'Amegakure Genin')).toBe(false); // per player
   });
 
   it('the Rebel is a 1/2', () => {
@@ -494,12 +494,21 @@ describe('Prototype: Yahiko is a B-rank Shinobi', () => {
   });
 });
 
-describe('Prototype: the Extra Deck', () => {
-  it("starts with Kakuzu's three mask techniques, which are out of the Main Deck", () => {
+describe('Prototype: the starter Leader Deck', () => {
+  it('is Itachi, Kisame, Sasori, Deidara, Kakuzu and Hidan — exactly the 50-point budget', async () => {
+    const { characterDeckCost, presetDeck } = await import('../../src/engine/decklist');
     const p = createSetupState('p1', 'trust', {}, { ruleset: 'prototype' }).players.p1;
-    expect((p.extraDeck ?? []).map((c) => c.defId).sort()).toEqual(['jutsu-false-darkness', 'jutsu-pressure-damage', 'jutsu-searing-migraine']);
+    expect([...p.characterDeck, ...(p.pendingCharacterReveal?.revealed ?? [])].sort()).toEqual(['deidara', 'hidan', 'itachi', 'kakuzu', 'kisame', 'sasori-hiruko']);
+    expect(characterDeckCost({ ...presetDeck(), characterDeck: { itachi: 1, kisame: 1, 'sasori-hiruko': 1, deidara: 1, kakuzu: 1, hidan: 1 } })).toBe(50);
+  });
+});
+
+describe('Prototype: the Extra Deck', () => {
+  it("starts with Kakuzu's three mask techniques and 3 Crow Clones, none of them in the Main Deck", () => {
+    const p = createSetupState('p1', 'trust', {}, { ruleset: 'prototype' }).players.p1;
+    expect((p.extraDeck ?? []).map((c) => c.defId).sort()).toEqual(['jutsu-crow-clone', 'jutsu-crow-clone', 'jutsu-crow-clone', 'jutsu-false-darkness', 'jutsu-pressure-damage', 'jutsu-searing-migraine']);
     const main = [...p.handDeck.map((c) => c.defId), ...p.hand.flatMap((h) => (h.kind === 'card' ? [h.defId] : []))];
-    expect(main.filter((id) => ['jutsu-false-darkness', 'jutsu-pressure-damage', 'jutsu-searing-migraine'].includes(id))).toEqual([]);
+    expect(main.filter((id) => ['jutsu-false-darkness', 'jutsu-pressure-damage', 'jutsu-searing-migraine', 'jutsu-crow-clone'].includes(id))).toEqual([]);
     expect(createSetupState('p1').players.p1.extraDeck).toBeUndefined(); // base game: no Extra Deck
   });
 
@@ -520,5 +529,81 @@ describe('Prototype: the Extra Deck', () => {
     const { validateDeck, presetDeck } = await import('../../src/engine/decklist');
     const deck = { ...presetDeck(), handDeck: { ...presetDeck().handDeck, 'fireball-jutsu': 2 }, extraDeck: { 'fireball-jutsu': 2 } };
     expect(validateDeck(deck).some((e) => e.startsWith('Fireball Jutsu'))).toBe(true);
+  });
+});
+
+describe('Prototype: the Amegakure Jonin specialists', () => {
+  /** Puts a specialist straight onto p1's front row with `pool` Chakra in its Pool, in Combat. */
+  function placeSpecialist(defId: string, pool: number): { state: GameState; id: string } {
+    const s = { ...proto(freshMain1()), phase: 'Combat' as const };
+    const placed = placeShinobi(s, 'p1', defId, 3, 5, 0);
+    const frontRow = placed.state.players.p1.frontRow.map((t) => (t?.instanceId === placed.id ? { ...t, defId, chakraPool: { current: pool, capacity: 4 } } : t));
+    return { state: { ...placed.state, players: { ...placed.state.players, p1: { ...placed.state.players.p1, frontRow } } }, id: placed.id };
+  }
+
+  it('are 5-Supply 2/6 Shinobi with a Pool of 4, one of each in the starter deck', () => {
+    for (const id of ['shinobi-rain-jonin-water', 'shinobi-rain-jonin-wind', 'shinobi-rain-jonin-poison']) {
+      expect(getHandCardDef(id)).toMatchObject({ cost: 5, shinobi: { damage: 2, health: 6, pool: 4 } });
+    }
+  });
+
+  it('Water Specialist: Rain Water Bullet (2 Chakra) deals 2 damage', () => {
+    const w = placeSpecialist('shinobi-rain-jonin-water', 4);
+    const hp = unit(w.state, 'p2-deidara')!.currentHP;
+    const s = resolveTop(activateAbility(w.state, w.id, 'rain-water-bullet', ['p2-deidara'], 0));
+    expect(unit(s, 'p2-deidara')!.currentHP).toBe(hp - 2);
+    expect(unit(s, w.id)!.chakraPool!.current).toBe(2);
+  });
+
+  it('Wind Specialist: Gale Blade (3 Chakra) deals 1 to each of up to 2 enemy units', () => {
+    const w = placeSpecialist('shinobi-rain-jonin-wind', 4);
+    const a = unit(w.state, 'p2-deidara')!.currentHP;
+    const b = unit(w.state, 'p2-kisame')!.currentHP;
+    const s = resolveTop(activateAbility(w.state, w.id, 'gale-blade', ['p2-deidara', 'p2-kisame'], 0));
+    expect([unit(s, 'p2-deidara')!.currentHP, unit(s, 'p2-kisame')!.currentHP]).toEqual([a - 1, b - 1]);
+    expect(unit(s, w.id)!.chakraPool!.current).toBe(1);
+  });
+
+  it('Poison Specialist: Poison Fog (4 Chakra) gives 2 Poison to each of up to 2 adjacent enemy Shinobi — not Leaders', () => {
+    const p = placeSpecialist('shinobi-rain-jonin-poison', 4);
+    const e1 = placeShinobi(p.state, 'p2', 'Genin A', 1, 2, 0);
+    const e2 = placeShinobi(e1.state, 'p2', 'Genin B', 1, 2, 1);
+    expect(activateAbility(e2.state, p.id, 'poison-fog', ['p2-deidara'], 0).stack).toHaveLength(0); // a Leader isn't a Shinobi
+    const s = resolveTop(activateAbility(e2.state, p.id, 'poison-fog', [e1.id, e2.id], 0));
+    expect([unit(s, e1.id)!.extra.poisonCounters, unit(s, e2.id)!.extra.poisonCounters]).toEqual([2, 2]);
+    expect(unit(s, p.id)!.chakraPool!.current).toBe(0);
+  });
+});
+
+describe('Prototype: the Amegakure Elite Guards', () => {
+  it('Sensor (7 Supplies, 4/7): entering play logs your opponent\'s hand and draws you a card', () => {
+    let s = { ...proto(freshMain1()), turn: 41 };
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1, handDeck: [makeHandCardInstance('reconnaissance')] } } };
+    const card = addToHand(s, 'p1', 'shinobi-rain-elite-sensor');
+    const handBefore = card.state.players.p1.hand.length;
+    s = gameReducer(card.state, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
+    expect(shinobiOf(s, 'p1').some((t) => t.name === 'Amegakure Elite Guard: Sensor')).toBe(true);
+    expect(s.players.p1.hand).toHaveLength(handBefore); // played 1, drew 1
+    expect(s.players.p1.handDeck).toHaveLength(0);
+    expect(s.log.some((l) => l.text.startsWith("Rain Sensing: p1 looks at p2's hand"))).toBe(true);
+    // A snapshot for p1's hand window: p2's hand as it was, not a live view.
+    const peek = s.handPeeks![0];
+    expect(peek).toMatchObject({ viewer: 'p1', owner: 'p2', source: 'Rain Sensing' });
+    expect(peek.cards).toEqual(card.state.players.p2.hand);
+    const later = { ...s, players: { ...s.players, p2: { ...s.players.p2, hand: [] } } };
+    expect(later.handPeeks![0].cards).toHaveLength(card.state.players.p2.hand.length);
+  });
+
+  it("Bodyguard: Rain Shield (4 Chakra) reduces each hit on one of your units by 2 until your next turn", () => {
+    let s = { ...proto(freshMain1()), phase: 'Main1' as const };
+    const placed = placeShinobi(s, 'p1', 'Bodyguard', 4, 7, 0);
+    const frontRow = placed.state.players.p1.frontRow.map((t) => (t?.instanceId === placed.id ? { ...t, defId: 'shinobi-rain-elite-bodyguard', chakraPool: { current: 4, capacity: 4 } } : t));
+    s = { ...placed.state, players: { ...placed.state.players, p1: { ...placed.state.players.p1, frontRow } } };
+    s = resolveTop(activateAbility(s, placed.id, 'rain-shield', ['p1-kisame'], 0));
+    const hp = unit(s, 'p1-kisame')!.currentHP;
+    s = dealDamage(s, 'p1-kisame', 3).state;
+    expect(unit(s, 'p1-kisame')!.currentHP).toBe(hp - 1);
+    s = dealDamage({ ...s, turn: s.turn + 2 }, 'p1-kisame', 3).state;
+    expect(unit(s, 'p1-kisame')!.currentHP).toBe(hp - 4); // gone on your next turn
   });
 });

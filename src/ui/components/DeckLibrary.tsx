@@ -11,6 +11,7 @@ import {
   characterPool,
   copyLimit,
   handCardPool,
+  EXTRA_DECK_MAX,
   extraDeckSize,
   handDeckSize,
   presetDeck,
@@ -464,9 +465,8 @@ function DeckEditor({ deck, onChange, onDone, onCopy }: { deck: DeckList; onChan
           ))}
           {VARIANT === 'prototype' && (
             <>
-              <h3>
-                {EXTRA_DECK_NAME} <span>({extraDeckSize(deck)})</span>
-              </h3>
+              <h3>{EXTRA_DECK_NAME}</h3>
+              <CountBar label={EXTRA_DECK_NAME} count={extraDeckSize(deck)} min={0} max={EXTRA_DECK_MAX} />
               {extraDeckSize(deck) === 0 && <p className="deck-panel__empty">Empty — cards here are only pulled out by effects (e.g. Kakuzu's Heart Masks).</p>}
               {hand
                 .filter((d) => (extra[d.id] ?? 0) > 0)

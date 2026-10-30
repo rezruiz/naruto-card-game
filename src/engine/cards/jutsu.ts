@@ -677,6 +677,7 @@ const crowCloneCard: HandCardDef = {
   type: 'Genjutsu',
   maxTargets: 0,
   negatesTargetingOfSelf: true,
+  requiresSharingan: true,
   // Condition: the enabling character has Sharingan (a Style tag — Itachi has it).
   legalityCheck: (ctx) => {
     const enabler = findOccupant(ctx.state, ctx.enablingInstanceId)?.occupant;

@@ -190,7 +190,7 @@ export function prototypeCardCost(state: GameState, def: HandCardDef, ctx: HandC
     // Blacksmith Village: your Equipment costs 1 less Supply (to a minimum of 1).
     return { cost: hasTerrain(state, ctx.player, TERRAIN.blacksmithVillage) ? Math.max(1, equipCost - 1) : equipCost, fromPool };
   }
-  // Amegakure: your Rain Village Shinobi and Rebels cost 1 less Supply (to a minimum of 1).
+  // Amegakure: your Amegakure Shinobi cost 1 less Supply (to a minimum of 1).
   if (def.cardType === 'shinobi' && amegakureBuffs(state, ctx.player, def.id)) return { cost: Math.max(1, cost - 1), fromPool };
   return { cost, fromPool };
 }

@@ -22,12 +22,12 @@ export function hasTerrain(state: GameState, player: PlayerId, defId: string): b
   return state.ruleset === 'prototype' && state.players[player].terrainInPlay?.defId === defId;
 }
 
-/** The Shinobi Amegakure, Village Hidden in the Rain buffs: the Rain Village Shinobi and Amegakure Civilian Rebels. */
+/** The Shinobi Amegakure, Village Hidden in the Rain buffs: the Amegakure Shinobi (Genin, Scout, Chunin, Jonin and its specialists, Elite Guard, Civilian Rebel). */
 export function isRainShinobi(defId: string): boolean {
   return /^shinobi-(rain-|amegakure-civilian-rebel$)/.test(defId);
 }
 
-/** Amegakure: +1 Damage, +1 Health and 1 Supply cheaper to play (to a minimum of 1), for this player's Rain Village Shinobi and Rebels. */
+/** Amegakure: +1 Damage, +1 Health and 1 Supply cheaper to play (to a minimum of 1), for this player's Amegakure Shinobi. */
 export function amegakureBuffs(state: GameState, player: PlayerId, defId: string): boolean {
   return hasTerrain(state, player, TERRAIN.amegakure) && isRainShinobi(defId);
 }

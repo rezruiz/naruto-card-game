@@ -60,10 +60,15 @@ const PT_STARTER_COPIES: Record<string, number> = {
   'jutsu-pressure-damage': 0,
   'jutsu-searing-migraine': 0,
   'jutsu-false-darkness': 0,
+  // All 3 Crow Clones (the copy limit) are in the Extra Deck.
+  'jutsu-crow-clone': 0,
   'squad-formation': 0,
+  'bingo-book-c': 0,
+  'jutsu-mind-prison': 0,
   'smoke-out': 0,
   'kunai-deflection': 0,
   'battlefield-selection': 2,
+  'medical-chakra-infusion': 2,
 };
 
 /** The Prototype's starter Main Deck: the base preset (minus its Terrain, with PT_STARTER_COPIES applied), plus Shinobi, 2 Medical Pouches, 2 Chakra Storage Scrolls and 1 each of five Terrain. The other Equipment is in the Deck Library only. */
@@ -77,8 +82,14 @@ export const PROTOTYPE_HAND_MANIFEST: { defId: string; copies: number }[] = [
   ...PROTOTYPE_TERRAIN_MANIFEST,
 ];
 
-/** The Prototype's starter Extra Deck: Kakuzu's three mask techniques, which his Heart Masks pulls out. */
-export const PROTOTYPE_EXTRA_MANIFEST: { defId: string; copies: number }[] = ['jutsu-pressure-damage', 'jutsu-searing-migraine', 'jutsu-false-darkness'].map((defId) => ({ defId, copies: 1 }));
+/** The Prototype's starter Extra Deck: Kakuzu's three mask techniques (his Heart Masks pulls them out) and 3 Genjutsu: Crow Clone (Itachi's Summoning: Crow Substitution). */
+export const PROTOTYPE_EXTRA_MANIFEST: { defId: string; copies: number }[] = [
+  ...['jutsu-pressure-damage', 'jutsu-searing-migraine', 'jutsu-false-darkness'].map((defId) => ({ defId, copies: 1 })),
+  { defId: 'jutsu-crow-clone', copies: 3 },
+];
+
+/** The Prototype's starter Leader Deck: the full 50-point budget (S 10 + 10, A 8 + 8 + 8, B 6). */
+export const PROTOTYPE_LEADER_MANIFEST = ['itachi', 'kisame', 'sasori-hiruko', 'deidara', 'kakuzu', 'hidan'];
 
 /** The deck builder's card pool. */
 export function handCardPool(): HandCardDef[] {
@@ -95,6 +106,9 @@ const sum = (counts: Record<string, number>) => Object.values(counts).reduce((a,
 export function handDeckSize(deck: DeckList): number {
   return sum(deck.handDeck);
 }
+
+/** Prototype: the Extra Deck holds at most this many cards. */
+export const EXTRA_DECK_MAX = 15;
 
 /** Prototype: how many cards are in the Extra Deck. */
 export function extraDeckSize(deck: DeckList): number {
@@ -140,6 +154,7 @@ export function validateDeck(deck: DeckList): string[] {
   }
   if (PROTOTYPE) {
     if (byRank.D) errors.push('No D Rank characters in the Prototype — every character is C Rank or higher.');
+    if (extraDeckSize(deck) > EXTRA_DECK_MAX) errors.push(`Extra Deck has ${extraDeckSize(deck)} cards — at most ${EXTRA_DECK_MAX}.`);
     const cost = characterDeckCost(deck);
     if (cost > PT_CHARACTER_BUDGET) errors.push(`Character Deck costs ${cost} — the budget is ${PT_CHARACTER_BUDGET} (S 10, A 8, B 6, C 4).`);
   }
@@ -171,7 +186,7 @@ export function presetDeck(): DeckList {
     name: 'Akatsuki Starter',
     // The Prototype build's starter deck also carries the placeholder Shinobi (shinobi.ts).
     handDeck: Object.fromEntries((VARIANT === 'prototype' ? PROTOTYPE_HAND_MANIFEST : HAND_DECK_MANIFEST).map(({ defId, copies }) => [defId, copies])),
-    characterDeck: countsOf(VARIANT === 'prototype' ? CHARACTER_DECK_MANIFEST.filter((id) => !NOT_LEADERS.has(id)) : CHARACTER_DECK_MANIFEST),
+    characterDeck: countsOf(VARIANT === 'prototype' ? PROTOTYPE_LEADER_MANIFEST : CHARACTER_DECK_MANIFEST),
     ...(VARIANT === 'prototype' ? { extraDeck: Object.fromEntries(PROTOTYPE_EXTRA_MANIFEST.map(({ defId, copies }) => [defId, copies])) } : {}),
     preset: true,
   };

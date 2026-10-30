@@ -54,11 +54,11 @@ Both of these are general rules, and a card can say otherwise: a card that costs
 - can't enable Jutsu cards; its own Chakra Pool pays only for its own abilities;
 - goes to its owner's discard pile when defeated.
 
-A deck holds at most **3 copies of each Shinobi**. **Legendary rule:** a named character is one of a kind — you can't have two units with the same name in play (Leaders and Shinobi alike). Generic units like Rain Village Genin aren't named.
+A deck holds at most **3 copies of each Shinobi**. **Legendary rule:** a named character is one of a kind — you can't have two units with the same name in play (Leaders and Shinobi alike). Generic units like Amegakure Genin aren't named.
 
 **Main deck size.** The main deck needs at least **60 cards** (up to 80).
 
-**Extra Deck.** A separate deck of main-deck cards (it doesn't count toward the 60–80). It's never drawn from or shuffled into the main deck: cards leave it only through effects that say "from your Extra Deck". A card's copy limit counts its copies in both decks together. In the Prototype, **Kakuzu's Heart Masks** adds Pressure Damage, Searing Migraine and False Darkness from your Extra Deck to your hand when he enters play; the starter Extra Deck holds those three.
+**Extra Deck.** A separate deck of main-deck cards (it doesn't count toward the 60–80). It holds at most **15 cards**. It's never drawn from or shuffled into the main deck: cards leave it only through effects that say "from your Extra Deck". A card's copy limit counts its copies in both decks together. In the Prototype, **Kakuzu's Heart Masks** adds Pressure Damage, Searing Migraine and False Darkness from your Extra Deck to your hand when he enters play; **Itachi's Summoning: Crow Substitution** puts a Genjutsu: Crow Clone from your Extra Deck on top of your main deck. The starter Extra Deck holds Kakuzu's three and 3 Crow Clones.
 
 **Leader Deck budget.** A Leader Deck is built within a **budget of 50**: S-Rank Leaders cost 10, A 8, B 6, C 4. It holds at most **8 Leaders** and at most **3 S-Rank**; the budget replaces the 10–15 size range and the A-Rank cap. No Leader is below C Rank.
 
@@ -89,16 +89,16 @@ The Prototype's starter deck carries 2 Medical Pouches and 2 Chakra Storage Scro
 | Terrain | Cost | Effect |
 |---|---|---|
 | Akatsuki Hideout (Akatsuki) | 2 | At your Upkeep, add 1 Chakra to each of your Akatsuki Leaders' Pools. *(Replaces its base-game Upkeep discount — there is no Upkeep cost in the Prototype.)* |
-| Amegakure, Village Hidden in the Rain (Akatsuki) | 3 | Your Rain Village Shinobi and Amegakure Civilian Rebels get +1 Damage and +1 Health, and cost 1 less Supply to play (to a minimum of 1). |
-| Supply Depot | 1 | Your Supplies maximum is 1 higher. |
+| Amegakure, Village Hidden in the Rain (Akatsuki) | 3 | Your Amegakure Shinobi (every Shinobi named "Amegakure …") get +1 Damage and +1 Health, and cost 1 less Supply to play (to a minimum of 1). |
+| Supply Depot | 7 | At the start of each of your turns, your Supplies maximum goes up by 2 instead of 1 (still up to 20). Growth already gained stays if it leaves play. |
 | Blacksmith Village | 2 | Your Equipment costs 1 less Supply (to a minimum of 1). |
-| Training Grounds | 2 | Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your Leaders (the **Train** menu on the Terrain). |
+| Training Grounds | 4 | Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your units — any Leader or Shinobi with a Chakra Pool (the **Train** menu on the Terrain). |
 | Forest of Death | 3 | The first Shinobi you play each turn can attack that turn. |
 | Hidden Mist (Water) | 3 | Enemy Shinobi attacking your Leaders deal 1 less damage (to a minimum of 1). |
 | Shinobi Graveyard | 2 | When one of your Shinobi is defeated, gain 1 Supply this turn. |
 | Valley of the End | 4 | **Both sides:** every Leader's damage-dealing Jutsu and abilities deal +1 damage (each hit). |
 
-Health buffs from a Terrain come off when it leaves play (a unit never drops below 1 HP from losing one). The starter deck in the Prototype carries Akatsuki Hideout, Amegakure, Supply Depot, Blacksmith Village and Training Grounds (1 each); the others are in the Deck Library.
+Health buffs from a Terrain come off when it leaves play (a unit never drops below 1 HP from losing one). The starter deck in the Prototype carries Akatsuki Hideout, Amegakure, Blacksmith Village and Training Grounds (1 each); the others are in the Deck Library.
 
 ---
 
@@ -1072,7 +1072,7 @@ Type: Ninjutsu): Cost must be fully paid with pooled Chakra. Deal 3 + X
 damage, where X is the Chakra pooled on the target. Absorb 2.
 
 ### Itachi of the Sharingan (S Rank)
-**HP: 11** · Pool Capacity: 4 (placeholder)
+**HP: 12** · Pool Capacity: 12
 Specialization: Tactician / Assault · Styles: Fire, Sharingan · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
@@ -1082,13 +1082,16 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   (minimum 1).
 - Failing Health — Itachi can use at most 2 abilities each turn, and
   can't use his Ultimate and his Forbidden Technique in the same turn.
+- Sharingan Insight — When Itachi enters play, search your Jutsu Deck
+  for a Sharingan Genjutsu card (one that needs a Sharingan user, e.g.
+  Genjutsu: Crow Clone), add it to your hand, then shuffle.
 
 Abilities:
 - Crow Shuriken Barrage — 2 Chakra, Style: None, Type: Taijutsu: Deal 1 damage.
-- Fire Release: Great Fireball — 4 Chakra, Style: Fire, Type: Ninjutsu: Deal 2 damage.
-- Summoning: Crows — 1 Chakra, Style: None, Type: Ninjutsu: Search your Jutsu Deck for a Genjutsu: Crow Clone, shuffle your Jutsu Deck, then put that card on top.
+- Fire Release: Great Fireball — 5 Chakra, Style: Fire, Type: Ninjutsu: Deal 3 damage.
+- Summoning: Crow Substitution — 1 Chakra, Style: None, Type: Ninjutsu: Search your Extra Deck for a Genjutsu: Crow Clone and put it on top of your Jutsu Deck.
 
-Ultimate — Amaterasu (8 Chakra, Style: Fire, Type: Ninjutsu): Deal 3
+Ultimate — Amaterasu (7 Chakra, Style: Fire, Type: Ninjutsu): Deal 3
 damage to target enemy, plus 1 more at the start of each of your next 3
 Upkeeps. Damage can't be reduced.
 
@@ -3180,10 +3183,10 @@ Engine flags: max 2 abilities per turn; has an Upkeep passive
 | Ability | Cost | Speed | Style | Type | Damaging | Targets | Target side | Notes |
 |---|---|---|---|---|---|---|---|---|
 | Crow Shuriken Barrage | 2 | Normal | None | Taijutsu | yes | 1 | enemy | — |
-| Fire Release: Great Fireball | 4 | Normal | Fire | Ninjutsu | yes | 1 | enemy | — |
-| Summoning: Crows | 1 | Normal | None | Ninjutsu | no | none/auto | — | tutors Crow Clone to the top of the Jutsu Deck |
+| Fire Release: Great Fireball | 5 | Normal | Fire | Ninjutsu | yes | 1 | enemy | — |
+| Summoning: Crow Substitution | 1 | Normal | None | Ninjutsu | no | none/auto | — | puts a Crow Clone from the Extra Deck on top of the Jutsu Deck |
 | Mangekyō Sharingan: Tsukuyomi - Infinite Agony | 8 | Normal | None | Genjutsu | yes | 1 | enemy | Forbidden |
-| Amaterasu | 8 | Normal | Fire | Ninjutsu | yes | 1 | enemy | Ultimate |
+| Amaterasu | 7 | Normal | Fire | Ninjutsu | yes | 1 | enemy | Ultimate |
 
 ### Konan — A Rank
 

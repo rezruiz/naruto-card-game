@@ -278,6 +278,13 @@ export function dealDamage(
     effectiveAmount -= reduced;
     next = appendLog(next, `Pillar Encirclement reduces the hit on ${occupant.name} by ${reduced}.`);
   }
+  // Rain Shield (Amegakure Elite Guard: Bodyguard): each hit on the shielded unit until its controller's next turn is reduced by 2.
+  const rainShieldUntil = occupant.extra.rainShieldUntilTurn as number | undefined;
+  if (rainShieldUntil !== undefined && rainShieldUntil >= state.turn && effectiveAmount > 0 && !opts.cannotBeReduced && !opts.ongoing && !modified.unprotectable) {
+    const reduced = Math.min(2, effectiveAmount);
+    effectiveAmount -= reduced;
+    next = appendLog(next, `Rain Shield reduces the hit on ${occupant.name} by ${reduced}.`);
+  }
   if (!opts.cannotBeReduced && !opts.ongoing && !modified.unprotectable) {
     const remaining = (occupant.extra.damagePreventionRemaining as number) ?? 0;
     const activeTurn = occupant.extra.damagePreventionUntilTurn as number | undefined;

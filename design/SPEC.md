@@ -1316,7 +1316,7 @@ Type: Ninjutsu): Cost must be fully paid with pooled Chakra. Deal 3 + X
 damage, where X is the Chakra pooled on the target. Absorb 2.
 
 ### Itachi of the Sharingan (S Rank)
-**HP: 11** · Pool Capacity: 4 (placeholder)
+**HP: 12** · Pool Capacity: 12
 Specialization: Tactician / Assault · Styles: Fire, Sharingan · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
@@ -1326,13 +1326,16 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   (minimum 1).
 - Failing Health — Itachi can use at most 2 abilities each turn, and
   can't use his Ultimate and his Forbidden Technique in the same turn.
+- Sharingan Insight — When Itachi enters play, search your Jutsu Deck
+  for a Sharingan Genjutsu card (one that needs a Sharingan user, e.g.
+  Genjutsu: Crow Clone), add it to your hand, then shuffle.
 
 Abilities:
 - Crow Shuriken Barrage — 2 Chakra, Style: None, Type: Taijutsu: Deal 1 damage.
-- Fire Release: Great Fireball — 4 Chakra, Style: Fire, Type: Ninjutsu: Deal 2 damage.
-- Summoning: Crows — 1 Chakra, Style: None, Type: Ninjutsu: Search your Jutsu Deck for a Genjutsu: Crow Clone, shuffle your Jutsu Deck, then put that card on top.
+- Fire Release: Great Fireball — 5 Chakra, Style: Fire, Type: Ninjutsu: Deal 3 damage.
+- Summoning: Crow Substitution — 1 Chakra, Style: None, Type: Ninjutsu: Search your Extra Deck for a Genjutsu: Crow Clone and put it on top of your Jutsu Deck.
 
-Ultimate — Amaterasu (8 Chakra, Style: Fire, Type: Ninjutsu): Deal 3
+Ultimate — Amaterasu (7 Chakra, Style: Fire, Type: Ninjutsu): Deal 3
 damage to target enemy, plus 1 more at the start of each of your next 3
 Upkeeps. Damage can't be reduced.
 
@@ -1826,31 +1829,56 @@ or reduce it.
 
 ---
 
-*Shinobi (Prototype only): units for testing the prototype rules — the Rain Village Shinobi are vanilla placeholders. The Prototype build's starter deck has 3 Rebels, 2 Yahiko, 2 Mercenaries and 1 each of the Genin, Chunin, Jonin and Elite Guard (the Scout is in the Deck Library only); they aren't part of the base game.*
+*Shinobi (Prototype only): units for testing the prototype rules — the Amegakure Genin, Scout, Chunin, Jonin and Elite Guard are vanilla placeholders. The Prototype build's starter deck has 3 Rebels, 2 Yahiko, 2 Mercenaries, 1 plain Amegakure Jonin, 1 of each Amegakure Jonin specialist and 1 of each Amegakure Elite Guard (the plain Genin, Scout, Chunin and Elite Guard are in the Deck Library only); they aren't part of the base game.*
 
-**Rain Village Genin** — Shinobi
+**Amegakure Genin** — Shinobi
 Cost: 1 Supply.
 Damage 1 · Health 2.
 
-**Rain Village Scout** — Shinobi
+**Amegakure Scout** — Shinobi
 Cost: 2 Supplies.
 Damage 2 · Health 2.
 
-**Rain Village Chunin** — Shinobi
+**Amegakure Chunin** — Shinobi
 Cost: 3 Supplies.
 Damage 2 · Health 4.
 
-**Rain Village Jonin** — Shinobi
+**Amegakure Jonin** — Shinobi
 Cost: 4 Supplies.
 Damage 3 · Health 5.
 
-**Rain Village Elite Guard** — Shinobi
+**Amegakure Elite Guard** — Shinobi
 Cost: 6 Supplies.
 Damage 4 · Health 7.
 
 **Mercenary** — Shinobi
 Cost: 3 Supplies.
 Damage 2 · Health 2.
+
+**Amegakure Jonin: Water Specialist** — Shinobi
+Cost: 5 Supplies.
+Damage 2 · Health 6 · Pool Capacity 4 · Style: Water.
+Water Release: Rain Water Bullet — 2 Chakra, Style: Water, Type: Ninjutsu: Deal 2 damage.
+
+**Amegakure Jonin: Wind Specialist** — Shinobi
+Cost: 5 Supplies.
+Damage 2 · Health 6 · Pool Capacity 4 · Style: Wind.
+Wind Release: Gale Blade — 3 Chakra, Style: Wind, Type: Ninjutsu: Deal 1 damage to each of up to 2 enemy units.
+
+**Amegakure Jonin: Poison Specialist** — Shinobi
+Cost: 5 Supplies.
+Damage 2 · Health 6 · Pool Capacity 4 · Style: Poison.
+Poison Fog — 4 Chakra, Style: Poison, Type: Ninjutsu: Up to 2 enemy Shinobi adjacent to each other each get 2 Poison counters.
+
+**Amegakure Elite Guard: Sensor** — Shinobi
+Cost: 7 Supplies.
+Damage 4 · Health 7.
+Rain Sensing: When it enters play, look at your opponent's hand, then draw a card.
+
+**Amegakure Elite Guard: Bodyguard** — Shinobi
+Cost: 6 Supplies.
+Damage 4 · Health 7 · Pool Capacity 4 · Style: Water.
+Rain Shield — 4 Chakra, Style: Water, Type: Ninjutsu: Until your next turn, each instance of damage dealt to one of your units is reduced by 2.
 
 **Amegakure Civilian Rebel** — Shinobi · D Rank
 Cost: 1 Supply.

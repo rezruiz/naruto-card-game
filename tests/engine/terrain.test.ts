@@ -66,7 +66,7 @@ describe('Prototype: Terrain', () => {
     expect(unit(later, 'p1-hidan')!.chakraPool!.current).toBe(unit(replaced, 'p1-hidan')!.chakraPool!.current);
   });
 
-  it('Amegakure: Rain Village Shinobi get +1 Damage and +1 Health and cost 1 less Supply (min 1), others don’t', () => {
+  it('Amegakure: Amegakure Shinobi get +1 Damage and +1 Health and cost 1 less Supply (min 1), others don’t', () => {
     const a = placeShinobi(proto(freshMain1()), 'p1', 'shinobi-rain-chunin', 2, 4, 0);
     const b = placeShinobi(a.state, 'p1', 'shinobi-other', 2, 4, 1);
     const s = play(b.state, 'p1', TERRAIN.amegakure);
@@ -78,15 +78,28 @@ describe('Prototype: Terrain', () => {
     const ctx = { state: s, player: 'p1' as const, enablingInstanceId: '', targetInstanceIds: [] };
     expect(prototypeCardCost(s, getHandCardDef('shinobi-rain-jonin')!, ctx).cost).toBe(3); // 4 - 1
     expect(prototypeCardCost(s, getHandCardDef('shinobi-rain-genin')!, ctx).cost).toBe(1); // minimum 1
-    expect(prototypeCardCost(s, getHandCardDef('shinobi-yahiko')!, ctx).cost).toBe(6); // not a Rain Village Shinobi
+    expect(prototypeCardCost(s, getHandCardDef('shinobi-yahiko')!, ctx).cost).toBe(6); // not an Amegakure Shinobi
     // Played again (no change) — the buff isn't applied twice.
     expect(unit(act(s, { type: 'ADJUST_SUPPLIES', player: 'p1', delta: 0 }), a.id)!.maxHP).toBe(5);
   });
 
-  it('Supply Depot raises the Supplies maximum by 1', () => {
-    const s = proto(freshMain1());
-    const max = suppliesMax(s, 'p1');
-    expect(suppliesMax(play(s, 'p1', TERRAIN.supplyDepot), 'p1')).toBe(max + 1);
+  it('Supply Depot: your Supplies maximum grows by 2 a turn instead of 1, never past 20', () => {
+    const toNextTurn = (s: GameState) => {
+      let next = gameReducer(s, { type: 'ADVANCE_PHASE' });
+      for (let i = 0; i < 20 && !(next.activePlayer === 'p1' && next.phase === 'Untap'); i++) next = gameReducer(next, { type: 'ADVANCE_PHASE' });
+      return next;
+    };
+    let s: GameState = { ...proto(freshMain1()), turn: 13, firstPlayer: 'p1' }; // p1's 7th turn: 7 Supplies
+    expect(suppliesMax(s, 'p1')).toBe(7);
+    s = { ...play({ ...s, players: { ...s.players, p1: { ...s.players.p1, suppliesSpent: -10 } } }, 'p1', TERRAIN.supplyDepot), phase: 'End' };
+    expect(suppliesMax(s, 'p1')).toBe(7); // no change the turn it's played
+    s = toNextTurn(s);
+    expect(suppliesMax(s, 'p1')).toBe(9);
+    s = toNextTurn({ ...s, phase: 'End' });
+    expect(suppliesMax(s, 'p1')).toBe(11);
+    s = toNextTurn({ ...s, phase: 'End' });
+    expect(suppliesMax(s, 'p1')).toBe(13);
+    expect(suppliesMax({ ...s, turn: 41 }, 'p1')).toBe(20); // capped
   });
 
   it('Blacksmith Village: Equipment costs 1 less, never below 1', () => {
@@ -98,6 +111,15 @@ describe('Prototype: Terrain', () => {
     const protector = play(knives, 'p1', 'equip-forehead-protector', [holder.id]); // 2 → 1
     expect(suppliesAvailable(protector, 'p1')).toBe(before - 5);
     expect(equipmentOn(protector, holder.id)).toHaveLength(2);
+  });
+
+  it('Training Grounds can pool into a Shinobi with a Pool (Yahiko), not one without', () => {
+    const y = placeShinobi(proto(freshMain1()), 'p1', 'shinobi-yahiko', 2, 3, 0);
+    const g = placeShinobi(y.state, 'p1', 'shinobi-rain-genin', 1, 2, 1);
+    const withPool = { ...g.state, players: { ...g.state.players, p1: { ...g.state.players.p1, frontRow: g.state.players.p1.frontRow.map((t) => (t?.instanceId === y.id ? { ...t, chakraPool: { current: 0, capacity: 8 } } : t)) } } };
+    const s = play(withPool, 'p1', TERRAIN.trainingGrounds);
+    expect(unit(act(s, { type: 'USE_TRAINING_GROUNDS', leaderId: y.id }), y.id)!.chakraPool!.current).toBe(1);
+    expect(unit(act(s, { type: 'USE_TRAINING_GROUNDS', leaderId: g.id }), g.id)!.chakraPool).toBeUndefined();
   });
 
   it('Training Grounds: once per turn, 1 Supply pools 1 Chakra into a Leader', () => {
@@ -168,14 +190,14 @@ describe('Prototype: Terrain', () => {
     expect(hp - unit(after, 'p2-hidan')!.currentHP).toBe(3);
   });
 
-  it('every Terrain is Unique in the Prototype, and the starter deck (within 80 cards) carries five of them', () => {
+  it('every Terrain is Unique in the Prototype, and the starter deck (within 80 cards) carries four of them', () => {
     // (Akatsuki Hideout is Unique only in the Prototype build — the base game's preset carries 2.)
     for (const id of Object.values(TERRAIN).filter((t) => t !== TERRAIN.akatsukiHideout)) expect(copyLimit('hand', id)).toBe(1);
     const setup = createSetupState('p1', 'strict', {}, { ruleset: 'prototype' });
     const all = [...setup.players.p1.handDeck, ...setup.players.p1.hand.filter((h) => h.kind === 'card')].map((c) => c.defId);
     const terrain = all.filter((d) => (Object.values(TERRAIN) as string[]).includes(d));
-    expect(terrain).toHaveLength(5);
-    expect(new Set(terrain).size).toBe(5);
+    expect(terrain).toHaveLength(4);
+    expect(new Set(terrain).size).toBe(4);
     expect(all.length).toBeLessThanOrEqual(80);
   });
 });

@@ -57,6 +57,8 @@ export interface HandCardDef {
   resolve: (ctx: HandCardContext) => GameState;
   /** Negates the targeting of an attack aimed at its enabling character (the Substitution family) — refused while that character is under Spore Technique. */
   negatesTargetingOfSelf?: boolean;
+  /** Needs a Sharingan user to enable it (Genjutsu: Crow Clone) — what Itachi's Sharingan Insight searches for. */
+  requiresSharingan?: boolean;
   /** Shinobi cards (prototype): the unit's base Damage and Health once it's in play. */
   shinobi?: {
     damage: number;

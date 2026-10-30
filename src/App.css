@@ -1849,3 +1849,56 @@
   font-size: 10px;
   max-width: 100%;
 }
+
+/* A look at the opponent's hand (HandPeekWindow): a small window you can drag by its title bar. Below the details modal (z-index 100). */
+.hand-peek {
+  position: fixed;
+  z-index: 90;
+  width: min(760px, calc(100vw - 32px));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg, #fff);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.3);
+}
+
+.hand-peek__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.hand-peek__title {
+  font-weight: 700;
+}
+
+.hand-peek__sub {
+  font-weight: 400;
+  opacity: 0.75;
+  font-size: 0.85em;
+}
+
+.hand-peek__close {
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 2px 8px;
+}
+
+.hand-peek__body {
+  border: none;
+  border-radius: 0 0 10px 10px;
+  padding: 0 4px;
+}
+
+.hand-peek__empty {
+  margin: 0;
+  opacity: 0.75;
+}

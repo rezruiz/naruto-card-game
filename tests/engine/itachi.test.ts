@@ -154,22 +154,34 @@ describe('Lingering effects on a defeated unit are dropped', () => {
   });
 });
 
-describe('Itachi: Summoning: Crows', () => {
-  it('finds Genjutsu: Crow Clone in the Jutsu Deck, shuffles the rest and puts it on top', () => {
-    let state = giveChakra({ ...freshCombat(), phase: 'Main1' }, 'p1', 1);
-    const deck = ['substitution', 'jutsu-crow-clone', 'explosive-tag', 'reconnaissance'].map(makeHandCardInstance);
-    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: deck } } };
-    state = resolveTop(activateAbility(state, 'p1-itachi', 'summoning-crows', [], 0));
-    expect(state.players.p1.handDeck[0].defId).toBe('jutsu-crow-clone');
-    expect(state.players.p1.handDeck).toHaveLength(4);
-    expect(state.players.p1.genericChakraAvailable).toBe(0);
-  });
-
-  it('with no Crow Clone left it just shuffles', () => {
+describe('Itachi: Summoning: Crow Substitution and Sharingan Insight', () => {
+  it('Summoning: Crow Substitution puts a Genjutsu: Crow Clone from the Extra Deck on top of the Jutsu Deck', () => {
     let state = giveChakra({ ...freshCombat(), phase: 'Main1' }, 'p1', 1);
     const deck = ['substitution', 'explosive-tag'].map(makeHandCardInstance);
+    const extraDeck = ['jutsu-pressure-damage', 'jutsu-crow-clone'].map(makeHandCardInstance);
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: deck, extraDeck } } };
+    state = resolveTop(activateAbility(state, 'p1-itachi', 'crow-substitution', [], 0));
+    expect(state.players.p1.handDeck.map((c) => c.defId)).toEqual(['jutsu-crow-clone', 'substitution', 'explosive-tag']);
+    expect(state.players.p1.extraDeck!.map((c) => c.defId)).toEqual(['jutsu-pressure-damage']);
+  });
+
+  it('with no Crow Clone in the Extra Deck it does nothing', () => {
+    let state = giveChakra({ ...freshCombat(), phase: 'Main1' }, 'p1', 1);
+    const deck = ['substitution', 'explosive-tag'].map(makeHandCardInstance);
+    state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: deck, extraDeck: [] } } };
+    state = resolveTop(activateAbility(state, 'p1-itachi', 'crow-substitution', [], 0));
+    expect(state.players.p1.handDeck.map((c) => c.defId)).toEqual(['substitution', 'explosive-tag']);
+  });
+
+  it('Sharingan Insight: when Itachi enters play, a Sharingan Genjutsu card goes from the Jutsu Deck to hand', async () => {
+    const { getCharacterDef } = await import('../../src/engine/characters/registry');
+    let state = freshCombat();
+    const deck = ['substitution', 'jutsu-crow-clone', 'jutsu-mind-prison'].map(makeHandCardInstance);
     state = { ...state, players: { ...state.players, p1: { ...state.players.p1, handDeck: deck } } };
-    state = resolveTop(activateAbility(state, 'p1-itachi', 'summoning-crows', [], 0));
-    expect(state.players.p1.handDeck.map((c) => c.defId).sort()).toEqual(['explosive-tag', 'substitution']);
+    const handBefore = state.players.p1.hand.length;
+    state = getCharacterDef('itachi')!.onEnterPlay!(state, 'p1-itachi', 'p1');
+    const added = state.players.p1.hand.slice(handBefore);
+    expect(added.map((h) => (h.kind === 'card' ? h.defId : ''))).toEqual(['jutsu-crow-clone']); // Mind Prison doesn't need Sharingan
+    expect(state.players.p1.handDeck.map((c) => c.defId).sort()).toEqual(['jutsu-mind-prison', 'substitution']);
   });
 });

@@ -26,6 +26,7 @@ import { DetailsModal } from './ui/components/DetailsModal';
 import { ChakraSourceRow } from './ui/components/ChakraSourceRow';
 import { CharacterCard, IN_PLAY_CARD_DRAG_TYPE } from './ui/components/CharacterCard';
 import { CharacterRevealPanel } from './ui/components/CharacterRevealPanel';
+import { HandPeekWindow } from './ui/components/HandPeekWindow';
 import { LobbyScreen } from './ui/components/LobbyScreen';
 import { DeckLibrary } from './ui/components/DeckLibrary';
 import { loadDecks, loadSelectedDeckId, saveDecks, saveSelectedDeckId } from './ui/deckStorage';
@@ -342,6 +343,8 @@ function ViewGame({
 }) {
   const [pending, setPending] = useState<Pending>(null);
   const [details, setDetails] = useState<Details>(null);
+  // Hand-peek windows this player has closed (each client closes its own).
+  const [closedPeeks, setClosedPeeks] = useState<Set<string>>(() => new Set());
   /** A character card from hand waiting for the player to pick its back-row slot (§9 positioning). */
   const [placing, setPlacing] = useState<{ player: PlayerId; instanceId: string; name: string } | null>(null);
   /** A card being dragged out of a hand toward the board (Hearthstone-style play), and the slot it's hovering. */
@@ -892,7 +895,7 @@ function ViewGame({
     // Prototype Terrain, Training Grounds: once per turn, pay 1 Supply to pool 1 Chakra into a Leader.
     const training = proto && mine && !setupBlocked && player.terrainInPlay?.defId === TERRAIN.trainingGrounds;
     const trainingBlocker = training ? (trainingGroundsBlocker(state, playerId) ?? (!trust && suppliesAvailable(state, playerId) < 1 ? 'Not enough Supplies (1 needed).' : null)) : null;
-    const trainees = training ? player.backRow.filter((c): c is NonNullable<typeof c> => !!c && trainingGroundsBlocker(state, playerId, c.instanceId) === null) : [];
+    const trainees = training ? [...player.backRow, ...player.frontRow].filter((c): c is NonNullable<typeof c> => !!c && trainingGroundsBlocker(state, playerId, c.instanceId) === null) : [];
     const terrainZone = (
       <div className={`mat__zone mat__zone--terrain${player.terrainInPlay ? ' mat__zone--filled' : ''}`} key="terrain">
         <span className="mat__zone-title">Terrain</span>
@@ -912,7 +915,7 @@ function ViewGame({
                 value=""
                 disabled={!!trainingBlocker || trainees.length === 0}
                 aria-label="Training Grounds"
-                title={trainingBlocker ?? (trainees.length === 0 ? 'No Leader has room in its Chakra Pool.' : 'Pay 1 Supply to pool 1 Chakra into a Leader (once per turn)')}
+                title={trainingBlocker ?? (trainees.length === 0 ? 'None of your units has room in its Chakra Pool.' : 'Pay 1 Supply to pool 1 Chakra into one of your units (once per turn)')}
                 onChange={(ev) => {
                   if (ev.target.value) dispatch({ type: 'USE_TRAINING_GROUNDS', leaderId: ev.target.value });
                 }}
@@ -1445,6 +1448,17 @@ function ViewGame({
           </div>
         </DetailsModal>
       )}
+      {(state.handPeeks ?? [])
+        .filter((peek) => isMyBoard(peek.viewer) && !closedPeeks.has(peek.id))
+        .map((peek, i) => (
+          <HandPeekWindow
+            key={peek.id}
+            peek={peek}
+            offset={i}
+            onClose={() => setClosedPeeks((closed) => new Set(closed).add(peek.id))}
+            onOpenDetails={(name, subtitle, text) => setDetails({ kind: 'card', name, subtitle, text })}
+          />
+        ))}
       {confirmCharacterDraw && (
         <DetailsModal
           title={

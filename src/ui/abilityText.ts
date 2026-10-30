@@ -33,8 +33,8 @@ const ABILITY_TEXT: Record<string, string> = {
   'samehada-shark-transformation': 'Needs 10 absorbed. Transform: +6 Pool, +6 max HP, Water attacks +1 damage, Ninjutsu attacks Absorb 1 both ways; Samehada Strike and Water Prison are disabled. Ends after 7+ damage taken, or at Upkeep with ≤3 pooled.',
   // Itachi
   'crow-shuriken-barrage': 'Deal 1 damage.',
-  'great-fireball-technique': 'Deal 2 damage.',
-  'summoning-crows': 'Search your Jutsu Deck for Genjutsu: Crow Clone; shuffle, then put it on top.',
+  'great-fireball-technique': 'Deal 3 damage.',
+  'crow-substitution': 'Search your Extra Deck for Genjutsu: Crow Clone and put it on top of your Main Deck.',
   amaterasu: 'Deal 3 damage, then 1 more at each of your next 3 Upkeeps. Can’t be reduced.',
   'tsukuyomi-infinite-agony': 'Target that hasn’t dealt Itachi more than 6 damage this game: deal 5 and stun it for 1 turn cycle.',
   // Konan
@@ -72,6 +72,10 @@ const ABILITY_TEXT: Record<string, string> = {
   'water-pillar-wall': 'Prevent the next 2 damage to Yahiko this turn.',
   'rallying-words': 'Each ally’s next attack this turn deals +1 damage.',
   'yahiko-sacrifices-himself': 'While the opponent has 2+ more characters: when an attack would defeat another of yours, Yahiko takes it instead.',
+  'rain-water-bullet': 'Deal 2 damage.',
+  'rain-shield': 'Until your next turn, each hit one of your units takes is reduced by 2.',
+  'gale-blade': 'Deal 1 damage to each of up to 2 enemy units.',
+  'poison-fog': 'Up to 2 adjacent enemy Shinobi each get 2 Poison counters.',
   'pillar-encirclement': 'Until your next turn, each hit Yahiko takes is reduced by 2.',
   'selfless-resolve': 'While the opponent has 2+ more characters (Leaders and Shinobi): when a targeted attack would defeat another of yours, Yahiko takes all of it instead — his own abilities can’t reduce it.',
   // Amegakure Civilian Rebel
@@ -118,7 +122,7 @@ const TRAIT_TEXT: Record<string, string[]> = {
   hidan: ["Jashin's Blessing — the first time he'd be defeated, he survives at 1 HP. Heals 1 each End Phase (2 while Cursing)."],
   deidara: [],
   kisame: ['Samehada — absorbed Chakra goes into his Pool; overflow becomes generic.', 'Samehada Fusion — at 10 absorbed he can transform: +6 Pool and HP, Water attacks +1 damage, his Ninjutsu attacks Absorb 1, and enemy Ninjutsu attacks on him Absorb 1 from their user.'],
-  itachi: ['Sharingan Foresight — prevent 1 damage from enemy Quick abilities and Quick Jutsu targeting him.', 'Genjutsu Master — Genjutsu cards he enables cost 1 less (min 1).', 'Failing Health — max 2 abilities per turn; never his Ultimate and Forbidden Technique in the same turn.'],
+  itachi: ['Sharingan Foresight — prevent 1 damage from enemy Quick abilities and Quick Jutsu targeting him.', 'Genjutsu Master — Genjutsu cards he enables cost 1 less (min 1).', 'Failing Health — max 2 abilities per turn; never his Ultimate and Forbidden Technique in the same turn.', 'Sharingan Insight — on entering play, search your Main Deck for a Sharingan Genjutsu card, add it to your hand, then shuffle.'],
   konan: ['Paper Body — −2 damage from Taijutsu, +1 from Fire.', 'Starts with 1 Shikigami Charge.'],
   'sasori-hiruko': ['Puppet Shell — when Hiruko falls, Sasori becomes Hollow Body (4 HP) instead.', 'Poison — each Upkeep, remove 1 counter and take 1 damage (can’t be prevented).'],
   'sasori-hollow-body': ['Sasori’s true form — defeating it defeats Sasori.', 'Poison — each Upkeep, remove 1 counter and take 1 damage (can’t be prevented).'],
@@ -126,6 +130,7 @@ const TRAIT_TEXT: Record<string, string[]> = {
   juzo: ['Heals 3 whenever he defeats an enemy character.', 'Iron-Forged Body — −1 damage from Taijutsu (min 1).'],
   yahiko: ['Inspiring Leader — your other Akatsuki’s first ability each turn costs 1 less (min 1).', 'Elemental Versatility — first elemental jutsu each turn costs 1 less (Jutsu cards he enables too).'],
   'amegakure-civilian-rebel': [],
+  'shinobi-rain-elite-sensor': ['Rain Sensing — when it enters play, look at your opponent’s hand, then draw a card.'],
   'shinobi-yahiko': ['Elemental Versatility — your first elemental Jutsu or ability each turn costs 1 less (any of your units, and Jutsu your Leaders enable).'],
   'deva-path': ['Max 2 of its abilities per turn.', 'Rinnegan Reservoir — may spend any Path’s Pool.'],
   'asura-path': ['Rinnegan Reservoir — may spend any Path’s Pool.'],

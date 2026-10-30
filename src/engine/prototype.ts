@@ -44,10 +44,17 @@ function turnsStarted(state: GameState, player: PlayerId): number {
   return player === state.firstPlayer ? Math.ceil(state.turn / 2) : Math.floor(state.turn / 2);
 }
 
-/** This player's Supplies maximum right now: 1 on their first turn, +1 each turn after, capped at 20 (+1 with Supply Depot). */
+/** This player's Supplies maximum right now: 1 on their first turn, +1 each turn after (+2 while Supply Depot is in play), capped at 20. */
 export function suppliesMax(state: GameState, player: PlayerId): number {
-  const depot = hasTerrain(state, player, TERRAIN.supplyDepot) ? 1 : 0;
-  return Math.min(SUPPLIES_CAP, Math.max(0, turnsStarted(state, player))) + depot;
+  return Math.min(SUPPLIES_CAP, Math.max(0, turnsStarted(state, player)) + (state.players[player].supplyGrowthBonus ?? 0));
+}
+
+/** Start of a player's turn (Untap): with Supply Depot in play, their Supplies maximum grows by 1 more than usual. */
+export function tickSupplyDepot(state: GameState, player: PlayerId): GameState {
+  if (!isPrototype(state) || !hasTerrain(state, player, TERRAIN.supplyDepot)) return state;
+  const p = state.players[player];
+  const next = { ...state, players: { ...state.players, [player]: { ...p, supplyGrowthBonus: (p.supplyGrowthBonus ?? 0) + 1 } } };
+  return appendLog(next, `Supply Depot: ${player}'s Supplies grow by 2 this turn.`);
 }
 
 export function suppliesAvailable(state: GameState, player: PlayerId): number {

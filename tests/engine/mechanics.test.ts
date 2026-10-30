@@ -45,7 +45,7 @@ describe('Damage modifiers (who hits, with what)', () => {
   it("Konan's Paper Body: −2 from Taijutsu, +1 from Fire", () => {
     const s = withCharacterAt(freshCombat(), 'p1', 0, 'konan');
     expect(hp(hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-konan']), 'p1-konan')).toBe(11); // 1 − 2
-    expect(hp(hit(s, 'p2-itachi', 'great-fireball-technique', ['p1-konan']), 'p1-konan')).toBe(8); // Fire 2 + 1
+    expect(hp(hit(s, 'p2-itachi', 'great-fireball-technique', ['p1-konan']), 'p1-konan')).toBe(7); // Fire 3 + 1
   });
 
   it("Juzo's Iron-Forged Body: −1 from Taijutsu, never below 1", () => {
@@ -56,8 +56,8 @@ describe('Damage modifiers (who hits, with what)', () => {
 
   it("Itachi's Sharingan Foresight: −1 from Quick abilities and Quick Jutsu targeting him", () => {
     const s = giveChakra({ ...freshCombat(), activePlayer: 'p2', priorityPlayer: 'p2' }, 'p2', 20);
-    expect(hp(resolveTop(playCard(s, 'p2', 'jutsu-false-darkness', 'p2-kakuzu', ['p1-itachi'])), 'p1-itachi')).toBe(10); // Quick 2 − 1
-    expect(hp(resolveTop(playCard(s, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', ['p1-itachi'])), 'p1-itachi')).toBe(7); // Normal 4
+    expect(hp(resolveTop(playCard(s, 'p2', 'jutsu-false-darkness', 'p2-kakuzu', ['p1-itachi'])), 'p1-itachi')).toBe(11); // Quick 2 − 1 (Itachi has 12 HP)
+    expect(hp(resolveTop(playCard(s, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', ['p1-itachi'])), 'p1-itachi')).toBe(8); // Normal 4
   });
 
   it("Kakuzu's Iron Skin: −2 physical and −2 elemental until the end of the next turn", () => {
@@ -92,7 +92,7 @@ describe('Cost modifiers', () => {
     let s = setExtra(freshCombat(), 'p2-kisame', { transformed: true, absorbedChakra: 10 });
     s = { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'itachi' ? { ...c, chakraPool: { ...c.chakraPool, current: 2 } } : c)) } } };
     s = use(s, 'p1-itachi', 'great-fireball-technique', ['p2-kisame']);
-    expect(s.players.p1.genericChakraAvailable).toBe(16); // printed 4, no surcharge
+    expect(s.players.p1.genericChakraAvailable).toBe(15); // printed 5, no surcharge
     s = resolveTop(s);
     expect(unit(s, 'p2-kisame').extra.absorbedChakra).toBe(11);
     expect(unit(s, 'p1-itachi').chakraPool!.current).toBe(1);
