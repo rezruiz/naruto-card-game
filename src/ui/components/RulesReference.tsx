@@ -65,7 +65,11 @@ export function RulesReference() {
           <strong>Field Orientation:</strong> a character or summoned token can't use damaging abilities the turn it enters (Deidara's Clay Spiders excepted).
         </li>
         <li>
-          <strong>Timing:</strong> damaging Normal-speed abilities are Combat only; healing/support abilities and Jutsu work in Main or Combat; Terrain, Missions and deck searches are Main only. Quick and Reactive follow their own speed.
+          <strong>Timing:</strong>{' '}
+          {VARIANT === 'prototype'
+            ? 'Jutsu and abilities work in either Main Phase or Combat; each Attack-type Jutsu is still once per turn. Terrain and Missions are Main only.'
+            : 'damaging Normal-speed abilities are Combat only; healing/support abilities and Jutsu work in Main or Combat; Terrain, Missions and deck searches are Main only.'}{' '}
+          Quick and Reactive follow their own speed.
         </li>
         <li>
           <strong>Health:</strong> start at 20; 0 loses. Drawing from an empty {MAIN_DECK_NAME} costs 3 Health.

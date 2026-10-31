@@ -50,7 +50,7 @@ import {
 import type { GameAction, GameState, PlayerId, PlayerState, Phase } from './types';
 import { adjustSupplies, isPrototype, tickSupplyDepot } from './prototype';
 import { sweepEquipment, tickEquipmentHeals } from './equipment';
-import { sweepTerrain, activateTrainingGrounds, tickHideout } from './cards/terrain';
+import { sweepTerrain, tickHideout, tickTrainingGrounds } from './cards/terrain';
 import { assignShinobiDefender, cancelShinobiAttack, confirmShinobiAttacks, confirmShinobiDefense, declareShinobiAttack, endShinobiCombat } from './shinobi';
 
 /**
@@ -239,6 +239,7 @@ function advanceOnePhase(input: GameState): GameState {
     next = tickScheduledHeals(next, next.activePlayer);
     next = tickEquipmentHeals(next, next.activePlayer);
     next = tickHideout(next, next.activePlayer);
+    next = tickTrainingGrounds(next, next.activePlayer);
   }
   // The Draw Phase draw itself is a manual click (DRAW_PHASE_CARD), never automatic.
   return next;
@@ -389,8 +390,6 @@ function reduce(state: GameState, action: GameAction): GameState {
       return confirmShinobiDefense(drained);
     case 'ADJUST_SUPPLIES':
       return adjustSupplies(drained, action.player, action.delta);
-    case 'USE_TRAINING_GROUNDS':
-      return activateTrainingGrounds(drained, action.leaderId);
     case 'PLACE_CHAKRA_SOURCE':
       return placeChakraSource(drained, action.instanceId);
     case 'TAP_CHAKRA_SOURCE':

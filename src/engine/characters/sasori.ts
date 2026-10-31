@@ -24,11 +24,12 @@ export function makeThirdKazekage(owner: PlayerId, ownerInstanceId: string): Tok
     defId: THIRD_KAZEKAGE_ID,
     owner,
     name: 'Third Kazekage',
-    maxHP: 5,
-    currentHP: 5,
+    maxHP: 6,
+    currentHP: 6,
     ownerCharacterInstanceId: ownerInstanceId,
     status: freshTokenStatus(),
-    extra: {},
+    // Its abilities are paid from Sasori's Pool (the id survives Hiruko's fall to Hollow Body).
+    extra: { sharedPoolOwner: ownerInstanceId },
   };
 }
 
@@ -260,7 +261,8 @@ registerCharacter({
   name: 'Sasori (Hiruko)',
   rank: 'A',
   baseMaxHP: 7,
-  basePoolCapacity: 2,
+  basePoolCapacity: 10,
+  poisonImmune: true,
   styles: ['Poison'],
   abilities: [tailStrike, puppetShellGuard],
   synergy: ['Akatsuki', 'Deidara'],
@@ -271,21 +273,22 @@ registerCharacter({
   name: 'Sasori (Hollow Body)',
   rank: 'A',
   baseMaxHP: 4,
-  basePoolCapacity: 2,
+  basePoolCapacity: 10,
   styles: ['Poison'],
   abilities: [poisonSenbon, puppetSummon],
   ultimate: puppetPerformanceHundredPuppets,
   synergy: ['Akatsuki', 'Deidara'],
 });
 
-registerTokenDef({ id: THIRD_KAZEKAGE_ID, name: 'Third Kazekage', abilities: [ironSandBarrage, goldDustPoison, ironSandWall] });
+registerTokenDef({ id: THIRD_KAZEKAGE_ID, name: 'Third Kazekage', abilities: [ironSandBarrage, goldDustPoison, ironSandWall], combatUnit: true, poisonImmune: true });
 registerTokenDef({ id: PUPPET_SOLDIER_ID, name: 'Puppet Soldier', abilities: [puppetStrike] });
 
 // Puppet Shell: Hiruko — reaching 0 HP as Hiruko isn't a true defeat, it's a
 // transformation into Hollow Body (design/CHARACTER_LOG.md): same instanceId
 // (so Third Kazekage's ownerCharacterInstanceId link, and anything else
-// pointing at Sasori, stays valid), fresh full HP/Pool, fresh Field
-// Orientation (an explicit ruling, not pure narrative continuation).
+// pointing at Sasori, stays valid), fresh full HP, the Chakra in his Pool
+// carried over, fresh Field Orientation (an explicit ruling, not pure
+// narrative continuation).
 registerDefeatHook(HIRUKO_ID, (state, targetInstanceId) => {
   const found = findOccupant(state, targetInstanceId);
   if (!found || !isCharacter(found.occupant)) return null;
@@ -298,7 +301,7 @@ registerDefeatHook(HIRUKO_ID, (state, targetInstanceId) => {
     name: 'Sasori (Hollow Body)',
     maxHP: 4,
     currentHP: 4,
-    chakraPool: { current: 0, capacity: 2 },
+    chakraPool: { ...occupant.chakraPool },
     status: { ...occupant.status, enteredTurn: state.turn },
   };
   const next = { ...state, players: { ...state.players, [player]: { ...p, backRow } } };

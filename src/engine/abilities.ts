@@ -1,6 +1,6 @@
 import { appendLog, appendWarning } from './phases/phaseMachine';
 import { isPrototype } from './prototype';
-import { findOccupant, isCharacter, isHidingLikeAMole, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant, surfaceFromMole } from './board';
+import { findOccupant, isCharacter, isHidingLikeAMole, isOutOfReach, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant, surfaceFromMole } from './board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from './stack';
 import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
 import { getCharacterDef, getTokenDef, sharedVersatilitySource } from './characters/registry';
@@ -56,6 +56,8 @@ export interface AbilityDef {
   requiresFullPoolPayment?: boolean;
   /** "N Chakra + the entire Pool" costs (Almighty Push, Yahiko Sacrifices Himself, Death is an Explosion): the whole Pool is always spent as part of the cost, whatever split the player asked for; the rest comes from generic Chakra. */
   spendsEntirePool?: boolean;
+  /** Shown while choosing targets, when the order they're picked in matters (C3, Shi-Suri). */
+  targetHint?: string;
   /** Negates the targeting of an attack aimed at its own source (Crow Clone, Paper Clone, Shinra Tensei V2) — refused while that unit is under Spore Technique. */
   negatesTargetingOfSelf?: boolean;
   /** Can't be activated at all — it fires from its own trigger (the engine asks the controller at that moment). Shown on the card for reference only. */
@@ -252,7 +254,8 @@ export function checkLegality(
     return { ok: false, reason: `${ability.name} is Normal speed — can only be activated on an empty stack during your own Main/Combat Phase.` };
   }
   // §4.5: a Normal-speed damage-dealing ability is a Combat Phase action; non-damaging (healing/support) Normal-speed abilities may be used in Main or Combat.
-  if (ability.speed === 'Normal' && ability.isDamaging && state.phase !== 'Combat') {
+  // Prototype rules: every Normal-speed ability may be used in either Main Phase or Combat.
+  if (ability.speed === 'Normal' && ability.isDamaging && state.phase !== 'Combat' && !isPrototype(state)) {
     return { ok: false, reason: `${ability.name} deals damage — it can only be activated during your Combat Phase.` };
   }
   if (ability.speed !== 'Normal' && state.priorityPlayer !== found.player) {
@@ -308,6 +311,7 @@ export function checkLegality(
         const nonRetreatedExists = state.players[targetFound.player].backRow.some((c) => c && !c.status.retreated);
         if (nonRetreatedExists) return { ok: false, reason: `${targetFound.occupant.name} is Retreated and can't be targeted.` };
       }
+      if (!isAlly && isOutOfReach(targetFound.occupant, ability.type)) return { ok: false, reason: `${targetFound.occupant.name} is Airborne: ${ability.type} can't reach it.` };
       if (isPhasedOut(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} has phased out (Crow Clone) and can't be targeted this turn.` };
       if (targetId !== sourceInstanceId && isHidingLikeAMole(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} is Hiding Like a Mole and can't be targeted.` };
     }
@@ -334,7 +338,7 @@ export function checkLegality(
   }
 
   const cost = resolveCost(ability, ctx);
-  // Prototype rules: every ability is paid in full from the Chakra Pool — generic Chakra can only be pooled.
+  // Prototype rules: every ability is paid in full from the Chakra Pool — generic Chakra can only be pooled or spent on Jutsu.
   if (isPrototype(state)) payFromPool = cost;
   const totalPool = payFromPool;
   const totalGeneric = cost - payFromPool;

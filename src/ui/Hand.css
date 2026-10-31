@@ -186,6 +186,7 @@
 }
 
 .hand-view .hand-card__stat--health {
+  display: flex;
   margin-left: auto;
   color: #22c55e;
 }

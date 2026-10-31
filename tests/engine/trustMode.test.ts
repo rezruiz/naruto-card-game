@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { healOccupant } from '../../src/engine/combat';
 import { gameReducer } from '../../src/engine/reducer';
 import { redactStateFor } from '../../src/engine/redact';
 import { makeHandCardInstance } from '../../src/engine/deck';
@@ -279,6 +280,29 @@ describe('trust mode: turn flow', () => {
   });
 });
 
+describe('trust mode: no caps', () => {
+  it('a heal leaves a unit above its max HP where it is', () => {
+    let s = run(trustMain1(), { type: 'ADJUST_HP', instanceId: 'p1-kakuzu', delta: 5 });
+    const above = hp(s, 'p1', 'p1-kakuzu');
+    s = healOccupant(s, 'p1-kakuzu', 2);
+    expect(hp(s, 'p1', 'p1-kakuzu')).toBe(above);
+  });
+
+  it('manual HP never goes below 1: defeat stays with the Damage button', () => {
+    expect(hp(run(trustMain1(), { type: 'ADJUST_HP', instanceId: 'p1-kakuzu', delta: -99 }), 'p1', 'p1-kakuzu')).toBe(1);
+  });
+
+  it('pools past capacity with a warning, and the strict rules still refuse it', () => {
+    const start = run(trustMain1(), { type: 'ADJUST_GENERIC_CHAKRA', player: 'p1', delta: 20 });
+    const capacity = start.players.p1.backRow[0]!.chakraPool.capacity;
+    const s = run(start, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: capacity + 3 });
+    expect(s.players.p1.backRow[0]!.chakraPool.current).toBe(capacity + 3);
+    expect(s.log.some((l) => /past its capacity/.test(l.text))).toBe(true);
+    const strict = gameReducer({ ...start, rules: 'strict' }, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: capacity + 3 });
+    expect(strict.players.p1.backRow[0]!.chakraPool.current).toBe(0);
+  });
+});
+
 describe('trust mode: manual adjustments and deck tools', () => {
   it('adjusts HP, Pool, Health, and Chakra, all logged as manual', () => {
     let s = trustMain1();
@@ -286,7 +310,9 @@ describe('trust mode: manual adjustments and deck tools', () => {
     s = run(s, { type: 'ADJUST_HP', instanceId: 'p1-kakuzu', delta: -2 });
     expect(hp(s, 'p1', 'p1-kakuzu')).toBe(maxHp - 2);
     s = run(s, { type: 'ADJUST_HP', instanceId: 'p1-kakuzu', delta: 99 });
-    expect(hp(s, 'p1', 'p1-kakuzu')).toBe(maxHp); // capped at max
+    expect(hp(s, 'p1', 'p1-kakuzu')).toBe(maxHp + 97); // no cap in trust mode
+    s = run(s, { type: 'ADJUST_HP', instanceId: 'p1-kakuzu', delta: -96 });
+    expect(hp(s, 'p1', 'p1-kakuzu')).toBe(maxHp + 1);
     s = run(s, { type: 'ADJUST_POOL', instanceId: 'p1-kakuzu', delta: 2 }, { type: 'ADJUST_PLAYER_HEALTH', player: 'p1', delta: -3 }, { type: 'ADJUST_GENERIC_CHAKRA', player: 'p1', delta: 2 });
     expect(s.players.p1.backRow[0]!.chakraPool.current).toBe(2);
     expect(s.players.p1.health).toBe(17);

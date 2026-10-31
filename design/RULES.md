@@ -29,15 +29,25 @@
 
 > **You're playing the Prototype.** These rules are being tested and override the rest of this rulebook wherever they disagree. The base game is unchanged — switch back to it from the lobby.
 
-**Leaders.** Character cards are Leaders. A Leader pays for its abilities, and for the Jutsu cards it enables, with Chakra from its own Chakra Pool — never with generic Chakra. Every Jutsu card is played through a Leader (even a Type: None Jutsu), and its cost always counts as paid from the Pool, so a "cheaper from the Pool" discount always applies. Leaders can't attack (they act only through their abilities) and can't defend.
+**Leaders.** Character cards are Leaders. A Leader pays for its abilities with Chakra from its own Chakra Pool — never with tapped Chakra. Leaders can't attack (they act only through their abilities) and can't defend.
 
-**Chakra.** Chakra sources are still placed and tapped, but that Chakra can only be **pooled** into a character — it can't be spent directly. Only **Jutsu and Shinobi cards** can be discarded as Chakra sources — Missions, Terrain and Assists can't.
+**Chakra.** Chakra sources are still placed and tapped. Tapped Chakra can be **pooled** into a character or spent on **Jutsu cards**, but it can't pay for abilities, and unspent tapped Chakra is lost at the end of the turn. Only **Jutsu and Shinobi cards** can be discarded as Chakra sources — Missions, Terrain and Assists can't.
 
 **No Upkeep.** Leaders cost nothing to keep in play: there is no Upkeep payment (and no starting-character Upkeep bonus). Abilities that trigger during the Upkeep Phase still happen.
 
-**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Equipment, Missions, Terrain, Assists, Retreat and Leader Deck draws** — everything that isn't a Chakra Pool cost. By default Jutsu cards cost Chakra and every other card costs Supplies.
+**Supplies.** A second resource. On each of your turns your Supplies refill to your maximum: 1 on your first turn, +1 each turn after, up to 20. Unspent Supplies don't carry over. Supplies pay for **Shinobi, Equipment, Missions, Terrain, Assists, Retreat and Leader Deck draws** — everything that isn't a Chakra cost. By default Jutsu cards cost Chakra and every other card costs Supplies.
 
 Both of these are general rules, and a card can say otherwise: a card that costs Chakra when it would normally cost Supplies (or the other way round), or one that can (or can't) be discarded as Chakra, says so on the card.
+
+**Jutsu cards.** A Jutsu costs Chakra, paid with tapped Chakra, its enabling Leader's Pool, or both. A "cheaper from the Pool" discount applies only when you pay from the Pool. A Jutsu needs an enabling Leader if it has a Style, it attacks, or its text refers to the enabling character; any other Jutsu needs no enabler and is paid with tapped Chakra. On an attack Jutsu with an X in its cost, **X must be paid from the enabling Leader's Pool**; its base cost can be tapped Chakra. Water Dragon Jutsu has no Pool discount in the Prototype: it costs 1 + X. Medical Chakra Infusion can heal one of your Leaders or Shinobi.
+
+**Pooling.** A Leader can be pooled into unless it has used an ability this turn. Pooling **taps** the Leader: its card turns sideways until the next turn starts, and it can't use abilities while tapped. Enabling a Jutsu doesn't count as using an ability, so it can still be pooled into afterward, and pooling into it doesn't stop it enabling a Jutsu. A Shinobi still can't be pooled into after attacking.
+
+**Patchwork Threads.** Kakuzu's Ultimate triggers only when he defeats a Leader, not a Shinobi.
+
+**Starting hand.** You start with **7** cards. The first mulligan is free (a full new 7); each later one draws 1 fewer (6, then 5, …).
+
+**Jutsu and ability timing.** On your turn, you may play a Jutsu or use an ability during either Main Phase or Combat, whether or not it deals damage. Each Attack-type Jutsu is still once per turn. Quick and Reactive effects follow their own speed, and Terrain and Missions are still Main Phase plays.
 
 **Board.** There is no board shape — no rows of positions, no columns, no cross pattern. Each player has two open lanes: **Leaders** and **Shinobi & Tokens**, with **no limit** on how many units are in either. A new Leader, Shinobi or token simply joins the end of its lane; you never pick a position. Where a card refers to units "next to" or "adjacent to" one, that means the units directly beside it in the same lane — nothing is in front of or behind anything.
 
@@ -92,7 +102,7 @@ The Prototype's starter deck carries 2 Medical Pouches and 2 Chakra Storage Scro
 | Amegakure, Village Hidden in the Rain (Akatsuki) | 3 | Your Amegakure Shinobi (every Shinobi named "Amegakure …") get +1 Damage and +1 Health, and cost 1 less Supply to play (to a minimum of 1). |
 | Supply Depot | 7 | At the start of each of your turns, your Supplies maximum goes up by 2 instead of 1 (still up to 20). Growth already gained stays if it leaves play. |
 | Blacksmith Village | 2 | Your Equipment costs 1 less Supply (to a minimum of 1). |
-| Training Grounds | 4 | Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your units — any Leader or Shinobi with a Chakra Pool (the **Train** menu on the Terrain). |
+| Training Grounds | 4 | At your Upkeep, you may pay 1 Supply to pool 1 Chakra into one of your units — any Leader or Shinobi with a Chakra Pool. |
 | Forest of Death | 3 | The first Shinobi you play each turn can attack that turn. |
 | Hidden Mist (Water) | 3 | Enemy Shinobi attacking your Leaders deal 1 less damage (to a minimum of 1). |
 | Shinobi Graveyard | 2 | When one of your Shinobi is defeated, gain 1 Supply this turn. |
@@ -676,7 +686,9 @@ Declared actions resolve **first-declared, first-resolved.** A responding player
 
 ### 17.8 What trust mode does not enforce
 Not gated (advisory warnings only, where a strict rule would have applied): **which phase** you act in; **speed/priority**; **once-per-turn** limits; **pooled-vs-acted** exclusivity; **Style, Disabled, Retreated, Field Orientation, target-side and Retreat-immunity-at-declaration** checks; **sufficient Chakra** at the moment of declaring; **Chakra-source placement** limits (one per turn, Main Phase) and the **Main-Phase-only** rule for pooling, Retreat, Return and playing Characters; Retreat's "not your only character", "not stunned" and "not already acted" conditions.
-Still **enforced** even in trust mode (physical/state consistency): the card or unit **must exist**; Pool **capacity**; you can't pool more than you have **available**; you can't Consume a Character card for Chakra; a played Character needs **room on the board**; actions belong to the **owner** of the card or unit.
+**No caps in trust mode:** manual +HP can go past max HP, and pooling can go past Pool capacity (with a warning). A heal never lowers a unit that's above its max.
+
+Still **enforced** even in trust mode (physical/state consistency): the card or unit **must exist**; you can't pool more than you have **available**; you can't Consume a Character card for Chakra; a played Character needs **room on the board**; actions belong to the **owner** of the card or unit.
 
 ### 17.9 Strict mode
 The engine can also run **strict mode** (full phase/priority/legality enforcement, MTG-style stack). It is the mode the engine's unit tests exercise and is not used in playtests. Its stack is last-in-first-out; the design rule in §5.2 (first in, first out with response insertion) is what trust mode implements.
@@ -773,7 +785,7 @@ Rulings marked ✔ were made explicitly by the designer during the playtest-buil
 33. ✔ **Selections the rules give you are yours:** which Mission a new one replaces at the limit, which character gets a Mission reward, which of several **tied** characters you pay Upkeep for, Squad Formation's redirect (a standing choice, Off by default).
 34. ✔ **Every tracked resource is visible** — Clay Charges, Hearts, Shikigami Charges, absorbed Chakra, Curse target, cooldowns, pending effects… on the card (key ones) and in its details.
 35. ✔ **Synergy discount is board-wide:** −1 upkeep for each character **past the first** sharing a Synergy tag, **capped at −2 total** (applies to the starting character's upkeep too). Two Akatsuki S-Ranks: 6 → 5; two S-Ranks + a C: 6 → 4. (SPEC §6.5.)
-36. ✔ **Undo** exists for actions a player can't fix by hand (draws, mulligans, Character Deck picks, reveals, choices); **Restart** keeps the network connection; **trust mode** can be toggled from the sidebar. **[Playtest]** In trust mode a character, **Mission or Terrain** put into play by mistake can be dragged back to hand (or use its **Return to hand** button); it returns as a fresh card — its progress, damage and tracked resources reset.
+36. ✔ **Undo** steps back through every action in the game, one at a time (up to the last 100), including Shinobi attacks and defenses; settings aren't actions, and a blocked action doesn't use a step; **Restart** keeps the network connection; **trust mode** can be toggled from the sidebar. **[Playtest]** In trust mode a character, **Mission or Terrain** put into play by mistake can be dragged back to hand (or use its **Return to hand** button); it returns as a fresh card — its progress, damage and tracked resources reset.
 45. ✔ **Akatsuki Hideout costs 2 Chakra** (was 0). (SPEC §13c.)
 
 **Engine completions — every "simplified" card effect now works as printed**
@@ -887,14 +899,15 @@ Pool Capacity is intentionally left **TBD** per card — assign it during
 card balancing.
 
 ### Kakuzu (A Rank)
-**HP: 4** · Pool Capacity: (Hearts − 1) × 2 — starts at 8 with all 5 Hearts
+**HP: 4** · Pool Capacity: Hearts × 2 — starts at 10 with all 5 Hearts
 Specialization: Assault / Vanguard · Styles: Earth, Wind, Lightning, Fire · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Five Hearts — Whenever Kakuzu would be defeated with more than 1 Heart
   remaining, he instead loses 1 Heart, a Style, and revives; losing his
-  last Heart defeats him for good. Chakra Pool Capacity = (current
-  Hearts − 1) × 2.
+  last Heart defeats him for good. Chakra Pool Capacity = current
+  Hearts × 2. He keeps the Chakra in his Pool, down to its new
+  maximum.
 - Elemental Versatility — First elemental jutsu each turn costs −1
 - Heart Masks — When Kakuzu enters play, search your Jutsu Deck for
   Pressure Damage, Searing Migraine and False Darkness and add them to
@@ -911,7 +924,7 @@ Pool, and gain 1 elemental Style from the defeated character (your
 choice if several) — even one he already has.
 
 ### Hidan (B Rank)
-**HP: 9** · Pool Capacity: 1
+**HP: 9** · Pool Capacity: 6
 Specialization: Vanguard / Assault · Styles: Ritual · Synergy: Akatsuki, Kakuzu
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
@@ -1017,45 +1030,43 @@ is defeated (no cooldown from fizzling).
   Drill Peck — 1 Chakra, Quick Technique, Type: Taijutsu: Deal 1 damage.
 
 ### Deidara (A Rank)
-**HP: 10 (placeholder)** · Pool Capacity: 3
+**HP: 10 (placeholder)** · Pool Capacity: 10
 Specialization: Assault · Styles: Explosion, Earth · Synergy: Akatsuki
 
 Abilities:
 - C1, Shi-Wan: Clay Spider — 1 Chakra, Style: Explosion, Type: Ninjutsu: Create a Clay Spider token (below) and gain 1 Clay Charge. Usable twice/turn (overrides the once-per-turn cap).
 - Detonation Art — 4 Chakra, Style: Explosion, Type: Ninjutsu: Deal 1 damage. Spend 1 Clay Charge → deal 3 instead.
+- C2, Shi-Ryu — 3 Chakra, Style: Explosion, Type: Ninjutsu: Spend 5 Clay Charges. Deidara becomes Airborne: enemy Shinobi attacks, Taijutsu and Bukijutsu can't target him while he's in play, and he gains 1 Clay Charge at each of your Upkeeps.
 
 **Clay Spider Token** (HP: 1)
 - Fizzles if Deidara dies. Max 5 in play at once.
+- Its abilities are paid from Deidara's Chakra Pool.
 - Ambush — no Field Orientation; it can act the turn it's created.
-- Self Detonate — 3 Chakra, Quick Technique, Style: Explosion, Type: Ninjutsu: Choose any number of your Clay Spider tokens and 1 target; they all detonate against it for 1 damage each. 3 Chakra total per activation, regardless of spider count. Usable any number of times per turn.
+- Self Detonate — 2 Chakra, Quick Technique, Style: Explosion, Type: Ninjutsu: Choose any number of your Clay Spider tokens and 1 target; they all detonate against it for 1 damage each. 2 Chakra total per activation, regardless of spider count. Usable any number of times per turn.
 - Combine — Style: Explosion, Type: Ninjutsu: 4 Clay Spider tokens revert to clay and are destroyed, generating 2 Clay Charges.
 
 Ultimate — C3, Shi-Suri (7 Chakra, Style: Explosion, Type: Ninjutsu):
-Condition: Chakra Pool must be full to activate (may still be spent as
-part of the cost). Spend 5 Clay Charges. Deal 4 damage to 1 target, plus
-3 damage in a cross pattern from it (§9) — whatever's immediately left,
-right, in front of, and behind the target, up to 4 additional hits.
+Spend 2 Clay Charges. Deal 4 damage to 1 unit and 2 damage to each of up
+to 2 other units.
 
 Forbidden Technique — Death is an Explosion (Style: Explosion, Type:
 Ninjutsu) — two versions: *(full nuance: design/CHARACTER_LOG.md)*
 
-- **Version 1** — Cost: 5 Chakra + entire Pool (must be full) + 4 Clay
-  Charges. Condition: Deidara at 3 HP or less. Deal 7 to all enemies, 3
-  to all allies. Deidara dies.
-- **Version 2** (Reactive Technique) — Cost: 6 Chakra + entire Pool
-  (must be full) + 4 Clay Charges. Trigger: Deidara's HP would hit 0 or
-  below — activate this instead. Deal 7 to all enemies, 5 to all allies.
-  Deidara dies.
+- **Version 1** — Cost: 6 Chakra. Condition: Deidara at 3 HP or less. Spend up to 3 Clay Charges. Deal 4 damage to
+  all enemies, +1 for each Clay Charge spent (up to 7), and 3 to all allies. Deidara dies.
+- **Version 2** (Reactive Technique) — Cost: 6 Chakra. Trigger: Deidara's HP would hit 0 or below — activate this
+  instead. Spend up to 3 Clay Charges. Deal 4 damage to all enemies, +1 for each Clay Charge spent (up to 7), and
+  5 to all allies. Deidara dies.
 
 ### Kisame, Tailless Tailed Beast (S Rank)
-**HP: 10** · Pool Capacity: 12
+**HP: 12** · Pool Capacity: 12
 Specialization: Assault / Tactician · Styles: Water · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Samehada — Absorbed Chakra is stored in Kisame's Chakra Pool; Chakra
   absorbed past his Pool's capacity becomes generic Chakra instead.
 - Samehada Fusion — Once Samehada absorbs 10 Chakra, Kisame may enter
-  Samehada Shark Transformation: +6 Pool, +6 max HP (16 total), Water
+  Samehada Shark Transformation: +6 Pool, +6 max HP (18 total), Water
   Style attacks +1 damage (Samehada Strike and Water Prison Jutsu
   disabled), all Ninjutsu attacks from Kisame have Absorb 1, and incoming Ninjutsu attacks Absorb 1 from
   their user to Kisame. Exits after ≥7 damage post-transformation, or at
@@ -1065,7 +1076,7 @@ Abilities:
 - Samehada Strike — 2 Chakra from his Pool, Type: Taijutsu: Deal 1, Absorb 3.
 - Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Taijutsu: Deal 2, Absorb 4.
 - Water Style: Water Prison Jutsu — 5 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
-- Water Style: Thousand Hungry Sharks — 8 Chakra, Type: Ninjutsu: Deal 4 damage, split however you choose between any number of enemy targets.
+- Water Style: Thousand Hungry Sharks — 7 Chakra, Type: Ninjutsu: Deal 4 damage, split however you choose between any number of enemy targets.
 
 Ultimate — Water Style: Super Shark Bomb Jutsu (6 Chakra, Style: Water,
 Type: Ninjutsu): Cost must be fully paid with pooled Chakra. Deal 3 + X
@@ -1129,7 +1140,7 @@ defeated before then, this delayed second hit is cancelled (the
 immediate hit already happened and isn't affected).
 
 ### Sasori (A Rank)
-**HP: 7 (Hiruko form)** · Pool Capacity: 2
+**HP: 7 (Hiruko form)** · Pool Capacity: 10
 Specialization: Tactician / Assault · Styles: Poison · Synergy:
 Akatsuki, Deidara
 
@@ -1139,8 +1150,8 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Puppet Shell: Hiruko — Sasori begins play piloting Hiruko, his outer
   battle shell (stats and abilities below). Whenever Hiruko would be
   defeated, instead of Sasori being defeated, he transforms: Hollow
-  Body (his true form) takes over, entering at its own full HP/Pool
-  with Field Orientation (§6.6). Only once Hollow Body is also
+  Body (his true form) takes over, entering at its own full HP with
+  Field Orientation (§6.6) and keeping the Chakra in his Pool. Only once Hollow Body is also
   defeated is Sasori truly defeated.
 - Chakra Strings: Third Kazekage — When Sasori enters play, also create
   the Third Kazekage token (below) — a separate Puppet under his
@@ -1148,11 +1159,12 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   Sasori is currently in. Third Kazekage's own fate has no effect on
   Sasori's HP or current form.
 
-**Hiruko Form (starting)** — HP 7 · Pool Capacity 2
+**Hiruko Form (starting)** — HP 7 · Pool Capacity 10
+- Immune to Poison.
 - Tail Strike — 3 Chakra, Style: None, Type: Taijutsu: Deal 2 damage, apply 2 Poison counters.
 - Puppet Shell Guard — 2 Chakra, Reactive Technique, Style: None, Type: Taijutsu: Redirect a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at Third Kazekage onto Hiruko instead, reduced by 2 (min 0).
 
-**Hollow Body Form (after Hiruko falls)** — HP 4 · Pool Capacity 2
+**Hollow Body Form (after Hiruko falls)** — HP 4 · Pool Capacity 10
 - Poison Senbon — 2 Chakra, Style: Poison, Type: Taijutsu: Deal 1 damage, apply 2 Poison counters. (Poisoned: at the start of every Upkeep Phase — not just its controller's — it loses 1 Poison counter and takes 1 damage per counter removed. This damage can't be prevented or healed away.)
 - Chakra Strings: Puppet Summon — 2 Chakra, Style: None, Type: Ninjutsu: Create a Puppet Soldier token (below).
 
@@ -1162,12 +1174,15 @@ activate (may still be spent as part of the cost). Deal 2 damage to all
 enemy units (Characters and Tokens alike), apply 3 Poison counters to
 each.
 
-**Third Kazekage Token** (HP: 5) — separate and simultaneous, not part
+**Third Kazekage Token** (HP: 6) — separate and simultaneous, not part
 of Sasori's own form chain above.
 - Fizzles if Sasori is truly defeated (Hollow Body falls).
+- Its abilities are paid from Sasori's Chakra Pool.
+- Immune to Poison.
+- In Shinobi combat (Prototype), Shinobi can attack it, and it can defend your Leaders like a Shinobi. It never attacks and deals no Damage back.
 - Iron Sand Barrage — 3 Chakra, Type: Ninjutsu: Deal 3 damage.
 - Gold Dust Poison — 2 Chakra, Type: Ninjutsu: Deal 1 damage to up to 2 enemies, apply 1 Poison counter to each.
-- Iron Sand Wall — 3+X Chakra, Reactive Technique, Type: Ninjutsu: In response to a targeted Ninjutsu or Taijutsu ability aimed at any friendly unit, reduce its damage by 2 (min 0). You may spend X additional Chakra (up to 4) to reduce it by a further X.
+- Iron Sand Wall — 3+X Chakra, Reactive Technique, Type: Ninjutsu: In response to a targeted Ninjutsu, Taijutsu or Bukijutsu attack on one of your units, including Third Kazekage, reduce that attack's damage by 2 + X (min 0). X can be up to 4.
 
 **Puppet Soldier Token** (HP: 2)
 - Fizzles if Hollow Body is defeated (which, since Hollow Body is
@@ -1619,7 +1634,7 @@ edited, update the entry too, the same way SPEC.md itself is kept current
 Starting at 5 Hearts, Kakuzu has 4 "extra lives": each time he'd
 otherwise be defeated with more than 1 Heart left, he loses a Heart and a
 Style instead of dying, and Chakra Pool Capacity drops by 2 (from the
-(Hearts−1)×2 formula — 8→6→4→2→0 as Hearts go 5→4→3→2→1). Losing his
+Hearts×2 formula — 10→8→6→4→2 as Hearts go 5→4→3→2→1). Losing his
 last Heart (reaching 0) is the only way to truly defeat him. Style loss
 has no specified order — assume the controller chooses which of his
 remaining Styles to drop each time.
@@ -1843,12 +1858,12 @@ spiders).
 implies all chosen spiders must share that one target within a single
 activation — there's no way to split one activation across multiple
 targets. If you want to hit two different targets, that's two separate
-activations (each its own 3-Chakra cost), not one activation with a
+activations (each its own 2-Chakra cost), not one activation with a
 split effect.
 
 ### Ultimate — C3, Shi-Suri / general "Pool must be full" pattern
-This card (and Deva Path's Ultimate, and both Forbidden Technique
-versions below) use the same recurring pattern: **"Chakra Pool must be
+Deva Path's Ultimate uses this recurring pattern (Deidara's Ultimate and
+Forbidden Technique no longer need a full Pool): **"Chakra Pool must be
 full to activate" is a condition checked at activation, separate from
 whatever Chakra cost is then paid** — the ability can still spend some
 or all of that same Pool as part of its cost immediately after the
@@ -1856,11 +1871,7 @@ full-Pool check passes. It's a gate on *when* you're allowed to use the
 ability, not a claim that the Pool stays full through resolution.
 
 ### Forbidden Technique — Death is an Explosion
-Both versions require the Pool to be full to activate (same pattern as
-above) and then spend the entire Pool as part of the cost — so the true
-total cost is the printed Chakra number *plus* whatever Deidara's Pool
-Capacity currently is (e.g. at Pool Capacity 3: Version 1 costs 5+3=8
-total Chakra-equivalent, Version 2 costs 6+3=9). Version 2's trigger
+Both versions cost 6 Chakra, and may spend up to 3 Clay Charges for +1 damage each to every enemy. Version 2's trigger
 ("if Deidara's HP would be reduced to 0 or lower, activate this
 instead") is a replacement effect on the game's default lethal-damage
 rule — it doesn't save Deidara from dying (he still dies either way,
@@ -2032,7 +2043,7 @@ just hand-card enablement.
 
 ### Ultimate — Paper Person of God Technique
 Same "Pool must be full to activate, then may spend it" pattern used by
-Deidara's Ultimate (see above) — the full-Pool check happens at
+Deva Path's Ultimate (see above) — the full-Pool check happens at
 activation, not through resolution. Two separate hits, on two different
 clocks:
 - **Immediate:** 3 damage to all enemy units, resolves right away as
@@ -2070,7 +2081,7 @@ trigger is not treated as a "defeat" event** — it won't trigger an
 opponent's on-defeat effects (e.g. Kakuzu's own Ultimate, "whenever
 Kakuzu defeats any shinobi") the way actually killing a character would,
 because Sasori isn't being defeated at that moment, just changing form.
-Hollow Body enters at its own full HP/Pool (not a continuation of
+Hollow Body enters at its own full HP, keeps the Chakra in his Pool (not a continuation of
 whatever damage Hiruko had taken) and with Field Orientation (§6.6) —
 an explicit ruling, since the alternative (letting Hollow Body act
 immediately, treating this as pure narrative continuation rather than a
@@ -2176,7 +2187,7 @@ Sasori's final form, is the same moment Sasori himself is truly
 defeated.
 
 ### Hollow Body's Ultimate — Puppet Performance: Hundred Puppets
-Same full-Pool-to-activate pattern as Deidara's and Konan's Ultimates
+Same full-Pool-to-activate pattern as Konan's Ultimate
 (see their entries above). Also a blanket effect (targets no one) for
 the same reason those are — can't be stopped by target-negation (§9).
 Only available once Sasori has transformed into Hollow Body — there's no
@@ -3050,7 +3061,7 @@ being better than the other.
 The deck's first direct-damage Jutsu card. One important distinction
 flagged for clarity: this is **not** a cross-pattern effect (§9) — a
 true cross pattern hits *all* available cardinal directions from the
-epicenter simultaneously (like Shinra Tensei or C3 Shi-Suri, §Pain of
+epicenter simultaneously (like Shinra Tensei, §Pain of
 the Six Paths, §Deidara above). Explosive Tag instead lets the attacker
 choose **one** of the up to four adjacent positions (front, behind,
 left, or right) to also hit — closer in spirit to the pre-cross-pattern
@@ -3155,9 +3166,9 @@ HP 10 · Pool capacity 3 · Styles: Explosion, Earth · Synergy: Akatsuki
 |---|---|---|---|---|---|---|---|---|
 | C1, Shi-Wan: Clay Spider | 1 | Normal | Explosion | Ninjutsu | no | none/auto | — | 2/turn |
 | Detonation Art | 4 | Normal | Explosion | Ninjutsu | yes | 1 | enemy | — |
-| Death is an Explosion (Version 1) | variable | Normal | Explosion | Ninjutsu | yes | none/auto | — | Forbidden |
-| Death is an Explosion (Version 2) | variable | Reactive | Explosion | Ninjutsu | yes | none/auto | — | Forbidden |
-| C3, Shi-Suri | 7 | Normal | Explosion | Ninjutsu | yes | 1 | enemy | Ultimate |
+| Death is an Explosion (Version 1) | 6 | Normal | Explosion | Ninjutsu | yes | none/auto | — | Forbidden |
+| Death is an Explosion (Version 2) | 6 | Reactive | Explosion | Ninjutsu | yes | none/auto | — | Forbidden |
+| C3, Shi-Suri | 7 | Normal | Explosion | Ninjutsu | yes | 3 | enemy | Ultimate |
 
 ### Kisame — S Rank
 

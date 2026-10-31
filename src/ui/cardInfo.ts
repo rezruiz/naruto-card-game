@@ -30,6 +30,7 @@ const PROTOTYPE_CHARACTER_TEXT: [pattern: RegExp, replacement: string][] = [
     /When Kakuzu enters play, search your Jutsu Deck for\s+Pressure Damage, Searing Migraine and False Darkness and add them to\s+your hand\./,
     'When Kakuzu enters play, add Pressure Damage, Searing Migraine and False Darkness from your Extra Deck to your hand.',
   ],
+  [/Trigger: whenever Kakuzu defeats any\s+shinobi\./, 'Trigger: whenever Kakuzu defeats a Leader.'],
 ];
 
 export function getCharacterCardText(defId: string): string | undefined {

@@ -620,7 +620,8 @@ export function healOccupant(
   const found = findOccupant(state, targetInstanceId);
   if (!found || amount <= 0) return state;
   const { player, zone, index, occupant } = found;
-  const newHP = Math.min(occupant.maxHP, occupant.currentHP + amount);
+  // Max HP caps a heal, but never pulls down a unit already above it (a trust mode correction).
+  const newHP = Math.max(occupant.currentHP, Math.min(occupant.maxHP, occupant.currentHP + amount));
   const next = setCurrentHP(state, player, zone, index, newHP);
   return appendLog(next, `${occupant.name} heals to ${newHP}/${occupant.maxHP} HP.`);
 }

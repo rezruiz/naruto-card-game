@@ -4,7 +4,7 @@ import { createSetupState } from '../engine/state';
 import { RULESET_OPTS } from '../variant';
 import { redactStateFor } from '../engine/redact';
 import { hostGame, joinGame, type Connection, type ConnStatus } from './connection';
-import { pushUndo, undoLabelFor, type UndoEntry } from '../ui/undo';
+import { recordUndo, type UndoEntry } from '../ui/undo';
 import type { GameAction, GameState, PlayerId } from '../engine/types';
 import type { DeckList } from '../engine/decklist';
 
@@ -59,9 +59,9 @@ export function useNetGame() {
     (action: GameAction) => {
       const prev = stateRef.current;
       if (!prev) return;
-      const label = undoLabelFor(action);
-      if (label) historyRef.current = pushUndo(historyRef.current, { state: prev, label });
-      commit(gameReducer(prev, action));
+      const next = gameReducer(prev, action);
+      historyRef.current = recordUndo(historyRef.current, action, prev, next);
+      commit(next);
     },
     [commit],
   );

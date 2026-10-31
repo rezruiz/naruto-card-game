@@ -757,6 +757,36 @@ button.in-play-chip--plain:hover {
   min-height: 132px;
 }
 
+/* A Leader pooled into this turn is tapped: its card turned sideways. Vertical writing turns the card's content
+   the way a rotation would, but the layout follows, so it takes up its sideways width instead of overlapping. */
+.lane--leaders .board-cell--tapped {
+  width: auto;
+  min-height: 0;
+  align-self: center;
+}
+
+.lane--leaders .board-cell--tapped > .compact-card {
+  flex: none;
+  width: auto;
+  height: 118px;
+  min-height: 0;
+  writing-mode: vertical-rl;
+}
+
+.board-cell--tapped .compact-card__name {
+  padding-right: 0;
+  padding-inline-end: 18px;
+}
+
+.board-cell--tapped .compact-card .compact-card__info {
+  top: auto;
+  bottom: 4px;
+}
+
+.board-cell--tapped .compact-card__hint {
+  writing-mode: horizontal-tb;
+}
+
 /* Shinobi and tokens: small tiles, since there can be many of them. */
 .lane--units .board-cell {
   width: 100px;
@@ -804,6 +834,7 @@ button.in-play-chip--plain:hover {
 }
 
 .token-card__effect {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -812,6 +843,7 @@ button.in-play-chip--plain:hover {
 /* Attack (Damage) bottom-left, Health bottom-right — big enough to read at a glance across a crowded lane. */
 .token-card__stats {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 4px;
   margin-top: auto;
@@ -825,6 +857,7 @@ button.in-play-chip--plain:hover {
 }
 
 .token-card__stat--health {
+  display: flex;
   margin-left: auto; /* stays bottom-right even on a token with no attack */
   color: #22c55e;
 }
@@ -861,8 +894,19 @@ button.in-play-chip--plain:hover {
     0 -1.5px 0 #111418, 0 1.5px 0 #111418, -1.5px 0 0 #111418, 1.5px 0 0 #111418;
 }
 
+/* A touch smaller than the shield, with the number lifted to sit on the shuriken's exact centre (digits ride low in their line box). */
+.stat-icon--attack {
+  width: 28px;
+  height: 28px;
+}
+
+.stat-icon--attack svg {
+  position: relative;
+  top: -0.8px;
+}
+
 .stat-icon--attack .stat-icon__value {
-  top: 0;
+  top: -0.8px;
 }
 
 .stat-icon__shuriken {

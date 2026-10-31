@@ -1,9 +1,9 @@
 // Prototype rules (the Prototype build only — see variant.ts). A game created
 // with ruleset 'prototype' plays the new direction from the Design Draft:
 //
-// - No generic Chakra spending: Chakra sources are still tapped, but that
-//   Chakra can only be pooled. Every Chakra cost — a character's abilities and
-//   the Jutsu cards a Leader enables — is paid from a Chakra Pool.
+// - Abilities are paid only from a Chakra Pool. Jutsu cards are paid with tapped
+//   Chakra, their enabler's Pool, or both, and only a Jutsu with a Style, an
+//   attack or text about its enabler needs an enabler at all.
 // - Supplies: a second resource that refills each turn. Your maximum is the
 //   number of turns you've started (1 on your first turn), up to 20.
 //   Jutsu cards cost Chakra; every other card (Shinobi, Missions, Terrain,
@@ -20,6 +20,11 @@ import type { GameState, PlayerId } from './types';
 
 export function isPrototype(state: GameState): boolean {
   return state.ruleset === 'prototype';
+}
+
+/** The starting hand, and so the first (free) mulligan's redraw: each mulligan after it draws 1 fewer. */
+export function openingHandSize(state: GameState): number {
+  return isPrototype(state) ? 7 : 6;
 }
 
 export const SUPPLIES_CAP = 20;

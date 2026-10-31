@@ -16,15 +16,14 @@ describe('Deidara — Death is an Explosion (Forbidden Technique)', () => {
   const armed = (hp: number, charges: number) =>
     setDeidara(giveChakra(freshCombat(), 'p1', 20), (d) => ({ currentHP: hp, chakraPool: { ...d.chakraPool, current: d.chakraPool.capacity }, extra: { ...d.extra, clayCharges: charges } }));
 
-  it('Version 1: at 3 HP or less with a full Pool and 4 Clay Charges — 7 to every enemy, 3 to every ally, Deidara dies; the whole Pool is spent', () => {
-    let s = armed(3, 4);
+  it('Version 1: at 3 HP or less, 3 Clay Charges make it 7 to every enemy, 3 to every ally, Deidara dies; it costs 6 Chakra', () => {
+    let s = armed(3, 3);
     const enemiesBefore = new Map(unitsHp(s, 'p2'));
     const alliesBefore = new Map(unitsHp(s, 'p1'));
     const deidaraId = deidaraOf(s)!.instanceId;
-    s = activateAbility(s, deidaraId, 'death-is-an-explosion-v1', [], 0);
+    s = activateAbility(s, deidaraId, 'death-is-an-explosion-v1', [], 0, { choices: { clayCharges: 3 } });
     expect(s.stack).toHaveLength(1);
-    expect(s.players.p1.genericChakraAvailable).toBe(15); // 5 generic — the Pool (3) paid the rest
-    expect(deidaraOf(s)!.chakraPool.current).toBe(0);
+    expect(s.players.p1.genericChakraAvailable).toBe(14);
     s = resolveTop(s);
     expect(deidaraOf(s)).toBeUndefined(); // he dies
     expect(s.log.some((l) => /Art is an EXPLOSION/.test(l.text))).toBe(true);
@@ -34,36 +33,38 @@ describe('Deidara — Death is an Explosion (Forbidden Technique)', () => {
     if (hidanAfter) expect(hidanAfter.currentHP).toBeLessThan(alliesBefore.get(hidanAfter.instanceId)!);
   });
 
-  it('Version 1 is refused above 3 HP, without a full Pool, or with too few Clay Charges', () => {
-    for (const s of [armed(4, 4), armed(3, 3), setDeidara(armed(3, 4), (d) => ({ chakraPool: { ...d.chakraPool, current: 0 } }))]) {
-      expect(activateAbility(s, deidaraOf(s)!.instanceId, 'death-is-an-explosion-v1', [], 0).stack).toHaveLength(0);
-    }
+  it('Version 1 is refused above 3 HP, but needs neither a full Pool nor Clay Charges', () => {
+    const partial = setDeidara(armed(3, 0), (d) => ({ chakraPool: { ...d.chakraPool, current: 2 } }));
+    const used = activateAbility(partial, deidaraOf(partial)!.instanceId, 'death-is-an-explosion-v1', [], 0);
+    expect(used.stack).toHaveLength(1);
+    expect(deidaraOf(used)!.chakraPool.current).toBe(2); // only the 6 Chakra is paid, not the Pool
+    const healthy = armed(4, 3);
+    expect(activateAbility(healthy, deidaraOf(healthy)!.instanceId, 'death-is-an-explosion-v1', [], 0).stack).toHaveLength(0);
   });
 
-  it('Version 2: when Deidara would be defeated (full Pool, 4 Charges) the player is asked — Activate blasts and he dies', () => {
+  it('Version 2: when Deidara would be defeated the player is asked — Activate blasts and he dies', () => {
     let s = armed(2, 5);
     const deidaraId = deidaraOf(s)!.instanceId;
     s = dealDamage(s, deidaraId, 5).state;
     expect(deidaraOf(s)?.currentHP).toBe(0); // held at 0 HP, waiting on the answer
     const choice = s.pendingChoices[0];
     expect(choice.player).toBe('p1');
-    s = gameReducer(s, { type: 'RESOLVE_CHOICE', choiceId: choice.id, optionIds: ['activate'] });
+    s = gameReducer(s, { type: 'RESOLVE_CHOICE', choiceId: choice.id, optionIds: ['activate-3'] });
     expect(deidaraOf(s)).toBeUndefined();
     expect(s.players.p1.genericChakraAvailable).toBe(14);
     expect(s.log.some((l) => /Art is an EXPLOSION/.test(l.text))).toBe(true);
   });
 
-  it('Version 2: declining just lets him fall; without a full Pool and 4 Charges there is no prompt at all', () => {
+  it('Version 2: declining just lets him fall; the choices stop at the Clay Charges he has', () => {
     let s = armed(2, 5);
     s = dealDamage(s, deidaraOf(s)!.instanceId, 5).state;
     s = gameReducer(s, { type: 'RESOLVE_CHOICE', choiceId: s.pendingChoices[0].id, optionIds: ['decline'] });
     expect(deidaraOf(s)).toBeUndefined();
     expect(s.log.some((l) => /Art is an EXPLOSION/.test(l.text))).toBe(false);
 
-    let t = armed(2, 3);
+    let t = armed(2, 2);
     t = dealDamage(t, deidaraOf(t)!.instanceId, 5).state;
-    expect(t.pendingChoices).toHaveLength(0);
-    expect(deidaraOf(t)).toBeUndefined();
+    expect(t.pendingChoices[0].options.map((o) => o.id)).toEqual(['activate-0', 'activate-1', 'activate-2', 'decline']);
   });
 
   it("Version 2 can't be activated by hand — it only fires from its trigger", () => {
@@ -84,13 +85,13 @@ describe('Clay Spider token', () => {
   };
   const spiders = (s: GameState) => s.players.p1.frontRow.filter((t) => t?.defId === 'clay-spider').map((t) => t!.instanceId);
 
-  it('Self Detonate: the player picks how many spiders detonate at one target — 1 damage each, 3 Chakra total, spiders destroyed', () => {
-    let s = giveChakra(withSpiders(2), 'p1', 3);
+  it('Self Detonate: the player picks how many spiders detonate at one target — 1 damage each, 2 Chakra total, spiders destroyed', () => {
+    let s = giveChakra(withSpiders(2), 'p1', 2);
     expect(spiders(s)).toHaveLength(2);
     const hpBefore = s.players.p2.backRow[1]!.currentHP;
     const chakraBefore = s.players.p1.genericChakraAvailable;
     s = activateAbility({ ...s, priorityPlayer: 'p1' }, spiders(s)[0], 'self-detonate', ['p2-hidan'], 0, { choices: { spiders: 2 } });
-    expect(s.players.p1.genericChakraAvailable).toBe(chakraBefore - 3);
+    expect(s.players.p1.genericChakraAvailable).toBe(chakraBefore - 2);
     s = resolveTop(s);
     expect(spiders(s)).toHaveLength(0);
     expect(s.players.p2.backRow[1]!.currentHP).toBe(hpBefore - 2);
@@ -160,17 +161,17 @@ describe('Deidara', () => {
     expect(ability.choices!({ ...ctx, state: noCharges })).toEqual([]);
   });
 
-  it('C3, Shi-Suri requires a full Pool and 5 Clay Charges, and hits in a cross pattern', () => {
+  it('C3, Shi-Suri requires 2 Clay Charges: 4 to the first unit, 2 to up to 2 others', () => {
     let state = freshMain1(); // pooling is a Main Phase action
-    // Not enough Charges or Pool yet — rejected.
+    // Not enough Charges yet — rejected.
     const stackBefore = state.stack.length;
     state = activateAbility({ ...state, phase: 'Combat' }, 'p1-deidara', 'c3-shi-suri', ['p2-kakuzu'], 0);
     expect(state.stack.length).toBe(stackBefore);
     state = { ...state, phase: 'Main1' };
 
-    // Fill Deidara's Pool (capacity 3) and stock 5 Clay Charges.
-    state = giveChakra(state, 'p1', 3);
-    state = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-deidara', amount: 3 });
+    // Fill Deidara's Pool (capacity 10) and stock 2 Clay Charges.
+    state = giveChakra(state, 'p1', 10);
+    state = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-deidara', amount: 10 });
     // Pooling taps Deidara for the rest of *this* turn (§5.3's pool-XOR-act
     // rule) — advance to a later turn before activating his Ultimate.
     for (let i = 0; i < 15; i++) state = gameReducer(state, { type: 'ADVANCE_PHASE' });
@@ -184,7 +185,7 @@ describe('Deidara', () => {
         p1: {
           ...state.players.p1,
           backRow: state.players.p1.backRow.map((c, i) =>
-            i === 2 && c ? { ...c, extra: { ...c.extra, clayCharges: 5 } } : c,
+            i === 2 && c ? { ...c, extra: { ...c.extra, clayCharges: 2 } } : c,
           ),
         },
       },
@@ -193,13 +194,13 @@ describe('Deidara', () => {
 
     // Hidan (HP 9) is the primary target — Kakuzu (HP 4) would just revive from a 4-damage hit.
     const hidanHpBefore = state.players.p2.backRow[1]?.currentHP ?? 0; // primary target
-    const kakuzuHpBefore = state.players.p2.backRow[0]?.currentHP ?? 0; // left neighbor — cross pattern
+    const kakuzuHpBefore = state.players.p2.backRow[0]?.currentHP ?? 0; // second pick
 
-    state = activateAbility(state, 'p1-deidara', 'c3-shi-suri', ['p2-hidan'], 0);
+    state = activateAbility(state, 'p1-deidara', 'c3-shi-suri', ['p2-hidan', 'p2-kakuzu'], 0);
     expect(state.stack).toHaveLength(1);
     state = resolveTop(state);
 
     expect(state.players.p2.backRow[1]?.currentHP).toBe(hidanHpBefore - 4); // primary hit
-    expect(state.players.p2.backRow[0]?.currentHP).toBe(kakuzuHpBefore - 3); // cross-pattern splash
+    expect(state.players.p2.backRow[0]?.currentHP).toBe(kakuzuHpBefore - 2);
   });
 });

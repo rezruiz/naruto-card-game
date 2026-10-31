@@ -193,7 +193,7 @@ export interface PlayerState {
   pendingCharacterReveal: { revealed: string[]; reason: 'setup' | 'reinforcement' } | null;
   /** How many paid manual Character Deck draws (§8) this player has made — only ever increases, drives the escalating tax (3/5/7/8, capped). Reinforcement-trigger draws never advance it. */
   reinforcementsPlayed: number;
-  /** How many times this player has mulliganed so far this game (§3) — the first is free (redraw 6); each one after draws 1 fewer. */
+  /** How many times this player has mulliganed so far this game (§3) — the first is free (a full new hand); each one after draws 1 fewer. */
   mulligansSoFar: number;
   /** At most 1 Terrain card active at once (§10a) — playing another replaces it. */
   terrainInPlay: HandCardInstance | null;
@@ -415,8 +415,6 @@ export type GameAction =
   | { type: 'ASSIGN_SHINOBI_DEFENDER'; attackerId: string; defenderId: string | null }
   | { type: 'CONFIRM_SHINOBI_DEFENSE' }
   | { type: 'ADJUST_SUPPLIES'; player: PlayerId; delta: number }
-  /** Prototype rules: Training Grounds — pay 1 Supply to pool 1 Chakra into one of your Leaders (cards/terrain.ts). */
-  | { type: 'USE_TRAINING_GROUNDS'; leaderId: string }
   // --- Trust mode: staging & resolution ---
   | { type: 'STAGE_ABILITY'; instanceId: string; abilityId: string; targetInstanceIds: string[]; payFromPool: number; choices?: AbilityChoices; /** Declare it even though the strict rules wouldn't allow it. */ force?: boolean }
   | { type: 'STAGE_CARD'; instanceId: string; enablingInstanceId: string; targetInstanceIds: string[]; payFromPool: number; amount?: number; force?: boolean }

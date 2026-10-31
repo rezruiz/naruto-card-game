@@ -90,6 +90,10 @@ export interface HandCardDef {
    */
   chakraSource?: boolean;
   paidWith?: 'chakra' | 'supplies';
+  /** Prototype rules: an attack Jutsu's X: how much of its cost must come from its enabler's Pool (the base cost can be tapped Chakra). */
+  poolX?: (ctx: HandCardContext) => number;
+  /** Prototype rules: a Style: None, non-attacking Jutsu that still needs an enabler, because its text refers to the enabling character. */
+  usesEnabler?: boolean;
   /** Synergy tag(s), mainly relevant for Terrain cards (§10a) that other cards check for (e.g. Chidori Interception's cost discount "if an Akatsuki-Synergy Terrain is in play"). */
   synergy?: string[];
 }
@@ -126,13 +130,17 @@ export interface EquipmentStats {
  * (§10c), Terrain (§10a), Missions (§10b), and Type: None tactical cards
  * (Field Intelligence, Incoming Mission Assignment, Battlefield Selection).
  */
-export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type' | 'paidWith'>, prototype = false): boolean {
-  // Prototype rules: a Chakra cost is paid from a Leader's Chakra Pool, so even a Type: None Jutsu needs a Leader to play it through.
-  if (prototype) return paysInChakra(def);
+export function needsEnablingCharacter(def: Pick<HandCardDef, 'cardType' | 'type' | 'paidWith' | 'style' | 'isDamaging' | 'usesEnabler'>, prototype = false): boolean {
+  if (prototype) {
+    if (!paysInChakra(def)) return false;
+    if (def.cardType !== 'jutsu') return true;
+    // Prototype rules: only a Jutsu with a Style, an attack, or text about its enabler is played through a Leader.
+    return (!!def.style && def.style !== 'None') || !!def.isDamaging || !!def.usesEnabler;
+  }
   return def.cardType === 'jutsu' && def.type !== 'None';
 }
 
-/** Prototype rules: whether this card costs Chakra (from a Leader's Pool) rather than Supplies — Jutsu by default, unless the card says otherwise. */
+/** Prototype rules: whether this card costs Chakra rather than Supplies — Jutsu by default, unless the card says otherwise. */
 export function paysInChakra(def: Pick<HandCardDef, 'cardType' | 'paidWith'>): boolean {
   return (def.paidWith ?? (def.cardType === 'jutsu' ? 'chakra' : 'supplies')) === 'chakra';
 }

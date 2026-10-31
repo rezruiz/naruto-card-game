@@ -99,7 +99,7 @@ registerCharacter({
   name: 'Hidan',
   rank: 'B',
   baseMaxHP: 9,
-  basePoolCapacity: 1,
+  basePoolCapacity: 6,
   synergy: ['Akatsuki', 'Kakuzu'],
   styles: ['Ritual'],
   abilities: [tripleScytheSweep],

@@ -2,7 +2,7 @@ import { needsEnablingCharacter, type HandCardContext, type HandCardDef } from '
 import type { GameState, PlayerId } from '../engine/types';
 import { VARIANT } from '../variant';
 
-/** The Prototype build plays the prototype rules: every Jutsu card needs a Leader, and its cost always comes from that Leader's Pool. */
+/** The Prototype build plays the prototype rules, which change which cards need an enabler. */
 const PROTOTYPE = VARIANT === 'prototype';
 
 export type PendingCard = {
@@ -37,12 +37,17 @@ export function cardStage(p: PendingCard): CardStage {
   if (!p.targetsConfirmed && maxTargets > 0 && p.targets.length < maxTargets) return 'target';
   const wantsAmount = typeof p.def.needsAmountChoice === 'function' ? p.def.needsAmountChoice(p.targets) : !!p.def.needsAmountChoice;
   if (wantsAmount && p.amount === null) return 'amount';
-  if (p.def.offersPoolDiscount && p.payFromPool === null && !PROTOTYPE) return 'payFromPool';
+  if (p.payFromPool === null) return 'payFromPool';
   return 'ready';
 }
 
 export function toHandCardContext(state: GameState, p: PendingCard): HandCardContext {
   return { state, player: p.playerId, enablingInstanceId: p.enablingInstanceId, targetInstanceIds: p.targets, amount: p.amount ?? undefined };
+}
+
+/** Whether paying from the Pool is a choice that changes the cost. Prototype rules: not for a card whose X always comes from the Pool. */
+export function offersPoolDiscount(def: HandCardDef): boolean {
+  return !!def.offersPoolDiscount && !(PROTOTYPE && def.poolX);
 }
 
 export function newPendingCard(playerId: PlayerId, cardInstanceId: string, def: HandCardDef): PendingCard {
@@ -52,7 +57,7 @@ export function newPendingCard(playerId: PlayerId, cardInstanceId: string, def: 
     cardInstanceId,
     def,
     enablingInstanceId: '',
-    payFromPool: def.offersPoolDiscount ? null : 0,
+    payFromPool: offersPoolDiscount(def) ? null : 0,
     targets: [],
     targetsConfirmed: false,
     amount: null,

@@ -12,16 +12,17 @@ const ABILITY_TEXT: Record<string, string> = {
   // Kakuzu
   'earth-grudge-fear': 'Deal 1 damage to any target (3 while Iron Skin holds).',
   'iron-skin': 'For the next turn cycle: Kakuzu takes −2 from physical and −2 from elemental attacks, and Earth Grudge Fear deals +2.',
-  'patchwork-threads': 'After Kakuzu defeats a shinobi: regain 1 Heart, heal 3, gain 2 Chakra to his Pool, and take 1 elemental Style from the defeated (duplicates allowed).',
+  'patchwork-threads': `After Kakuzu defeats a ${VARIANT === 'prototype' ? 'Leader' : 'shinobi'}: regain 1 Heart, heal 3, gain 2 Chakra to his Pool, and take 1 elemental Style from the defeated (duplicates allowed).`,
   // Hidan
   'triple-scythe-sweep': 'Deal 1 damage.',
   'curse-technique': 'Curse an enemy Hidan has damaged: all damage Hidan takes is mirrored onto it, Triple Scythe Sweep costs 1 and can hit Hidan himself (+2 to the Cursed; can’t drop him below 3), and his allies can’t target him. Ends when Hidan or the Cursed enemy falls.',
   // Deidara
   'c1-shi-wan': 'Create a Clay Spider token and gain 1 Clay Charge. Up to 2×/turn.',
   'detonation-art': 'Deal 1 damage — or spend 1 Clay Charge to deal 3.',
-  'c3-shi-suri': 'Needs a full Pool. Deal 4 to a target and 3 to each unit next to it (cross).',
-  'death-is-an-explosion-v1': 'Needs a full Pool and Deidara at 3 HP or less. Deal 7 to every enemy and 3 to every ally. Deidara dies.',
-  'death-is-an-explosion-v2': 'When Deidara would be defeated (full Pool, 4 Clay Charges), you’re asked: deal 7 to every enemy and 5 to every ally. He dies either way.',
+  'c2-shi-ryu': 'Deidara becomes Airborne: enemy Shinobi attacks, Taijutsu and Bukijutsu can’t target him while he’s in play, and he gains 1 Clay Charge at each of your Upkeeps.',
+  'c3-shi-suri': 'Deal 4 to 1 unit and 2 to each of up to 2 other units.',
+  'death-is-an-explosion-v1': 'Needs Deidara at 3 HP or less. Deal 4 to every enemy (+1 per Clay Charge spent, up to 3) and 3 to every ally. Deidara dies.',
+  'death-is-an-explosion-v2': 'When Deidara would be defeated, you’re asked: deal 4 to every enemy (+1 per Clay Charge spent, up to 3) and 5 to every ally. He dies either way.',
   'self-detonate': 'Choose how many of your Clay Spiders detonate at 1 target — 1 damage each. They’re destroyed. Any number of times per turn.',
   'combine-clay-spiders': 'Destroy 4 Clay Spiders: Deidara gains 2 Clay Charges.',
   // Kisame
@@ -51,7 +52,7 @@ const ABILITY_TEXT: Record<string, string> = {
   'puppet-performance-hundred-puppets': 'Needs a full Pool. Deal 2 to all enemy units and apply 3 Poison to each.',
   'iron-sand-barrage': 'Deal 3 damage.',
   'gold-dust-poison': 'Deal 1 damage to up to 2 enemies and apply 1 Poison to each.',
-  'iron-sand-wall': 'Reduce a Ninjutsu/Taijutsu attack on a friendly unit by 2 + X.',
+  'iron-sand-wall': 'Reduce a Ninjutsu, Taijutsu or Bukijutsu attack on one of your units, including Third Kazekage, by 2 + X.',
   'puppet-strike': 'Deal 1 damage.',
   // Zetsu & his clones
   'dual-nature-switch': 'Switch between White and Black mode. Free, any number of times.',
@@ -101,10 +102,11 @@ const ABILITY_TEXT: Record<string, string> = {
 const COST_TEXT: Record<string, string> = {
   'patchwork-threads': '2 Chakra from Pool',
   'triple-scythe-sweep': '3 Chakra (1 while Cursing)',
-  'c3-shi-suri': '7 Chakra + 5 Clay Charges',
-  'death-is-an-explosion-v1': '5 Chakra + entire Pool + 4 Clay Charges',
-  'death-is-an-explosion-v2': '6 Chakra + entire Pool + 4 Clay Charges',
-  'self-detonate': '3 Chakra (total, any number of Spiders)',
+  'c2-shi-ryu': '3 Chakra + 5 Clay Charges',
+  'c3-shi-suri': '7 Chakra + 2 Clay Charges',
+  'death-is-an-explosion-v1': '6 Chakra',
+  'death-is-an-explosion-v2': '6 Chakra',
+  'self-detonate': '2 Chakra (total, any number of Spiders)',
   'samehada-strike': '2 Chakra from Pool',
   'samehada-strike-evolved': '2 Chakra from Pool',
   'super-shark-bomb-jutsu': '6 Chakra (fully paid with pooled Chakra)',
@@ -118,13 +120,13 @@ const COST_TEXT: Record<string, string> = {
 
 /** Short trait lines per character/token (defId) — the passives that matter at a glance. */
 const TRAIT_TEXT: Record<string, string[]> = {
-  kakuzu: ['Five Hearts — when defeated with 2+ Hearts, lose a Heart and a Style and revive instead. Pool = (Hearts − 1) × 2.', 'Elemental Versatility — first elemental jutsu each turn costs 1 less (Jutsu cards he enables too).', VARIANT === 'prototype' ? 'Heart Masks — on entering play, add Pressure Damage, Searing Migraine and False Darkness from your Extra Deck to your hand.' : 'Heart Masks — on entering play, search your Jutsu Deck for Pressure Damage, Searing Migraine and False Darkness.'],
+  kakuzu: ['Five Hearts — when defeated with 2+ Hearts, lose a Heart and a Style and revive instead, keeping his Chakra up to the new max. Pool = Hearts × 2.', 'Elemental Versatility — first elemental jutsu each turn costs 1 less (Jutsu cards he enables too).', VARIANT === 'prototype' ? 'Heart Masks — on entering play, add Pressure Damage, Searing Migraine and False Darkness from your Extra Deck to your hand.' : 'Heart Masks — on entering play, search your Jutsu Deck for Pressure Damage, Searing Migraine and False Darkness.'],
   hidan: ["Jashin's Blessing — the first time he'd be defeated, he survives at 1 HP. Heals 1 each End Phase (2 while Cursing)."],
   deidara: [],
   kisame: ['Samehada — absorbed Chakra goes into his Pool; overflow becomes generic.', 'Samehada Fusion — at 10 absorbed he can transform: +6 Pool and HP, Water attacks +1 damage, his Ninjutsu attacks Absorb 1, and enemy Ninjutsu attacks on him Absorb 1 from their user.'],
   itachi: ['Sharingan Foresight — prevent 1 damage from enemy Quick abilities and Quick Jutsu targeting him.', 'Genjutsu Master — Genjutsu cards he enables cost 1 less (min 1).', 'Failing Health — max 2 abilities per turn; never his Ultimate and Forbidden Technique in the same turn.', 'Sharingan Insight — on entering play, search your Main Deck for a Sharingan Genjutsu card, add it to your hand, then shuffle.'],
   konan: ['Paper Body — −2 damage from Taijutsu, +1 from Fire.', 'Starts with 1 Shikigami Charge.'],
-  'sasori-hiruko': ['Puppet Shell — when Hiruko falls, Sasori becomes Hollow Body (4 HP) instead.', 'Poison — each Upkeep, remove 1 counter and take 1 damage (can’t be prevented).'],
+  'sasori-hiruko': ['Puppet Shell — when Hiruko falls, Sasori becomes Hollow Body (4 HP) instead.', 'Immune to Poison.', 'Poison — each Upkeep, remove 1 counter and take 1 damage (can’t be prevented).'],
   'sasori-hollow-body': ['Sasori’s true form — defeating it defeats Sasori.', 'Poison — each Upkeep, remove 1 counter and take 1 damage (can’t be prevented).'],
   zetsu: ['Dual Nature — only one mode’s ability (White or Black) per turn.', 'Heals 1 each Upkeep.', 'Shared Reservoir — his Pool fills only by absorbing, and his Clones and Golems share it.'],
   juzo: ['Heals 3 whenever he defeats an enemy character.', 'Iron-Forged Body — −1 damage from Taijutsu (min 1).'],
@@ -141,12 +143,17 @@ const TRAIT_TEXT: Record<string, string[]> = {
   'ku-three-headed-hound': ['Fizzles if Animal Path falls.'],
   'war-rhino': ['Fizzles if Animal Path falls.'],
   'giant-drill-beaked-bird': ['Evasive — Normal-speed attacks on it miss on a lost coin flip.', 'Fizzles if Animal Path falls.'],
-  'third-kazekage': ['Fizzles if Sasori is truly defeated.'],
+  'third-kazekage': ['Uses Sasori’s Pool. Fizzles if Sasori is truly defeated.', 'Immune to Poison.', ...(VARIANT === 'prototype' ? ['Can be attacked by Shinobi and can defend your Leaders. It never attacks and deals no Damage back.'] : [])],
   'puppet-soldier': ['Fizzles if Sasori is truly defeated.'],
   'white-zetsu-clone': ['Uses Zetsu’s shared Pool. Fizzles if Zetsu falls.'],
   'zetsu-golem': ['Uses Zetsu’s shared Pool. Fizzles if Zetsu falls.', 'Regeneration — heals 1 each Upkeep if it took no damage last turn.'],
-  'clay-spider': ['Fizzles if Deidara falls. Max 5.'],
+  'clay-spider': ['Uses Deidara’s Pool. Fizzles if Deidara falls. Max 5.'],
 };
+
+/** An ability's condensed text by id, for effects that come from it (e.g. a Rain Shield on a unit). */
+export function abilityTextById(id: string): string | undefined {
+  return ABILITY_TEXT[id];
+}
 
 export function abilityText(ability: AbilityDef): string {
   if (ability.id.startsWith('summon-')) return 'Summon this Path Beast (not while it’s in play or on cooldown).';

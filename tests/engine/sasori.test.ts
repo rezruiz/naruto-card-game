@@ -4,6 +4,7 @@ import { dealDamage } from '../../src/engine/combat';
 import { gameReducer } from '../../src/engine/reducer';
 import { placeToken } from '../../src/engine/board';
 import { makeThirdKazekage } from '../../src/engine/characters';
+import { applyPoison } from '../../src/engine/poison';
 import { freshCombat, giveChakra, resolveTop, withCharacterAt, playCard } from './testUtils';
 
 function withSasori() {
@@ -30,6 +31,66 @@ describe('Sasori', () => {
     expect(sasori.defId).toBe('sasori-hollow-body');
     expect(sasori.currentHP).toBe(4);
     expect(sasori.maxHP).toBe(4);
+  });
+
+  it('Hollow Body keeps the Chakra Hiruko had in the Pool', () => {
+    const base = withSasori();
+    const setup = { ...base, players: { ...base.players, p1: { ...base.players.p1, backRow: base.players.p1.backRow.map((c, i) => (i === 0 && c ? { ...c, chakraPool: { ...c.chakraPool, current: 5 } } : c)) } } };
+    const hollow = dealDamage(setup, 'p1-sasori-hiruko', 7).state.players.p1.backRow[0]!;
+    expect(hollow.defId).toBe('sasori-hollow-body');
+    expect(hollow.chakraPool).toEqual({ current: 5, capacity: 10 });
+    expect(hollow.currentHP).toBe(4);
+  });
+
+  describe("Third Kazekage uses Sasori's Pool (Prototype)", () => {
+    const armed = (pool: number) => {
+      const { state, kazekageId } = withSasoriAndKazekage();
+      const backRow = state.players.p1.backRow.map((c, i) => (i === 0 && c ? { ...c, chakraPool: { ...c.chakraPool, current: pool } } : c));
+      // Past Field Orientation, so only the Pool decides.
+      const frontRow = state.players.p1.frontRow.map((t) => (t?.instanceId === kazekageId ? { ...t, status: { ...t.status, enteredTurn: 0 } } : t));
+      return { state: { ...state, ruleset: 'prototype' as const, players: { ...state.players, p1: { ...state.players.p1, backRow, frontRow } } }, kazekageId };
+    };
+
+    it("pays from Sasori's Pool", () => {
+      const { state, kazekageId } = armed(5);
+      const s = activateAbility(state, kazekageId, 'iron-sand-barrage', ['p2-hidan'], 0);
+      expect(s.stack).toHaveLength(1);
+      expect(s.players.p1.backRow[0]!.chakraPool.current).toBe(2);
+    });
+
+    it("can't act without enough in the Pool", () => {
+      const { state, kazekageId } = armed(2);
+      const s = activateAbility(state, kazekageId, 'iron-sand-barrage', ['p2-hidan'], 0);
+      expect(s.stack).toHaveLength(0);
+      expect(s.log.at(-1)?.text).toMatch(/Not enough Chakra pooled/);
+    });
+
+    it('keeps using the Pool after Hiruko falls to Hollow Body', () => {
+      const { state, kazekageId } = armed(5);
+      const hollow = dealDamage(state, 'p1-sasori-hiruko', 7).state;
+      expect(hollow.players.p1.backRow[0]!.defId).toBe('sasori-hollow-body');
+      const s = activateAbility(hollow, kazekageId, 'iron-sand-barrage', ['p2-hidan'], 0);
+      expect(s.stack).toHaveLength(1);
+      expect(s.players.p1.backRow[0]!.chakraPool.current).toBe(2);
+    });
+  });
+
+  it('Hiruko is immune to Poison; Hollow Body is not', () => {
+    const state = withSasori();
+    const poisoned = applyPoison(state, 'p1-sasori-hiruko', 3);
+    expect(poisoned.players.p1.backRow[0]!.extra.poisonCounters).toBeUndefined();
+    expect(poisoned.log.at(-1)?.text).toBe('Sasori (Hiruko) is immune to Poison.');
+    const hollow = dealDamage(state, 'p1-sasori-hiruko', 7).state;
+    expect(applyPoison(hollow, 'p1-sasori-hiruko', 3).players.p1.backRow[0]!.extra.poisonCounters).toBe(3);
+  });
+
+  it('Third Kazekage is immune to Poison; other units still get it', () => {
+    const { state, kazekageId } = withSasoriAndKazekage();
+    const kazekage = (s: typeof state) => s.players.p1.frontRow.find((t) => t?.instanceId === kazekageId)!;
+    const poisoned = applyPoison(state, kazekageId, 3);
+    expect(kazekage(poisoned).extra.poisonCounters).toBeUndefined();
+    expect(poisoned.log.at(-1)?.text).toBe('Third Kazekage is immune to Poison.');
+    expect(applyPoison(state, 'p1-hidan', 3).players.p1.backRow[1]!.extra.poisonCounters).toBe(3);
   });
 
   it("Third Kazekage doesn't fizzle when Hiruko transforms, but does fizzle when Hollow Body is truly defeated", () => {
@@ -97,6 +158,21 @@ describe('Sasori', () => {
     state = gameReducer(state, { type: 'PASS_PRIORITY' });
     state = gameReducer(state, { type: 'PASS_PRIORITY' }); // resolves Thousand Hungry Sharks, reduced by 2
     expect(state.players.p1.backRow[1]!.currentHP).toBe(hidanHpBefore - 2); // 4 - 2
+  });
+
+  it('Iron Sand Wall can protect Third Kazekage itself', () => {
+    let { state, kazekageId } = withSasoriAndKazekage();
+    state = { ...state, activePlayer: 'p2', priorityPlayer: 'p2' };
+    state = giveChakra(state, 'p2', 6);
+    state = playCard(state, 'p2', 'jutsu-thousand-hungry-sharks', 'p2-kisame', [kazekageId]); // 4 damage, Ninjutsu
+    expect(state.stack).toHaveLength(1);
+
+    state = giveChakra(state, 'p1', 3);
+    state = activateAbility(state, kazekageId, 'iron-sand-wall', [kazekageId], 0);
+    expect(state.stack).toHaveLength(2);
+
+    state = resolveTop(resolveTop(state));
+    expect(state.players.p1.frontRow.find((t) => t?.instanceId === kazekageId)!.currentHP).toBe(4); // 6 - (4 - 2)
   });
 
   it('Iron Sand Wall: the player may pay X more Chakra (up to 4) to reduce it by a further X', () => {

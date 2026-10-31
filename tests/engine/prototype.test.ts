@@ -3,12 +3,14 @@ import { activateAbility } from '../../src/engine/abilities';
 import { gameReducer } from '../../src/engine/reducer';
 import { drawCard, makeHandCardInstance } from '../../src/engine/deck';
 import { dealDamage } from '../../src/engine/combat';
-import { getAdjacent, legalCharacterSlots, legalTokenSlots, maxCharacters, placeCharacter } from '../../src/engine/board';
+import { getAdjacent, legalCharacterSlots, legalTokenSlots, maxCharacters, placeCharacter, placeToken } from '../../src/engine/board';
 import { previewUpkeep } from '../../src/engine/upkeep';
-import { shinobiDamage } from '../../src/engine/shinobi';
+import { attackBlocker, shinobiDamage } from '../../src/engine/shinobi';
+import { makeThirdKazekage } from '../../src/engine/characters';
 import { charactersRemaining, suppliesAvailable, suppliesMax } from '../../src/engine/prototype';
 import { currentTax } from '../../src/engine/playCharacter';
 import { canBeChakraSource, getHandCardDef, needsEnablingCharacter, paysInChakra } from '../../src/engine/cards/registry';
+import { checkHandCardLegality, resolveCost as cardCost } from '../../src/engine/cards/playHandCard';
 import { createSetupState } from '../../src/engine/state';
 import { freshCombat, freshMain1, giveChakra, resolveTop, withCharacterAt } from './testUtils';
 import type { GameState, PlayerId, TokenInstance } from '../../src/engine/types';
@@ -50,7 +52,7 @@ function placeShinobi(state: GameState, player: PlayerId, name: string, damage: 
   return { state: { ...state, players: { ...state.players, [player]: { ...state.players[player], frontRow } } }, id };
 }
 
-describe('Prototype: Chakra is paid only from Pools', () => {
+describe('Prototype: paying Chakra', () => {
   it("a Leader's ability can't use generic Chakra — only its own Pool", () => {
     const s = { ...proto(giveChakra(freshMain1(), 'p1', 5)), phase: 'Combat' as const };
     expect(activateAbility(s, 'p1-kakuzu', 'earth-grudge-fear', ['p2-hidan'], 0).stack).toHaveLength(0);
@@ -60,15 +62,269 @@ describe('Prototype: Chakra is paid only from Pools', () => {
     expect(pooled.players.p1.genericChakraAvailable).toBe(5); // untouched
   });
 
-  it("a Jutsu card is paid from its enabling Leader's Pool, and even a Type: None Jutsu needs a Leader", () => {
-    let s = proto(giveChakra(freshMain1(), 'p1', 5));
+  it('a Jutsu with no Style that doesn\'t attack needs no enabler, and is paid with tapped Chakra', () => {
+    const s = proto(giveChakra(freshMain1(), 'p1', 5));
     const recon = addToHand(s, 'p1', 'reconnaissance');
-    expect(gameReducer(recon.state, { type: 'PLAY_HAND_CARD', instanceId: recon.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 }).stack).toHaveLength(0);
-    s = withPool(recon.state, 'p1-hidan', 1);
-    const played = gameReducer(s, { type: 'PLAY_HAND_CARD', instanceId: recon.instanceId, enablingInstanceId: 'p1-hidan', targetInstanceIds: [], payFromPool: 0 });
+    const played = gameReducer(recon.state, { type: 'PLAY_HAND_CARD', instanceId: recon.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 });
     expect(played.stack).toHaveLength(1);
-    expect(unit(played, 'p1-hidan')!.chakraPool!.current).toBe(0);
-    expect(played.players.p1.genericChakraAvailable).toBe(5);
+    expect(played.players.p1.genericChakraAvailable).toBe(4);
+    const broke = addToHand(proto(freshMain1()), 'p1', 'reconnaissance');
+    expect(gameReducer(broke.state, { type: 'PLAY_HAND_CARD', instanceId: broke.instanceId, enablingInstanceId: '', targetInstanceIds: [], payFromPool: 0 }).stack).toHaveLength(0);
+  });
+
+  it('a Jutsu with a Style or an attack, or text about its enabler, still needs one', () => {
+    const needs = (id: string) => needsEnablingCharacter(getHandCardDef(id)!, true);
+    expect(['fireball-jutsu', 'senbon-volley', 'substitution', 'kunai-deflection'].map(needs)).toEqual([true, true, true, true]);
+    expect(['field-intelligence', 'medical-chakra-infusion', 'jutsu-disruption', 'chakra-suppression'].map(needs)).toEqual([false, false, false, false]);
+  });
+
+  it("a Jutsu can be paid with tapped Chakra, its enabler's Pool, or both", () => {
+    const base = withPool(proto(giveChakra(freshMain1(), 'p1', 1)), 'p1-kisame', 5);
+    const play = (payFromPool: number) => {
+      const card = addToHand({ ...base, phase: 'Combat' }, 'p1', 'senbon-volley');
+      return gameReducer(card.state, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p1-kisame', targetInstanceIds: ['p2-deidara'], payFromPool });
+    };
+    const cost = getHandCardDef('senbon-volley')!.cost as number;
+    const fromPool = play(cost);
+    expect(fromPool.stack).toHaveLength(1);
+    expect(unit(fromPool, 'p1-kisame')!.chakraPool!.current).toBe(5 - cost);
+    expect(fromPool.players.p1.genericChakraAvailable).toBe(1);
+    const mixed = play(cost - 1);
+    expect(mixed.stack).toHaveLength(1);
+    expect(unit(mixed, 'p1-kisame')!.chakraPool!.current).toBe(5 - (cost - 1));
+    expect(mixed.players.p1.genericChakraAvailable).toBe(0);
+  });
+
+  it('a Pool discount applies only when paid from the Pool', () => {
+    const s = proto(freshMain1());
+    const def = getHandCardDef('substitution')!;
+    const ctx = { state: s, player: 'p1' as const, enablingInstanceId: 'p1-kisame', targetInstanceIds: [] };
+    expect(cardCost(def, ctx, 0)).toBe(4);
+    expect(cardCost(def, ctx, 1)).toBe(2);
+  });
+
+  describe('an attack Jutsu\'s X comes from the Pool', () => {
+    // Kakuzu's Elemental Versatility would otherwise take 1 off these Wind Jutsu.
+    const noVersatility = (s: GameState): GameState => ({ ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c ? { ...c, extra: { ...c.extra, elementalVersatilityUsedTurn: s.turn } } : c)) } } });
+    const playBullets = (generic: number, pool: number, targets: string[]) => {
+      const base = noVersatility(withPool(proto(giveChakra(freshMain1(), 'p1', generic)), 'p1-kakuzu', pool));
+      const card = addToHand({ ...base, phase: 'Combat' }, 'p1', 'jutsu-air-bullets');
+      return gameReducer(card.state, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: targets, payFromPool: 0 });
+    };
+
+    it('takes X from the Pool and the base cost from tapped Chakra', () => {
+      const s = playBullets(1, 2, ['p2-deidara', 'p2-deidara']); // 1 + 2
+      expect(s.stack).toHaveLength(1);
+      expect(unit(s, 'p1-kakuzu')!.chakraPool!.current).toBe(0);
+      expect(s.players.p1.genericChakraAvailable).toBe(0);
+    });
+
+    it("can't pay X with tapped Chakra", () => {
+      const s = playBullets(5, 1, ['p2-deidara', 'p2-deidara']);
+      expect(s.stack).toHaveLength(0);
+      expect(s.players.p1.genericChakraAvailable).toBe(5);
+    });
+
+    it('lets the Pool pay the base cost too', () => {
+      const base = noVersatility(withPool(proto(freshMain1()), 'p1-kakuzu', 3));
+      const card = addToHand({ ...base, phase: 'Combat' }, 'p1', 'jutsu-air-bullets');
+      const s = gameReducer(card.state, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-deidara', 'p2-deidara'], payFromPool: 3 });
+      expect(s.stack).toHaveLength(1);
+      expect(unit(s, 'p1-kakuzu')!.chakraPool!.current).toBe(0);
+    });
+
+    it('Water Dragon Jutsu costs 1 + X with no discount', () => {
+      const s = proto(freshMain1());
+      const def = getHandCardDef('water-dragon-jutsu')!;
+      const ctx = { state: s, player: 'p1' as const, enablingInstanceId: 'p1-kisame', targetInstanceIds: [], amount: 3 };
+      expect(cardCost(def, ctx, 3)).toBe(4);
+      expect(def.poolX!(ctx)).toBe(3);
+    });
+
+    it('stays out of the base game', () => {
+      const def = getHandCardDef('water-dragon-jutsu')!;
+      const ctx = { state: freshMain1(), player: 'p1' as const, enablingInstanceId: 'p1-kisame', targetInstanceIds: [], amount: 3 };
+      expect(cardCost(def, ctx, 1)).toBe(3);
+    });
+  });
+
+  it('enabling a Jutsu leaves a Leader free to be pooled into, and the other way round', () => {
+    const base = withPool(proto(giveChakra(freshMain1(), 'p1', 5)), 'p1-kakuzu', 2);
+    const card = addToHand({ ...base, phase: 'Combat' }, 'p1', 'jutsu-air-bullets');
+    const played = gameReducer(card.state, { type: 'PLAY_HAND_CARD', instanceId: card.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-deidara'], payFromPool: 0 });
+    expect(played.stack).toHaveLength(1);
+    const after = gameReducer({ ...played, stack: [], phase: 'Main2' }, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 });
+    expect(unit(after, 'p1-kakuzu')!.chakraPool!.current).toBe(unit(played, 'p1-kakuzu')!.chakraPool!.current + 1);
+
+    const pooled = gameReducer({ ...base, phase: 'Main1' }, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 });
+    const second = addToHand({ ...pooled, phase: 'Combat' }, 'p1', 'jutsu-air-bullets');
+    const enabled = gameReducer(second.state, { type: 'PLAY_HAND_CARD', instanceId: second.instanceId, enablingInstanceId: 'p1-kakuzu', targetInstanceIds: ['p2-deidara'], payFromPool: 0 });
+    expect(enabled.stack).toHaveLength(1);
+  });
+
+  it('Medical Chakra Infusion heals a Leader or a Shinobi, but not a plain Token or an enemy', () => {
+    const base = proto(giveChakra(freshMain1(), 'p1', 5));
+    const placed = placeShinobi(base, 'p1', 'Genin', 1, 5, 0);
+    const legal = (target: string, s: GameState = placed.state) => {
+      const card = addToHand(s, 'p1', 'medical-chakra-infusion');
+      return checkHandCardLegality(card.state, 'p1', card.instanceId, '', [target], 0).ok;
+    };
+    expect(legal('p1-hidan')).toBe(true);
+    expect(legal(placed.id)).toBe(true);
+    expect(legal('p2-hidan')).toBe(false);
+    const token = makeThirdKazekage('p1', 'p1-hidan');
+    expect(legal(token.instanceId, placeToken(placed.state, 'p1', token))).toBe(false);
+  });
+
+  describe('Deidara, Prototype', () => {
+    describe('C2, Shi-Ryu', () => {
+      const flying = () => {
+        const s = activateAbility(setCharges(deidara(0, 3, 10), 5), 'p1-deidara', 'c2-shi-ryu', [], 0);
+        expect(s.stack).toHaveLength(1);
+        return resolveTop(s);
+      };
+      const setCharges = (s: GameState, clayCharges: number): GameState => ({ ...s, players: { ...s.players, p1: { ...s.players.p1, backRow: s.players.p1.backRow.map((c) => (c?.defId === 'deidara' ? { ...c, extra: { ...c.extra, clayCharges } } : c)) } } });
+
+      it('spends 3 Chakra from his Pool and 5 Clay Charges, and needs all 5', () => {
+        const s = flying();
+        expect(unit(s, 'p1-deidara')!.extra.airborne).toBe(true);
+        expect(unit(s, 'p1-deidara')!.extra.clayCharges).toBe(0);
+        expect(unit(s, 'p1-deidara')!.chakraPool!.current).toBe(0);
+        expect(activateAbility(setCharges(deidara(0, 3, 10), 4), 'p1-deidara', 'c2-shi-ryu', [], 0).stack).toHaveLength(0);
+      });
+
+      it("enemy Shinobi attacks, Taijutsu and Bukijutsu can't target him", () => {
+        const s = { ...flying(), activePlayer: 'p2' as const, priorityPlayer: 'p2' as const, phase: 'Combat' as const };
+        const a = placeShinobi(s, 'p2', 'Jonin', 3, 5, 0);
+        expect(gameReducer(a.state, { type: 'DECLARE_SHINOBI_ATTACK', attackerId: a.id, targetId: 'p1-deidara' }).shinobiCombat ?? null).toBeNull();
+        for (const defId of ['senbon-volley', 'finishing-blow']) {
+          const card = addToHand(withPool(a.state, 'p2-kisame', 5), 'p2', defId);
+          expect(checkHandCardLegality(card.state, 'p2', card.instanceId, 'p2-kisame', ['p1-deidara'], 2).reason).toMatch(/Airborne/);
+        }
+      });
+
+      it('Ninjutsu still reaches him, and he stays up however much damage he takes', () => {
+        const s = { ...flying(), activePlayer: 'p2' as const, priorityPlayer: 'p2' as const };
+        const card = addToHand(withPool(s, 'p2-kisame', 5), 'p2', 'fireball-jutsu');
+        expect(checkHandCardLegality(card.state, 'p2', card.instanceId, 'p2-kisame', ['p1-deidara'], 3).reason ?? '').not.toMatch(/Airborne/);
+        const hit = dealDamage(s, 'p1-deidara', 9).state;
+        expect(unit(hit, 'p1-deidara')!.extra.airborne).toBe(true);
+      });
+
+      it('gains 1 Clay Charge at each of your Upkeeps, for free', () => {
+        const upkeep = (s: GameState) => gameReducer({ ...s, phase: 'Untap', activePlayer: 'p1', priorityPlayer: 'p1' }, { type: 'ADVANCE_PHASE' });
+        const s = upkeep(flying());
+        expect(s.phase).toBe('Upkeep');
+        expect(unit(s, 'p1-deidara')!.extra.clayCharges).toBe(1);
+        expect(unit(s, 'p1-deidara')!.chakraPool!.current).toBe(0);
+        expect(unit(upkeep(setCharges(deidara(0, 3, 10), 0)), 'p1-deidara')!.extra.clayCharges).toBe(0); // not Airborne
+      });
+
+      it('his other abilities keep their normal Clay Charge costs', () => {
+        const s = flying();
+        const backRow = s.players.p1.backRow.map((c) => (c?.defId === 'deidara' ? { ...c, chakraPool: { ...c.chakraPool, current: 7 }, status: { ...c.status, usedAbilitiesThisTurn: [] }, extra: { ...c.extra, clayCharges: 1 } } : c));
+        expect(activateAbility({ ...s, players: { ...s.players, p1: { ...s.players.p1, backRow } } }, 'p1-deidara', 'c3-shi-suri', ['p2-kakuzu'], 0).stack).toHaveLength(0);
+      });
+
+      it("can't be used again while Airborne", () => {
+        expect(activateAbility(setCharges(withPool(flying(), 'p1-deidara', 4), 5), 'p1-deidara', 'c2-shi-ryu', [], 0).stack).toHaveLength(0);
+      });
+    });
+
+    it("Self Detonate pays from Deidara's Pool", () => {
+      let s = resolveTop(activateAbility(deidara(0, 5, 10), 'p1-deidara', 'c1-shi-wan', [], 0));
+      const spider = s.players.p1.frontRow.find((t) => t?.defId === 'clay-spider')!;
+      s = activateAbility(s, spider.instanceId, 'self-detonate', ['p2-hidan'], 0, { choices: { spiders: 1 } });
+      expect(s.stack).toHaveLength(1);
+      expect(unit(s, 'p1-deidara')!.chakraPool!.current).toBe(2); // 5 − 1 (C1) − 2
+    });
+
+    const deidara = (generic: number, pool: number, hp = 3) => {
+      const s = withPool(proto(giveChakra(freshCombat(), 'p1', generic)), 'p1-deidara', pool);
+      const backRow = s.players.p1.backRow.map((c) => (c?.defId === 'deidara' ? { ...c, currentHP: hp, status: { ...c.status, enteredTurn: 0 }, extra: { ...c.extra, clayCharges: 5 } } : c));
+      return { ...s, players: { ...s.players, p1: { ...s.players.p1, backRow } } };
+    };
+
+    it('C3 deals 4 to the first unit and 2 to up to 2 others, anywhere on the board, even if the first falls', () => {
+      let s = deidara(0, 7, 10);
+      const [far, second, first] = [s.players.p2.backRow[0]!.instanceId, s.players.p2.backRow[1]!.instanceId, s.players.p2.backRow[3]!.instanceId];
+      const third = s.players.p2.backRow[4]!.instanceId;
+      const hp = (id: string, from: GameState) => unit(from, id)!.currentHP;
+      const before = { far: hp(far, s), second: hp(second, s), third: hp(third, s) };
+      s = { ...s, players: { ...s.players, p2: { ...s.players.p2, backRow: s.players.p2.backRow.map((c) => (c?.instanceId === first ? { ...c, currentHP: 1, extra: { ...c.extra, hearts: 1 } } : c)) } } };
+      s = resolveTop(activateAbility(s, 'p1-deidara', 'c3-shi-suri', [first, second, third], 0));
+      expect(unit(s, first)).toBeUndefined();
+      expect(hp(second, s)).toBe(before.second - 2);
+      expect(hp(third, s)).toBe(before.third - 2);
+      expect(hp(far, s)).toBe(before.far);
+    });
+
+    it('C3 can pick one unit, but not more than 3 or the same unit twice', () => {
+      const id = 'p1-deidara';
+      expect(activateAbility(deidara(0, 7, 10), id, 'c3-shi-suri', ['p2-kakuzu'], 0).stack).toHaveLength(1);
+      expect(activateAbility(deidara(0, 7, 10), id, 'c3-shi-suri', ['p2-kakuzu', 'p2-kakuzu'], 0).stack).toHaveLength(0);
+    });
+
+    it('Version 1 pays 6 from the Pool and leaves the rest of it', () => {
+      const s = activateAbility(deidara(5, 8), 'p1-deidara', 'death-is-an-explosion-v1', [], 0);
+      expect(s.stack).toHaveLength(1);
+      expect(s.players.p1.genericChakraAvailable).toBe(5);
+      expect(unit(s, 'p1-deidara')!.chakraPool!.current).toBe(2);
+    });
+
+    it("Version 1 can't use tapped Chakra", () => {
+      expect(activateAbility(deidara(10, 5), 'p1-deidara', 'death-is-an-explosion-v1', [], 0).stack).toHaveLength(0);
+    });
+
+    it('Version 2 pays from the Pool, so it works whoever\'s turn it is', () => {
+      let s = { ...deidara(0, 7), activePlayer: 'p2' as const, priorityPlayer: 'p2' as const };
+      s = dealDamage(s, 'p1-deidara', 3).state;
+      s = gameReducer(s, { type: 'RESOLVE_CHOICE', choiceId: s.pendingChoices[0].id, optionIds: ['activate-2'] });
+      expect(s.log.some((l) => /Art is an EXPLOSION!" — 6 to every enemy, 5 to every ally/.test(l.text))).toBe(true);
+    });
+
+    it.each([
+      [0, 4],
+      [1, 5],
+      [3, 7],
+    ])('Version 1 with %i Clay Charges deals %i to every enemy', (spend, damage) => {
+      const start = deidara(0, 6);
+      const s = resolveTop(activateAbility(start, 'p1-deidara', 'death-is-an-explosion-v1', [], 0, { choices: { clayCharges: spend } }));
+      expect(s.log.some((l) => l.text.includes(`${damage} to every enemy, 3 to every ally`))).toBe(true);
+    });
+
+    it("can't spend more than 3 Clay Charges on it", () => {
+      const s = resolveTop(activateAbility(deidara(0, 6), 'p1-deidara', 'death-is-an-explosion-v1', [], 0, { choices: { clayCharges: 5 } }));
+      expect(s.log.some((l) => l.text.includes('7 to every enemy'))).toBe(true);
+    });
+
+    it('Version 2 without 6 in the Pool: no prompt, he just falls', () => {
+      const s = dealDamage(deidara(20, 5), 'p1-deidara', 3).state;
+      expect(s.pendingChoices).toHaveLength(0);
+      expect(s.log.some((l) => /Art is an EXPLOSION/.test(l.text))).toBe(false);
+      expect(unit(s, 'p1-deidara')).toBeUndefined();
+    });
+
+    it('C3 works with 7 in the Pool, not full, and other abilities still ignore tapped Chakra', () => {
+      const s = activateAbility(deidara(0, 7, 10), 'p1-deidara', 'c3-shi-suri', ['p2-kakuzu'], 0);
+      expect(s.stack).toHaveLength(1);
+      expect(unit(s, 'p1-deidara')!.chakraPool!.current).toBe(0);
+      expect(activateAbility(deidara(20, 6, 10), 'p1-deidara', 'c3-shi-suri', ['p2-kakuzu'], 0).stack).toHaveLength(0);
+    });
+  });
+
+  it("using an ability still blocks pooling into that unit", () => {
+    const s = { ...withPool(proto(giveChakra(freshMain1(), 'p1', 5)), 'p1-kakuzu', 2), phase: 'Combat' as const };
+    const acted = resolveTop(activateAbility(s, 'p1-kakuzu', 'earth-grudge-fear', ['p2-hidan'], 0));
+    const after = gameReducer({ ...acted, phase: 'Main2' }, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 1 });
+    expect(unit(after, 'p1-kakuzu')!.chakraPool!.current).toBe(unit(acted, 'p1-kakuzu')!.chakraPool!.current);
+  });
+
+  it("Kakuzu's kill credit for Patchwork Threads comes from a Leader, not a Shinobi", () => {
+    const a = placeShinobi(proto(freshMain1()), 'p2', 'Genin', 1, 1, 0);
+    const s = dealDamage(a.state, a.id, 1, { attackerInstanceId: 'p1-kakuzu' } as never).state;
+    expect(unit(s, a.id)).toBeUndefined();
+    expect(unit(s, 'p1-kakuzu')!.extra.lastKillTurn).toBeUndefined();
   });
 
   it('only Jutsu and Shinobi cards can be placed as Chakra sources', () => {
@@ -93,6 +349,107 @@ describe('Prototype: Chakra is paid only from Pools', () => {
     // The real cards follow the defaults.
     expect(paysInChakra(getHandCardDef('unshakable-resolve')!)).toBe(false);
     expect(canBeChakraSource(getHandCardDef('unshakable-resolve')!)).toBe(false);
+  });
+});
+
+describe('Prototype: Third Kazekage in Shinobi combat', () => {
+  function setup() {
+    const combat: GameState = { ...proto(freshMain1()), phase: 'Combat' };
+    const a = placeShinobi(combat, 'p1', 'Jonin', 3, 5, 0);
+    const kazekage = makeThirdKazekage('p2', 'p2-deidara');
+    return { state: placeToken(a.state, 'p2', kazekage), attacker: a.id, kazekage: kazekage.instanceId };
+  }
+
+  it('blocks a Shinobi attack on a Leader, taking the hit and dealing nothing back', () => {
+    const { state, attacker, kazekage } = setup();
+    const hp = unit(state, 'p2-deidara')!.currentHP;
+    let s = gameReducer(state, { type: 'DECLARE_SHINOBI_ATTACK', attackerId: attacker, targetId: 'p2-deidara' });
+    s = gameReducer(s, { type: 'CONFIRM_SHINOBI_ATTACKS' });
+    expect(s.shinobiCombat?.step).toBe('defend');
+    s = gameReducer(s, { type: 'ASSIGN_SHINOBI_DEFENDER', attackerId: attacker, defenderId: kazekage });
+    s = gameReducer(s, { type: 'CONFIRM_SHINOBI_DEFENSE' });
+    expect(unit(s, 'p2-deidara')!.currentHP).toBe(hp);
+    expect(unit(s, kazekage)!.currentHP).toBe(3); // 6 − 3
+    expect(unit(s, attacker)!.currentHP).toBe(5);
+  });
+
+  it('may decline to block', () => {
+    const { state, attacker } = setup();
+    const hp = unit(state, 'p2-deidara')!.currentHP;
+    let s = gameReducer(state, { type: 'DECLARE_SHINOBI_ATTACK', attackerId: attacker, targetId: 'p2-deidara' });
+    s = gameReducer(s, { type: 'CONFIRM_SHINOBI_ATTACKS' });
+    s = gameReducer(s, { type: 'CONFIRM_SHINOBI_DEFENSE' });
+    expect(unit(s, 'p2-deidara')!.currentHP).toBe(hp - 3);
+  });
+
+  it('can be attacked directly, and that attack can\'t be defended', () => {
+    const { state, attacker, kazekage } = setup();
+    let s = gameReducer(state, { type: 'DECLARE_SHINOBI_ATTACK', attackerId: attacker, targetId: kazekage });
+    expect(s.shinobiCombat?.attacks).toHaveLength(1);
+    s = gameReducer(s, { type: 'CONFIRM_SHINOBI_ATTACKS' }); // resolves at once
+    expect(s.shinobiCombat ?? null).toBeNull();
+    expect(unit(s, kazekage)!.currentHP).toBe(3);
+    expect(unit(s, attacker)!.currentHP).toBe(5);
+  });
+
+  it("isn't a Shinobi otherwise: it can't attack", () => {
+    const { state, kazekage } = setup();
+    expect(attackBlocker({ ...state, activePlayer: 'p2' }, kazekage)).toBe('Only Shinobi can attack.');
+  });
+
+  it("other Tokens still can't be attacked or defend", () => {
+    const { state, attacker } = setup();
+    const soldier = placeShinobi(state, 'p2', 'Plain', 1, 1, 5);
+    const plain = { ...soldier.state, players: { ...soldier.state.players, p2: { ...soldier.state.players.p2, frontRow: soldier.state.players.p2.frontRow.map((t) => (t?.instanceId === soldier.id ? { ...t, defId: 'puppet-soldier', extra: {} } : t)) } } };
+    expect(gameReducer(plain, { type: 'DECLARE_SHINOBI_ATTACK', attackerId: attacker, targetId: soldier.id }).shinobiCombat ?? null).toBeNull();
+  });
+});
+
+describe('Prototype: starting hand', () => {
+  it('deals 7 cards; the first mulligan redraws 7, the second 6 (the base game stays at 6)', () => {
+    let s = createSetupState('p1', 'strict', {}, { ruleset: 'prototype' });
+    const cards = () => s.players.p1.hand.filter((h) => h.kind === 'card');
+    expect(cards()).toHaveLength(7);
+    s = gameReducer(s, { type: 'MULLIGAN', player: 'p1' });
+    expect(cards()).toHaveLength(7);
+    s = gameReducer(s, { type: 'MULLIGAN', player: 'p1' });
+    expect(cards()).toHaveLength(6);
+    expect(createSetupState('p1').players.p1.hand.filter((h) => h.kind === 'card')).toHaveLength(6);
+  });
+});
+
+describe('Prototype: Jutsu and ability timing', () => {
+  const inPhase = (s: GameState, phase: 'Main1' | 'Combat' | 'Main2'): GameState => ({ ...s, phase });
+
+  it.each(['Main1', 'Combat', 'Main2'] as const)('a damaging ability works in %s', (phase) => {
+    const placed = placeShinobi(proto(freshMain1()), 'p1', 'Water Specialist', 2, 6, 0);
+    const frontRow = placed.state.players.p1.frontRow.map((t) => (t?.instanceId === placed.id ? { ...t, defId: 'shinobi-rain-jonin-water', chakraPool: { current: 2, capacity: 4 } } : t));
+    const s = inPhase({ ...placed.state, players: { ...placed.state.players, p1: { ...placed.state.players.p1, frontRow } } }, phase);
+    const hp = unit(s, 'p2-deidara')!.currentHP;
+    const after = resolveTop(activateAbility(s, placed.id, 'rain-water-bullet', ['p2-deidara'], 0));
+    expect(unit(after, 'p2-deidara')!.currentHP).toBe(hp - 2);
+  });
+
+  it.each(['Main1', 'Combat', 'Main2'] as const)('Attack-type and tactical Jutsu are both legal in %s', (phase) => {
+    let s = withPool(proto(giveChakra(freshMain1(), 'p1', 1)), 'p1-kisame', 5);
+    const senbon = addToHand(s, 'p1', 'senbon-volley');
+    const recon = addToHand(senbon.state, 'p1', 'reconnaissance');
+    s = inPhase(recon.state, phase);
+    const cost = getHandCardDef('senbon-volley')!.cost as number;
+    expect(checkHandCardLegality(s, 'p1', senbon.instanceId, 'p1-kisame', ['p2-deidara'], cost)).toEqual({ ok: true });
+    expect(checkHandCardLegality(s, 'p1', recon.instanceId, '', [], 0)).toEqual({ ok: true });
+  });
+
+  it('stays on your own turn, keeps Attack-type Jutsu once per turn, and leaves Terrain as a Main Phase play', () => {
+    let s = withPool(proto(freshMain1()), 'p1-kisame', 5);
+    const senbon = addToHand(s, 'p1', 'senbon-volley');
+    const terrain = addToHand(senbon.state, 'p1', 'akatsuki-hideout');
+    s = inPhase(terrain.state, 'Combat');
+    expect(checkHandCardLegality({ ...s, activePlayer: 'p2' }, 'p1', senbon.instanceId, 'p1-kisame', ['p2-deidara'], 0).ok).toBe(false);
+    expect(checkHandCardLegality({ ...s, phase: 'End' }, 'p1', senbon.instanceId, 'p1-kisame', ['p2-deidara'], 0).ok).toBe(false);
+    expect(checkHandCardLegality(s, 'p1', terrain.instanceId, '', [], 0).reason).toMatch(/only be played during a Main Phase/);
+    const used = { ...s, players: { ...s.players, p1: { ...s.players.p1, attackJutsuUsedThisTurn: ['Senbon Volley'] } } };
+    expect(checkHandCardLegality(used, 'p1', senbon.instanceId, 'p1-kisame', ['p2-deidara'], 0).ok).toBe(false);
   });
 });
 

@@ -13,7 +13,7 @@ const DEF_ID = 'kakuzu';
 const HEART_STYLE_ORDER: Style[] = ['Fire', 'Lightning', 'Wind', 'Earth'];
 
 function poolCapacityForHearts(hearts: number): number {
-  return Math.max(0, hearts - 1) * 2;
+  return hearts * 2;
 }
 
 const earthGrudgeFear: AbilityDef = {
@@ -176,11 +176,13 @@ registerDefeatHook(DEF_ID, (state, targetInstanceId) => {
 
   const p = state.players[player];
   const backRow = p.backRow.slice();
+  const capacity = poolCapacityForHearts(newHearts);
   backRow[index] = {
     ...kakuzu,
     currentHP: kakuzu.maxHP,
     styles: newStyles,
-    chakraPool: { current: 0, capacity: poolCapacityForHearts(newHearts) },
+    // He keeps his Chakra, down to the smaller Pool's new maximum.
+    chakraPool: { current: Math.min(kakuzu.chakraPool.current, capacity), capacity },
     extra: { ...kakuzu.extra, hearts: newHearts, lostStyles: newLostStyles },
   };
   const next = { ...state, players: { ...state.players, [player]: { ...p, backRow } } };

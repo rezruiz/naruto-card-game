@@ -145,9 +145,9 @@ describe('Water Style: Thousand Hungry Sharks (Jutsu card)', () => {
   const combat = (s: ReturnType<typeof freshCombat>) => giveChakra(s, 'p1', 6);
   const hp = (s: ReturnType<typeof freshCombat>, i: number) => s.players.p2.backRow[i]!.currentHP;
 
-  it("Kisame also has it as his own ability, at 8 — same split, Fusion's +1 and Absorb 1 apply", () => {
-    expect(findAbility('kisame', 'thousand-hungry-sharks')?.cost).toBe(8);
-    let s = giveChakra(freshCombat(), 'p1', 8);
+  it("Kisame also has it as his own ability, at 7 — same split, Fusion's +1 and Absorb 1 apply", () => {
+    expect(findAbility('kisame', 'thousand-hungry-sharks')?.cost).toBe(7);
+    let s = giveChakra(freshCombat(), 'p1', 7);
     const before = [hp(s, 1), hp(s, 4)];
     s = activateAbility(s, 'p1-kisame', 'thousand-hungry-sharks', ['p2-hidan', 'p2-itachi', 'p2-itachi'], 0);
     expect(s.players.p1.genericChakraAvailable).toBe(0);

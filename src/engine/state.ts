@@ -1,6 +1,6 @@
 import type { GameState, PlayerId, PlayerState, RulesMode } from './types';
 import { BACK_ROW_SIZE, FRONT_ROW_SIZE } from './board';
-import { NOT_LEADERS } from './prototype';
+import { NOT_LEADERS, openingHandSize } from './prototype';
 import { createCharacterInstance, CHARACTER_DECK_MANIFEST } from './characters';
 import { buildHandDeck, drawCard, revealCharacters, shuffle } from './deck';
 import { PROTOTYPE_EXTRA_MANIFEST, PROTOTYPE_HAND_MANIFEST, PROTOTYPE_LEADER_MANIFEST, toManifests, type DeckList } from './decklist';
@@ -108,7 +108,7 @@ function createEmptyPlayer(id: PlayerId): PlayerState {
  * SPEC.md §3's real Setup flow: shuffles both decks, reveals each player's
  * top 3 Character Deck cards (awaiting a CHOOSE_CHARACTER action each to
  * pick the starting character — §8's D-rank bonus rule applies here too),
- * and deals each a 6-card starting hand (mulligan is a separate, optional
+ * and deals each their starting hand (mulligan is a separate, optional
  * MULLIGAN action from here). Turn 1 begins immediately; the Draw Phase
  * skip for whoever goes first is handled by drawForDrawPhase, keyed off
  * `firstPlayer`.
@@ -165,7 +165,7 @@ export function createSetupState(
       },
     };
     state = revealCharacters(state, player, 3, 'setup');
-    for (let i = 0; i < 6; i++) state = drawCard(state, player);
+    for (let i = 0; i < openingHandSize(state); i++) state = drawCard(state, player);
   }
 
   return state;

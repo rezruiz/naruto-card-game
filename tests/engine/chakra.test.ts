@@ -108,20 +108,11 @@ describe('Personal Chakra Pooling (§5.3)', () => {
   });
 
   it('cannot pool beyond the character’s capacity', () => {
-    let state = onlyStartingCharacter(toMain1(createInitialState('p1')), 'p1'); // no upkeep to tap sources
-    // Kakuzu's starting capacity is (5 Hearts - 1) * 2 = 8. Accumulate 9
-    // sources over 9 of p1's turns, then tap all of them together in one
-    // turn to have 9 Chakra available — more than the character can hold.
-    for (let i = 0; i < 9; i++) {
-      state = gameReducer(state, { type: 'PLACE_CHAKRA_SOURCE', instanceId: state.players.p1.hand[0].instanceId });
-      state = advance(state, 4 + 7 + 3); // back to p1 Main1 next turn
-    }
-    for (let i = 0; i < 9; i++) {
-      state = gameReducer(state, { type: 'TAP_CHAKRA_SOURCE', sourceIndex: i });
-    }
-    expect(state.players.p1.genericChakraAvailable).toBe(9);
-    const result = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 9 });
-    expect(result.players.p1.backRow[0]?.chakraPool.current).toBe(0); // rejected, capacity is 8
+    // Kakuzu's starting capacity is 5 Hearts * 2 = 10, so 11 Chakra is more than he can hold.
+    const main = onlyStartingCharacter(toMain1(createInitialState('p1')), 'p1');
+    const state = { ...main, players: { ...main.players, p1: { ...main.players.p1, genericChakraAvailable: 11 } } };
+    const result = gameReducer(state, { type: 'POOL_CHAKRA', instanceId: 'p1-kakuzu', amount: 11 });
+    expect(result.players.p1.backRow[0]?.chakraPool.current).toBe(0); // rejected, capacity is 10
   });
 
   it('is not cleared at End Phase, unlike the generic pool', () => {

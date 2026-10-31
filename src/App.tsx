@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { gameReducer, setupPending } from './engine/reducer';
 import { createSetupState } from './engine/state';
 import { findOccupant, isCharacter, legalCharacterSlots, maxCharacters } from './engine/board';
@@ -7,12 +7,13 @@ import { abilityDeclarationWarnings, cardDeclarationWarnings } from './engine/tr
 import { findAbility, poolAvailableFor, resolveCost, type ChoiceSpec } from './engine/abilities';
 import { getCharacterDeckEntry } from './engine/characters';
 import { currentTax } from './engine/playCharacter';
-import { canBeChakraSource, getHandCardDef } from './engine/cards/registry';
+import { canBeChakraSource, getHandCardDef, paysInChakra } from './engine/cards/registry';
 import { missionProgressText } from './engine/cards/missions';
 import type { AbilityChoices, GameAction, GameState, HandEntry, MissionInstance, PlayerId } from './engine/types';
-import { cardStage, newPendingCard, toHandCardContext, type PendingCard } from './ui/cardFlow';
+import { poolRequired, resolveCost as cardCost } from './engine/cards/playHandCard';
+import { cardStage, newPendingCard, offersPoolDiscount, toHandCardContext, type PendingCard } from './ui/cardFlow';
 import { getCharacterCardText, getHandCardText } from './ui/cardInfo';
-import { pushUndo, undoLabelFor, type UndoEntry } from './ui/undo';
+import { recordUndo, type UndoEntry } from './ui/undo';
 import { AbilityChoiceStep } from './ui/components/AbilityChoiceStep';
 import { ChoicePanel } from './ui/components/ChoicePanel';
 import { HandRevealPanel } from './ui/components/HandRevealPanel';
@@ -42,9 +43,7 @@ import { useNetGame } from './net/useNetGame';
 import './App.css';
 import './ui/BoardMat.css';
 import { CHARACTER_DECK_NAME, GRAVEYARD_NAME, LEADER_GRAVEYARD_NAME, EXTRA_DECK_NAME, MAIN_DECK_NAME, RULESET_OPTS, VARIANT, VARIANT_LABEL } from './variant';
-import { charactersRemaining, isPrototype, suppliesAvailable, suppliesMax } from './engine/prototype';
-import { trainingGroundsBlocker } from './engine/cards/terrain';
-import { TERRAIN } from './engine/terrainEffects';
+import { charactersRemaining, isPrototype, openingHandSize, suppliesAvailable, suppliesMax } from './engine/prototype';
 import { ShinobiCombatPanel } from './ui/components/ShinobiCombatPanel';
 
 const MAIN_PHASES = new Set(['Main1', 'Main2']);
@@ -271,6 +270,27 @@ function PendingCardBanner({
   if (stage === 'payFromPool') {
     const found = findOccupant(state, pending.enablingInstanceId);
     const poolAvailable = found && isCharacter(found.occupant) ? found.occupant.chakraPool.current : 0;
+    // Prototype rules, Trust off: a Jutsu that costs more than the Chakra tapped can take the rest from its enabler's Pool.
+    if (!offersPoolDiscount(pending.def)) {
+      const tapped = state.players[pending.playerId].genericChakraAvailable;
+      const required = poolRequired(state, pending.def, ctx);
+      const shortfall = cardCost(pending.def, ctx, required) - required - tapped;
+      return (
+        <>
+          <span>
+            {pending.def.name}: only {tapped} Chakra tapped
+          </span>
+          <span>
+            <button type="button" onClick={() => onChoosePayFromPool(required + shortfall)}>
+              Pay {required + shortfall} from {found?.occupant.name}'s Pool
+            </button>
+            <button type="button" onClick={onCancel}>
+              Cancel
+            </button>
+          </span>
+        </>
+      );
+    }
     const fullCost = typeof pending.def.cost === 'function' ? pending.def.cost(ctx, 0) : pending.def.cost;
     const discountedCost = typeof pending.def.cost === 'function' ? pending.def.cost(ctx, 1) : pending.def.cost;
     const poolPay = Math.min(discountedCost, poolAvailable);
@@ -345,6 +365,13 @@ function ViewGame({
   const [details, setDetails] = useState<Details>(null);
   // Hand-peek windows this player has closed (each client closes its own).
   const [closedPeeks, setClosedPeeks] = useState<Set<string>>(() => new Set());
+  // An undone peek can happen again (with the same id), and that one should open.
+  useEffect(() => {
+    setClosedPeeks((closed) => {
+      const kept = [...closed].filter((id) => state.handPeeks?.some((peek) => peek.id === id));
+      return kept.length === closed.size ? closed : new Set(kept);
+    });
+  }, [state.handPeeks]);
   /** A character card from hand waiting for the player to pick its back-row slot (§9 positioning). */
   const [placing, setPlacing] = useState<{ player: PlayerId; instanceId: string; name: string } | null>(null);
   /** A card being dragged out of a hand toward the board (Hearthstone-style play), and the slot it's hovering. */
@@ -496,6 +523,16 @@ function ViewGame({
   /** Dispatches once a card's pipeline is complete, otherwise just stores the (further-along) pending state — the single funnel every card-flow step passes through. */
   function advanceCard(next: PendingCard) {
     if (cardStage(next) === 'ready') {
+      if (!trust && isPrototype(state) && next.payFromPool === 0 && !offersPoolDiscount(next.def) && paysInChakra(next.def) && next.enablingInstanceId) {
+        const nextCtx = toHandCardContext(state, next);
+        const required = poolRequired(state, next.def, nextCtx);
+        const shortfall = cardCost(next.def, nextCtx, required) - required - state.players[next.playerId].genericChakraAvailable;
+        const enabler = findOccupant(state, next.enablingInstanceId)?.occupant;
+        if (shortfall > 0 && enabler?.chakraPool && enabler.chakraPool.current >= required + shortfall) {
+          setPending({ ...next, payFromPool: null });
+          return;
+        }
+      }
       const play = {
         instanceId: next.cardInstanceId,
         enablingInstanceId: next.enablingInstanceId,
@@ -566,7 +603,7 @@ function ViewGame({
   const setupBlocked = setupPending(state);
 
   const detailsOwner = details?.kind === 'occupant' ? findOccupant(state, details.instanceId)?.player : undefined;
-  const detailsCanAct = !!detailsOwner && isMyBoard(detailsOwner) && (trust || state.activePlayer === detailsOwner) && canAct && !setupBlocked;
+  const detailsControlled = !!detailsOwner && isMyBoard(detailsOwner) && (trust || state.activePlayer === detailsOwner) && !setupBlocked;
 
   /** A non-character card being dragged from this player's hand that can be dropped on their Chakra row as a Chakra source. */
   function myDragCard(playerId: PlayerId) {
@@ -611,10 +648,10 @@ function ViewGame({
             <button
               type="button"
               disabled={!mine}
-              title="Shuffle your hand back and redraw — the first mulligan is free (6 cards), each one after draws 1 fewer"
+              title={`Shuffle your hand back and redraw — the first mulligan is free (${openingHandSize(state)} cards), each one after draws 1 fewer`}
               onClick={() => dispatch({ type: 'MULLIGAN', player: playerId })}
             >
-              Mulligan (redraw {Math.max(0, 6 - player.mulligansSoFar)})
+              Mulligan (redraw {Math.max(0, openingHandSize(state) - player.mulligansSoFar)})
             </button>
             <span className="mulligan-bar__note">
               {player.mulligansSoFar === 0 ? 'Available until you confirm your starting character.' : `${player.mulligansSoFar} mulligan(s) so far.`}
@@ -668,7 +705,7 @@ function ViewGame({
         sources={player.chakraSources}
         genericChakraAvailable={player.genericChakraAvailable}
         fadingChakra={player.fadingGenericChakra}
-        canTap={canActNow}
+        canTap={canActNow || (mine && isActive && state.phase === 'Combat' && !setupBlocked)}
         onTap={(sourceIndex) => dispatch({ type: 'TAP_CHAKRA_SOURCE', sourceIndex, player: playerId })}
         onUntap={trust ? (sourceIndex) => dispatch({ type: 'UNTAP_CHAKRA_SOURCE', player: playerId, sourceIndex }) : undefined}
         onAdjustGeneric={trust && mine ? (delta) => dispatch({ type: 'ADJUST_GENERIC_CHAKRA', player: playerId, delta }) : undefined}
@@ -799,7 +836,7 @@ function ViewGame({
         );
       }
       return (
-        <div key={character.instanceId} className={`board-cell board-cell--character board-cell--filled${legal ? ' board-cell--push' : ''}${dropClass}`} {...dropProps}>
+        <div key={character.instanceId} className={`board-cell board-cell--character board-cell--filled${legal ? ' board-cell--push' : ''}${isPrototype(state) && character.status.pooledThisTurn ? ' board-cell--tapped' : ''}${dropClass}`} {...dropProps}>
           {legal && (
             <button type="button" className="board-slot__push" onClick={() => placeAt(slot)} title={`Play ${placingHere!.name} here — ${character.name} shifts aside`}>
               Place here ⇄
@@ -813,6 +850,7 @@ function ViewGame({
             onClickAsTarget={clickTarget}
             onClickAsEnabler={clickEnabler}
             onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
+            onOpenInfo={(info) => setDetails({ kind: 'card', ...info })}
             draggable={trust && mine && !pending}
           />
         </div>
@@ -831,6 +869,7 @@ function ViewGame({
               isTargetable={isTargetable}
               onClickAsTarget={clickTarget}
               onOpenDetails={(id) => setDetails({ kind: 'occupant', instanceId: id })}
+              onOpenInfo={(info) => setDetails({ kind: 'card', ...info })}
             />
           </div>
         );
@@ -892,10 +931,6 @@ function ViewGame({
     const unitLane = proto
       ? lane('units', 'Shinobi & Tokens', String(unitSlots.length), unitSlots.map((slot) => tokenCell(slot)), 'No Shinobi or tokens in play')
       : null;
-    // Prototype Terrain, Training Grounds: once per turn, pay 1 Supply to pool 1 Chakra into a Leader.
-    const training = proto && mine && !setupBlocked && player.terrainInPlay?.defId === TERRAIN.trainingGrounds;
-    const trainingBlocker = training ? (trainingGroundsBlocker(state, playerId) ?? (!trust && suppliesAvailable(state, playerId) < 1 ? 'Not enough Supplies (1 needed).' : null)) : null;
-    const trainees = training ? [...player.backRow, ...player.frontRow].filter((c): c is NonNullable<typeof c> => !!c && trainingGroundsBlocker(state, playerId, c.instanceId) === null) : [];
     const terrainZone = (
       <div className={`mat__zone mat__zone--terrain${player.terrainInPlay ? ' mat__zone--filled' : ''}`} key="terrain">
         <span className="mat__zone-title">Terrain</span>
@@ -910,24 +945,6 @@ function ViewGame({
                 setDetails({ kind: 'card', name, subtitle: 'Terrain in play', text: getHandCardText(name), returnInstanceId: trust && mine ? player.terrainInPlay!.instanceId : undefined })
               }
             />
-            {training && (
-              <select
-                value=""
-                disabled={!!trainingBlocker || trainees.length === 0}
-                aria-label="Training Grounds"
-                title={trainingBlocker ?? (trainees.length === 0 ? 'None of your units has room in its Chakra Pool.' : 'Pay 1 Supply to pool 1 Chakra into one of your units (once per turn)')}
-                onChange={(ev) => {
-                  if (ev.target.value) dispatch({ type: 'USE_TRAINING_GROUNDS', leaderId: ev.target.value });
-                }}
-              >
-                <option value="">Train (1)…</option>
-                {trainees.map((c) => (
-                  <option key={c.instanceId} value={c.instanceId}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            )}
           </span>
         ) : (
           <span className="mat__zone-empty">None</span>
@@ -1179,8 +1196,9 @@ function ViewGame({
     // colored strip, `info` first so it's the first thing seen entering that
     // player's zone — from the top of the page for the top board, or right
     // after the shared battlefield for the bottom board.
+    // Against a real opponent, their strip shrinks to one line: there's nothing to do in it, so it shouldn't push your own area off screen.
     const hud = (
-      <div className={`player-board player-board--${position} player-board--${playerId}`} key={playerId}>
+      <div className={`player-board player-board--${position} player-board--${playerId}${myPlayerId !== null && !mine ? ' player-board--compact' : ''}`} key={playerId}>
         {/* Chakra sits right against the board, then the hand: board → Chakra → hand for the bottom player, mirrored for the top one. */}
         {position === 'bottom' ? [chakra, hand, info] : [info, hand, chakra]}
       </div>
@@ -1267,7 +1285,18 @@ function ViewGame({
           />
           {trust && <RuleWarnings log={state.log} />}
           {onUndo && (
-            <button type="button" className="sidebar-undo" disabled={!undoLabel} onClick={onUndo} title="Undo the last draw/reveal-type action (things you can't fix by hand)">
+            <button
+              type="button"
+              className="sidebar-undo"
+              disabled={!undoLabel}
+              title="Take back the last action"
+              onClick={() => {
+                // Whatever was being played mid-flow may not exist in the state this returns to.
+                setPending(null);
+                setPlacing(null);
+                onUndo();
+              }}
+            >
               ↶ Undo{undoLabel ? `: ${undoLabel}` : ''}
             </button>
           )}
@@ -1343,7 +1372,8 @@ function ViewGame({
                 <>
                   <span>
                     Choose {pending.maxTargets > 1 ? `up to ${pending.maxTargets} targets` : 'a target'} ({pending.targets.length}/
-                    {pending.maxTargets} selected)
+                    {pending.maxTargets} selected){' '}
+                    {findAbility(findOccupant(state, pending.instanceId)?.occupant.defId ?? '', pending.abilityId)?.targetHint}
                   </span>
                   <span>
                     {pending.targets.length > 0 && (
@@ -1404,7 +1434,8 @@ function ViewGame({
         <CharacterDetailsModal
           state={state}
           instanceId={details.instanceId}
-          canAct={detailsCanAct}
+          canAct={detailsControlled && canAct}
+          canUseAbilities={detailsControlled && (canAct || state.phase === 'Combat')}
           onClose={() => setDetails(null)}
           onPool={(instanceId, amount) => dispatch({ type: 'POOL_CHAKRA', instanceId, amount })}
           onActivate={(instanceId, abilityId, maxTargets) => startActivation(detailsOwner ?? state.activePlayer, instanceId, abilityId, maxTargets)}
@@ -1541,7 +1572,7 @@ function ViewGame({
 /**
  * Local (single-player testing) game state, with the same undo history and
  * restart the networked host keeps: an in-memory snapshot is pushed before
- * each undoable action (draws, mulligans, reveal picks — see ui/undo.ts).
+ * each action (see ui/undo.ts).
  */
 function useLocalGame() {
   const [state, setState] = useState<GameState>(() => createSetupState(undefined, 'trust', {}, RULESET_OPTS));
@@ -1553,9 +1584,8 @@ function useLocalGame() {
 
   const dispatch = useCallback((action: GameAction) => {
     const prev = stateRef.current;
-    const label = undoLabelFor(action);
-    if (label) setHistory((h) => pushUndo(h, { state: prev, label }));
     const next = gameReducer(prev, action);
+    setHistory((h) => recordUndo(h, action, prev, next));
     stateRef.current = next;
     setState(next);
   }, []);

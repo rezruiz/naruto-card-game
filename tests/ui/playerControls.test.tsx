@@ -59,11 +59,11 @@ describe('character popup controls', () => {
     expect((screen.getByRole('button', { name: 'Pool 1 Chakra' }) as HTMLButtonElement).disabled).toBe(true);
     unmount();
 
-    modal(giveChakra(freshMain1(), 'p1', 4), 'p1-deidara', { onPool }); // capacity 3, 4 available -> fits 3
+    modal(giveChakra(freshMain1(), 'p1', 12), 'p1-deidara', { onPool }); // capacity 10, 12 available -> fits 10
     fireEvent.click(screen.getByRole('button', { name: 'Pool 1 Chakra' }));
     expect(onPool).toHaveBeenLastCalledWith('p1-deidara', 1);
-    fireEvent.click(screen.getByRole('button', { name: 'Pool 3' }));
-    expect(onPool).toHaveBeenLastCalledWith('p1-deidara', 3);
+    fireEvent.click(screen.getByRole('button', { name: 'Pool 10' }));
+    expect(onPool).toHaveBeenLastCalledWith('p1-deidara', 10);
   });
 });
 

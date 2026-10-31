@@ -1,6 +1,6 @@
 import { findOccupant, isCharacter } from '../board';
 import { activateAbility, checkLegality, findAbility, poolAvailableFor, resolveCost as abilityCost, type AbilityDef } from '../abilities';
-import { checkHandCardLegality, playHandCard, resolveCost as cardCost } from '../cards/playHandCard';
+import { checkHandCardLegality, playHandCard, poolRequired, resolveCost as cardCost } from '../cards/playHandCard';
 import { getHandCardDef, needsEnablingCharacter, paysInChakra, targetedIds } from '../cards/registry';
 import { getCharacterDef, getTokenDef } from '../characters/registry';
 import { appendLog, appendPrivateLog, appendWarning } from '../phases/phaseMachine';
@@ -369,8 +369,8 @@ function stagedCost(state: GameState, a: StagedAction): { cost: number; poolOnly
   if (!def) return { cost: 0, poolOnly: 0, poolUnit: a.sourceInstanceId };
   // Prototype rules: a Supplies cost (Shinobi, Equipment, Missions, …) isn't Chakra — it's paid when the card resolves.
   if (isPrototype(state) && !paysInChakra(def)) return { cost: 0, poolOnly: 0, poolUnit: a.sourceInstanceId };
-  const cost = cardCost(def, { state, player: a.owner, enablingInstanceId: a.sourceInstanceId, targetInstanceIds: a.targets, amount: a.amount }, a.payFromPool);
-  return { cost, poolOnly: 0, poolUnit: a.sourceInstanceId };
+  const ctx = { state, player: a.owner, enablingInstanceId: a.sourceInstanceId, targetInstanceIds: a.targets, amount: a.amount };
+  return { cost: cardCost(def, ctx, a.payFromPool), poolOnly: poolRequired(state, def, ctx), poolUnit: a.sourceInstanceId };
 }
 
 function poolOf(state: GameState, unitId: string, isAbility: boolean): number {
@@ -397,19 +397,24 @@ function checkPayments(state: GameState): GameState | null {
     if (cost <= 0) continue;
     const isAbility = a.kind === 'ability';
     const poolLeft = poolOf(state, poolUnit, isAbility) - (poolSpent[poolUnit] ?? 0);
+    if (!isAbility && poolOnly > poolLeft) {
+      return appendWarning(state, `${a.owner} can't pay for ${a.label} yet — ${poolOnly} of it must come from the enabling Leader's Pool, which has ${poolLeft}.`);
+    }
     const fromPool = Math.min(poolLeft, Math.max(poolOnly, a.payFromPool));
     const needGeneric = cost - fromPool;
-    if (needGeneric <= generic[a.owner]) {
+    // Prototype rules: tapped Chakra pays for Jutsu, never for abilities.
+    const usableGeneric = isAbility && isPrototype(state) ? 0 : generic[a.owner];
+    if (needGeneric <= usableGeneric) {
       generic[a.owner] -= needGeneric;
       poolSpent[poolUnit] = (poolSpent[poolUnit] ?? 0) + fromPool;
       continue;
     }
-    const shortfall = needGeneric - generic[a.owner];
+    const shortfall = needGeneric - usableGeneric;
     const unitName = findOccupant(state, poolUnit)?.occupant.name ?? 'the character';
     if (!a.poolDeclined && poolLeft - fromPool >= shortfall) {
       return enqueueChoice(state, {
         player: a.owner,
-        prompt: `${a.label} costs ${cost} Chakra but only ${generic[a.owner]} is tapped. Pay the other ${shortfall} from ${unitName}'s Pool?`,
+        prompt: `${a.label} costs ${cost} Chakra but only ${usableGeneric} is tapped. Pay the other ${shortfall} from ${unitName}'s Pool?`,
         options: [
           { id: 'yes', label: `Yes — ${shortfall} from the Pool` },
           { id: 'no', label: "No — I'll tap Chakra" },
@@ -422,7 +427,7 @@ function checkPayments(state: GameState): GameState | null {
     }
     return appendWarning(
       state,
-      `${a.owner} can't pay for ${a.label} yet (costs ${cost}, ${generic[a.owner] + fromPool} available) — tap your Chakra sources${a.poolDeclined ? '' : ' or pool Chakra'}, then resolve again.`,
+      `${a.owner} can't pay for ${a.label} yet (costs ${cost}, ${usableGeneric + fromPool} available) — tap your Chakra sources${a.poolDeclined ? '' : ' or pool Chakra'}, then resolve again.`,
     );
   }
   return null;

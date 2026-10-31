@@ -27,6 +27,12 @@ export function isShinobi(occ: BoardOccupant | null | undefined): occ is TokenIn
   return !!occ && !isCharacter(occ) && occ.extra.shinobi === true;
 }
 
+/** A unit Shinobi attacks can fight: a Shinobi, or a Token that counts as one in combat (Third Kazekage). */
+export function isCombatUnit(occ: BoardOccupant | null | undefined): occ is TokenInstance {
+  if (!occ || isCharacter(occ)) return false;
+  return occ.extra.shinobi === true || !!getTokenDef(occ.defId)?.combatUnit;
+}
+
 /** A Shinobi's Damage right now: its base Damage, plus any bonus for a named unit its controller has in play (Leader or Shinobi), its Terrain (Amegakure) and its Equipment. */
 export function shinobiDamage(occ: BoardOccupant, state?: GameState): number {
   const base = (occ.extra.shinobiDamage as number | undefined) ?? 0;
@@ -48,13 +54,13 @@ function spendRally(state: GameState, attackerId: string): { state: GameState; b
 
 /** A unit a Shinobi may attack: a Leader (back-row character, or one of Pain's Path tokens) or a Shinobi. */
 function isAttackable(occ: BoardOccupant): boolean {
-  return occ.extra.painPath === true || isCharacter(occ) || isShinobi(occ);
+  return occ.extra.painPath === true || isCharacter(occ) || isCombatUnit(occ);
 }
 
 /** Attacks on a Leader can be defended; attacks on a Shinobi can't. */
 export function targetsLeader(state: GameState, attack: ShinobiAttack): boolean {
   const target = findOccupant(state, attack.targetId)?.occupant;
-  return !!target && !isShinobi(target);
+  return !!target && !isCombatUnit(target);
 }
 
 // --- Cards --------------------------------------------------------------------
@@ -182,6 +188,7 @@ export function declareShinobiAttack(state: GameState, attackerId: string, targe
   const target = findOccupant(working, targetId);
   if (!target || target.player === attacker.player || !isAttackable(target.occupant)) return appendLog(state, `Can't attack: a Shinobi attacks an enemy Leader or an enemy Shinobi.`);
   if (target.occupant.status.retreated) return appendLog(state, `Can't attack: ${target.occupant.name} is Retreated.`);
+  if (target.occupant.extra.airborne === true) return appendLog(state, `Can't attack: ${target.occupant.name} is Airborne.`);
   const combat = working.shinobiCombat ?? { step: 'declare' as const, attacks: [] };
   return appendLog({ ...working, shinobiCombat: { ...combat, attacks: [...combat.attacks, { attackerId, targetId }] } }, `${attacker.occupant.name} will attack ${target.occupant.name}.`);
 }
@@ -195,7 +202,7 @@ export function cancelShinobiAttack(state: GameState, attackerId: string): GameS
 
 /** The defending player's Shinobi that could stand in front of a Leader. */
 function availableDefenders(state: GameState, defender: PlayerId): TokenInstance[] {
-  return state.players[defender].frontRow.filter((t): t is TokenInstance => isShinobi(t) && !t.status.disabled);
+  return state.players[defender].frontRow.filter((t): t is TokenInstance => isCombatUnit(t) && !t.status.disabled);
 }
 
 export function confirmShinobiAttacks(state: GameState): GameState {
@@ -219,7 +226,7 @@ export function assignShinobiDefender(state: GameState, attackerId: string, defe
   if (defenderId !== null) {
     if (!targetsLeader(state, attack)) return appendLog(state, "A Shinobi can only defend its Leader — not another Shinobi.");
     const found = findOccupant(state, defenderId);
-    if (!found || found.player !== defendingPlayer || !isShinobi(found.occupant)) return appendLog(state, 'Only your own Shinobi can defend.');
+    if (!found || found.player !== defendingPlayer || !isCombatUnit(found.occupant)) return appendLog(state, 'Only your own Shinobi can defend.');
     if (found.occupant.status.disabled) return appendLog(state, `${found.occupant.name} is Disabled and can't defend.`);
     if (combat.attacks.some((a) => a.defenderId === defenderId && a.attackerId !== attackerId)) return appendLog(state, `${found.occupant.name} is already defending against another attack.`);
   }
@@ -265,7 +272,7 @@ export function resolveShinobiCombat(state: GameState): GameState {
       next = appendLog(next, `${attacker.name}'s target is gone — the attack does nothing.`);
       continue;
     }
-    if (isShinobi(target)) {
+    if (isCombatUnit(target)) {
       next = trade(next, attack.attackerId, attack.targetId, rally.bonus);
     } else {
       let damage = shinobiDamage(attacker, next) + rally.bonus;

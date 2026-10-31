@@ -1,5 +1,7 @@
 import { dealDamage } from './combat';
 import { findOccupant } from './board';
+import { getCharacterDef, getTokenDef } from './characters/registry';
+import { appendLog } from './phases/phaseMachine';
 import type { BoardOccupant, GameState, PlayerId } from './types';
 
 /**
@@ -32,6 +34,7 @@ export function applyPoison(state: GameState, instanceId: string, amount: number
   if (amount <= 0) return state;
   const found = findOccupant(state, instanceId);
   if (!found) return state;
+  if (getTokenDef(found.occupant.defId)?.poisonImmune || getCharacterDef(found.occupant.defId)?.poisonImmune) return appendLog(state, `${found.occupant.name} is immune to Poison.`);
   const current = (found.occupant.extra.poisonCounters as number) ?? 0;
   return setPoisonCounters(state, instanceId, current + amount);
 }

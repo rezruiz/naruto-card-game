@@ -1,8 +1,9 @@
 import { findOccupant, isCharacter, patchOccupant } from '../board';
 import { getCharacterDef } from '../characters/registry';
-import { appendLog, appendWarning } from '../phases/phaseMachine';
-import { spendSupplies } from '../prototype';
-import { TERRAIN, amegakureBuffs, hasTerrain, markTerrainUsed, terrainUsedThisTurn } from '../terrainEffects';
+import { enqueueChoice, registerChoiceResolver } from '../choices';
+import { appendLog } from '../phases/phaseMachine';
+import { spendSupplies, suppliesAvailable } from '../prototype';
+import { TERRAIN, amegakureBuffs, hasTerrain } from '../terrainEffects';
 import { registerHandCard } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
 import type { BoardOccupant, GameState, PlayerId } from '../types';
@@ -70,7 +71,7 @@ export const PROTOTYPE_TERRAIN_CARDS: HandCardDef[] = [
   terrainCard(TERRAIN.amegakure, 'Amegakure, Village Hidden in the Rain', 3, 'Your Amegakure Shinobi get +1 Damage and +1 Health, and cost 1 less Supply to play (to a minimum of 1).', { synergy: ['Akatsuki'] }),
   terrainCard(TERRAIN.supplyDepot, 'Supply Depot', 7, 'At the start of each of your turns, your Supplies maximum goes up by 2 instead of 1 (still up to 20).'),
   terrainCard(TERRAIN.blacksmithVillage, 'Blacksmith Village', 2, 'Your Equipment costs 1 less Supply (to a minimum of 1).'),
-  terrainCard(TERRAIN.trainingGrounds, 'Training Grounds', 4, 'Once per turn, in your Main Phase, you may pay 1 Supply to pool 1 Chakra into one of your units.'),
+  terrainCard(TERRAIN.trainingGrounds, 'Training Grounds', 4, 'At your Upkeep, you may pay 1 Supply to pool 1 Chakra into one of your units.'),
   terrainCard(TERRAIN.forestOfDeath, 'Forest of Death', 3, 'The first Shinobi you play each turn can attack that turn.'),
   terrainCard(TERRAIN.hiddenMist, 'Hidden Mist', 3, 'Enemy Shinobi attacking your Leaders deal 1 less damage (to a minimum of 1).', { style: 'Water' }),
   terrainCard(TERRAIN.shinobiGraveyard, 'Shinobi Graveyard', 2, 'When one of your Shinobi is defeated, gain 1 Supply this turn.'),
@@ -150,33 +151,35 @@ export function sweepTerrain(state: GameState): GameState {
 
 // --- Training Grounds ----------------------------------------------------------
 
-/** Why this player can't use Training Grounds on this unit right now (null = they can) — any unit of theirs with a Chakra Pool (a Leader, or a Shinobi like Yahiko). Trust mode only checks that the Terrain and the unit are there. */
-export function trainingGroundsBlocker(state: GameState, player: PlayerId, leaderId?: string): string | null {
-  if (!hasTerrain(state, player, TERRAIN.trainingGrounds)) return 'You need Training Grounds in play.';
-  const trust = state.rules === 'trust';
-  if (!trust) {
-    if (state.activePlayer !== player || (state.phase !== 'Main1' && state.phase !== 'Main2')) return 'Only in your Main Phase.';
-    if (state.stack.length > 0) return 'Wait for the stack to resolve.';
-    if (terrainUsedThisTurn(state, player, TERRAIN.trainingGrounds)) return 'Already used this turn.';
-  }
-  if (leaderId === undefined) return null;
-  const found = findOccupant(state, leaderId);
-  if (!found || found.player !== player || !found.occupant.chakraPool) return 'Choose one of your units with a Chakra Pool.';
-  const pool = found.occupant.chakraPool;
-  if (pool.current >= pool.capacity) return `${found.occupant.name}'s Chakra Pool is full.`;
-  return null;
+const TRAINING_GROUNDS_CHOICE = 'training-grounds';
+
+/**
+ * Upkeep Phase: Training Grounds' controller is asked which of their units to pool 1 Chakra into, for 1 Supply (or
+ * to skip): any Leader or Shinobi with room in its Pool. No prompt when no unit has room or (strict rules) they can't pay.
+ */
+export function tickTrainingGrounds(state: GameState, player: PlayerId): GameState {
+  if (!hasTerrain(state, player, TERRAIN.trainingGrounds)) return state;
+  if (state.rules !== 'trust' && suppliesAvailable(state, player) < 1) return state;
+  const { backRow, frontRow } = state.players[player];
+  const units = [...backRow, ...frontRow].filter((u) => u?.chakraPool && u.chakraPool.current < u.chakraPool.capacity) as BoardOccupant[];
+  if (units.length === 0) return state;
+  return enqueueChoice(state, {
+    player,
+    prompt: 'Training Grounds: pay 1 Supply to pool 1 Chakra into one of your units?',
+    options: [...units.map((u) => ({ id: u.instanceId, label: `${u.name} (Pool ${u.chakraPool!.current}/${u.chakraPool!.capacity})` })), { id: 'skip', label: 'Skip' }],
+    min: 1,
+    max: 1,
+    resolverId: TRAINING_GROUNDS_CHOICE,
+    data: {},
+  });
 }
 
-/** Training Grounds, for the unit's controller (`leaderId` is the unit pooled into — any unit with a Pool). */
-export function activateTrainingGrounds(state: GameState, leaderId: string): GameState {
-  const player = findOccupant(state, leaderId)?.player ?? state.activePlayer;
-  const blocker = trainingGroundsBlocker(state, player, leaderId);
-  if (blocker) return appendLog(state, `Can't use Training Grounds: ${blocker}`);
-  let next = state;
-  if (state.rules === 'trust' && terrainUsedThisTurn(state, player, TERRAIN.trainingGrounds)) next = appendWarning(next, 'Training Grounds is used again this turn — allowed (trust mode).');
-  const paid = spendSupplies(next, player, 1, 'Training Grounds');
-  if (!paid) return appendLog(state, "Can't use Training Grounds: not enough Supplies (1 needed).");
-  next = markTerrainUsed(paid, player, TERRAIN.trainingGrounds);
-  next = patchOccupant(next, leaderId, (o) => ({ ...o, chakraPool: { ...o.chakraPool!, current: o.chakraPool!.current + 1 } }));
-  return appendLog(next, `Training Grounds: ${player} pools 1 Chakra into ${findOccupant(next, leaderId)!.occupant.name}.`);
-}
+registerChoiceResolver(TRAINING_GROUNDS_CHOICE, (state, choice, optionIds) => {
+  const unitId = optionIds[0];
+  if (unitId === 'skip' || !findOccupant(state, unitId)) return appendLog(state, `${choice.player} skips Training Grounds.`);
+  const paid = spendSupplies(state, choice.player, 1, 'Training Grounds');
+  if (!paid) return appendLog(state, 'Not enough Supplies for Training Grounds.');
+  const next = patchOccupant(paid, unitId, (o) => ({ ...o, chakraPool: { ...o.chakraPool!, current: o.chakraPool!.current + 1 } }));
+  return appendLog(next, `Training Grounds: ${choice.player} pools 1 Chakra into ${findOccupant(next, unitId)!.occupant.name}.`);
+});
+

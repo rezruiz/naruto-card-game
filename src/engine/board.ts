@@ -6,8 +6,7 @@ import type {
   CharacterInstance,
   GameState,
   PlayerId,
-  TokenInstance,
-} from './types';
+  TokenInstance, AbilityType } from './types';
 
 /** Back-row positions. More than the character limit, so characters can spread out and line up with the tokens in front of them (§9). */
 export const BACK_ROW_SIZE = 10;
@@ -148,6 +147,11 @@ export function isPhasedOut(state: GameState, occ: BoardOccupant): boolean {
 }
 
 /** Earth Style: Hiding Like a Mole Technique — this unit can't be targeted (through moleHiddenUntilTurn). */
+/** Deidara's Airborne (C2, Shi-Ryu): enemy Taijutsu and Bukijutsu can't target him, and neither can Shinobi attacks (shinobi.ts). */
+export function isOutOfReach(occ: BoardOccupant, type: AbilityType | undefined): boolean {
+  return occ.extra.airborne === true && (type === 'Taijutsu' || type === 'Bukijutsu');
+}
+
 export function isHidingLikeAMole(state: GameState, occ: BoardOccupant): boolean {
   return ((occ.extra.moleHiddenUntilTurn as number | undefined) ?? -1) >= state.turn;
 }

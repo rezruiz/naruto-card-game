@@ -19,7 +19,8 @@ export function adjustHp(state: GameState, instanceId: string, delta: number): G
   const found = findOccupant(state, instanceId);
   if (!found) return state;
   const before = found.occupant.currentHP;
-  const after = Math.min(found.occupant.maxHP, Math.max(1, before + delta));
+  // No upper limit: a manual correction can go past max HP. Defeat stays with the Damage button, which runs the rules.
+  const after = Math.max(1, before + delta);
   const next = patchOccupant(state, instanceId, (o) => ({ ...o, currentHP: after }));
   return appendLog(next, `(manual) ${found.occupant.name} HP ${before} → ${after}.`);
 }

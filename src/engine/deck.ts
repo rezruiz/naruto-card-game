@@ -2,7 +2,7 @@ import { painUnitId } from './board';
 import { getCharacterDeckEntry } from './characters';
 import { applyHealthLoss } from './combat';
 import { appendLog, appendWarning } from './phases/phaseMachine';
-import { earlyDeployCost, isPrototype, spendSupplies } from './prototype';
+import { earlyDeployCost, isPrototype, openingHandSize, spendSupplies } from './prototype';
 import { getHandCardDef } from './cards/registry';
 import { currentTax, playCharacter, reinforcementTax } from './playCharacter';
 import { enqueueChoice, registerChoiceResolver } from './choices';
@@ -403,7 +403,7 @@ export function mulligan(state: GameState, player: PlayerId): GameState {
   const otherEntries = p.hand.filter((h) => h.kind !== 'card');
   const shuffledBack = shuffle([...p.handDeck, ...cardEntries.map((c) => ({ instanceId: c.instanceId, defId: c.defId }))]);
 
-  const drawCount = Math.max(0, 6 - p.mulligansSoFar);
+  const drawCount = Math.max(0, openingHandSize(state) - p.mulligansSoFar);
   const drawn = shuffledBack.slice(0, drawCount);
   const remaining = shuffledBack.slice(drawCount);
 

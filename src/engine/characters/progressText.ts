@@ -35,6 +35,7 @@ const yes = (v: unknown) => (v ? 'Yes' : 'No');
  */
 const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant) => TrackedItem | undefined> = {
   clayCharges: (v) => ({ label: 'Clay Charges', value: `${(v as number) ?? 0}`, key: true }),
+  airborne: (v) => (v ? { label: 'Airborne', value: 'On C2, Shi-Ryu', key: true } : undefined),
   deathPending: (v) => (v ? { label: 'Death is an Explosion', value: 'Would be defeated — waiting on your answer', key: true } : undefined),
   deathResolved: () => undefined, // internal: his Death is an Explosion decision was made
   hearts: (v) => ({ label: 'Hearts', value: `${(v as number) ?? 5}/5`, key: true }),
@@ -61,7 +62,7 @@ const PER_KEY: Record<string, (v: unknown, state: GameState, occ: BoardOccupant)
   sharedPoolOwner: (v, s) => {
     const owner = typeof v === 'string' ? findOccupant(s, v)?.occupant : undefined;
     const pool = owner && 'chakraPool' in owner && owner.chakraPool ? owner.chakraPool.current : 0;
-    return { label: 'Shared Reservoir', value: `${pool} Chakra (${nameOf(s, v)})`, key: true };
+    return { label: 'Shared Pool', value: `${pool} Chakra (${nameOf(s, v)})`, key: true };
   },
   damagedByZetsuFamilyTurn: (v, s) => (v === s.turn ? { label: 'Damaged by Zetsu family', value: 'This turn' } : undefined),
   cannotNegateOwnDamageUntilTurn: (v, s) => ((v as number) >= s.turn ? { label: "Can't negate damage to itself", value: `Through turn ${v}`, key: true } : undefined),

@@ -6,6 +6,7 @@ import { appendLog, otherPlayer } from '../phases/phaseMachine';
 import { drawCard, lookAndTakeCardType, lookAndTakeMatching } from '../deck';
 import { applyPoison } from '../poison';
 import { scheduleHeal } from '../scheduledHeals';
+import { isPrototype } from '../prototype';
 import { negateFirstMatchingAttack, stackItemInfo } from './negation';
 import { getHandCardDef, registerHandCard } from './registry';
 import type { HandCardDef } from './registry';
@@ -20,6 +21,7 @@ function isAttack(info: ReturnType<typeof stackItemInfo>): boolean {
 const substitution: HandCardDef = {
   id: 'substitution',
   name: 'Substitution',
+  usesEnabler: true,
   cardType: 'jutsu',
   negatesTargetingOfSelf: true,
   cost: (_ctx, payFromPool) => (payFromPool > 0 ? 2 : 4),
@@ -198,10 +200,11 @@ const medicalChakraInfusion: HandCardDef = {
   style: 'None',
   type: 'Ninjutsu',
   targetSide: 'ally',
-  // "One of your characters" — like the Mission rewards, a token (e.g. a Pain Path) isn't a character.
+  prototypeText: 'Style: None, Type: Ninjutsu\nCost: 1 Chakra.\nEffect: Heal 2 HP to one of your Leaders or Shinobi (cannot exceed max HP).',
+  // "One of your characters" — like the Mission rewards, a token (e.g. a Pain Path) isn't a character. Prototype rules: a Shinobi counts.
   legalityCheck: (ctx) => {
     const found = ctx.targetInstanceIds[0] ? findOccupant(ctx.state, ctx.targetInstanceIds[0]) : undefined;
-    return !!found && found.player === ctx.player && isCharacter(found.occupant);
+    return !!found && found.player === ctx.player && (isCharacter(found.occupant) || found.occupant.extra.shinobi === true);
   },
   resolve: (ctx) => {
     const target = ctx.targetInstanceIds[0];
@@ -435,6 +438,7 @@ const mudWall: HandCardDef = {
 const kunaiDeflection: HandCardDef = {
   id: 'kunai-deflection',
   name: 'Kunai Deflection',
+  usesEnabler: true,
   cardType: 'jutsu',
   cost: (_ctx, payFromPool) => (payFromPool > 0 ? 1 : 2),
   offersPoolDiscount: true,
@@ -602,14 +606,17 @@ const reconnaissance: HandCardDef = {
 
 // "1+X: deal X (max 5); paying from the Pool, the cost is just X" — the
 // Substitution-family Pool discount, scaled by the X the player picks.
+// Prototype rules: X always comes from the Pool, so there's no discount left to offer.
 const waterDragonJutsu: HandCardDef = {
   id: 'water-dragon-jutsu',
   name: 'Water Dragon Jutsu',
   cardType: 'jutsu',
   cost: (ctx, payFromPool) => {
     const x = Math.max(1, Math.min(5, ctx.amount ?? 1));
-    return payFromPool > 0 ? x : 1 + x;
+    return payFromPool > 0 && !isPrototype(ctx.state) ? x : 1 + x;
   },
+  poolX: (ctx) => Math.max(1, Math.min(5, ctx.amount ?? 1)),
+  prototypeText: "Style: Water, Type: Ninjutsu\nCost: 1 + X Chakra.\nEffect: Pay X from the enabling character's Pool. Deal X damage to an enemy character (X is at most 5).",
   offersPoolDiscount: true,
   speed: 'Normal',
   style: 'Water',
@@ -645,6 +652,7 @@ function isGenjutsuUser(state: GameState, instanceId: string): boolean {
 const mindPrisonCard: HandCardDef = {
   id: 'jutsu-mind-prison',
   name: 'Genjutsu: Mind Prison',
+  usesEnabler: true,
   cardType: 'jutsu',
   cost: (ctx) => (isGenjutsuUser(ctx.state, ctx.enablingInstanceId) ? 3 : 5),
   speed: 'Quick',
@@ -670,6 +678,7 @@ const mindPrisonCard: HandCardDef = {
 const crowCloneCard: HandCardDef = {
   id: 'jutsu-crow-clone',
   name: 'Genjutsu: Crow Clone',
+  usesEnabler: true,
   cardType: 'jutsu',
   cost: 2,
   speed: 'Quick',
@@ -869,6 +878,8 @@ function windBullets(id: string, name: string, base: number, perHit: number, max
     name,
     cardType: 'jutsu',
     cost: (ctx) => base + Math.max(1, Math.min(maxX, ctx.targetInstanceIds.length)),
+    poolX: (ctx) => Math.max(1, Math.min(maxX, ctx.targetInstanceIds.length)),
+    prototypeText: `Style: Wind, Type: Ninjutsu\nCost: ${base} + X Chakra (X is at most ${maxX}).\nEffect: Pay X from the enabling character's Pool. X times, deal ${perHit} damage to target enemy unit. You may choose the same unit more than once.`,
     speed: 'Normal',
     style: 'Wind',
     type: 'Ninjutsu',

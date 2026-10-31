@@ -29,6 +29,8 @@ export interface CharacterDef {
   elementalVersatility?: boolean;
   /** Grants each OTHER ally character's first ability each turn a 1-Chakra discount, min 1 (Yahiko's Inspiring Leader). */
   grantsInspiringLeader?: boolean;
+  /** Can't get Poison counters (Sasori's Hiruko form). */
+  poisonImmune?: boolean;
   /** Blocks the normal §5.3 Chakra-pooling action into this character (Zetsu's No Self-Pooling — only absorption effects fill his Pool). */
   noSelfPooling?: boolean;
   /** Fires right after this character enters play, however it got there (Kakuzu's Heart Masks). */
@@ -73,6 +75,10 @@ export interface TokenDef {
   onEndPhase?: (state: GameState, instanceId: string) => GameState;
   /** Passive traits, by name, shown on the card ahead of its abilities. */
   traits?: string[];
+  /** Prototype rules: a Token that Shinobi attacks treat like a Shinobi — it can be attacked and can defend, but it never attacks and deals no Damage back. */
+  combatUnit?: boolean;
+  /** Can't get Poison counters (Third Kazekage). */
+  poisonImmune?: boolean;
   /** Fires when a Shinobi with this id comes into play (e.g. Amegakure Elite Guard: Sensor). */
   onEnterPlay?: (state: GameState, instanceId: string, player: PlayerId) => GameState;
   /**

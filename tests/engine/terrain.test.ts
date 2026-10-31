@@ -113,27 +113,54 @@ describe('Prototype: Terrain', () => {
     expect(equipmentOn(protector, holder.id)).toHaveLength(2);
   });
 
-  it('Training Grounds can pool into a Shinobi with a Pool (Yahiko), not one without', () => {
-    const y = placeShinobi(proto(freshMain1()), 'p1', 'shinobi-yahiko', 2, 3, 0);
-    const g = placeShinobi(y.state, 'p1', 'shinobi-rain-genin', 1, 2, 1);
-    const withPool = { ...g.state, players: { ...g.state.players, p1: { ...g.state.players.p1, frontRow: g.state.players.p1.frontRow.map((t) => (t?.instanceId === y.id ? { ...t, chakraPool: { current: 0, capacity: 8 } } : t)) } } };
-    const s = play(withPool, 'p1', TERRAIN.trainingGrounds);
-    expect(unit(act(s, { type: 'USE_TRAINING_GROUNDS', leaderId: y.id }), y.id)!.chakraPool!.current).toBe(1);
-    expect(unit(act(s, { type: 'USE_TRAINING_GROUNDS', leaderId: g.id }), g.id)!.chakraPool).toBeUndefined();
-  });
+  describe('Training Grounds', () => {
+    const toUpkeep = (s: GameState): GameState => act({ ...s, phase: 'Untap', activePlayer: 'p1', priorityPlayer: 'p1' }, { type: 'ADVANCE_PHASE' });
+    const choose = (s: GameState, optionId: string): GameState => act(s, { type: 'RESOLVE_CHOICE', choiceId: s.pendingChoices[0].id, optionIds: [optionId] });
+    const withPool = (s: GameState, id: string): GameState => ({
+      ...s,
+      players: { ...s.players, p1: { ...s.players.p1, frontRow: s.players.p1.frontRow.map((t) => (t?.instanceId === id ? { ...t, chakraPool: { current: 0, capacity: 8 } } : t)) } },
+    });
 
-  it('Training Grounds: once per turn, 1 Supply pools 1 Chakra into a Leader', () => {
-    const s = play(proto(freshMain1()), 'p1', TERRAIN.trainingGrounds);
-    const pool = unit(s, 'p1-hidan')!.chakraPool!.current;
-    const supplies = suppliesAvailable(s, 'p1');
-    const once = act(s, { type: 'USE_TRAINING_GROUNDS', leaderId: 'p1-hidan' });
-    expect(unit(once, 'p1-hidan')!.chakraPool!.current).toBe(pool + 1);
-    expect(suppliesAvailable(once, 'p1')).toBe(supplies - 1);
-    const twice = act(once, { type: 'USE_TRAINING_GROUNDS', leaderId: 'p1-kakuzu' });
-    expect(unit(twice, 'p1-kakuzu')!.chakraPool!.current).toBe(unit(once, 'p1-kakuzu')!.chakraPool!.current);
-    // Not on an enemy Leader, and not without the Terrain.
-    expect(unit(act(s, { type: 'USE_TRAINING_GROUNDS', leaderId: 'p2-hidan' }), 'p2-hidan')!.chakraPool!.current).toBe(unit(s, 'p2-hidan')!.chakraPool!.current);
-    expect(unit(act(proto(freshMain1()), { type: 'USE_TRAINING_GROUNDS', leaderId: 'p1-hidan' }), 'p1-hidan')!.chakraPool!.current).toBe(pool);
+    it('asks at your Upkeep which unit to pool into, for 1 Supply', () => {
+      let s = toUpkeep(play(proto(freshMain1()), 'p1', TERRAIN.trainingGrounds));
+      expect(s.phase).toBe('Upkeep');
+      expect(s.pendingChoices[0]).toMatchObject({ player: 'p1', resolverId: 'training-grounds' });
+      const pool = unit(s, 'p1-hidan')!.chakraPool!.current;
+      const supplies = suppliesAvailable(s, 'p1');
+      s = choose(s, 'p1-hidan');
+      expect(unit(s, 'p1-hidan')!.chakraPool!.current).toBe(pool + 1);
+      expect(suppliesAvailable(s, 'p1')).toBe(supplies - 1);
+      expect(s.pendingChoices).toHaveLength(0);
+    });
+
+    it('can be skipped, and pays nothing', () => {
+      const asked = toUpkeep(play(proto(freshMain1()), 'p1', TERRAIN.trainingGrounds));
+      const pool = unit(asked, 'p1-hidan')!.chakraPool!.current;
+      const supplies = suppliesAvailable(asked, 'p1');
+      const s = choose(asked, 'skip');
+      expect(unit(s, 'p1-hidan')!.chakraPool!.current).toBe(pool);
+      expect(suppliesAvailable(s, 'p1')).toBe(supplies);
+    });
+
+    it('offers your units with room in a Pool: a Shinobi with one (Yahiko), not one without, and no enemies', () => {
+      const y = placeShinobi(proto(freshMain1()), 'p1', 'shinobi-yahiko', 2, 3, 0);
+      const g = placeShinobi(y.state, 'p1', 'shinobi-rain-genin', 1, 2, 1);
+      const s = toUpkeep(play(withPool(g.state, y.id), 'p1', TERRAIN.trainingGrounds));
+      const ids = s.pendingChoices[0].options.map((o) => o.id);
+      expect(ids).toContain(y.id);
+      expect(ids).toContain('p1-hidan');
+      expect(ids).not.toContain(g.id);
+      expect(ids.some((id) => id.startsWith('p2-'))).toBe(false);
+      expect(unit(choose(s, y.id), y.id)!.chakraPool!.current).toBe(1);
+    });
+
+    it("doesn't ask without the Terrain, on the opponent's Upkeep, or when you can't pay", () => {
+      const s = play(proto(freshMain1()), 'p1', TERRAIN.trainingGrounds);
+      expect(toUpkeep(proto(freshMain1())).pendingChoices).toHaveLength(0);
+      expect(act({ ...s, phase: 'Untap', activePlayer: 'p2', priorityPlayer: 'p2' }, { type: 'ADVANCE_PHASE' }).pendingChoices).toHaveLength(0);
+      const broke = { ...s, players: { ...s.players, p1: { ...s.players.p1, suppliesSpent: 999 } } };
+      expect(act({ ...broke, phase: 'Untap', activePlayer: 'p1', priorityPlayer: 'p1' }, { type: 'ADVANCE_PHASE' }).pendingChoices).toHaveLength(0);
+    });
   });
 
   it('Forest of Death: only the first Shinobi you play each turn can attack right away', () => {

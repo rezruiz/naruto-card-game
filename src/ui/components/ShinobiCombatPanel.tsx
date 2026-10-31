@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { findOccupant, isCharacter } from '../../engine/board';
 import { otherPlayer } from '../../engine/phases/phaseMachine';
-import { attackBlocker, isShinobi, shinobiDamage, targetsLeader } from '../../engine/shinobi';
+import { attackBlocker, isCombatUnit, isShinobi, shinobiDamage, targetsLeader } from '../../engine/shinobi';
 import type { BoardOccupant, GameAction, GameState, PlayerId } from '../../engine/types';
 
 // Prototype rules: Shinobi combat (engine/shinobi.ts). The active player picks
@@ -9,7 +9,7 @@ import type { BoardOccupant, GameAction, GameState, PlayerId } from '../../engin
 // which of their Shinobi stand in front of an attacked Leader.
 
 function unitLabel(u: BoardOccupant, state: GameState): string {
-  return isShinobi(u) ? `${u.name} (${shinobiDamage(u, state)}/${u.currentHP})` : `${u.name} (Leader, ${u.currentHP} HP)`;
+  return isCombatUnit(u) ? `${u.name} (${shinobiDamage(u, state)}/${u.currentHP})` : `${u.name} (Leader, ${u.currentHP} HP)`;
 }
 
 export function ShinobiCombatPanel({
@@ -28,7 +28,7 @@ export function ShinobiCombatPanel({
 
   if (combat?.step === 'defend') {
     const myDefense = isMyBoard(defender);
-    const mine = state.players[defender].frontRow.filter((t) => isShinobi(t) && !t.status.disabled) as BoardOccupant[];
+    const mine = state.players[defender].frontRow.filter((t) => isCombatUnit(t) && !t.status.disabled) as BoardOccupant[];
     return (
       <div className="decision-panel shinobi-combat">
         <strong>Shinobi attacks — {defender.toUpperCase()} chooses defenders</strong>
@@ -82,8 +82,8 @@ export function ShinobiCombatPanel({
   const myShinobi = state.players[attacker].frontRow.filter((t) => isShinobi(t)) as BoardOccupant[];
   if (myShinobi.length === 0) return null;
   const enemyTargets = [
-    ...state.players[defender].backRow.filter((c): c is NonNullable<typeof c> => !!c && isCharacter(c) && !c.status.retreated),
-    ...state.players[defender].frontRow.filter((t): t is NonNullable<typeof t> => !!t && (t.extra.painPath === true || isShinobi(t))),
+    ...state.players[defender].backRow.filter((c): c is NonNullable<typeof c> => !!c && isCharacter(c) && !c.status.retreated && c.extra.airborne !== true),
+    ...state.players[defender].frontRow.filter((t): t is NonNullable<typeof t> => !!t && (t.extra.painPath === true || isCombatUnit(t))),
   ] as BoardOccupant[];
   const declared = combat?.attacks ?? [];
 

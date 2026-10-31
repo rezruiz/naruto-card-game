@@ -2,6 +2,8 @@ import type { CharacterInstance, GameState } from '../../engine/types';
 import { hasFieldOrientation } from '../../engine/board';
 import { trackedResources } from '../../engine/characters/progressText';
 import { EquipmentChips } from './EquipmentChips';
+import { InfoChip } from './InfoChip';
+import { FIELD_ORIENTATION_TEXT, statusInfo, styleInfo, trackedInfo, type EffectInfo } from '../effectInfo';
 
 /** The drag payload type for a character being dragged back to hand. */
 export const CHARACTER_DRAG_TYPE = 'application/x-naruto-character';
@@ -22,6 +24,7 @@ export function CharacterCard({
   onClickAsTarget,
   onClickAsEnabler,
   onOpenDetails,
+  onOpenInfo,
   draggable = false,
 }: {
   character: CharacterInstance;
@@ -31,10 +34,14 @@ export function CharacterCard({
   onClickAsTarget: (instanceId: string) => void;
   onClickAsEnabler?: (instanceId: string) => void;
   onOpenDetails: (instanceId: string) => void;
+  /** Opens one of the card's effects (Equipment, Poison, a status...) rather than the unit. */
+  onOpenInfo?: (info: EffectInfo) => void;
   /** Trust mode, own board: can be dragged onto its owner's hand to take back a play. */
   draggable?: boolean;
 }) {
   const { chakraPool } = character;
+  // While a target or enabler is being picked, every click on the card picks it.
+  const openInfo = isTargetable || isEnablable ? undefined : onOpenInfo;
   const sick = hasFieldOrientation(state, character);
   const resources = trackedResources(state, character).filter((t) => t.key);
 
@@ -74,25 +81,33 @@ export function CharacterCard({
       {character.styles.length > 0 && (
         <div className="compact-card__styles" title="Styles — which Style abilities and Jutsu cards this character can use or enable">
           {character.styles.map((style, i) => (
-            <span key={`${style}-${i}`} className={`style-chip style-chip--${style.toLowerCase()}`}>
+            <InfoChip key={`${style}-${i}`} className={`style-chip style-chip--${style.toLowerCase()}`} info={styleInfo(style, character.name)} onOpen={openInfo}>
               {style}
-            </span>
+            </InfoChip>
           ))}
         </div>
       )}
-      <EquipmentChips state={state} holderId={character.instanceId} />
+      <EquipmentChips state={state} holderId={character.instanceId} onOpenInfo={openInfo} />
       <div className="compact-card__badges">
-        {character.status.retreated && <span className="badge badge--retreated">Retreated</span>}
-        {character.status.disabled && <span className="badge badge--disabled">Disabled</span>}
+        {character.status.retreated && (
+          <InfoChip className="badge badge--retreated" info={statusInfo('Retreated', character.name)} onOpen={openInfo}>
+            Retreated
+          </InfoChip>
+        )}
+        {character.status.disabled && (
+          <InfoChip className="badge badge--disabled" info={statusInfo('Disabled', character.name)} onOpen={openInfo}>
+            Disabled
+          </InfoChip>
+        )}
         {sick && (
-          <span className="badge badge--orientation" title="Field Orientation: it entered play this turn, so it can't use damage-dealing abilities until its controller's next turn. Non-damaging abilities are fine.">
+          <InfoChip className="badge badge--orientation" title={`Field Orientation: ${FIELD_ORIENTATION_TEXT}`} info={statusInfo('Field Orientation', character.name)} onOpen={openInfo}>
             Field Orientation
-          </span>
+          </InfoChip>
         )}
         {resources.map((t, i) => (
-          <span className="badge badge--resource" key={`${t.label}-${i}`} title={`${t.label}: ${t.value}`}>
+          <InfoChip className="badge badge--resource" key={`${t.label}-${i}`} title={`${t.label}: ${t.value}`} info={trackedInfo(t, character.name)} onOpen={openInfo}>
             {t.label}: {t.value}
-          </span>
+          </InfoChip>
         ))}
       </div>
       <div className="compact-card__hint">Click for details</div>

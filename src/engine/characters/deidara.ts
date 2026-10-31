@@ -1,4 +1,5 @@
-import { countTokensOfType, findOccupant, getCrossPatternTargets, isCharacter, patchCharacter, placeToken } from '../board';
+import { isPrototype } from '../prototype';
+import { countTokensOfType, findOccupant, isCharacter, patchCharacter, placeToken } from '../board';
 import { dealDamage, registerDefeatHook } from '../combat';
 import { appendLog, appendWarning, otherPlayer } from '../phases/phaseMachine';
 import { enqueueChoice, registerChoiceResolver } from '../choices';
@@ -39,7 +40,7 @@ function makeClaySpider(owner: PlayerId, ownerInstanceId: string): TokenInstance
     currentHP: 1,
     ownerCharacterInstanceId: ownerInstanceId,
     status: { disabled: false, retreated: false, enteredTurn: -1, hasAmbush: false, usedAbilitiesThisTurn: [], pooledThisTurn: false },
-    extra: {},
+    extra: { sharedPoolOwner: ownerInstanceId }, // its abilities are paid from Deidara's Pool
   };
 }
 
@@ -102,7 +103,7 @@ const detonationArt: AbilityDef = {
 };
 
 // Condition: Deidara's Pool at max Capacity (checked at activation; the cost
-// may then spend from it). Spends 5 Clay Charges.
+// may then spend from it). Spends 2 Clay Charges.
 const c3ShiSuri: AbilityDef = {
   id: 'c3-shi-suri',
   name: 'C3, Shi-Suri',
@@ -112,39 +113,48 @@ const c3ShiSuri: AbilityDef = {
   type: 'Ninjutsu',
   isUltimate: true,
   isDamaging: true,
+  maxTargets: 3,
+  targetHint: 'The first unit you pick takes 4 damage; the others take 2.',
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     if (!found || !(isCharacter(found.occupant))) return false;
-    const pool = found.occupant.chakraPool;
-    return pool.current >= pool.capacity && clayCharges(ctx.state, ctx.sourceInstanceId) >= 5;
+    const picks = ctx.targetInstanceIds;
+    return picks.length >= 1 && new Set(picks).size === picks.length && clayCharges(ctx.state, ctx.sourceInstanceId) >= 2;
   },
   resolve: (ctx) => {
-    const target = ctx.targetInstanceIds[0];
+    const [target, ...others] = ctx.targetInstanceIds;
     if (!target) return ctx.state;
-    let state = addClayCharges(ctx.state, ctx.sourceInstanceId, -5);
+    let state = addClayCharges(ctx.state, ctx.sourceInstanceId, -2);
     state = dealDamage(state, target, 4).state;
-
-    const found = findOccupant(state, target);
-    if (found) {
-      // Cross-pattern splash: left/right/front/back of the primary target
-      // (SPEC.md §9) — the main validation point for this character.
-      const splash = getCrossPatternTargets(state, found.player, found.zone, found.index);
-      for (const occ of splash) {
-        state = dealDamage(state, occ.instanceId, 3).state;
-      }
+    for (const id of others.slice(0, 2)) {
+      if (findOccupant(state, id)) state = dealDamage(state, id, 2).state;
     }
-    return appendLog(state, "Deidara's C3, Shi-Suri detonates in a cross pattern.");
+    return appendLog(state, "Deidara's C3, Shi-Suri detonates.");
+  },
+};
+
+// C2, Shi-Ryu: he takes to the air on his clay dragon, for as long as he's in play. board.ts's isOutOfReach and
+// shinobi.ts apply what that means.
+const c2ShiRyu: AbilityDef = {
+  id: 'c2-shi-ryu',
+  name: 'C2, Shi-Ryu',
+  cost: 3,
+  speed: 'Normal',
+  style: 'Explosion',
+  type: 'Ninjutsu',
+  maxTargets: 0,
+  legalityCheck: (ctx) => {
+    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
+    return !!found && found.occupant.extra.airborne !== true && clayCharges(ctx.state, ctx.sourceInstanceId) >= 5;
+  },
+  resolve: (ctx) => {
+    const state = addClayCharges(ctx.state, ctx.sourceInstanceId, -5);
+    const next = patchCharacter(state, ctx.sourceInstanceId, (d) => ({ ...d, extra: { ...d.extra, airborne: true } }));
+    return appendLog(next, 'Deidara takes to the air on C2, Shi-Ryu — he is Airborne.');
   },
 };
 
 // --- Forbidden Technique — Death is an Explosion ---------------------------
-
-function poolIsFull(state: GameState, instanceId: string): boolean {
-  const found = findOccupant(state, instanceId);
-  if (!found || !isCharacter(found.occupant)) return false;
-  const { current, capacity } = found.occupant.chakraPool;
-  return current >= capacity;
-}
 
 /** The blast both versions share: `enemyDamage` to every enemy unit, `allyDamage` to every other friendly unit (Characters and Tokens alike). */
 function deathIsAnExplosionBlast(state: GameState, deidaraId: string, enemyDamage: number, allyDamage: number): GameState {
@@ -170,36 +180,43 @@ function deidaraDies(state: GameState, deidaraId: string): GameState {
   return dealDamage(marked, deidaraId, 1, { cannotBeReduced: true, ongoing: true }).state;
 }
 
-// Version 1: a deliberate last stand — Deidara at 3 HP or less, full Pool, 4 Clay Charges.
+/** Death is an Explosion's blast: 4 damage to every enemy, +1 per Clay Charge spent, up to 3. */
+const BLAST_DAMAGE = 4;
+const BLAST_MAX_CHARGES = 3;
+const blastCharges = (state: GameState, instanceId: string) => Math.min(BLAST_MAX_CHARGES, clayCharges(state, instanceId));
+
+// Version 1: a deliberate last stand — Deidara at 3 HP or less.
 const deathIsAnExplosionV1: AbilityDef = {
   id: 'death-is-an-explosion-v1',
   name: 'Death is an Explosion (Version 1)',
-  cost: (ctx) => {
-    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    return 5 + (found && isCharacter(found.occupant) ? found.occupant.chakraPool.current : 0);
-  },
-  spendsEntirePool: true,
+  cost: 6,
   speed: 'Normal',
   style: 'Explosion',
   type: 'Ninjutsu',
   isForbidden: true,
   isDamaging: true,
   maxTargets: 0,
+  choices: (ctx) => {
+    const max = blastCharges(ctx.state, ctx.sourceInstanceId);
+    return max > 0 ? [{ id: 'clayCharges', kind: 'number', prompt: 'Spend how many Clay Charges for +1 damage to every enemy each?', min: 0, max }] : [];
+  },
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
     if (!found || !isCharacter(found.occupant)) return false;
-    return found.occupant.currentHP <= 3 && poolIsFull(ctx.state, ctx.sourceInstanceId) && clayCharges(ctx.state, ctx.sourceInstanceId) >= 4;
+    return found.occupant.currentHP <= 3;
   },
   resolve: (ctx) => {
     if (!findOccupant(ctx.state, ctx.sourceInstanceId)) return ctx.state;
-    let state = addClayCharges(ctx.state, ctx.sourceInstanceId, -4);
-    state = deathIsAnExplosionBlast(state, ctx.sourceInstanceId, 7, 3);
+    const chosen = typeof ctx.choices?.clayCharges === 'number' ? ctx.choices.clayCharges : 0;
+    const spent = Math.max(0, Math.min(blastCharges(ctx.state, ctx.sourceInstanceId), chosen));
+    let state = addClayCharges(ctx.state, ctx.sourceInstanceId, -spent);
+    state = deathIsAnExplosionBlast(state, ctx.sourceInstanceId, BLAST_DAMAGE + spent, 3);
     return deidaraDies(state, ctx.sourceInstanceId);
   },
 };
 
 // Version 2: a replacement for his death — when Deidara would be defeated
-// with a full Pool and 4 Clay Charges, he stays at 0 HP for a moment and his
+// with 6 Chakra to pay, he stays at 0 HP for a moment and his
 // controller is ASKED whether to go out with the blast (never automatic).
 // Damage can't pause mid-resolution for a Reactive activation, so the
 // trigger is the defeat itself (a defeat hook), answered via a pending choice.
@@ -207,11 +224,7 @@ const V2_ID = 'death-is-an-explosion-v2';
 const deathIsAnExplosionV2: AbilityDef = {
   id: V2_ID,
   name: 'Death is an Explosion (Version 2)',
-  cost: (ctx) => {
-    const found = findOccupant(ctx.state, ctx.sourceInstanceId);
-    return 6 + (found && isCharacter(found.occupant) ? found.occupant.chakraPool.current : 0);
-  },
-  spendsEntirePool: true,
+  cost: 6,
   triggeredOnly: true,
   speed: 'Reactive',
   style: 'Explosion',
@@ -228,13 +241,16 @@ registerDefeatHook(DEF_ID, (state, instanceId) => {
   const deidara = found.occupant;
   if (deidara.extra.deathResolved) return null; // his decision is made — the defeat goes through
   if (deidara.extra.deathPending) return state; // already waiting on the answer; stays at 0 HP
-  if (!poolIsFull(state, instanceId) || clayCharges(state, instanceId) < 4) return null;
+  // Prototype rules: like every ability, it's paid from his Pool.
+  const available = isPrototype(state) ? deidara.chakraPool.current : state.players[found.player].genericChakraAvailable;
+  if (available < 6 && state.rules !== 'trust') return null;
+  const charges = Array.from({ length: blastCharges(state, instanceId) + 1 }, (_, spent) => spent);
   const marked = patchCharacter(state, instanceId, (d) => ({ ...d, extra: { ...d.extra, deathPending: true } }));
   return enqueueChoice(appendLog(marked, 'Deidara would be defeated — he can go out with Death is an Explosion.'), {
     player: found.player,
-    prompt: `Deidara would be defeated. Activate Death is an Explosion (Version 2)? Costs 6 Chakra + his entire Pool + 4 Clay Charges: 7 damage to every enemy, 5 to every ally. He dies either way.`,
+    prompt: `Deidara would be defeated. Activate Death is an Explosion (Version 2)? Costs 6 Chakra: ${BLAST_DAMAGE} damage to every enemy, +1 for each Clay Charge spent, and 5 to every ally. He dies either way.`,
     options: [
-      { id: 'activate', label: 'Activate — Art is an Explosion!' },
+      ...charges.map((spent) => ({ id: `activate-${spent}`, label: `Activate — ${BLAST_DAMAGE + spent} damage (spend ${spent} Clay Charge${spent === 1 ? '' : 's'})` })),
       { id: 'decline', label: 'Decline — just fall' },
     ],
     min: 1,
@@ -248,19 +264,23 @@ registerChoiceResolver(V2_ID, (state, choice, optionIds) => {
   const instanceId = choice.data.instanceId as string;
   const found = findOccupant(state, instanceId);
   if (!found || !isCharacter(found.occupant)) return state;
-  if (optionIds[0] !== 'activate') return deidaraDies(appendLog(state, 'Deidara falls without detonating.'), instanceId);
+  if (!optionIds[0]?.startsWith('activate-')) return deidaraDies(appendLog(state, 'Deidara falls without detonating.'), instanceId);
+  const spent = Number(optionIds[0].slice('activate-'.length));
 
   const player = found.player;
   const relaxed = state.rules === 'trust';
+  const fromPool = isPrototype(state);
   const generic = state.players[player].genericChakraAvailable;
-  if (generic < 6 && !relaxed) {
-    return deidaraDies(appendLog(state, `Not enough Chakra for Death is an Explosion (needs 6 available, has ${generic}) — Deidara falls.`), instanceId);
+  const available = fromPool ? found.occupant.chakraPool.current : generic;
+  if (available < 6 && !relaxed) {
+    return deidaraDies(appendLog(state, `Not enough Chakra for Death is an Explosion (needs 6 available, has ${available}) — Deidara falls.`), instanceId);
   }
-  let next = generic < 6 ? appendWarning(state, `${player} is short ${6 - generic} Chakra for Death is an Explosion (trust mode — allowed).`) : state;
-  next = { ...next, players: { ...next.players, [player]: { ...next.players[player], genericChakraAvailable: Math.max(0, generic - 6), fadingGenericChakra: Math.max(0, next.players[player].fadingGenericChakra - (6)) } } };
-  next = patchCharacter(next, instanceId, (d) => ({ ...d, chakraPool: { ...d.chakraPool, current: 0 } }));
-  next = addClayCharges(next, instanceId, -4);
-  next = deathIsAnExplosionBlast(next, instanceId, 7, 5);
+  let next = available < 6 ? appendWarning(state, `${player} is short ${6 - available} Chakra for Death is an Explosion (trust mode — allowed).`) : state;
+  if (fromPool) next = patchCharacter(next, instanceId, (d) => ({ ...d, chakraPool: { ...d.chakraPool, current: Math.max(0, d.chakraPool.current - 6) } }));
+  else
+    next = { ...next, players: { ...next.players, [player]: { ...next.players[player], genericChakraAvailable: Math.max(0, generic - 6), fadingGenericChakra: Math.max(0, next.players[player].fadingGenericChakra - (6)) } } };
+  next = addClayCharges(next, instanceId, -spent);
+  next = deathIsAnExplosionBlast(next, instanceId, BLAST_DAMAGE + spent, 5);
   return deidaraDies(next, instanceId);
 });
 
@@ -283,7 +303,7 @@ function removeSpiders(state: GameState, player: PlayerId, ids: string[]): GameS
 const selfDetonate: AbilityDef = {
   id: 'self-detonate',
   name: 'Self Detonate',
-  cost: 3,
+  cost: 2,
   speed: 'Quick',
   style: 'None', // Tokens can't carry Styles yet — Explosion is flavor here (same as Pain's Paths)
   type: 'Ninjutsu',
@@ -339,12 +359,15 @@ registerTokenDef({ id: CLAY_SPIDER_DEF_ID, name: 'Clay Spider', abilities: [self
 
 registerCharacter({
   id: DEF_ID,
+  // Airborne (C2, Shi-Ryu): a free Clay Charge each of his turns.
+  onUpkeep: (state, instanceId) =>
+    findOccupant(state, instanceId)?.occupant.extra.airborne === true ? appendLog(addClayCharges(state, instanceId, 1), 'Airborne: Deidara gains 1 Clay Charge.') : state,
   name: 'Deidara',
   rank: 'A',
   baseMaxHP: 10,
-  basePoolCapacity: 3,
+  basePoolCapacity: 10,
   styles: ['Explosion', 'Earth'],
-  abilities: [clSpiderAbility, detonationArt, deathIsAnExplosionV1, deathIsAnExplosionV2],
+  abilities: [clSpiderAbility, detonationArt, c2ShiRyu, deathIsAnExplosionV1, deathIsAnExplosionV2],
   ultimate: c3ShiSuri,
   initialExtra: { clayCharges: 0 },
   synergy: ['Akatsuki'],

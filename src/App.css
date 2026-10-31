@@ -1978,3 +1978,165 @@
 .theme-toggle:focus-visible {
   opacity: 1;
 }
+
+/* The opponent's strip against a real opponent: hand and Chakra on one thin line, so your own area stays on screen.
+   Their hidden cards become small backs; a card they've revealed becomes a name chip you can still click for its text. */
+.player-board--compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px;
+  padding: 4px 6px 4px 8px;
+}
+
+.player-board--compact .board-section {
+  flex-basis: 100%;
+}
+
+.player-board--compact .board-section:empty {
+  display: none;
+}
+
+.player-board--compact .hand-view {
+  flex: 1 1 240px;
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 10px;
+}
+
+.player-board--compact .hand-view__label {
+  flex: none;
+  font-size: 13px;
+}
+
+.player-board--compact .hand-view .hand-view__cards {
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+  padding: 0;
+}
+
+.player-board--compact .hand-view .hand-card,
+.player-board--compact .hand-view .hand-card:first-child,
+.player-board--compact .hand-view .hand-card:last-child {
+  --card-w: 112px;
+  height: 30px;
+  margin: 0;
+  padding: 0 6px;
+  justify-content: center;
+  border-top-width: 1px;
+  border-radius: 5px;
+}
+
+.player-board--compact .hand-view .hand-card--back,
+.player-board--compact .hand-view .hand-card--back:first-child,
+.player-board--compact .hand-view .hand-card--back:last-child {
+  --card-w: 21px;
+  border-radius: 4px;
+}
+
+.player-board--compact .hand-view .hand-card:hover,
+.player-board--compact .hand-view .hand-card:focus-within {
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.player-board--compact .hand-view .hand-card__name {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-board--compact .hand-card__gem,
+.player-board--compact .hand-card__type,
+.player-board--compact .hand-card__text,
+.player-board--compact .hand-card__stats,
+.player-board--compact .hand-card__actions {
+  display: none;
+}
+
+.player-board--compact .chakra-drop {
+  flex: none;
+  min-width: 0;
+}
+
+.player-board--compact .chakra-sources {
+  height: 100%;
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 3px 10px;
+}
+
+.player-board--compact .chakra-sources__label {
+  gap: 4px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.player-board--compact .chakra-sources__label strong {
+  font-size: 16px;
+}
+
+.player-board--compact .chakra-symbol {
+  font-size: 16px;
+}
+
+.player-board--compact .supplies-label {
+  margin-left: 2px;
+}
+
+.player-board--compact .cost-swatch {
+  width: 13px;
+  height: 13px;
+}
+
+.player-board--compact .chakra-sources__boxes {
+  flex-wrap: nowrap;
+  gap: 3px;
+}
+
+.player-board--compact .chakra-sources__empty {
+  display: none;
+}
+
+.player-board--compact .chakra-source {
+  width: 16px;
+  height: 22px;
+  border-width: 1px;
+  border-radius: 3px;
+}
+
+.player-board--compact .chakra-source--tapped {
+  margin: 0 3px;
+}
+
+.player-board--compact .chakra-source__symbol {
+  font-size: 10px;
+}
+
+.player-board--compact .pile--small .pile__card {
+  width: 22px;
+  height: 30px;
+}
+
+.player-board--compact .pile--small .pile__count {
+  font-size: 12px;
+}
+
+.player-board--compact .pile--small .pile__label {
+  font-size: 10px;
+}
+
+/* Something on a unit's card you can click for its own text (InfoChip). */
+.info-chip {
+  cursor: help;
+}
+
+.info-chip:hover,
+.info-chip:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}

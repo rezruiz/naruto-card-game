@@ -81,6 +81,7 @@ export function CharacterDetailsModal({
   state,
   instanceId,
   canAct,
+  canUseAbilities = canAct,
   onClose,
   onPool,
   onActivate,
@@ -90,8 +91,10 @@ export function CharacterDetailsModal({
 }: {
   state: GameState;
   instanceId: string;
-  /** True only for the controlling player during their own Main Phase. */
+  /** Pooling and Retreat: true only for the controlling player during their own Main Phase. */
   canAct: boolean;
+  /** Abilities, which also work in Combat. */
+  canUseAbilities?: boolean;
   onClose: () => void;
   onPool: (instanceId: string, amount: number) => void;
   onActivate: (instanceId: string, abilityId: string, maxTargets: number) => void;
@@ -116,7 +119,7 @@ export function CharacterDetailsModal({
   const charDef = character ? getCharacterDef(occupant.defId) : undefined;
   const abilities = character ? (charDef ? [...charDef.abilities, ...(charDef.ultimate ? [charDef.ultimate] : [])] : []) : (getTokenDef(occupant.defId)?.abilities ?? []);
   const retreated = occupant.status.retreated;
-  const usable = canAct && !retreated;
+  const usable = canUseAbilities && !retreated;
   const closeThen = (fn: () => void) => () => {
     onClose();
     fn();
@@ -136,7 +139,8 @@ export function CharacterDetailsModal({
 
   const available = state.players[found.player].genericChakraAvailable;
   // Any unit with a Pool of its own can be pooled into — characters, and Pain's Path tokens (Rinnegan Reservoir).
-  const poolRoom = pool ? (Number.isFinite(pool.capacity) ? pool.capacity - pool.current : Infinity) : 0;
+  // Trust mode (`manual`) sets no limit on how much can be pooled.
+  const poolRoom = pool ? (!manual && Number.isFinite(pool.capacity) ? pool.capacity - pool.current : Infinity) : 0;
 
   return (
     <DetailsModal title={occupant.name} subtitle={subtitle} hideText onClose={onClose}>
@@ -202,8 +206,8 @@ export function CharacterDetailsModal({
               ))}
           </div>
         )}
-        {!canAct && abilities.length > 0 && <span className="details-modal__note">Abilities can be used by the controlling player.</span>}
-        {canAct && retreated && <span className="details-modal__note">Retreated — return from Retreat to use abilities.</span>}
+        {!canUseAbilities && abilities.length > 0 && <span className="details-modal__note">Abilities can be used by the controlling player.</span>}
+        {canUseAbilities && retreated && <span className="details-modal__note">Retreated — return from Retreat to use abilities.</span>}
 
         {fullText && (
           <details className="full-rules">

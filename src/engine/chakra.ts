@@ -147,7 +147,8 @@ export function poolChakra(state: GameState, instanceId: string, amount: number)
   }
   const room = pool.capacity - pool.current;
   if (amount > room) {
-    return appendLog(working, `${player} can't pool ${amount} into ${unit.name}'s Chakra Pool — only ${room} room left.`);
+    if (!relaxed) return appendLog(working, `${player} can't pool ${amount} into ${unit.name}'s Chakra Pool — only ${room} room left.`);
+    working = appendWarning(working, `${unit.name}'s Chakra Pool goes past its capacity — not legal under the strict rules, allowed anyway (trust mode).`);
   }
 
   let next = patchOccupant(working, instanceId, (o) => ({

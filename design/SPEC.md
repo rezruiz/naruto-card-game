@@ -807,7 +807,7 @@ is directly in front of back-row position 1, slot 2 in front of position
   in front of it, if any; a front-row Token's back neighbor is the 1
   Character directly behind it, if any.
 
-A **cross pattern** effect (e.g. Shinra Tensei, C3 Shi-Suri, §13) hits
+A **cross pattern** effect (e.g. Shinra Tensei, §13) hits
 the epicenter/main target plus whatever's immediately left, right, in
 front of, and behind it — up to 4 additional occupants. Any arm with
 nothing there (edge of a row, an empty slot in front or behind) simply
@@ -1131,14 +1131,15 @@ Pool Capacity is intentionally left **TBD** per card — assign it during
 card balancing.
 
 ### Kakuzu (A Rank)
-**HP: 4** · Pool Capacity: (Hearts − 1) × 2 — starts at 8 with all 5 Hearts
+**HP: 4** · Pool Capacity: Hearts × 2 — starts at 10 with all 5 Hearts
 Specialization: Assault / Vanguard · Styles: Earth, Wind, Lightning, Fire · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Five Hearts — Whenever Kakuzu would be defeated with more than 1 Heart
   remaining, he instead loses 1 Heart, a Style, and revives; losing his
-  last Heart defeats him for good. Chakra Pool Capacity = (current
-  Hearts − 1) × 2.
+  last Heart defeats him for good. Chakra Pool Capacity = current
+  Hearts × 2. He keeps the Chakra in his Pool, down to its new
+  maximum.
 - Elemental Versatility — First elemental jutsu each turn costs −1
 - Heart Masks — When Kakuzu enters play, search your Jutsu Deck for
   Pressure Damage, Searing Migraine and False Darkness and add them to
@@ -1155,7 +1156,7 @@ Pool, and gain 1 elemental Style from the defeated character (your
 choice if several) — even one he already has.
 
 ### Hidan (B Rank)
-**HP: 9** · Pool Capacity: 1
+**HP: 9** · Pool Capacity: 6
 Specialization: Vanguard / Assault · Styles: Ritual · Synergy: Akatsuki, Kakuzu
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
@@ -1261,45 +1262,43 @@ is defeated (no cooldown from fizzling).
   Drill Peck — 1 Chakra, Quick Technique, Type: Taijutsu: Deal 1 damage.
 
 ### Deidara (A Rank)
-**HP: 10 (placeholder)** · Pool Capacity: 3
+**HP: 10 (placeholder)** · Pool Capacity: 10
 Specialization: Assault · Styles: Explosion, Earth · Synergy: Akatsuki
 
 Abilities:
 - C1, Shi-Wan: Clay Spider — 1 Chakra, Style: Explosion, Type: Ninjutsu: Create a Clay Spider token (below) and gain 1 Clay Charge. Usable twice/turn (overrides the once-per-turn cap).
 - Detonation Art — 4 Chakra, Style: Explosion, Type: Ninjutsu: Deal 1 damage. Spend 1 Clay Charge → deal 3 instead.
+- C2, Shi-Ryu — 3 Chakra, Style: Explosion, Type: Ninjutsu: Spend 5 Clay Charges. Deidara becomes Airborne: enemy Shinobi attacks, Taijutsu and Bukijutsu can't target him while he's in play, and he gains 1 Clay Charge at each of your Upkeeps.
 
 **Clay Spider Token** (HP: 1)
 - Fizzles if Deidara dies. Max 5 in play at once.
+- Its abilities are paid from Deidara's Chakra Pool.
 - Ambush — no Field Orientation; it can act the turn it's created.
-- Self Detonate — 3 Chakra, Quick Technique, Style: Explosion, Type: Ninjutsu: Choose any number of your Clay Spider tokens and 1 target; they all detonate against it for 1 damage each. 3 Chakra total per activation, regardless of spider count. Usable any number of times per turn.
+- Self Detonate — 2 Chakra, Quick Technique, Style: Explosion, Type: Ninjutsu: Choose any number of your Clay Spider tokens and 1 target; they all detonate against it for 1 damage each. 2 Chakra total per activation, regardless of spider count. Usable any number of times per turn.
 - Combine — Style: Explosion, Type: Ninjutsu: 4 Clay Spider tokens revert to clay and are destroyed, generating 2 Clay Charges.
 
 Ultimate — C3, Shi-Suri (7 Chakra, Style: Explosion, Type: Ninjutsu):
-Condition: Chakra Pool must be full to activate (may still be spent as
-part of the cost). Spend 5 Clay Charges. Deal 4 damage to 1 target, plus
-3 damage in a cross pattern from it (§9) — whatever's immediately left,
-right, in front of, and behind the target, up to 4 additional hits.
+Spend 2 Clay Charges. Deal 4 damage to 1 unit and 2 damage to each of up
+to 2 other units.
 
 Forbidden Technique — Death is an Explosion (Style: Explosion, Type:
 Ninjutsu) — two versions: *(full nuance: design/CHARACTER_LOG.md)*
 
-- **Version 1** — Cost: 5 Chakra + entire Pool (must be full) + 4 Clay
-  Charges. Condition: Deidara at 3 HP or less. Deal 7 to all enemies, 3
-  to all allies. Deidara dies.
-- **Version 2** (Reactive Technique) — Cost: 6 Chakra + entire Pool
-  (must be full) + 4 Clay Charges. Trigger: Deidara's HP would hit 0 or
-  below — activate this instead. Deal 7 to all enemies, 5 to all allies.
-  Deidara dies.
+- **Version 1** — Cost: 6 Chakra. Condition: Deidara at 3 HP or less. Spend up to 3 Clay Charges. Deal 4 damage to
+  all enemies, +1 for each Clay Charge spent (up to 7), and 3 to all allies. Deidara dies.
+- **Version 2** (Reactive Technique) — Cost: 6 Chakra. Trigger: Deidara's HP would hit 0 or below — activate this
+  instead. Spend up to 3 Clay Charges. Deal 4 damage to all enemies, +1 for each Clay Charge spent (up to 7), and
+  5 to all allies. Deidara dies.
 
 ### Kisame, Tailless Tailed Beast (S Rank)
-**HP: 10** · Pool Capacity: 12
+**HP: 12** · Pool Capacity: 12
 Specialization: Assault / Tactician · Styles: Water · Synergy: Akatsuki
 
 Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Samehada — Absorbed Chakra is stored in Kisame's Chakra Pool; Chakra
   absorbed past his Pool's capacity becomes generic Chakra instead.
 - Samehada Fusion — Once Samehada absorbs 10 Chakra, Kisame may enter
-  Samehada Shark Transformation: +6 Pool, +6 max HP (16 total), Water
+  Samehada Shark Transformation: +6 Pool, +6 max HP (18 total), Water
   Style attacks +1 damage (Samehada Strike and Water Prison Jutsu
   disabled), all Ninjutsu attacks from Kisame have Absorb 1, and incoming Ninjutsu attacks Absorb 1 from
   their user to Kisame. Exits after ≥7 damage post-transformation, or at
@@ -1309,7 +1308,7 @@ Abilities:
 - Samehada Strike — 2 Chakra from his Pool, Type: Taijutsu: Deal 1, Absorb 3.
 - Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Taijutsu: Deal 2, Absorb 4.
 - Water Style: Water Prison Jutsu — 5 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
-- Water Style: Thousand Hungry Sharks — 8 Chakra, Type: Ninjutsu: Deal 4 damage, split however you choose between any number of enemy targets.
+- Water Style: Thousand Hungry Sharks — 7 Chakra, Type: Ninjutsu: Deal 4 damage, split however you choose between any number of enemy targets.
 
 Ultimate — Water Style: Super Shark Bomb Jutsu (6 Chakra, Style: Water,
 Type: Ninjutsu): Cost must be fully paid with pooled Chakra. Deal 3 + X
@@ -1373,7 +1372,7 @@ defeated before then, this delayed second hit is cancelled (the
 immediate hit already happened and isn't affected).
 
 ### Sasori (A Rank)
-**HP: 7 (Hiruko form)** · Pool Capacity: 2
+**HP: 7 (Hiruko form)** · Pool Capacity: 10
 Specialization: Tactician / Assault · Styles: Poison · Synergy:
 Akatsuki, Deidara
 
@@ -1383,8 +1382,8 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
 - Puppet Shell: Hiruko — Sasori begins play piloting Hiruko, his outer
   battle shell (stats and abilities below). Whenever Hiruko would be
   defeated, instead of Sasori being defeated, he transforms: Hollow
-  Body (his true form) takes over, entering at its own full HP/Pool
-  with Field Orientation (§6.6). Only once Hollow Body is also
+  Body (his true form) takes over, entering at its own full HP with
+  Field Orientation (§6.6) and keeping the Chakra in his Pool. Only once Hollow Body is also
   defeated is Sasori truly defeated.
 - Chakra Strings: Third Kazekage — When Sasori enters play, also create
   the Third Kazekage token (below) — a separate Puppet under his
@@ -1392,11 +1391,12 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   Sasori is currently in. Third Kazekage's own fate has no effect on
   Sasori's HP or current form.
 
-**Hiruko Form (starting)** — HP 7 · Pool Capacity 2
+**Hiruko Form (starting)** — HP 7 · Pool Capacity 10
+- Immune to Poison.
 - Tail Strike — 3 Chakra, Style: None, Type: Taijutsu: Deal 2 damage, apply 2 Poison counters.
 - Puppet Shell Guard — 2 Chakra, Reactive Technique, Style: None, Type: Taijutsu: Redirect a targeted Ninjutsu or Physical (Taijutsu or Bukijutsu, §6.8) attack aimed at Third Kazekage onto Hiruko instead, reduced by 2 (min 0).
 
-**Hollow Body Form (after Hiruko falls)** — HP 4 · Pool Capacity 2
+**Hollow Body Form (after Hiruko falls)** — HP 4 · Pool Capacity 10
 - Poison Senbon — 2 Chakra, Style: Poison, Type: Taijutsu: Deal 1 damage, apply 2 Poison counters. (Poisoned: at the start of every Upkeep Phase — not just its controller's — it loses 1 Poison counter and takes 1 damage per counter removed. This damage can't be prevented or healed away.)
 - Chakra Strings: Puppet Summon — 2 Chakra, Style: None, Type: Ninjutsu: Create a Puppet Soldier token (below).
 
@@ -1406,12 +1406,15 @@ activate (may still be spent as part of the cost). Deal 2 damage to all
 enemy units (Characters and Tokens alike), apply 3 Poison counters to
 each.
 
-**Third Kazekage Token** (HP: 5) — separate and simultaneous, not part
+**Third Kazekage Token** (HP: 6) — separate and simultaneous, not part
 of Sasori's own form chain above.
 - Fizzles if Sasori is truly defeated (Hollow Body falls).
+- Its abilities are paid from Sasori's Chakra Pool.
+- Immune to Poison.
+- In Shinobi combat (Prototype), Shinobi can attack it, and it can defend your Leaders like a Shinobi. It never attacks and deals no Damage back.
 - Iron Sand Barrage — 3 Chakra, Type: Ninjutsu: Deal 3 damage.
 - Gold Dust Poison — 2 Chakra, Type: Ninjutsu: Deal 1 damage to up to 2 enemies, apply 1 Poison counter to each.
-- Iron Sand Wall — 3+X Chakra, Reactive Technique, Type: Ninjutsu: In response to a targeted Ninjutsu or Taijutsu ability aimed at any friendly unit, reduce its damage by 2 (min 0). You may spend X additional Chakra (up to 4) to reduce it by a further X.
+- Iron Sand Wall — 3+X Chakra, Reactive Technique, Type: Ninjutsu: In response to a targeted Ninjutsu, Taijutsu or Bukijutsu attack on one of your units, including Third Kazekage, reduce that attack's damage by 2 + X (min 0). X can be up to 4.
 
 **Puppet Soldier Token** (HP: 2)
 - Fizzles if Hollow Body is defeated (which, since Hollow Body is

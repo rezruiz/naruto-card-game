@@ -1,11 +1,11 @@
 import { samehadaFusionAbsorb } from '../characters/kisame';
 import { getCharacterDef, sharedVersatilitySource } from '../characters/registry';
-import { findOccupant, isCharacter, patchCharacter, patchOccupant, isHidingLikeAMole, isPhasedOut, surfaceFromMole } from '../board';
+import { findOccupant, isCharacter, patchCharacter, patchOccupant, isHidingLikeAMole, isPhasedOut, surfaceFromMole, isOutOfReach } from '../board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
 import { isPrototype, spendSupplies, suppliesAvailable } from '../prototype';
-import { getHandCardDef, needsEnablingCharacter, targetedIds } from './registry';
+import { getHandCardDef, needsEnablingCharacter, paysInChakra, targetedIds } from './registry';
 import type { HandCardContext, HandCardDef } from './registry';
 import { TERRAIN, amegakureBuffs, hasTerrain } from '../terrainEffects';
 import { equipCostFor } from '../equipment';
@@ -44,6 +44,11 @@ function elementalVersatilityApplies(state: GameState, def: HandCardDef, enablin
 function sharedVersatilityFor(state: GameState, def: HandCardDef, player: PlayerId, enablingInstanceId: string): string | undefined {
   if (def.cardType !== 'jutsu' || def.type !== 'Ninjutsu' || def.style === 'None' || !enablingInstanceId) return undefined;
   return sharedVersatilitySource(state, player);
+}
+
+/** Prototype rules: how much of this card's cost must come from its enabler's Pool (an attack Jutsu's X). */
+export function poolRequired(state: GameState, def: HandCardDef, ctx: HandCardContext): number {
+  return isPrototype(state) ? (def.poolX?.(ctx) ?? 0) : 0;
 }
 
 export function resolveCost(def: HandCardDef, ctx: HandCardContext, payFromPool: number): number {
@@ -100,6 +105,7 @@ function checkTargets(state: GameState, player: PlayerId, def: HandCardDef, targ
       const nonRetreatedExists = state.players[targetFound.player].backRow.some((c) => c && !c.status.retreated);
       if (nonRetreatedExists) return { ok: false, reason: `${targetFound.occupant.name} is Retreated and can't be targeted.` };
     }
+    if (!isAlly && isOutOfReach(targetFound.occupant, def.type)) return { ok: false, reason: `${targetFound.occupant.name} is Airborne: ${def.type} can't reach it.` };
     if (isPhasedOut(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} has phased out (Crow Clone) and can't be targeted this turn.` };
     // It can still target itself — with its own abilities or a card it enables.
     if (targetId !== enablingInstanceId && isHidingLikeAMole(state, targetFound.occupant)) return { ok: false, reason: `${targetFound.occupant.name} is Hiding Like a Mole and can't be targeted.` };
@@ -131,7 +137,8 @@ export function checkHandCardLegality(
   }
   // Normal-speed timing: non-combat cards (Terrain, Missions, deck searches...) are Main-Phase plays; Attack-type Jutsu are Combat-only and once per turn per named card; combat-relevant immediate effects (healing) may go in either.
   if (def.speed === 'Normal') {
-    const timing = normalTiming(def);
+    // Prototype rules: every Normal-speed Jutsu may be played in either Main Phase or Combat.
+    const timing = isPrototype(state) && def.cardType === 'jutsu' ? 'either' : normalTiming(def);
     if (timing === 'combat' && state.phase !== 'Combat') {
       return { ok: false, reason: `${def.name} is an Attack-type Jutsu — it can only be played during your Combat Phase.` };
     }
@@ -154,18 +161,16 @@ export function checkHandCardLegality(
     return { ok: false, reason: `${def.name}'s condition isn't met.` };
   }
 
-  if (isPrototype(state)) return prototypeCostCheck(state, player, def, ctx);
+  if (isPrototype(state) && !paysInChakra(def)) return prototypeCostCheck(state, player, def, ctx);
 
-  const cost = resolveCost(def, ctx, payFromPool);
-  const enablerPool =
-    needsEnablingCharacter(def)
-      ? (() => {
-          const found = findOccupant(state, enablingInstanceId);
-          return found && isCharacter(found.occupant) ? found.occupant.chakraPool.current : 0;
-        })()
-      : 0;
-  const totalPool = payFromPool;
-  const totalGeneric = cost - payFromPool;
+  const required = poolRequired(state, def, ctx);
+  const fromPool = Math.max(payFromPool, required);
+  const cost = resolveCost(def, ctx, fromPool);
+  const enabler = findOccupant(state, enablingInstanceId);
+  const enablerPool = enabler && isCharacter(enabler.occupant) ? enabler.occupant.chakraPool.current : 0;
+  if (required > enablerPool) return { ok: false, reason: `${def.name}'s X must be paid from the enabling Leader's Pool (${required} needed, ${enablerPool} pooled).` };
+  const totalPool = fromPool;
+  const totalGeneric = cost - fromPool;
   if (totalPool < 0 || totalPool > enablerPool) {
     return { ok: false, reason: `Not enough Chakra pooled in the enabling character.` };
   }
@@ -177,31 +182,25 @@ export function checkHandCardLegality(
 }
 
 /**
- * Prototype rules (prototype.ts): a Jutsu card is paid entirely from its enabling Leader's Chakra Pool — so a
- * "cheaper if paid from the Pool" discount always applies — and every other card (Shinobi, Missions, Terrain,
- * Assists) costs Supplies instead of Chakra. A card can say otherwise (HandCardDef.paidWith).
+ * Prototype rules (prototype.ts): the Supplies cost of a card that isn't paid in Chakra (Shinobi, Missions, Terrain,
+ * Assists, Equipment). A card can say otherwise (HandCardDef.paidWith).
  */
-export function prototypeCardCost(state: GameState, def: HandCardDef, ctx: HandCardContext): { cost: number; fromPool: boolean } {
-  const fromPool = needsEnablingCharacter(def, true);
-  const cost = resolveCost(def, { ...ctx, state }, fromPool ? 1 : 0);
+export function prototypeCardCost(state: GameState, def: HandCardDef, ctx: HandCardContext): { cost: number } {
+  const cost = resolveCost(def, { ...ctx, state }, 0);
   if (def.cardType === 'equipment') {
     // An Equipment with a Leader cost (Medical Pouch) costs that much to attach to a Leader.
     const equipCost = equipCostFor(state, def.id, ctx.targetInstanceIds[0], cost);
     // Blacksmith Village: your Equipment costs 1 less Supply (to a minimum of 1).
-    return { cost: hasTerrain(state, ctx.player, TERRAIN.blacksmithVillage) ? Math.max(1, equipCost - 1) : equipCost, fromPool };
+    return { cost: hasTerrain(state, ctx.player, TERRAIN.blacksmithVillage) ? Math.max(1, equipCost - 1) : equipCost };
   }
   // Amegakure: your Amegakure Shinobi cost 1 less Supply (to a minimum of 1).
-  if (def.cardType === 'shinobi' && amegakureBuffs(state, ctx.player, def.id)) return { cost: Math.max(1, cost - 1), fromPool };
-  return { cost, fromPool };
+  if (def.cardType === 'shinobi' && amegakureBuffs(state, ctx.player, def.id)) return { cost: Math.max(1, cost - 1) };
+  return { cost };
 }
 
 function prototypeCostCheck(state: GameState, player: PlayerId, def: HandCardDef, ctx: HandCardContext): Legality {
-  const { cost, fromPool } = prototypeCardCost(state, def, ctx);
-  if (fromPool) {
-    const found = findOccupant(state, ctx.enablingInstanceId);
-    const pool = found && isCharacter(found.occupant) ? found.occupant.chakraPool.current : 0;
-    if (cost > pool) return { ok: false, reason: `Not enough Chakra pooled in the enabling Leader (${cost} needed, ${pool} pooled).` };
-  } else if (cost > suppliesAvailable(state, player)) {
+  const { cost } = prototypeCardCost(state, def, ctx);
+  if (cost > suppliesAvailable(state, player)) {
     return { ok: false, reason: `Not enough Supplies (${cost} needed, ${suppliesAvailable(state, player)} left).` };
   }
   return { ok: true };
@@ -213,8 +212,7 @@ function payCost(state: GameState, player: PlayerId, enablingInstanceId: string,
     const enabler = findOccupant(next, enablingInstanceId);
     const poolCurrent = enabler && isCharacter(enabler.occupant) ? enabler.occupant.chakraPool.current : 0;
     const fromPool = Math.min(payFromPool, poolCurrent);
-    // Prototype rules: generic Chakra can only be pooled, never spent.
-    const fromGeneric = isPrototype(next) ? 0 : Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
+    const fromGeneric = Math.min(cost - fromPool, next.players[player].genericChakraAvailable);
     if (fromPool + fromGeneric < cost) {
       next = appendWarning(next, `${player} is short ${cost - fromPool - fromGeneric} Chakra paying for this card (trust mode — allowed).`);
     }
@@ -258,23 +256,18 @@ export function playHandCard(
   const handEntry = state.players[player].hand.find((h) => h.instanceId === cardInstanceId)!;
   const def = getHandCardDef((handEntry as { defId: string }).defId)!;
   const ctx: HandCardContext = { state, player, enablingInstanceId, targetInstanceIds, amount };
+  payFromPool = Math.max(payFromPool, poolRequired(state, def, ctx));
   let cost = resolveCost(def, ctx, payFromPool);
   let paidInSupplies = false;
 
   let next: GameState;
-  if (isPrototype(state)) {
-    const proto = prototypeCardCost(state, def, ctx);
-    cost = proto.cost;
-    if (proto.fromPool) {
-      payFromPool = cost;
-      next = payCost(state, player, enablingInstanceId, cost, cost, !!opts.trust);
-    } else {
-      payFromPool = 0;
-      paidInSupplies = true;
-      const paid = spendSupplies(state, player, cost, def.name);
-      if (!paid) return appendLog(state, `Can't play ${def.name}: not enough Supplies.`);
-      next = paid;
-    }
+  if (isPrototype(state) && !paysInChakra(def)) {
+    cost = prototypeCardCost(state, def, ctx).cost;
+    payFromPool = 0;
+    paidInSupplies = true;
+    const paid = spendSupplies(state, player, cost, def.name);
+    if (!paid) return appendLog(state, `Can't play ${def.name}: not enough Supplies.`);
+    next = paid;
   } else {
     next = payCost(state, player, enablingInstanceId, cost, payFromPool, !!opts.trust);
   }

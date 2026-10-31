@@ -36,7 +36,7 @@ export function ChakraSourceRow({
         <span className="chakra-symbol" aria-hidden>
           🌀
         </span>
-        {supplies ? 'Chakra to pool' : 'Chakra available'}: <strong>{genericChakraAvailable}</strong>
+        Chakra available: <strong>{genericChakraAvailable}</strong>
         {fadingChakra > 0 && (
           <span className="chakra-sources__fading" title="Absorbed Chakra is spent first and fades when the phase changes">
             {' '}

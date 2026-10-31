@@ -38,6 +38,21 @@ describe('Kakuzu', () => {
     expect(activateAbility(state, 'p1-kakuzu', 'iron-skin', [], 0).stack).toHaveLength(0);
   });
 
+  describe('losing a Heart', () => {
+    const fall = (pool: number) => {
+      const s = setKakuzu(freshCombat(), (k) => ({ currentHP: 1, chakraPool: { ...k.chakraPool, current: pool } }));
+      return dealDamage(s, 'p1-kakuzu', 1).state.players.p1.backRow[0]!;
+    };
+
+    it('keeps his Chakra when it still fits', () => {
+      expect(fall(5).chakraPool).toEqual({ current: 5, capacity: 8 });
+    });
+
+    it('drops to the new max when it would be over', () => {
+      expect(fall(10).chakraPool).toEqual({ current: 8, capacity: 8 });
+    });
+  });
+
   it('Patchwork Threads: 2 Chakra from his Pool after a kill — regain a Heart, heal 3, gain 2 Chakra to his Pool', () => {
     let state = freshMain1(); // pooling is a Main Phase action
     state = giveChakra(state, 'p1', 3);

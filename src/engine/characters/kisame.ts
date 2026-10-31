@@ -204,7 +204,7 @@ const superSharkBombJutsu: AbilityDef = {
 const thousandHungrySharks: AbilityDef = {
   id: 'thousand-hungry-sharks',
   name: 'Water Style: Thousand Hungry Sharks',
-  cost: 8,
+  cost: 7,
   speed: 'Normal',
   style: 'Water',
   type: 'Ninjutsu',
@@ -249,7 +249,7 @@ registerCharacter({
   name: 'Kisame',
   absorbsIntoPool: true,
   rank: 'S',
-  baseMaxHP: 10,
+  baseMaxHP: 12,
   basePoolCapacity: 12,
   styles: ['Water'],
   abilities: [
