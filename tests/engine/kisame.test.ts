@@ -45,13 +45,56 @@ describe('Kisame', () => {
     expect(state.players.p1.backRow[3]!.extra.absorbedChakra).toBe(13);
   });
 
-  it("Water Prison Jutsu locks a lower-rank target out of targeted abilities for 3 turns", () => {
+  describe('while holding Water Prison, Kisame', () => {
+    const holding = () => {
+      let state = giveChakra(freshCombat(), 'p1', 20);
+      state = resolveTop(activateAbility(state, 'p1-kisame', 'water-prison-jutsu', ['p2-kakuzu'], 0));
+      const backRow = state.players.p1.backRow.map((c) => (c?.defId === 'kisame' ? { ...c, status: { ...c.status, usedAbilitiesThisTurn: [] } } : c));
+      return { ...state, players: { ...state.players, p1: { ...state.players.p1, backRow } } };
+    };
+
+    it("can't use anything but Taijutsu and Bukijutsu", () => {
+      const s = activateAbility(holding(), 'p1-kisame', 'thousand-hungry-sharks', ['p2-hidan'], 0);
+      expect(s.stack).toHaveLength(0);
+      expect(s.log.at(-1)?.text).toMatch(/holding Water Prison/);
+    });
+
+    it("can't enable a Ninjutsu Jutsu card, but can enable a Bukijutsu one", () => {
+      expect(playCard(holding(), 'p1', 'jutsu-thousand-hungry-sharks', 'p1-kisame', ['p2-hidan']).stack).toHaveLength(0);
+      expect(playCard(holding(), 'p1', 'senbon-volley', 'p1-kisame', ['p2-hidan']).stack).toHaveLength(1);
+    });
+
+    it("can't start his Shark Transformation", () => {
+      const s = holding();
+      const backRow = s.players.p1.backRow.map((c) => (c?.defId === 'kisame' ? { ...c, extra: { ...c.extra, absorbedChakra: 10 } } : c));
+      expect(activateAbility({ ...s, players: { ...s.players, p1: { ...s.players.p1, backRow } } }, 'p1-kisame', 'samehada-shark-transformation', [], 0).stack).toHaveLength(0);
+    });
+
+    it('can still use Samehada Strike, which is Bukijutsu', () => {
+      const start = holding();
+      const backRow = start.players.p1.backRow.map((c) => (c?.defId === 'kisame' ? { ...c, chakraPool: { ...c.chakraPool, current: 2 } } : c));
+      const s = activateAbility({ ...start, players: { ...start.players, p1: { ...start.players.p1, backRow } } }, 'p1-kisame', 'samehada-strike', ['p2-hidan'], 2);
+      expect(s.stack).toHaveLength(1);
+    });
+
+    it('can use Ninjutsu again once the prison breaks', () => {
+      const s = dealDamage(holding(), 'p1-kisame', 3).state;
+      expect(activateAbility(s, 'p1-kisame', 'thousand-hungry-sharks', ['p2-hidan'], 0).stack).toHaveLength(1);
+    });
+
+    it('can use Ninjutsu again once the prison runs out', () => {
+      const s = holding();
+      expect(activateAbility({ ...s, turn: s.turn + 3 }, 'p1-kisame', 'thousand-hungry-sharks', ['p2-hidan'], 0).stack).toHaveLength(1);
+    });
+  });
+
+  it("Water Prison Jutsu locks a lower-rank target out of targeted abilities for 2 turns", () => {
     expect(activateAbility(giveChakra(freshCombat(), 'p1', 4), 'p1-kisame', 'water-prison-jutsu', ['p2-kakuzu'], 0).stack).toHaveLength(0); // costs 5
     let state = giveChakra(freshCombat(), 'p1', 5);
     state = activateAbility(state, 'p1-kisame', 'water-prison-jutsu', ['p2-kakuzu'], 0);
     state = resolveTop(state);
 
-    expect(state.players.p2.backRow[0]!.extra.targetLockUntilTurn).toBe(state.turn + 3);
+    expect(state.players.p2.backRow[0]!.extra.targetLockUntilTurn).toBe(state.turn + 2);
     // Disabled while transformed (Samehada Fusion).
     const shark = giveChakra(freshCombat(), 'p1', 5);
     const tf = { ...shark, players: { ...shark.players, p1: { ...shark.players.p1, backRow: shark.players.p1.backRow.map((c) => (c?.defId === 'kisame' ? { ...c, extra: { ...c.extra, transformed: true } } : c)) } } };

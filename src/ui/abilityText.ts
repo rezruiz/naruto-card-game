@@ -29,7 +29,7 @@ const ABILITY_TEXT: Record<string, string> = {
   'samehada-strike': 'Deal 1, Absorb 3.',
   'samehada-strike-evolved': 'Needs 9+ absorbed and 6+ pooled. Deal 2, Absorb 4.',
   'thousand-hungry-sharks': 'Deal 4 damage split however you like between any number of enemy targets (1 per pick; the rest on the last pick).',
-  'water-prison-jutsu': "A lower-Rank target can't use targeted abilities for 3 turns (or until Kisame takes damage).",
+  'water-prison-jutsu': "A lower-Rank target can't use targeted abilities for 2 turns (or until one hit deals Kisame 3+ damage). Kisame can only use Taijutsu and Bukijutsu while it holds.",
   'super-shark-bomb-jutsu': 'Deal 3 + the target’s pooled Chakra, Absorb 2.',
   'samehada-shark-transformation': 'Needs 10 absorbed. Transform: +6 Pool, +6 max HP, Water attacks +1 damage, Ninjutsu attacks Absorb 1 both ways; Samehada Strike and Water Prison are disabled. Ends after 7+ damage taken, or at Upkeep with ≤3 pooled.',
   // Itachi

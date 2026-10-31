@@ -1,6 +1,6 @@
 import { samehadaFusionAbsorb } from '../characters/kisame';
 import { getCharacterDef, sharedVersatilitySource } from '../characters/registry';
-import { findOccupant, isCharacter, patchCharacter, patchOccupant, isHidingLikeAMole, isPhasedOut, surfaceFromMole, isOutOfReach } from '../board';
+import { findOccupant, isCharacter, patchCharacter, patchOccupant, isHidingLikeAMole, isPhasedOut, surfaceFromMole, isOutOfReach, blockedByWaterPrison } from '../board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from '../stack';
 import { cursingHidan } from '../abilities';
 import { appendLog, appendWarning } from '../phases/phaseMachine';
@@ -81,6 +81,9 @@ function checkEnabler(state: GameState, player: PlayerId, def: HandCardDef, enab
   if (enabler.status.retreated) return { ok: false, reason: `${enabler.name} is Retreated and can't enable a card.` };
   const stunUntil = enabler.extra.stunnedUntilTurn as number | undefined;
   if (stunUntil !== undefined && state.turn <= stunUntil) return { ok: false, reason: `${enabler.name} is stunned and can't enable a card.` };
+  if (blockedByWaterPrison(state, enabler.instanceId, def.type)) {
+    return { ok: false, reason: `${enabler.name} is holding Water Prison and can only use Taijutsu and Bukijutsu.` };
+  }
   if (def.style !== 'None' && !enabler.styles.includes(def.style)) {
     return { ok: false, reason: `${enabler.name} doesn't have Style: ${def.style}, needed to enable ${def.name}.` };
   }

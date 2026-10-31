@@ -126,9 +126,13 @@ describe('Conditions that track who damaged or defeated whom', () => {
     expect(use(s, 'p1-kakuzu', 'earth-grudge-fear', ['p1-hidan']).stack).toHaveLength(0);
   });
 
-  it('Water Prison ends early when Kisame takes damage', () => {
+  it('Water Prison ends early only if a single hit deals Kisame 3 or more damage', () => {
     let s = setExtra(freshCombat(), 'p2-itachi', { targetLockUntilTurn: 99, targetLockBy: 'p1-kisame' });
-    s = hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-kisame']);
+    s = hit(s, 'p2-hidan', 'triple-scythe-sweep', ['p1-kisame']); // 1 damage holds
+    expect(unit(s, 'p2-itachi').extra.targetLockUntilTurn).toBe(99);
+    s = dealDamage(s, 'p1-kisame', 2).state; // two small hits don't add up
+    expect(unit(s, 'p2-itachi').extra.targetLockUntilTurn).toBe(99);
+    s = dealDamage(s, 'p1-kisame', 3).state;
     expect(unit(s, 'p2-itachi').extra.targetLockUntilTurn).toBeUndefined();
   });
 

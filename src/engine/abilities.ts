@@ -1,6 +1,6 @@
 import { appendLog, appendWarning } from './phases/phaseMachine';
 import { isPrototype } from './prototype';
-import { findOccupant, isCharacter, isHidingLikeAMole, isOutOfReach, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant, surfaceFromMole } from './board';
+import { blockedByWaterPrison, findOccupant, isCharacter, isHidingLikeAMole, isOutOfReach, isPhasedOut, hasFieldOrientation, patchCharacter, patchOccupant, surfaceFromMole } from './board';
 import { canActivateNormalSpeed, pushStackItem, describeCost } from './stack';
 import type { AbilityChoices, AbilitySpeed, AbilityType, BoardOccupant, GameState, PlayerId, Style } from './types';
 import { getCharacterDef, getTokenDef, sharedVersatilitySource } from './characters/registry';
@@ -269,6 +269,9 @@ export function checkLegality(
   // Generic "can't use abilities that target a character" stun (e.g. Kisame's
   // Water Prison Jutsu) — a character/token can set extra.targetLockUntilTurn
   // on a rival to block its targeted abilities through that turn number.
+  if (blockedByWaterPrison(state, source.instanceId, ability.type)) {
+    return { ok: false, reason: `${source.name} is holding Water Prison and can only use Taijutsu and Bukijutsu.` };
+  }
   const lockUntil = source.extra.targetLockUntilTurn as number | undefined;
   if (lockUntil !== undefined && state.turn <= lockUntil && (ability.maxTargets ?? 1) !== 0) {
     return { ok: false, reason: `${source.name} can't use abilities that target a character right now.` };

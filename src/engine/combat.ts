@@ -148,13 +148,13 @@ function recordDamage(state: GameState, target: BoardOccupant, targetOwner: Play
       next = setExtra(next, target.instanceId, { damageTakenFrom: taken });
     }
   }
-  if (target.defId === 'kisame') {
-    // Water Prison ends early once Kisame takes damage.
+  if (target.defId === 'kisame' && dealt >= 3) {
+    // Water Prison ends early if a single hit deals Kisame 3 or more damage.
     for (const p of ['p1', 'p2'] as PlayerId[]) {
       for (const unit of [...next.players[p].backRow, ...next.players[p].frontRow]) {
         if (unit && unit.extra.targetLockBy === target.instanceId) {
           next = setExtra(next, unit.instanceId, { targetLockUntilTurn: undefined, targetLockBy: undefined });
-          next = appendLog(next, `Kisame took damage — ${unit.name} breaks free of Water Prison.`);
+          next = appendLog(next, `Kisame took ${dealt} damage — ${unit.name} breaks free of Water Prison.`);
         }
       }
     }

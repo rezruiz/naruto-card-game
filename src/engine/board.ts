@@ -147,6 +147,14 @@ export function isPhasedOut(state: GameState, occ: BoardOccupant): boolean {
 }
 
 /** Earth Style: Hiding Like a Mole Technique — this unit can't be targeted (through moleHiddenUntilTurn). */
+/** Whether a unit holding Water Prison on someone is barred from this: it can only use Physical attacks (Taijutsu and Bukijutsu) while it holds. */
+export function blockedByWaterPrison(state: GameState, instanceId: string, type: AbilityType | undefined): boolean {
+  if (type === 'Taijutsu' || type === 'Bukijutsu') return false;
+  return [...state.players.p1.backRow, ...state.players.p1.frontRow, ...state.players.p2.backRow, ...state.players.p2.frontRow].some(
+    (u) => u?.extra.targetLockBy === instanceId && ((u.extra.targetLockUntilTurn as number | undefined) ?? -1) >= state.turn,
+  );
+}
+
 /** Deidara's Airborne (C2, Shi-Ryu): enemy Taijutsu and Bukijutsu can't target him, and neither can Shinobi attacks (shinobi.ts). */
 export function isOutOfReach(occ: BoardOccupant, type: AbilityType | undefined): boolean {
   return occ.extra.airborne === true && (type === 'Taijutsu' || type === 'Bukijutsu');

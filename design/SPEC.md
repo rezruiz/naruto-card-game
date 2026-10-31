@@ -1305,9 +1305,9 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   Upkeep with Pool ≤3.
 
 Abilities:
-- Samehada Strike — 2 Chakra from his Pool, Type: Taijutsu: Deal 1, Absorb 3.
-- Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Taijutsu: Deal 2, Absorb 4.
-- Water Style: Water Prison Jutsu — 5 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
+- Samehada Strike — 2 Chakra from his Pool, Type: Bukijutsu: Deal 1, Absorb 3.
+- Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Bukijutsu: Deal 2, Absorb 4.
+- Water Style: Water Prison Jutsu — 5 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 2 turns (or until a single hit deals Kisame 3 or more damage), it can't use abilities that target a character, and Kisame can only use Taijutsu and Bukijutsu.
 - Water Style: Thousand Hungry Sharks — 7 Chakra, Type: Ninjutsu: Deal 4 damage, split however you choose between any number of enemy targets.
 
 Ultimate — Water Style: Super Shark Bomb Jutsu (6 Chakra, Style: Water,

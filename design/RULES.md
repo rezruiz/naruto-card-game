@@ -1073,9 +1073,9 @@ Traits: *(full nuance: design/CHARACTER_LOG.md)*
   Upkeep with Pool ≤3.
 
 Abilities:
-- Samehada Strike — 2 Chakra from his Pool, Type: Taijutsu: Deal 1, Absorb 3.
-- Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Taijutsu: Deal 2, Absorb 4.
-- Water Style: Water Prison Jutsu — 5 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 3 turns (or until Kisame takes damage), it can't use abilities that target a character.
+- Samehada Strike — 2 Chakra from his Pool, Type: Bukijutsu: Deal 1, Absorb 3.
+- Samehada Strike Evolved — Requires ≥9 Chakra absorbed and ≥6 pooled, 2 Chakra from his Pool, Type: Bukijutsu: Deal 2, Absorb 4.
+- Water Style: Water Prison Jutsu — 5 Chakra, Type: Ninjutsu: Target must be a lower Rank. Through the next 2 turns (or until a single hit deals Kisame 3 or more damage), it can't use abilities that target a character, and Kisame can only use Taijutsu and Bukijutsu.
 - Water Style: Thousand Hungry Sharks — 7 Chakra, Type: Ninjutsu: Deal 4 damage, split however you choose between any number of enemy targets.
 
 Ultimate — Water Style: Super Shark Bomb Jutsu (6 Chakra, Style: Water,
@@ -3178,12 +3178,12 @@ Engine flags: absorbed Chakra goes into its Pool; has an Upkeep passive
 
 | Ability | Cost | Speed | Style | Type | Damaging | Targets | Target side | Notes |
 |---|---|---|---|---|---|---|---|---|
-| Samehada Strike | 2 | Normal | Water | Taijutsu | yes | 1 | enemy | paid from Pool |
-| Samehada Strike Evolved | 2 | Normal | Water | Taijutsu | yes | 1 | enemy | paid from Pool |
+| Samehada Strike | 2 | Normal | Water | Bukijutsu | yes | 1 | enemy | paid from Pool |
+| Samehada Strike Evolved | 2 | Normal | Water | Bukijutsu | yes | 1 | enemy | paid from Pool |
 | Water Style: Water Prison Jutsu | 5 | Normal | Water | Ninjutsu | no | 1 | enemy | not while transformed |
 | Water Style: Thousand Hungry Sharks | 8 | Normal | Water | Ninjutsu | yes | up to 4 | enemy | 4 damage split by picks |
 | Water Style: Super Shark Bomb Jutsu | variable | Normal | Water | Ninjutsu | yes | 1 | enemy | — |
-| Samehada Shark Transformation | 0 | Normal | None | None | no | none/auto | — | — |
+| Samehada Shark Transformation | 0 | Normal | None | Ninjutsu | no | none/auto | — | — |
 
 ### Itachi — S Rank
 

@@ -100,7 +100,7 @@ const samehadaStrike: AbilityDef = {
   requiresFullPoolPayment: true,
   speed: 'Normal',
   style: 'Water',
-  type: 'Taijutsu',
+  type: 'Bukijutsu',
   isDamaging: true,
   legalityCheck: (ctx) => !isTransformed(ctx),
   resolve: (ctx) => {
@@ -123,7 +123,7 @@ const samehadaStrikeEvolved: AbilityDef = {
   requiresFullPoolPayment: true,
   speed: 'Normal',
   style: 'Water',
-  type: 'Taijutsu',
+  type: 'Bukijutsu',
   isDamaging: true,
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
@@ -166,9 +166,9 @@ const waterPrisonJutsu: AbilityDef = {
     if (!target) return ctx.state;
     let state = patchCharacter(ctx.state, target, (t) => ({
       ...t,
-      extra: { ...t.extra, targetLockUntilTurn: ctx.state.turn + 3, targetLockBy: ctx.sourceInstanceId },
+      extra: { ...t.extra, targetLockUntilTurn: ctx.state.turn + 2, targetLockBy: ctx.sourceInstanceId },
     }));
-    return appendLog(state, `Water Prison Jutsu traps its target — no targeted abilities for 3 turns.`);
+    return appendLog(state, `Water Prison Jutsu traps its target — no targeted abilities for 2 turns.`);
   },
 };
 
@@ -224,7 +224,7 @@ const samehadaSharkTransformation: AbilityDef = {
   cost: 0,
   speed: 'Normal',
   style: 'None',
-  type: 'None',
+  type: 'Ninjutsu',
   maxTargets: 0,
   legalityCheck: (ctx) => {
     const found = findOccupant(ctx.state, ctx.sourceInstanceId);
