@@ -1,18 +1,16 @@
 // A unit's attack (Damage) and defense (Health) as small icons with the number
-// laid over them: a dark grey kunai (its blade centred under the number) and a
-// shield. The digits are white with a dark outline so they read in light and
-// dark themes.
+// laid over them: a dark grey shuriken (its broad middle sits under the number)
+// and a shield. The digits are white with a dark outline so they read in light
+// and dark themes.
 
-function Kunai() {
-  // Drawn pointing up with the blade's widest point at the centre, then tilted so the tip
-  // points up and to the right; the grip and ring trail off toward the bottom-left.
+function Shuriken() {
+  // The Naruto shuriken: an X of four broad blades, each ridged down the middle (one side catches the light), with a hole at the centre.
   return (
-    <g transform="rotate(40 16 16)">
-      <path className="stat-icon__blade" d="M16 -1.5 L22.2 15 L16 22 L9.8 15 Z" />
-      <rect className="stat-icon__grip" x="14.3" y="22" width="3.4" height="6" rx="0.8" />
-      <path className="stat-icon__wrap" d="M14.3 23 L17.7 24.4 M14.3 25.6 L17.7 27" />
-      <circle className="stat-icon__ring" cx="16" cy="30.6" r="2.4" />
-    </g>
+    <>
+      <path className="stat-icon__shuriken" d="M1.5 1.5 L16 9.5 L30.5 1.5 L22.5 16 L30.5 30.5 L16 22.5 L1.5 30.5 L9.5 16 Z" />
+      <path className="stat-icon__shuriken-bevel" d="M16 16 L16 9.5 L30.5 1.5 Z M16 16 L22.5 16 L30.5 30.5 Z M16 16 L16 22.5 L1.5 30.5 Z M16 16 L9.5 16 L1.5 1.5 Z" />
+      <circle className="stat-icon__shuriken-hole" cx="16" cy="16" r="2.6" />
+    </>
   );
 }
 
@@ -36,7 +34,7 @@ export function StatIcon({
   return (
     <span className={`stat-icon stat-icon--${kind}${hurt ? ' stat-icon--hurt' : ''}`} title={title} aria-label={title}>
       <svg viewBox="0 0 32 32" aria-hidden focusable="false">
-        {kind === 'attack' ? <Kunai /> : <Shield />}
+        {kind === 'attack' ? <Shuriken /> : <Shield />}
       </svg>
       <span className="stat-icon__value" aria-hidden>
         {value}

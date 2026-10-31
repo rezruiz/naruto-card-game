@@ -829,7 +829,7 @@ button.in-play-chip--plain:hover {
   color: #22c55e;
 }
 
-/* Attack and defense: the number laid over a dark grey kunai / a shield. StatIcon.tsx. */
+/* Attack and defense: the number laid over a dark grey shuriken / a shield. StatIcon.tsx. */
 .stat-icon {
   display: inline-grid;
   place-items: center;
@@ -861,38 +861,23 @@ button.in-play-chip--plain:hover {
     0 -1.5px 0 #111418, 0 1.5px 0 #111418, -1.5px 0 0 #111418, 1.5px 0 0 #111418;
 }
 
-.stat-icon--attack {
-  /* A small kunai behind the number — the digit runs across it rather than fitting inside. */
-  width: 26px;
-  height: 26px;
-}
-
 .stat-icon--attack .stat-icon__value {
   top: 0;
 }
 
-.stat-icon__blade {
-  fill: #4a4f57;
+.stat-icon__shuriken {
+  fill: #3f444b;
   stroke: #2b2f35;
-  stroke-width: 1.2;
+  stroke-width: 1;
   stroke-linejoin: round;
 }
 
-.stat-icon__grip {
-  fill: #3a3e44;
-  stroke: #2b2f35;
-  stroke-width: 0.8;
+.stat-icon__shuriken-bevel {
+  fill: #6d737d;
 }
 
-.stat-icon__wrap {
-  stroke: #5d636c;
-  stroke-width: 0.9;
-}
-
-.stat-icon__ring {
-  fill: none;
-  stroke: #3a3e44;
-  stroke-width: 1.8;
+.stat-icon__shuriken-hole {
+  fill: #1f2226;
 }
 
 .stat-icon__shield {
@@ -907,18 +892,13 @@ button.in-play-chip--plain:hover {
 }
 
 /* Still dark grey, with a faint light outline so it doesn't vanish on the dark card. */
-[data-theme='dark'] .stat-icon__blade {
-  fill: #555b64;
-  stroke: #9aa1ab;
-}
-
-[data-theme='dark'] .stat-icon__grip {
+[data-theme='dark'] .stat-icon__shuriken {
   fill: #474c54;
   stroke: #9aa1ab;
 }
 
-[data-theme='dark'] .stat-icon__ring {
-  stroke: #9aa1ab;
+[data-theme='dark'] .stat-icon__shuriken-bevel {
+  fill: #7a818c;
 }
 
 [data-theme='dark'] .stat-icon__shield {
