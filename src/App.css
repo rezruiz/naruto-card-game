@@ -1,7 +1,49 @@
+/* The game fills the window. The board and hands (.game-main) then scale up with it, so a wider window
+   shows bigger cards and text rather than the same cards with more empty space around them. */
+:root {
+  --board-scale: 1;
+}
+
+@media (min-width: 1500px) {
+  :root {
+    --board-scale: 1.1;
+  }
+}
+
+@media (min-width: 1700px) {
+  :root {
+    --board-scale: 1.2;
+  }
+}
+
+@media (min-width: 1900px) {
+  :root {
+    --board-scale: 1.3;
+  }
+}
+
+@media (min-width: 2200px) {
+  :root {
+    --board-scale: 1.45;
+  }
+}
+
+@media (min-width: 2500px) {
+  :root {
+    --board-scale: 1.6;
+  }
+}
+
+@media (min-width: 3400px) {
+  :root {
+    --board-scale: 2;
+  }
+}
+
 .app {
-  max-width: min(96vw, 1600px);
-  margin: 0 auto;
-  padding: 24px 16px 48px;
+  min-height: 100vh;
+  padding: 16px 12px 32px;
+  background: var(--table-bg);
 }
 
 .players-row {
@@ -46,14 +88,22 @@
 }
 
 .chakra-sources__label {
+  font-size: 19px;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
+/* The counts are read at a glance every turn. */
+.chakra-sources__label strong {
+  font-size: 28px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
 .chakra-symbol {
-  font-size: 20px;
+  font-size: 28px;
 }
 
 .chakra-sources__boxes {
@@ -541,10 +591,14 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  zoom: var(--board-scale);
+  /* The player areas are translucent, so they need the plain page colour behind them, not the table's. */
+  background: var(--bg);
+  border-radius: 10px;
 }
 
 .game-sidebar {
-  width: 300px;
+  width: clamp(240px, 15vw, 320px);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1579,11 +1633,9 @@
   font-weight: 600;
 }
 
-@media (prefers-color-scheme: dark) {
-  .rule-warnings__title,
-  .action-log__warning {
-    color: #f59e0b;
-  }
+[data-theme='dark'] .rule-warnings__title,
+[data-theme='dark'] .action-log__warning {
+  color: #f59e0b;
 }
 
 .deck-list__entry + .deck-list__entry {
@@ -1763,12 +1815,10 @@
   color: #3d1a6e;
 }
 
-@media (prefers-color-scheme: dark) {
-  .variant-badge--prototype {
-    background: #3a2560;
-    border-color: #8f6ad6;
-    color: #f1e6ff;
-  }
+[data-theme='dark'] .variant-badge--prototype {
+  background: #3a2560;
+  border-color: #8f6ad6;
+  color: #f1e6ff;
 }
 
 .lobby-screen__variant {
@@ -1802,8 +1852,8 @@
 /* The same amber square as a Supplies cost on a card (cardStyles.css). */
 .cost-swatch {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 20px;
+  height: 20px;
   border: 1px solid;
   vertical-align: -1px;
 }
@@ -1901,4 +1951,30 @@
 .hand-peek__empty {
   margin: 0;
   opacity: 0.75;
+}
+
+/* Light/dark button: out of the way in the corner, on every screen. Below the hand peek window and the details modal. */
+.theme-toggle {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 80;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel-bg);
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.12s ease;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  opacity: 1;
 }

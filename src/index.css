@@ -2,6 +2,8 @@
   --text: #2a2730;
   --text-h: #08060d;
   --bg: #f7f6f3;
+  /* The game screen outside the board and hands. */
+  --table-bg: #a9abb3;
   --panel-bg: #fff;
   --border: #d8d6db;
   --accent: #7c3aed;
@@ -13,25 +15,26 @@
   --card-hover-bg: #e2e5ee;
 
   font: 16px/145% system-ui, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #d6d4db;
-    --text-h: #f3f4f6;
-    --bg: #14151a;
-    --panel-bg: #1c1d24;
-    --border: #34353f;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.12);
-    --card-bg: #2a2c37;
-    --card-border: #4a4c5a;
-    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-    --card-hover-bg: #323543;
-  }
+:root[data-theme='dark'] {
+  --text: #d6d4db;
+  --text-h: #f3f4f6;
+  --bg: #14151a;
+  --table-bg: #33353f;
+  --panel-bg: #1c1d24;
+  --border: #34353f;
+  --accent: #c084fc;
+  --accent-bg: rgba(192, 132, 252, 0.12);
+  --card-bg: #2a2c37;
+  --card-border: #4a4c5a;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --card-hover-bg: #323543;
+
+  color-scheme: dark;
 }
 
 * {

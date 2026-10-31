@@ -560,7 +560,7 @@ button.in-play-chip--plain:hover {
 /* ---- Page layout: log (left) | board and hands (middle) | turn controls (right) ---- */
 .game-log {
   order: -1;
-  width: 250px;
+  width: clamp(200px, 13vw, 280px);
   flex-shrink: 0;
   position: sticky;
   top: 12px;
@@ -679,8 +679,11 @@ button.in-play-chip--plain:hover {
   gap: 8px;
 }
 
+/* All the piles in one line (the decks can be 3 wide), so the strip stays one card tall. */
 .mat--lanes .deck-col__row {
-  grid-template-columns: repeat(2, 76px);
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: 76px;
   align-items: start;
 }
 
@@ -903,23 +906,21 @@ button.in-play-chip--plain:hover {
   color: #fecaca;
 }
 
-@media (prefers-color-scheme: dark) {
-  /* Still dark grey, with a faint light outline so it doesn't vanish on the dark card. */
-  .stat-icon__blade {
-    fill: #555b64;
-    stroke: #9aa1ab;
-  }
+/* Still dark grey, with a faint light outline so it doesn't vanish on the dark card. */
+[data-theme='dark'] .stat-icon__blade {
+  fill: #555b64;
+  stroke: #9aa1ab;
+}
 
-  .stat-icon__grip {
-    fill: #474c54;
-    stroke: #9aa1ab;
-  }
+[data-theme='dark'] .stat-icon__grip {
+  fill: #474c54;
+  stroke: #9aa1ab;
+}
 
-  .stat-icon__ring {
-    stroke: #9aa1ab;
-  }
+[data-theme='dark'] .stat-icon__ring {
+  stroke: #9aa1ab;
+}
 
-  .stat-icon__shield {
-    stroke: #86efac;
-  }
+[data-theme='dark'] .stat-icon__shield {
+  stroke: #86efac;
 }

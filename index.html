@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Naruto Custom Card Game — Prototype</title>
+    <script>
+      // Before the first paint, so a dark page doesn't flash light. ThemeToggle.tsx saves the choice.
+      (function () {
+        var saved = null;
+        try {
+          saved = localStorage.getItem('naruto-theme');
+        } catch (e) {}
+        var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
